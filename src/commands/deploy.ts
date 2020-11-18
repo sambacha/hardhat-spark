@@ -1,12 +1,7 @@
 import {Command, flags} from '@oclif/command'
 
 export default class Deploy extends Command {
-  static description = ''
-
-  static examples = [
-    `$ mortar deploy
-`,
-  ]
+  static description = 'describe the command here'
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -21,6 +16,10 @@ export default class Deploy extends Command {
   async run() {
     const {args, flags} = this.parse(Deploy)
 
-    this.log(`deploy`)
+    const name = flags.name ?? 'world'
+    this.log(`hello ${name} from /Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/src/commands/deploy.ts`)
+    if (args.file && flags.force) {
+      this.log(`you input --force and --file: ${args.file}`)
+    }
   }
 }

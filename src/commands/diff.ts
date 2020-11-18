@@ -1,26 +1,24 @@
 import {Command, flags} from '@oclif/command'
+import * as path from "path";
 
 export default class Diff extends Command {
-  static description = ''
-
-  static examples = [
-    `$ mortar diff
-`,
-  ]
+  static description = 'describe the command here'
 
   static flags = {
     help: flags.help({char: 'h'}),
-    // flag with a value (-n, --name=VALUE)
-    name: flags.string({char: 'n', description: 'name to print'}),
-    // flag with no value (-f, --force)
-    force: flags.boolean({char: 'f'}),
   }
 
-  static args = [{name: 'file'}]
+  static args = [{name: 'pathToFile'}]
 
   async run() {
     const {args, flags} = this.parse(Diff)
+    let currentPath = process.cwd()
+    let filePath = args.pathToFile as string
+    if (filePath == "") {
+      console.log("no file path")
+    }
 
-    this.log(`diff`)
+    let userMigration = require(path.resolve(currentPath, filePath))
+    console.log(userMigration)
   }
 }
