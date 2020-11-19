@@ -25,10 +25,12 @@ export default class Init extends Command {
 
 
   async run() {
-    const {args, flags} = this.parse(Init)
+    const {flags} = this.parse(Init)
 
     //@TODO(filip): add support for other signing ways (e.g. memonic, seed phrase, hd wallet, etc)
     const configServis = new ConfigService(flags.networkId as string, flags.privateKey as string)
     configServis.generateAndSaveConfig(process.cwd())
+
+    // @TODO: iterate over all sol files and generate TS interface
   }
 }

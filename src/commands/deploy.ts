@@ -1,25 +1,31 @@
 import {Command, flags} from '@oclif/command'
+import * as path from "path";
+import {ModuleBucketRepo} from "../packages/modules/bucket_repo";
 
 export default class Deploy extends Command {
   static description = 'describe the command here'
 
   static flags = {
     help: flags.help({char: 'h'}),
-    // flag with a value (-n, --name=VALUE)
-    name: flags.string({char: 'n', description: 'name to print'}),
-    // flag with no value (-f, --force)
-    force: flags.boolean({char: 'f'}),
   }
 
-  static args = [{name: 'file'}]
+  static args = [{name: 'pathToFile'}]
 
   async run() {
-    const {args, flags} = this.parse(Deploy)
-
-    const name = flags.name ?? 'world'
-    this.log(`hello ${name} from /Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/src/commands/deploy.ts`)
-    if (args.file && flags.force) {
-      this.log(`you input --force and --file: ${args.file}`)
+    const {args} = this.parse(Deploy)
+    let currentPath = process.cwd()
+    let filePath = args.pathToFile as string
+    if (filePath == "") {
+      console.log("no file path")
     }
+
+    require(path.resolve(currentPath, filePath))
+    // add logic to continue with deployment
+    const moduleBucket = new ModuleBucketRepo(currentPath)
+    const currentBucket = moduleBucket.getCurrentBucket()
+
+    // initiate deploy procedure
+
+    moduleBucket.storeNewBucket(currentBucket, false)
   }
 }

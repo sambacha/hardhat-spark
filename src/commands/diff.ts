@@ -11,14 +11,13 @@ export default class Diff extends Command {
   static args = [{name: 'pathToFile'}]
 
   async run() {
-    const {args, flags} = this.parse(Diff)
+    const {args} = this.parse(Diff)
     let currentPath = process.cwd()
     let filePath = args.pathToFile as string
     if (filePath == "") {
       console.log("no file path")
     }
 
-    let userMigration = require(path.resolve(currentPath, filePath))
-    console.log(userMigration)
+    require(path.resolve(currentPath, filePath))
   }
 }

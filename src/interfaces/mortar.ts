@@ -1,3 +1,7 @@
+import {ModuleBucketRepo} from "../packages/modules/bucket_repo";
+import {ModuleResolver} from "../packages/modules/module_resolver";
+import {HardhatCompiler} from "../packages/ethereum/compiler/hardhat";
+
 export type AutoBinding = any | Binding;
 
 // Argument can be either an AutoBinding or a NamedArgument.
@@ -41,6 +45,15 @@ export class ContractBinding extends Binding {
   constructor(name: string, args: Arguments) {
     super(name)
     this.args = args
+  }
+}
+
+export class CompiledContractBinding extends ContractBinding {
+  public bytecode: string;
+
+  constructor(name: string, args: Arguments, bytecode: string) {
+    super(name, args)
+    this.bytecode = bytecode
   }
 }
 
@@ -172,8 +185,36 @@ export class Module {
   }
 }
 
-export function module(fn: ModuleBuilderFn): Module {
+export async function module(fn: ModuleBuilderFn): Promise<Module> {
+  const currentPath = process.cwd()
+
   const moduleBuilder = new ModuleBuilder(fn)
+  const moduleBucket = new ModuleBucketRepo(currentPath)
+  const moduleResolver = new ModuleResolver()
+  const compiler = new HardhatCompiler()
+
+  let contractNames: string[] = []
+  for (let [_, bind] of Object.entries(moduleBuilder.getAllBindings())) {
+    contractNames.push(bind.name)
+  }
+
+  compiler.compile()
+  const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractNames)
+
+  let oldModuleBucketBindings: { [p: string]: CompiledContractBinding } = moduleBucket.getCurrentBucket()
+  let newModuleBucketBindings: { [p: string]: CompiledContractBinding } = JSON.parse(JSON.stringify(moduleBuilder.getAllBindings()))
+
+  for (let binding of Object.keys(newModuleBucketBindings)) {
+    newModuleBucketBindings[binding].bytecode = bytecodes[binding]
+  }
+
+  if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBucketBindings)) {
+    moduleResolver.printDiffParams(oldModuleBucketBindings, newModuleBucketBindings)
+  } else {
+    console.log("nothing changed from last revision")
+  }
+
+  moduleBucket.storeNewBucket(newModuleBucketBindings, true)
 
   return new Module(
     moduleBuilder.getAllBindings(),

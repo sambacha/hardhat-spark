@@ -7,3 +7,7 @@
 /tmp
 node_modules
 .idea
+./example/artifacts
+./example/cache
+./example/.mortar
+./.mortar
