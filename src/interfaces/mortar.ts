@@ -1,6 +1,7 @@
 import {ModuleBucketRepo} from "../packages/modules/bucket_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
 import {HardhatCompiler} from "../packages/ethereum/compiler/hardhat";
+import {checkIfExist} from "../packages/utils/util";
 
 export type AutoBinding = any | Binding;
 
@@ -67,6 +68,44 @@ export class Action {
   }
 }
 
+type TxData = {
+  from: string
+  input: string
+}
+
+enum TransactionState {
+  UNKNOWN,
+  PENDING,
+  REPLACED,
+  IN_BLOCK,
+}
+
+
+type Transaction = {
+  from: string
+  to: string
+  gas: string
+  gasPrice: string
+  input: string
+  value: string
+  nonce: number
+  state: TransactionState
+}
+
+export type TransactionData = {
+  input: TxData | null,
+  output: Transaction | null,
+}
+
+export class DeployedContractBinding extends CompiledContractBinding {
+  public txData: TransactionData
+
+  constructor(name: string, args: Arguments, bytecode: string, txData: TransactionData) {
+    super(name, args, bytecode)
+    this.txData = txData
+  }
+}
+
 export abstract class ModuleUse {
   abstract use<T extends Module>(m: T, opts?: ModuleOptions): T;
 }
@@ -94,8 +133,13 @@ export class ModuleBuilder extends ModuleUse {
 
   bind(name: string, ...args: Arguments): ContractBinding {
     const contractBinding = new ContractBinding(name, args)
-    this.bindings[name] = contractBinding
 
+    if (checkIfExist(this.bindings[name])) {
+      console.log("Contract already binded to module - ", name)
+      process.exit(0)
+    }
+
+    this.bindings[name] = contractBinding
     return contractBinding
   }
 
@@ -185,7 +229,7 @@ export class Module {
   }
 }
 
-export async function module(fn: ModuleBuilderFn): Promise<Module> {
+export function module(fn: ModuleBuilderFn): Module {
   const currentPath = process.cwd()
 
   const moduleBuilder = new ModuleBuilder(fn)
@@ -201,7 +245,10 @@ export async function module(fn: ModuleBuilderFn): Promise<Module> {
   compiler.compile()
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractNames)
 
-  let oldModuleBucketBindings: { [p: string]: CompiledContractBinding } = moduleBucket.getCurrentBucket()
+  let oldModuleBucketBindings: { [p: string]: CompiledContractBinding } = moduleBucket.getBucket()
+  if (!checkIfExist(oldModuleBucketBindings)) {
+    oldModuleBucketBindings = {}
+  }
   let newModuleBucketBindings: { [p: string]: CompiledContractBinding } = JSON.parse(JSON.stringify(moduleBuilder.getAllBindings()))
 
   for (let binding of Object.keys(newModuleBucketBindings)) {

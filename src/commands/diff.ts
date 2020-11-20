@@ -18,6 +18,7 @@ export default class Diff extends Command {
       console.log("no file path")
     }
 
+    // @TODO: add custom pretty logging
     require(path.resolve(currentPath, filePath))
   }
 }

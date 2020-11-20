@@ -95,7 +95,6 @@ USAGE
 OPTIONS
   -f, --force
   -h, --help       show CLI help
-  -n, --name=name  name to print
 ```
 
 _See code: [src/commands/init.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/init.ts)_

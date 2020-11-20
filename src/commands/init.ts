@@ -28,8 +28,8 @@ export default class Init extends Command {
     const {flags} = this.parse(Init)
 
     //@TODO(filip): add support for other signing ways (e.g. memonic, seed phrase, hd wallet, etc)
-    const configServis = new ConfigService(flags.networkId as string, flags.privateKey as string)
-    configServis.generateAndSaveConfig(process.cwd())
+    const configService = new ConfigService(process.cwd())
+    configService.generateAndSaveConfig(flags.privateKey as string)
 
     // @TODO: iterate over all sol files and generate TS interface
   }

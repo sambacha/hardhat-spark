@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import {CompiledContractBinding} from "../../interfaces/mortar";
+import {CompiledContractBinding, DeployedContractBinding} from "../../interfaces/mortar";
 import {ModuleResolver} from "./module_resolver";
 
 const BUCKET_DIR_NAME = '.mortar'
@@ -22,7 +22,7 @@ export class ModuleBucketRepo {
     this.moduleResolver = new ModuleResolver()
   }
 
-  getCurrentBucket(): any {
+  getCurrentBucket(): { [p: string]: CompiledContractBinding } | null {
     const dir = path.resolve(this.bucketPath, CURRENT_BUCKET_NAME)
     if (!fs.existsSync(dir)){
       return null
@@ -33,7 +33,7 @@ export class ModuleBucketRepo {
     }))
   }
 
-  getBucket(): any {
+  getBucket(): { [p: string]: DeployedContractBinding } | null {
     const dir = path.resolve(this.bucketPath, BUCKET_NAME)
     if (!fs.existsSync(dir)){
       return null
