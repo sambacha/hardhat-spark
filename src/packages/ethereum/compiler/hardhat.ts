@@ -2,7 +2,7 @@ import {Compiler} from "./index";
 import {execSync} from "child_process";
 import * as path from "path";
 import {parseFiles} from "../../utils/files";
-
+import {JsonFragment} from "../../types/abi"
 
 export class HardhatCompiler extends Compiler {
   compile(): void {
@@ -21,5 +21,19 @@ export class HardhatCompiler extends Compiler {
     }
 
     return bytecodes
+  }
+
+  extractContractInterface(contractNames: string[]): { [p: string]: JsonFragment[] } {
+    let ABIs: { [p: string]: JsonFragment[] } = {}
+
+    const dir = path.resolve(process.cwd(), "artifacts", "contracts")
+    const buildArtifacts = parseFiles(dir, contractNames, [])
+    for (let artifact of buildArtifacts) {
+      const art = JSON.parse(artifact)
+
+      ABIs[art.contractName] = art.abi
+    }
+
+    return ABIs
   }
 }

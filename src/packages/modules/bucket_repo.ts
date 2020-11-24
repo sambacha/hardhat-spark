@@ -51,7 +51,7 @@ export class ModuleBucketRepo {
         dir = path.resolve(this.bucketPath, CURRENT_BUCKET_NAME)
     }
 
-    fs.writeFileSync(dir, JSON.stringify(bucket))
+    fs.writeFileSync(dir, JSON.stringify(bucket,null, 4))
     return
   }
 }

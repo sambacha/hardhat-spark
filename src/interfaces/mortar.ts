@@ -2,6 +2,9 @@ import {ModuleBucketRepo} from "../packages/modules/bucket_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
 import {HardhatCompiler} from "../packages/ethereum/compiler/hardhat";
 import {checkIfExist} from "../packages/utils/util";
+import {ModuleValidator} from "../packages/modules/module_validator";
+import {JsonFragment} from "../packages/types/abi"
+import {TransactionReceipt} from "@ethersproject/abstract-provider";
 
 export type AutoBinding = any | Binding;
 
@@ -51,10 +54,12 @@ export class ContractBinding extends Binding {
 
 export class CompiledContractBinding extends ContractBinding {
   public bytecode: string;
+  public abi: JsonFragment[]
 
-  constructor(name: string, args: Arguments, bytecode: string) {
+  constructor(name: string, args: Arguments, bytecode: string, abi: JsonFragment[]) {
     super(name, args)
     this.bytecode = bytecode
+    this.abi = abi
   }
 }
 
@@ -73,35 +78,24 @@ type TxData = {
   input: string
 }
 
-enum TransactionState {
+export enum TransactionState {
   UNKNOWN,
   PENDING,
   REPLACED,
   IN_BLOCK,
 }
 
-
-type Transaction = {
-  from: string
-  to: string
-  gas: string
-  gasPrice: string
-  input: string
-  value: string
-  nonce: number
-  state: TransactionState
-}
-
 export type TransactionData = {
   input: TxData | null,
-  output: Transaction | null,
+  output: TransactionReceipt | null,
+  contractAddress?: string,
 }
 
 export class DeployedContractBinding extends CompiledContractBinding {
   public txData: TransactionData
 
-  constructor(name: string, args: Arguments, bytecode: string, txData: TransactionData) {
-    super(name, args, bytecode)
+  constructor(name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData) {
+    super(name, args, bytecode, abi)
     this.txData = txData
   }
 }
@@ -112,7 +106,7 @@ export abstract class ModuleUse {
 
 export class ModuleBuilder extends ModuleUse {
   private opts: ModuleOptions;
-  private bindings: { [name: string]: Binding };
+  private bindings: { [name: string]: ContractBinding };
   private actions: { [name: string]: Action };
 
   constructor(fn: ModuleBuilderFn, opts?: ModuleOptions) {
@@ -169,14 +163,14 @@ export class ModuleBuilder extends ModuleUse {
   //
   registerAction(name: string, fn: ActionFn): Action {
     const action = new Action(name, fn)
-    this.bindings[name] = action
+    this.actions[name] = action
 
     return action
   }
 
   // getBinding(name: string): Binding;
 
-  getAllBindings(): { [name: string]: Binding } {
+  getAllBindings(): { [name: string]: ContractBinding } {
     return this.bindings
   }
 
@@ -198,11 +192,11 @@ export class ModuleBuilder extends ModuleUse {
 
 export class Module {
   private opts: ModuleOptions;
-  private bindings: { [name: string]: Binding };
+  private bindings: { [name: string]: ContractBinding };
   private actions: { [name: string]: Action };
 
   constructor(
-    bindings: { [name: string]: Binding },
+    bindings: { [name: string]: ContractBinding },
     actions: { [name: string]: Action },
   ) {
     this.opts = {params: {}}
@@ -220,7 +214,7 @@ export class Module {
   //
   // afterEach(fn: ModuleAfterEachFn, ...bindings: Binding[]): void;
 
-  getAllBindings(): { [name: string]: Binding } {
+  getAllBindings(): { [name: string]: ContractBinding } {
     return this.bindings
   }
 
@@ -236,6 +230,7 @@ export function module(fn: ModuleBuilderFn): Module {
   const moduleBucket = new ModuleBucketRepo(currentPath)
   const moduleResolver = new ModuleResolver()
   const compiler = new HardhatCompiler()
+  const moduleValidator = new ModuleValidator()
 
   let contractNames: string[] = []
   for (let [_, bind] of Object.entries(moduleBuilder.getAllBindings())) {
@@ -244,15 +239,28 @@ export function module(fn: ModuleBuilderFn): Module {
 
   compiler.compile()
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractNames)
+  // if (Object.entries(bytecodes).length != contractNames.length) { // @TODO: their is problem with matching contractName, fix regex
+  //   console.log("some bytecode is missing or .bind() was not used properly")
+  //   process.exit(0)
+  // }
 
-  let oldModuleBucketBindings: { [p: string]: CompiledContractBinding } = moduleBucket.getBucket()
+  const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractNames)
+  // if (Object.entries(abi).length != contractNames.length) {
+  //   console.log("some abi is missing or .bind() was not used properly")
+  //   process.exit(0)
+  // }
+
+  moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
+
+  let oldModuleBucketBindings = moduleBucket.getBucket() as { [p: string]: CompiledContractBinding }
   if (!checkIfExist(oldModuleBucketBindings)) {
     oldModuleBucketBindings = {}
   }
-  let newModuleBucketBindings: { [p: string]: CompiledContractBinding } = JSON.parse(JSON.stringify(moduleBuilder.getAllBindings()))
+  let newModuleBucketBindings = moduleBuilder.getAllBindings() as { [p: string]: CompiledContractBinding }
 
   for (let binding of Object.keys(newModuleBucketBindings)) {
     newModuleBucketBindings[binding].bytecode = bytecodes[binding]
+    newModuleBucketBindings[binding].abi = abi[binding]
   }
 
   if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBucketBindings)) {

@@ -29,7 +29,7 @@ export default class ConfigService {
     }
 
     try {
-      fs.writeFileSync(this.configPath , JSON.stringify(this.config))
+      fs.writeFileSync(this.configPath , JSON.stringify(this.config, null, 4))
     } catch (e) {
       throw new Error("failed to write to file")
     }

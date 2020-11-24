@@ -22,7 +22,7 @@ export function parseSolFiles(sourcePath: string, contractNames: string[], resul
   return result
 }
 
-export function parseFiles(sourcePath: string, contractNames: string[], result: string[]): string[] {
+export function  parseFiles(sourcePath: string, contractNames: string[], result: string[]): string[] {
   const filenames = fs.readdirSync(sourcePath)
 
   filenames.forEach((name) => {
@@ -32,6 +32,7 @@ export function parseFiles(sourcePath: string, contractNames: string[], result: 
 
       const content = fs.readFileSync(path.resolve(sourcePath, name), 'utf-8')
 
+      // @TODO: their is problem with matching contractName, fix regex to match only CONTRACT NAME
       if (new RegExp(contractNames.join("|")).test(content)) {
         result.push(content)
       }

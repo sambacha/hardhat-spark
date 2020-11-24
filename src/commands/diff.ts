@@ -8,12 +8,12 @@ export default class Diff extends Command {
     help: flags.help({char: 'h'}),
   }
 
-  static args = [{name: 'pathToFile'}]
+  static args = [{name: 'path'}]
 
   async run() {
     const {args} = this.parse(Diff)
     let currentPath = process.cwd()
-    let filePath = args.pathToFile as string
+    let filePath = args.path as string
     if (filePath == "") {
       console.log("no file path")
     }

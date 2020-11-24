@@ -6,7 +6,6 @@
     "chai": "^4.2.0",
     "ethereum-waffle": "^3.2.0",
     "ethers": "^5.0.19",
-    "hardhat": "^2.0.3",
-    "mortar-tenderly": "0.0.0"
+    "hardhat": "^2.0.3"
   }
 }

@@ -1,4 +1,4 @@
-import {ModuleBuilder, module} from "mortar-tenderly/src/interfaces/mortar"
+import {ModuleBuilder, module} from "../../src/interfaces/mortar"
 
 export const ExampleSetup = module((m: ModuleBuilder) => {
   // Bind contracts for deployment.

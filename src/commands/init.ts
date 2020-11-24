@@ -7,7 +7,7 @@ export default class Init extends Command {
   static flags = {
     help: flags.help({char: 'h'}),
     // flag with a value (-n, --name=VALUE)
-    networkId: flags.string(
+    networkId: flags.integer(
       {
         name: 'network_id',
         description: 'Network ID of the network you are willing to deploy your contracts',

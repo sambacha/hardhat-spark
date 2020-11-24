@@ -27,74 +27,69 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`mortar deploy [FILE]`](#mortar-deploy-file)
-* [`mortar diff [FILE]`](#mortar-diff-file)
-* [`mortar hello [FILE]`](#mortar-hello-file)
-* [`mortar init [FILE]`](#mortar-init-file)
+* [`mortar deploy [PATHTOFILE]`](#mortar-deploy-pathtofile)
+* [`mortar diff [PATH]`](#mortar-diff-path)
+* [`mortar help [COMMAND]`](#mortar-help-command)
+* [`mortar init`](#mortar-init)
 
-## `mortar deploy [FILE]`
+## `mortar deploy [PATHTOFILE]`
 
 describe the command here
 
 ```
 USAGE
-  $ mortar deploy [FILE]
+  $ mortar deploy [PATHTOFILE]
 
 OPTIONS
-  -f, --force
-  -h, --help       show CLI help
-  -n, --name=name  name to print
+  -h, --help             show CLI help
+  --networkId=networkId  (required) Network ID of the network you are willing to deploy your contracts
 ```
 
 _See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/deploy.ts)_
 
-## `mortar diff [FILE]`
+## `mortar diff [PATH]`
 
 describe the command here
 
 ```
 USAGE
-  $ mortar diff [FILE]
+  $ mortar diff [PATH]
 
 OPTIONS
-  -f, --force
-  -h, --help       show CLI help
-  -n, --name=name  name to print
+  -h, --help  show CLI help
 ```
 
 _See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/diff.ts)_
 
-## `mortar hello [FILE]`
+## `mortar help [COMMAND]`
 
-describe the command here
-
-```
-USAGE
-  $ mortar hello [FILE]
-
-OPTIONS
-  -f, --force
-  -h, --help       show CLI help
-  -n, --name=name  name to print
-
-EXAMPLE
-  $ mortar hello
-  hello world from ./src/hello.ts!
-```
-
-_See code: [src/commands/hello.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/hello.ts)_
-
-## `mortar init [FILE]`
-
-describe the command here
+display help for mortar
 
 ```
 USAGE
-  $ mortar init [FILE]
+  $ mortar help [COMMAND]
+
+ARGUMENTS
+  COMMAND  command to show help for
 
 OPTIONS
-  -f, --force
-  -h, --help       show CLI help
+  --all  see all commands in CLI
+```
+
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.2.0/src/commands/help.ts)_
+
+## `mortar init`
+
+Initialize mortar configuration file
+
+```
+USAGE
+  $ mortar init
+
+OPTIONS
+  -h, --help               show CLI help
+  --networkId=networkId    (required) Network ID of the network you are willing to deploy your contracts
+  --privateKey=privateKey  (required) Private Key of the deployer account
 ```
 
 _See code: [src/commands/init.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/init.ts)_
