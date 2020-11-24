@@ -2,17 +2,18 @@ import {Command, flags} from '@oclif/command'
 import * as path from "path";
 import {ModuleBucketRepo} from "../packages/modules/bucket_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
-import {DeployedContractBinding} from "../interfaces/mortar";
+import {DeployedContractBinding, Module} from "../interfaces/mortar";
 import {checkIfExist} from "../packages/utils/util";
 import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
 import ConfigService from "../packages/config/service";
 import {Prompter} from "../packages/prompter";
 import {TxExecutor} from "../packages/ethereum/transactions/executor";
 import {GasCalculator} from "../packages/ethereum/gas/calculator";
-import { ethers } from "ethers";
+import {ethers} from "ethers";
+import {cli, Levels} from "cli-ux";
 
 export default class Deploy extends Command {
-  static description = 'describe the command here'
+  static description = 'Deploy new migrations, difference between current and already deployed.'
 
   static flags = {
     networkId: flags.integer(
@@ -22,6 +23,12 @@ export default class Deploy extends Command {
         required: true
       }
     ),
+    debug: flags.boolean(
+      {
+        name: 'debug',
+        description: "Flag used for debugging"
+      }
+    ),
     help: flags.help({char: 'h'}),
   }
 
@@ -29,6 +36,10 @@ export default class Deploy extends Command {
 
   async run() {
     const {args, flags} = this.parse(Deploy)
+    if (flags.debug) {
+      cli.config.outputLevel = "debug"
+    }
+
     const currentPath = process.cwd()
     const filePath = args.pathToFile as string
     if (filePath == "") {
@@ -49,29 +60,26 @@ export default class Deploy extends Command {
     const prompter = new Prompter()
     const txExecutor = new TxExecutor(prompter, moduleBucket, txGenerator, flags.networkId, provider)
 
-    require(path.resolve(currentPath, filePath))
+    const modules = require(path.resolve(currentPath, filePath))
+    for (let [moduleName, module] of Object.entries(modules)) {
+      cli.info("\nDeploying module - ", moduleName)
+      let deployedBucket = moduleBucket.getBucket()
+      if (deployedBucket == null) {
+        deployedBucket = {}
+      }
 
-    let currentBucket = moduleBucket.getCurrentBucket()
-    if (currentBucket == null) {
-      currentBucket = {}
+      const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve((module as Module).getAllBindings(), deployedBucket)
+      if (!checkIfExist(resolvedBindings)) {
+        cli.info("Nothing to deploy")
+        process.exit(0)
+      }
+
+      const bindings = txGenerator.populateTx(resolvedBindings as { [p: string]: DeployedContractBinding })
+      prompter.promptDeployerBindings(bindings)
+
+      await prompter.promptContinueDeployment()
+      await txExecutor.executeBindings(moduleName, bindings)
     }
-
-    let deployedBucket = moduleBucket.getBucket()
-    if (deployedBucket == null) {
-      deployedBucket = {}
-    }
-
-    const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve(currentBucket, deployedBucket)
-    if (!checkIfExist(resolvedBindings)) {
-      console.log("Nothing to deploy")
-      process.exit(0)
-    }
-
-    const bindings = txGenerator.populateTx(resolvedBindings as { [p: string]: DeployedContractBinding })
-    prompter.promptDeployerBindings(bindings)
-
-    await prompter.promptContinueDeployment()
-    await txExecutor.executeBindings(bindings)
 
     process.exit(0)
   }

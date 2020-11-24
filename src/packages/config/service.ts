@@ -1,6 +1,7 @@
 import {Config} from "../types/config"
 import * as fs from 'fs';
 import * as path from 'path';
+import {cli} from "cli-ux";
 
 const CONFIG_FILENAME = 'mortar-config.json'
 
@@ -31,7 +32,9 @@ export default class ConfigService {
     try {
       fs.writeFileSync(this.configPath , JSON.stringify(this.config, null, 4))
     } catch (e) {
-      throw new Error("failed to write to file")
+      cli.debug(e)
+      cli.info("Failed to write to file.")
+      return false
     }
 
     return true

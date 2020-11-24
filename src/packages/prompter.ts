@@ -1,23 +1,21 @@
 import {DeployedContractBinding} from "../interfaces/mortar";
 import cli from "cli-ux";
-import {TransactionReceipt} from "@ethersproject/abstract-provider";
 
 export class Prompter {
   constructor() {
   }
 
-  // @TODO: move all prompting logic to here
   promptDeployerBindings(bindings: { [p: string]: DeployedContractBinding }): void {
     for (let [name, bind] of Object.entries(bindings)) {
-      console.log("Contract name: ", name)
-      console.log("   Tx Data: ")
-      console.log("            Input", bind.txData.input?.input)
-      console.log("            From", bind.txData.input?.from)
+      cli.debug("Contract name: ", name)
+      cli.debug("   Tx Data: ")
+      cli.debug("            Input", bind.txData.input?.input || "")
+      cli.debug("            From", bind.txData.input?.from || "")
     }
   }
 
   async promptContinueDeployment(): Promise<void> {
-    const con = await cli.prompt('Do you wish to continue with deployment of this migration? (Y/n)')
+    const con = await cli.prompt('Do you wish to continue with deployment of this module? (Y/n)')
     if (con != 'n' && con != 'Y') {
       return await this.promptContinueDeployment()
     }
@@ -40,7 +38,7 @@ export class Prompter {
   }
 
   promptSignedTransaction(tx: string): void {
-    cli.log(`Signed transaction: ${tx}`)
+    cli.debug(`Signed transaction: ${tx}`)
   }
 
   errorPrompt(error: Error): void {

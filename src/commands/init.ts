@@ -6,7 +6,6 @@ export default class Init extends Command {
 
   static flags = {
     help: flags.help({char: 'h'}),
-    // flag with a value (-n, --name=VALUE)
     networkId: flags.integer(
       {
         name: 'network_id',
@@ -21,16 +20,22 @@ export default class Init extends Command {
         required: true
       }
     ),
+    debug: flags.boolean(
+      {
+        name: 'debug',
+        description: "Flag used for debugging"
+      }
+    )
   }
 
 
   async run() {
     const {flags} = this.parse(Init)
 
-    //@TODO(filip): add support for other signing ways (e.g. memonic, seed phrase, hd wallet, etc)
+    //@TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
     const configService = new ConfigService(process.cwd())
     configService.generateAndSaveConfig(flags.privateKey as string)
 
-    // @TODO: iterate over all sol files and generate TS interface
+    // @TODO: iterate over abi and generate TS interface
   }
 }

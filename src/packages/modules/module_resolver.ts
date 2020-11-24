@@ -27,8 +27,8 @@ export class ModuleResolver {
 
     let i = 0
     while (i < oldBindingsLength) {
-      let oldBinding: CompiledContractBinding = oldBindings[Object.keys(oldBindings)[i]]
-      let newBinding: CompiledContractBinding = newBindings[Object.keys(oldBindings)[i]]
+      const oldBinding: CompiledContractBinding = oldBindings[Object.keys(oldBindings)[i]]
+      const newBinding: CompiledContractBinding = newBindings[Object.keys(oldBindings)[i]]
 
       if (oldBinding.bytecode != newBinding.bytecode) {
         return true
@@ -167,8 +167,9 @@ function checkArgs(currentArgs: any[], deployedArgs: any[]): boolean {
 
   let i = 0;
   while (i < currentArgsLen) {
-    // @TODO check this, not sure if works with bindings
-    if (currentArgs[i] != deployedArgs[i]) {
+
+    // @TODO add logic to check for specific part of args and not whole object
+    if (JSON.stringify(currentArgs[i]) != JSON.stringify(deployedArgs[i])) {
       return false
     }
 

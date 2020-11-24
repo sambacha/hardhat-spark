@@ -5,7 +5,6 @@ import {ModuleResolver} from "./module_resolver";
 
 const BUCKET_DIR_NAME = '.mortar'
 const BUCKET_NAME = 'deployed_module_builder_bucket.json'
-const CURRENT_BUCKET_NAME = 'current_module_builder_bucket.json'
 
 export class ModuleBucketRepo {
   private bucketPath: string
@@ -22,17 +21,6 @@ export class ModuleBucketRepo {
     this.moduleResolver = new ModuleResolver()
   }
 
-  getCurrentBucket(): { [p: string]: CompiledContractBinding } | null {
-    const dir = path.resolve(this.bucketPath, CURRENT_BUCKET_NAME)
-    if (!fs.existsSync(dir)){
-      return null
-    }
-
-    return JSON.parse(fs.readFileSync(dir, {
-      encoding: 'UTF-8'
-    }))
-  }
-
   getBucket(): { [p: string]: DeployedContractBinding } | null {
     const dir = path.resolve(this.bucketPath, BUCKET_NAME)
     if (!fs.existsSync(dir)){
@@ -47,9 +35,6 @@ export class ModuleBucketRepo {
   storeNewBucket(bucket: { [p: string]: CompiledContractBinding }, currentRevision: boolean): void {
     // @TODO: support multiple deployment setup
     let dir = path.resolve(this.bucketPath, BUCKET_NAME)
-    if (currentRevision) {
-        dir = path.resolve(this.bucketPath, CURRENT_BUCKET_NAME)
-    }
 
     fs.writeFileSync(dir, JSON.stringify(bucket,null, 4))
     return

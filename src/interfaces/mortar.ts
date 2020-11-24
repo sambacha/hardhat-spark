@@ -5,6 +5,7 @@ import {checkIfExist} from "../packages/utils/util";
 import {ModuleValidator} from "../packages/modules/module_validator";
 import {JsonFragment} from "../packages/types/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
+import {cli} from "cli-ux";
 
 export type AutoBinding = any | Binding;
 
@@ -192,11 +193,11 @@ export class ModuleBuilder extends ModuleUse {
 
 export class Module {
   private opts: ModuleOptions;
-  private bindings: { [name: string]: ContractBinding };
+  private bindings: { [name: string]: CompiledContractBinding };
   private actions: { [name: string]: Action };
 
   constructor(
-    bindings: { [name: string]: ContractBinding },
+    bindings: { [name: string]: CompiledContractBinding },
     actions: { [name: string]: Action },
   ) {
     this.opts = {params: {}}
@@ -214,7 +215,7 @@ export class Module {
   //
   // afterEach(fn: ModuleAfterEachFn, ...bindings: Binding[]): void;
 
-  getAllBindings(): { [name: string]: ContractBinding } {
+  getAllBindings(): { [name: string]: CompiledContractBinding } {
     return this.bindings
   }
 
@@ -232,23 +233,23 @@ export function module(fn: ModuleBuilderFn): Module {
   const compiler = new HardhatCompiler()
   const moduleValidator = new ModuleValidator()
 
-  let contractNames: string[] = []
+  let contractBuildNames: string[] = []
   for (let [_, bind] of Object.entries(moduleBuilder.getAllBindings())) {
-    contractNames.push(bind.name)
+    contractBuildNames.push(bind.name + '.json')
   }
 
-  compiler.compile()
-  const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractNames)
-  // if (Object.entries(bytecodes).length != contractNames.length) { // @TODO: their is problem with matching contractName, fix regex
-  //   console.log("some bytecode is missing or .bind() was not used properly")
-  //   process.exit(0)
-  // }
+  compiler.compile() // @TODO: make this more suitable for other compilers
+  const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractBuildNames)
+  if (Object.entries(bytecodes).length != contractBuildNames.length) {
+    cli.error("some bytecode is missing or .bind() was not used properly")
+    cli.exit(0)
+  }
 
-  const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractNames)
-  // if (Object.entries(abi).length != contractNames.length) {
-  //   console.log("some abi is missing or .bind() was not used properly")
-  //   process.exit(0)
-  // }
+  const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractBuildNames)
+  if (Object.entries(abi).length != contractBuildNames.length) {
+    cli.error("some abi is missing or .bind() was not used properly")
+    cli.exit(0)
+  }
 
   moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
 
@@ -256,23 +257,22 @@ export function module(fn: ModuleBuilderFn): Module {
   if (!checkIfExist(oldModuleBucketBindings)) {
     oldModuleBucketBindings = {}
   }
-  let newModuleBucketBindings = moduleBuilder.getAllBindings() as { [p: string]: CompiledContractBinding }
+  let newModuleBindings = moduleBuilder.getAllBindings() as { [p: string]: CompiledContractBinding }
 
-  for (let binding of Object.keys(newModuleBucketBindings)) {
-    newModuleBucketBindings[binding].bytecode = bytecodes[binding]
-    newModuleBucketBindings[binding].abi = abi[binding]
+  for (let binding of Object.keys(newModuleBindings)) {
+    newModuleBindings[binding].bytecode = bytecodes[binding]
+    newModuleBindings[binding].abi = abi[binding]
   }
 
-  if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBucketBindings)) {
-    moduleResolver.printDiffParams(oldModuleBucketBindings, newModuleBucketBindings)
+  if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBindings)) {
+    moduleResolver.printDiffParams(oldModuleBucketBindings, newModuleBindings)
   } else {
-    console.log("nothing changed from last revision")
+    cli.info("Nothing changed from last revision")
+    cli.exit(0)
   }
-
-  moduleBucket.storeNewBucket(newModuleBucketBindings, true)
 
   return new Module(
-    moduleBuilder.getAllBindings(),
+    newModuleBindings,
     moduleBuilder.getAllActions()
   )
 }

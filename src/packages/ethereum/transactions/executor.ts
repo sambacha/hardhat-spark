@@ -7,6 +7,7 @@ import {providers} from "ethers";
 import {defaultAbiCoder as abiCoder} from "@ethersproject/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {JsonFragmentType} from "../../types/abi";
+import {cli} from "cli-ux";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 const BLOCK_CONFIRMATION_NUMBER = 0
@@ -24,14 +25,13 @@ export class TxExecutor {
 
 
     this.ethers = ethers
-    // @TODO populate more as needed
   }
 
-  async executeBindings(bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
+  async executeBindings(bindingName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     for (let [name, binding] of Object.entries(bindings)) {
 
       if (!checkIfExist(binding.txData.output)) {
-        console.log(name, " - deploying")
+        cli.info(name, " - deploying")
         bindings[name] = await this.executeSingleBinding(binding, bindings)
       }
 
@@ -61,25 +61,27 @@ export class TxExecutor {
       switch (typeof binding.args[i]) {
         case "object": {
           if ("contract " + binding.args[i].name != constructorFragmentInputs[i].internalType) {
-            console.log("Unsupported type for - ", binding.name, " \n provided: ", binding.args[i].name, "\n expected: ", constructorFragmentInputs[i].internalType)
-            process.exit(0)
+            cli.info("Unsupported type for - ", binding.name,
+              " \n provided: ", binding.args[i].name,
+              "\n expected: ", constructorFragmentInputs[i].internalType || "")
+            cli.exit(0)
           }
 
           const dependencyName = binding.args[i].name
           const dependencyTxData = bindings[dependencyName].txData
           if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.output)) {
-            console.log("Dependency contract not deployed\n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
-            process.exit(0)
+            cli.log("Dependency contract not deployed\n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
+            cli.exit(0)
           }
 
           if (dependencyTxData.output != null && !dependencyTxData.output.status) {
-            console.log("Dependency contract not included in the block \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
-            process.exit(0)
+            cli.log("Dependency contract not included in the block \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
+            cli.exit(0)
           }
 
           if (!checkIfExist(dependencyTxData.contractAddress)) {
-            console.log("No contract address in dependency tree \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
-            process.exit(0)
+            cli.log("No contract address in dependency tree \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
+            cli.exit(0)
           }
 
           values.push(dependencyTxData.contractAddress)
@@ -107,8 +109,8 @@ export class TxExecutor {
           break
         } // @TODO: add support for big int and array buffer types, and any other that seem relevant
         default: {
-          console.log("Unsupported type for - ", binding.name, " ", binding.args[i])
-          process.exit(0)
+          cli.log("Unsupported type for - ", binding.name, " ", binding.args[i])
+          cli.exit(0)
         }
       }
     }
@@ -137,7 +139,7 @@ export class TxExecutor {
       const txResp = await this.ethers.sendTransaction(signedTx)
       this.prompter.sentTx()
       const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER)
-      this.prompter.transactionReceipt(txReceipt)
+      this.prompter.transactionReceipt()
       this.prompter.waitTransactionConfirmation()
       this.prompter.transactionConfirmation(name, BLOCK_CONFIRMATION_NUMBER)
 

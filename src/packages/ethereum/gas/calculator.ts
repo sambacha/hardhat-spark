@@ -10,8 +10,8 @@ export class GasCalculator {
     this.ethers = ethers
   }
 
-  async getCurrentPrice(): Promise<number> {
-    return 1 // @TODO - add eth gas station, or something similar
+  async getCurrentPrice(): Promise<BigNumber> {
+    return await this.ethers.getGasPrice()
   }
 
   async estimateGas(fromAddr: string, toAddr: string | null, data: string): Promise<BigNumber> {
