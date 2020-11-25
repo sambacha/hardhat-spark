@@ -1,5 +1,6 @@
 import {CompiledContractBinding, DeployedContractBinding, TransactionData} from "../../interfaces/mortar";
 import {checkIfExist} from "../utils/util"
+import {cli} from "cli-ux";
 
 export class ModuleResolver {
   constructor() {
@@ -58,7 +59,8 @@ export class ModuleResolver {
       newBindingsLength = Object.keys(newBindings).length
     }
     if (newBindingsLength < oldBindingsLength) {
-      console.log("current module is slimmer than new one")
+      cli.info("Currently deployed module is bigger than current module.")
+      cli.exit(0)
     }
 
     let i = 0

@@ -137,7 +137,7 @@
 // }
 //
 // export interface AutoBindOptions {
-//   // An array of glob patterns which define where to look for contracts to automatically bind.
+//   // An array of glob patterns which define where to look for contracts to automatically contract.
 //   targets: string[];
 //
 //   // Bindings which will be used as defaults when constructor arguments are bound.
@@ -217,7 +217,7 @@
 //   // and returns the provided Module so its' bindings can be used?.
 //   // use(m: Module, opts?: ModuleOptions): Module;
 //
-//   bind(name: string, ...args: Arguments): ContractBinding
+//   contract(name: string, ...args: Arguments): ContractBinding
 //
 //   bindDeployed(name: string, address: string, network?: string): DeployedBinding;
 //

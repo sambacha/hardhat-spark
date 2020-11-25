@@ -1,5 +1,6 @@
 import {ContractBinding} from "../../interfaces/mortar";
 import {JsonFragment} from "../types/abi"
+import {cli} from "cli-ux";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 
@@ -18,17 +19,17 @@ export class ModuleValidator {
       }
 
       if (binding.args.length != ABI.inputs?.length) {
-        console.log("Binding didn't not match number of arguments for contract - ", name)
-        console.log("  Expected ", ABI.inputs?.length, " and got ", binding.args.length, " number of arguments.")
-        process.exit(0)
+        cli.info("Binding did not match number of arguments for contract - ", name)
+        cli.info("  Expected ", String(ABI.inputs?.length || 0), " and got ", String(binding.args.length), " number of arguments.")
+        cli.exit(0)
       }
 
       for (let i = 0; i < binding.args.length; i++) {
         switch (typeof binding.args[i]) {
           case "object": {
             if ("contract " + binding.args[i].name != ABI.inputs[i].internalType) {
-              console.log("Unsupported type for - ", binding.name, " \n provided: ", binding.args[i].name, "\n expected: ", ABI.inputs[i].internalType)
-              process.exit(0)
+              cli.info("Unsupported type for - ", binding.name, " \n provided: ", binding.args[i].name, "\n expected: ", ABI.inputs[i].internalType || "")
+              cli.exit(0)
             }
             break
           }
@@ -45,8 +46,8 @@ export class ModuleValidator {
             break
           } // @TODO: add support for big int types, and any other that seem relevant
           default: {
-            console.log("Unsupported type for - ", binding.name, " ", binding.args[i])
-            process.exit(0)
+            cli.log("Unsupported type for - ", binding.name, " ", binding.args[i])
+            cli.exit(0)
           }
         }
       }

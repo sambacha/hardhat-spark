@@ -2,6 +2,7 @@ import {Config} from "../types/config"
 import * as fs from 'fs';
 import * as path from 'path';
 import {cli} from "cli-ux";
+import {ethers} from "ethers";
 
 const CONFIG_FILENAME = 'mortar-config.json'
 
@@ -28,6 +29,14 @@ export default class ConfigService {
     this.config = {
       privateKey: privateKey
     }
+    // @TODO: validate private key
+    try {
+      new ethers.utils.SigningKey(privateKey)
+    } catch (error) {
+      cli.debug(error)
+      cli.error("You have provided string that is not private key.")
+      cli.exit(0)
+    }
 
     try {
       fs.writeFileSync(this.configPath , JSON.stringify(this.config, null, 4))
@@ -45,6 +54,15 @@ export default class ConfigService {
       encoding: 'UTF-8'
     })
 
-    return (JSON.parse(content) as Config).privateKey
+    const privateKey = (JSON.parse(content) as Config).privateKey
+    try {
+      new ethers.utils.SigningKey(privateKey)
+    } catch (error) {
+      cli.debug(error)
+      cli.error("You have provided string that is not private key.")
+      cli.exit(0)
+    }
+
+    return privateKey
   }
 }

@@ -41,7 +41,7 @@ export class EthTxGenerator {
         input: bind.bytecode
       }
 
-      // @TODO: enable tracking of tx in event hooks. inside bind we have instance function in which we can track all necessary data along the way
+      // @TODO: enable tracking of tx in event hooks. inside contract we have instance function in which we can track all necessary data along the way
       rawTxs.push(rawTx)
 
       bindings[name].txData = rawTx

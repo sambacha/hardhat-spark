@@ -1,5 +1,7 @@
 import {Command, flags} from '@oclif/command'
 import ConfigService from "../packages/config/service";
+import {cli} from "cli-ux";
+import * as command from "../index";
 
 export default class Init extends Command {
   static description = 'Initialize mortar configuration file'
@@ -31,11 +33,12 @@ export default class Init extends Command {
 
   async run() {
     const {flags} = this.parse(Init)
+    if (flags.debug) {
+      cli.config.outputLevel = "debug"
+    }
 
-    //@TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
     const configService = new ConfigService(process.cwd())
-    configService.generateAndSaveConfig(flags.privateKey as string)
 
-    // @TODO: iterate over abi and generate TS interface
+    command.init(flags, configService)
   }
 }

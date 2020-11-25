@@ -126,11 +126,11 @@ export class ModuleBuilder extends ModuleUse {
   // and returns the provided Module so its' bindings can be used?.
   // use(m: Module, opts?: ModuleOptions): Module;
 
-  bind(name: string, ...args: Arguments): ContractBinding {
+  contract(name: string, ...args: Arguments): ContractBinding {
     const contractBinding = new ContractBinding(name, args)
 
     if (checkIfExist(this.bindings[name])) {
-      console.log("Contract already binded to module - ", name)
+      console.log("Contract already bind to the module - ", name)
       process.exit(0)
     }
 
@@ -241,13 +241,13 @@ export function module(fn: ModuleBuilderFn): Module {
   compiler.compile() // @TODO: make this more suitable for other compilers
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractBuildNames)
   if (Object.entries(bytecodes).length != contractBuildNames.length) {
-    cli.error("some bytecode is missing or .bind() was not used properly")
+    cli.error("some bytecode is missing or .contract() was not used properly")
     cli.exit(0)
   }
 
   const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractBuildNames)
   if (Object.entries(abi).length != contractBuildNames.length) {
-    cli.error("some abi is missing or .bind() was not used properly")
+    cli.error("some abi is missing or .contract() was not used properly")
     cli.exit(0)
   }
 

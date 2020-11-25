@@ -1,6 +1,7 @@
 import {Command, flags} from '@oclif/command'
 import * as path from "path";
 import {cli} from "cli-ux";
+import * as command from "../index";
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current migrations.'
@@ -18,13 +19,11 @@ export default class Diff extends Command {
   static args = [{name: 'path'}]
 
   async run() {
-    const {args} = this.parse(Diff)
-    let currentPath = process.cwd()
-    let filePath = args.path as string
-    if (filePath == "") {
-      cli.info("Path argument missing from command. \nPlease use --help to better understand usage of this command")
+    const {args, flags} = this.parse(Diff)
+    if (flags.debug) {
+      cli.config.outputLevel = "debug"
     }
 
-    require(path.resolve(currentPath, filePath))
+    command.diff(flags, args)
   }
 }

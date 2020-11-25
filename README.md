@@ -34,7 +34,7 @@ USAGE
 
 ## `mortar deploy [PATHTOFILE]`
 
-describe the command here
+Deploy new migrations, difference between current and already deployed.
 
 ```
 USAGE
@@ -42,14 +42,15 @@ USAGE
 
 OPTIONS
   -h, --help             show CLI help
-  --networkId=networkId  (required) Network ID of the network you are willing to deploy your contracts
+  --debug                Used for debugging purposes.
+  --networkId=networkId  (required) Network ID of the network you are willing to deploy your contracts.
 ```
 
 _See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/deploy.ts)_
 
 ## `mortar diff [PATH]`
 
-describe the command here
+Difference between deployed and current migrations.
 
 ```
 USAGE
@@ -57,6 +58,7 @@ USAGE
 
 OPTIONS
   -h, --help  show CLI help
+  --debug     Flag used for debugging
 ```
 
 _See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/diff.ts)_
@@ -88,6 +90,7 @@ USAGE
 
 OPTIONS
   -h, --help               show CLI help
+  --debug                  Flag used for debugging
   --networkId=networkId    (required) Network ID of the network you are willing to deploy your contracts
   --privateKey=privateKey  (required) Private Key of the deployer account
 ```
