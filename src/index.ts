@@ -31,7 +31,7 @@ export async function deploy(
   const modules = require(migrationFilePath)
   for (let [moduleName, module] of Object.entries(modules)) {
     cli.info("\nDeploy module - ", moduleName)
-    let deployedBucket = moduleBucket.getBucket()
+    let deployedBucket = moduleBucket.getBucketIfExist()
     if (deployedBucket == null) {
       deployedBucket = {}
     }

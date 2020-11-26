@@ -2,7 +2,10 @@ import {DeployedContractBinding} from "../interfaces/mortar";
 import cli from "cli-ux";
 
 export class Prompter {
-  constructor() {
+  private readonly skipConfirmation: boolean
+
+  constructor(skipConfirmation: boolean) {
+    this.skipConfirmation = skipConfirmation
   }
 
   promptDeployerBindings(bindings: { [p: string]: DeployedContractBinding }): void {
@@ -15,6 +18,10 @@ export class Prompter {
   }
 
   async promptContinueDeployment(): Promise<void> {
+    if (this.skipConfirmation) {
+      return
+    }
+
     const con = await cli.prompt('Do you wish to continue with deployment of this module? (Y/n)')
     if (con != 'n' && con != 'Y') {
       return await this.promptContinueDeployment()
@@ -26,6 +33,10 @@ export class Prompter {
   }
 
   async promptExecuteTx(): Promise<void> {
+    if (this.skipConfirmation) {
+      return
+    }
+
     const con = await cli.prompt('Execute transactions? (Y/n)')
     if (con != 'n' && con != 'Y') {
       return await this.promptExecuteTx()
@@ -62,6 +73,6 @@ export class Prompter {
   }
 
   transactionConfirmation(name: string, confirmationNumber: number): void {
-    cli.action.stop(`\n ${name} - Current block confirmation: ${confirmationNumber}`)
+    cli.action.stop(`\n Current block confirmation: ${confirmationNumber}`)
   }
 }

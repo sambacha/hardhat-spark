@@ -1,0 +1,38 @@
+{
+  "_format": "hh-sol-cache-1",
+  "files": {
+    "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/single-new-binding/contracts/Example.sol": {
+      "lastModificationDate": 1606313593424,
+      "sourceName": "contracts/Example.sol",
+      "solcConfig": {
+        "version": "0.7.3",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.7.0"
+      ],
+      "artifacts": [
+        "Example"
+      ]
+    }
+  }
+}

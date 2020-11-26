@@ -29,6 +29,12 @@ export default class Deploy extends Command {
         description: "Used for debugging purposes."
       }
     ),
+    skipConfirmation: flags.boolean(
+      {
+        name: "skipConfirmation",
+        description: "Used to skip confirmation questions."
+      }
+    ),
     help: flags.help({char: 'h'}),
   }
 
@@ -38,6 +44,11 @@ export default class Deploy extends Command {
     const {args, flags} = this.parse(Deploy)
     if (flags.debug) {
       cli.config.outputLevel = "debug"
+    }
+
+    let prompter
+    if (flags.skipConfirmation) {
+      prompter = new Prompter(true)
     }
 
     const currentPath = process.cwd()
@@ -57,7 +68,6 @@ export default class Deploy extends Command {
     const configService = new ConfigService(currentPath)
     const gasCalculator = new GasCalculator(provider)
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider)
-    const prompter = new Prompter()
     const txExecutor = new TxExecutor(prompter, moduleBucket, txGenerator, flags.networkId, provider)
     const migrationFilePath = path.resolve(currentPath, filePath)
 

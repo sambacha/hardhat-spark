@@ -253,7 +253,7 @@ export function module(fn: ModuleBuilderFn): Module {
 
   moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
 
-  let oldModuleBucketBindings = moduleBucket.getBucket() as { [p: string]: CompiledContractBinding }
+  let oldModuleBucketBindings = moduleBucket.getBucketIfExist() as { [p: string]: CompiledContractBinding }
   if (!checkIfExist(oldModuleBucketBindings)) {
     oldModuleBucketBindings = {}
   }
@@ -267,7 +267,7 @@ export function module(fn: ModuleBuilderFn): Module {
   if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBindings)) {
     moduleResolver.printDiffParams(oldModuleBucketBindings, newModuleBindings)
   } else {
-    cli.info("Nothing changed from last revision")
+    cli.info("Nothing changed from last revision.")
     cli.exit(0)
   }
 
