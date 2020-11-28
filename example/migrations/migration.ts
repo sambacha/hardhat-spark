@@ -2,7 +2,7 @@ import {
   ModuleBuilder,
   module,
   Binding,
-  DeployedContractBinding,
+  DeployedContractBinding, CompiledContractBinding,
 } from "../../src/interfaces/mortar"
 import {BigNumber} from "ethers";
 
@@ -17,4 +17,10 @@ export const ExampleModule = module((m: ModuleBuilder) => {
 
     console.log(Example.instance().contractAddress)
   }, Example)
+
+  SecondExample.afterCompile(async(AddressProvider: Binding, ...bindings: CompiledContractBinding[]) => {
+   const [SecondExample] = bindings
+
+    console.log(SecondExample.bytecode)
+  }, SecondExample)
 })

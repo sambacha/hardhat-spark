@@ -28,9 +28,12 @@ export async function deploy(
   prompter: Prompter,
   txExecutor: TxExecutor
 ) {
-  const modules = require(migrationFilePath)
+  const modules = await require(migrationFilePath)
 
   for (let [moduleName, module] of Object.entries(modules)) {
+    module = await module
+    console.log(module)
+
     cli.info("\nDeploy module - ", moduleName)
     let deployedBucket = moduleBucket.getBucketIfExist()
     if (deployedBucket == null) {

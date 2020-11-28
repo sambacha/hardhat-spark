@@ -113,7 +113,7 @@ export class ModuleResolver {
         deployedBinding.txData,
 
         // current event hooks
-        currentBinding.afterDeployEvent,
+        currentBinding.events,
       )
 
       // @TODO: is there more cases where we want to redeploy bindings
@@ -127,7 +127,7 @@ export class ModuleResolver {
           {} as TransactionData,
 
           // event hooks
-          currentBinding.afterDeployEvent,
+          currentBinding.events,
         )
       }
 
@@ -147,7 +147,7 @@ export class ModuleResolver {
         {} as TransactionData,
 
         // event hooks
-        currentBinding.afterDeployEvent,
+        currentBinding.events,
       )
       i++
     }

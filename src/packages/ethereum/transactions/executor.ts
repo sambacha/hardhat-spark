@@ -8,6 +8,7 @@ import {defaultAbiCoder as abiCoder} from "@ethersproject/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {JsonFragmentType} from "../../types/abi";
 import {cli} from "cli-ux";
+import {EventHandler} from "../../modules/events/handler";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 const BLOCK_CONFIRMATION_NUMBER = 0
@@ -38,34 +39,13 @@ export class TxExecutor {
       if (!checkIfExist(binding.txData.output)) {
         cli.info(name, " - deploying")
         bindings[name] = await this.executeSingleBinding(binding, bindings)
-        await this.executeAfterDeployEventHook(bindings[name], bindings)
+        await EventHandler.executeAfterDeployEventHook(bindings[name], bindings)
       }
 
       this.moduleBucket.storeNewBucket(bindings)
     }
 
     return
-  }
-
-  private async executeAfterDeployEventHook(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding.afterDeployEvent
-    if (!checkIfExist(events)) {
-      return
-    }
-
-    for (let event of events) {
-      const fn = event.fn
-      const deps = event.deps
-
-
-      let binds: DeployedContractBinding[] = []
-      for (let dependency of deps) {
-        const name = dependency.name
-        binds.push(bindings[name])
-      }
-
-      fn(binding, ...binds)
-    }
   }
 
   private async executeSingleBinding(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<DeployedContractBinding> {

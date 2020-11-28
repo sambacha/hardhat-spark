@@ -6,6 +6,7 @@ import {ModuleValidator} from "../packages/modules/module_validator";
 import {JsonFragment} from "../packages/types/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {cli} from "cli-ux";
+import {EventHandler} from "../packages/modules/events/handler";
 
 export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 
@@ -34,6 +35,12 @@ export type EventFnCompiled = (b: Binding, ...deps: CompiledContractBinding[]) =
 export type EventFn = (b: Binding, ...deps: ContractBinding[]) => void;
 
 export type AfterDeployEvent = { fn: EventFnDeployed, deps: ContractBinding[] }
+export type AfterCompileEvent = { fn: EventFnCompiled, deps: ContractBinding[] }
+
+export type Events = {
+  afterDeploy: AfterDeployEvent[]
+  afterCompile: AfterCompileEvent[]
+}
 
 export type ModuleOptions = {
   // Module parameters used to customize Module behavior.
@@ -44,11 +51,14 @@ export type ModuleBuilderFn = (m: ModuleBuilder) => void;
 
 export abstract class Binding {
   public name: string;
-  public afterDeployEvent: AfterDeployEvent[]
+  public events: Events
 
   constructor(name: string) {
     this.name = name
-    this.afterDeployEvent = []
+    this.events = {
+      afterDeploy: [],
+      afterCompile: [],
+    }
   }
 
   // beforeDeployment executes each time a deployment command is executed.
@@ -70,7 +80,7 @@ export abstract class Binding {
 
   // afterDeploy runs after the Binding was deployed.
   afterDeploy(fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
-    this.afterDeployEvent.push({
+    this.events.afterDeploy.push({
       fn,
       deps: bindings,
     })
@@ -83,7 +93,10 @@ export abstract class Binding {
 
   // afterCompile runs after the source code is compiled and the bytecode is available.
   afterCompile(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
-
+    this.events.afterCompile.push({
+      fn,
+      deps: bindings,
+    })
   }
 
   // // onChange runs after the Binding gets redeployed or changed
@@ -148,12 +161,12 @@ export class DeployedContractBinding extends CompiledContractBinding {
     name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData,
 
     // event hooks
-    afterDeployEvents: AfterDeployEvent[],
+    events: Events,
   ) {
     super(name, args, bytecode, abi)
     this.txData = txData
 
-    this.afterDeployEvent = afterDeployEvents
+    this.events = events
   }
 
   instance(): any {
@@ -303,7 +316,7 @@ export class Module {
   }
 }
 
-export function module(fn: ModuleBuilderFn): Module {
+export async function module(fn: ModuleBuilderFn): Promise<Module> {
   const currentPath = process.cwd()
 
   const moduleBuilder = new ModuleBuilder(fn)
@@ -341,6 +354,7 @@ export function module(fn: ModuleBuilderFn): Module {
   for (let binding of Object.keys(newModuleBindings)) {
     newModuleBindings[binding].bytecode = bytecodes[binding]
     newModuleBindings[binding].abi = abi[binding]
+    await EventHandler.executeAfterCompileEventHook(newModuleBindings[binding], newModuleBindings)
   }
 
   if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBindings)) {

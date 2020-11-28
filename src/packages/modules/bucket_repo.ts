@@ -66,12 +66,12 @@ export class ModuleBucketRepo {
     }
 
     for (let i = 0; i < args.length; i++) {
-      const events = (args[i] as DeployedContractBinding).afterDeployEvent
+      const events = (args[i] as DeployedContractBinding).events
       if (!checkIfExist(events)){
         continue
       }
 
-      if (events.length > 0) {
+      if (events.afterDeploy.length > 0 || events.afterCompile.length > 0) { // @TODO make this more convenient to check
         args[i] = new ContractBindingMetaData(args[i].name, args[i].args, args[i].bytecode, args[i].abi, args[i].txData)
       }
 
