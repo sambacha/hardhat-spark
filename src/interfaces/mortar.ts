@@ -7,7 +7,7 @@ import {JsonFragment} from "../packages/types/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {cli} from "cli-ux";
 
-export type AutoBinding = any | Binding;
+export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 
 // Argument can be either an AutoBinding or a NamedArgument.
 // In case of variadic arguments, the expected type is always
@@ -29,6 +29,12 @@ export type Arguments = Argument[];
 
 export type ActionFn = (...args: any[]) => void;
 
+export type EventFnDeployed = (b: Binding, ...deps: DeployedContractBinding[]) => void;
+export type EventFnCompiled = (b: Binding, ...deps: CompiledContractBinding[]) => void;
+export type EventFn = (b: Binding, ...deps: ContractBinding[]) => void;
+
+export type AfterDeployEvent = { fn: EventFnDeployed, deps: ContractBinding[] }
+
 export type ModuleOptions = {
   // Module parameters used to customize Module behavior.
   params: { [name: string]: any }
@@ -38,10 +44,52 @@ export type ModuleBuilderFn = (m: ModuleBuilder) => void;
 
 export abstract class Binding {
   public name: string;
+  public afterDeployEvent: AfterDeployEvent[]
 
   constructor(name: string) {
     this.name = name
+    this.afterDeployEvent = []
   }
+
+  // beforeDeployment executes each time a deployment command is executed.
+  beforeDeployment(fn: EventFn, ...bindings: ContractBinding[]): void {
+
+  }
+
+  // afterDeployment executes each time after a deployment has finished.
+  // The deployment doesn't actually have to perform any deployments for this event to trigger.
+  afterDeployment(fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
+
+  }
+
+  // beforeDeploy runs each time the Binding is about to be triggered.
+  // This event can be used to force the binding in question to be deployed.
+  beforeDeploy(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
+
+  }
+
+  // afterDeploy runs after the Binding was deployed.
+  afterDeploy(fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
+    this.afterDeployEvent.push({
+      fn,
+      deps: bindings,
+    })
+  }
+
+  // beforeCompile runs before the source code is compiled.
+  beforeCompile(fn: EventFn, ...bindings: ContractBinding[]): void {
+
+  }
+
+  // afterCompile runs after the source code is compiled and the bytecode is available.
+  afterCompile(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
+
+  }
+
+  // // onChange runs after the Binding gets redeployed or changed
+  // onChange(fn: RedeployFn): void {
+  //
+  // }
 }
 
 export class ContractBinding extends Binding {
@@ -95,8 +143,39 @@ export type TransactionData = {
 export class DeployedContractBinding extends CompiledContractBinding {
   public txData: TransactionData
 
-  constructor(name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData) {
+  constructor(
+    // metadata
+    name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData,
+
+    // event hooks
+    afterDeployEvents: AfterDeployEvent[],
+  ) {
     super(name, args, bytecode, abi)
+    this.txData = txData
+
+    this.afterDeployEvent = afterDeployEvents
+  }
+
+  instance(): any {
+    // @TODO return whole contract interface with all its data and metadata
+    return {
+      contractAddress: this.txData.contractAddress
+    }
+  }
+}
+
+export class ContractBindingMetaData {
+  public name: string
+  public args: Arguments
+  public bytecode: string
+  public abi: JsonFragment[]
+  public txData: TransactionData
+
+  constructor(name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData) {
+    this.name = name
+    this.args = args
+    this.bytecode = bytecode
+    this.abi = abi
     this.txData = txData
   }
 }
@@ -130,8 +209,8 @@ export class ModuleBuilder extends ModuleUse {
     const contractBinding = new ContractBinding(name, args)
 
     if (checkIfExist(this.bindings[name])) {
-      console.log("Contract already bind to the module - ", name)
-      process.exit(0)
+      cli.info("Contract already bind to the module - ", name)
+      cli.exit(0)
     }
 
     this.bindings[name] = contractBinding

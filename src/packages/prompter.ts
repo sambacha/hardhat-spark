@@ -32,6 +32,21 @@ export class Prompter {
     }
   }
 
+  async promptContinueToNextBinding(): Promise<void> {
+    if (this.skipConfirmation) {
+      return
+    }
+
+    const con = await cli.prompt('Do you wish to continue to the next binding? (Y/n)')
+    if (con != 'n' && con != 'Y') {
+      return await this.promptContinueDeployment()
+    }
+
+    if (con == 'n') {
+      cli.exit()
+    }
+  }
+
   async promptExecuteTx(): Promise<void> {
     if (this.skipConfirmation) {
       return
@@ -65,7 +80,7 @@ export class Prompter {
   }
 
   transactionReceipt(): void {
-    cli.log("Waiting for block confirmation...")
+    cli.info("Waiting for block confirmation...")
   }
 
   waitTransactionConfirmation(): void {

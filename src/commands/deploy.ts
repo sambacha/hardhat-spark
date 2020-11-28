@@ -38,7 +38,7 @@ export default class Deploy extends Command {
     help: flags.help({char: 'h'}),
   }
 
-  static args = [{name: 'pathToFile'}]
+  static args = [{name: 'path'}]
 
   async run() {
     const {args, flags} = this.parse(Deploy)
@@ -46,13 +46,8 @@ export default class Deploy extends Command {
       cli.config.outputLevel = "debug"
     }
 
-    let prompter
-    if (flags.skipConfirmation) {
-      prompter = new Prompter(true)
-    }
-
     const currentPath = process.cwd()
-    const filePath = args.pathToFile as string
+    const filePath = args.path as string
     if (filePath == "") {
       cli.info("Their is no mortar config, please run init first.\n   Use --help for more information.")
     }
@@ -63,6 +58,10 @@ export default class Deploy extends Command {
 
     const provider = new ethers.providers.JsonRpcProvider();
 
+    let prompter = new Prompter(false)
+    if (flags.skipConfirmation) {
+      prompter = new Prompter(true)
+    }
     const moduleResolver = new ModuleResolver()
     const moduleBucket = new ModuleBucketRepo(currentPath)
     const configService = new ConfigService(currentPath)

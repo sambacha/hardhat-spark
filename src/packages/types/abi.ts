@@ -1,7 +1,7 @@
 export interface JsonFragmentType {
-  name?: string;
+  name: string;
   indexed?: boolean;
-  type?: string;
+  type: string;
   internalType?: string;
   components?: Array<JsonFragmentType>;
 }

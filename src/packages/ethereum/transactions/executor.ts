@@ -30,18 +30,45 @@ export class TxExecutor {
   async executeBindings(bindingName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     for (let [name, binding] of Object.entries(bindings)) {
 
+      if (checkIfExist(binding.txData.output)) {
+        cli.info(name, "is already deployed")
+        await this.prompter.promptContinueToNextBinding()
+      }
+
       if (!checkIfExist(binding.txData.output)) {
         cli.info(name, " - deploying")
         bindings[name] = await this.executeSingleBinding(binding, bindings)
+        await this.executeAfterDeployEventHook(bindings[name], bindings)
       }
 
-      this.moduleBucket.storeNewBucket(bindings, false)
+      this.moduleBucket.storeNewBucket(bindings)
     }
 
     return
   }
 
-  async executeSingleBinding(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<DeployedContractBinding> {
+  private async executeAfterDeployEventHook(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
+    const events = binding.afterDeployEvent
+    if (!checkIfExist(events)) {
+      return
+    }
+
+    for (let event of events) {
+      const fn = event.fn
+      const deps = event.deps
+
+
+      let binds: DeployedContractBinding[] = []
+      for (let dependency of deps) {
+        const name = dependency.name
+        binds.push(bindings[name])
+      }
+
+      fn(binding, ...binds)
+    }
+  }
+
+  private async executeSingleBinding(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<DeployedContractBinding> {
     let constructorFragmentInputs = [] as JsonFragmentType[]
 
     for (let i = 0; i < binding.abi.length; i++) {
@@ -60,6 +87,20 @@ export class TxExecutor {
     for (let i = 0; i < constructorFragmentInputs?.length; i++) {
       switch (typeof binding.args[i]) {
         case "object": {
+          if (binding.args[i]?._isBigNumber) {
+            let value = binding.args[i].toString()
+
+            values.push(value)
+            types.push(constructorFragmentInputs[i].type)
+            break
+          }
+
+          if (binding.args[i].length > 0) {
+            values.push(binding.args[i])
+            types.push(constructorFragmentInputs[i].type)
+            break
+          }
+
           if ("contract " + binding.args[i].name != constructorFragmentInputs[i].internalType) {
             cli.info("Unsupported type for - ", binding.name,
               " \n provided: ", binding.args[i].name,
@@ -70,17 +111,17 @@ export class TxExecutor {
           const dependencyName = binding.args[i].name
           const dependencyTxData = bindings[dependencyName].txData
           if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.output)) {
-            cli.log("Dependency contract not deployed\n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
+            cli.info("Dependency contract not deployed\n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
             cli.exit(0)
           }
 
           if (dependencyTxData.output != null && !dependencyTxData.output.status) {
-            cli.log("Dependency contract not included in the block \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
+            cli.info("Dependency contract not included in the block \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
             cli.exit(0)
           }
 
           if (!checkIfExist(dependencyTxData.contractAddress)) {
-            cli.log("No contract address in dependency tree \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
+            cli.info("No contract address in dependency tree \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
             cli.exit(0)
           }
 
@@ -96,6 +137,12 @@ export class TxExecutor {
           break
         }
         case "string": {
+          if (constructorFragmentInputs[i].type == "bytes") {
+            values.push(Buffer.from(binding.args[i]))
+            types.push(constructorFragmentInputs[i].type)
+            break
+          }
+
           values.push(binding.args[i])
           types.push(constructorFragmentInputs[i].type)
 
@@ -107,9 +154,9 @@ export class TxExecutor {
 
 
           break
-        } // @TODO: add support for big int and array buffer types, and any other that seem relevant
+        }
         default: {
-          cli.log("Unsupported type for - ", binding.name, " ", binding.args[i])
+          cli.info("Unsupported type for - ", binding.name, " ", binding.args[i])
           cli.exit(0)
         }
       }
@@ -132,7 +179,7 @@ export class TxExecutor {
     return binding
   }
 
-  async sendTransaction(name: string, signedTx: string): Promise<TransactionReceipt> {
+  private async sendTransaction(name: string, signedTx: string): Promise<TransactionReceipt> {
     return new Promise(async (resolve) => {
 
       this.prompter.sendingTx()

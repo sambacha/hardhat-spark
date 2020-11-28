@@ -29,6 +29,7 @@ export async function deploy(
   txExecutor: TxExecutor
 ) {
   const modules = require(migrationFilePath)
+
   for (let [moduleName, module] of Object.entries(modules)) {
     cli.info("\nDeploy module - ", moduleName)
     let deployedBucket = moduleBucket.getBucketIfExist()
@@ -42,7 +43,7 @@ export async function deploy(
       process.exit(0)
     }
 
-    const bindings = txGenerator.populateTx(resolvedBindings as { [p: string]: DeployedContractBinding })
+    const bindings = txGenerator.initTx(resolvedBindings as { [p: string]: DeployedContractBinding })
     prompter.promptDeployerBindings(bindings)
 
     await prompter.promptContinueDeployment()

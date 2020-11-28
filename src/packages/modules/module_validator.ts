@@ -1,6 +1,7 @@
 import {ContractBinding} from "../../interfaces/mortar";
 import {JsonFragment} from "../types/abi"
 import {cli} from "cli-ux";
+import {handleTypes} from "../types/checker";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 
@@ -8,7 +9,7 @@ export class ModuleValidator {
   constructor() {
   }
 
-  validate(bindings: { [name: string]: ContractBinding }, ABIs: { [name: string]: JsonFragment[]}): void {
+  validate(bindings: { [name: string]: ContractBinding }, ABIs: { [name: string]: JsonFragment[] }): void {
     for (let [name, binding] of Object.entries(bindings)) {
       const abis = ABIs[name]
       let ABI = {} as JsonFragment
@@ -25,31 +26,10 @@ export class ModuleValidator {
       }
 
       for (let i = 0; i < binding.args.length; i++) {
-        switch (typeof binding.args[i]) {
-          case "object": {
-            if ("contract " + binding.args[i].name != ABI.inputs[i].internalType) {
-              cli.info("Unsupported type for - ", binding.name, " \n provided: ", binding.args[i].name, "\n expected: ", ABI.inputs[i].internalType || "")
-              cli.exit(0)
-            }
-            break
-          }
-          case "number": {
-            // @TODO
-            break
-          }
-          case "string": {
-            // @TODO
-            break
-          }
-          case "boolean": {
-            // @TODO
-            break
-          } // @TODO: add support for big int types, and any other that seem relevant
-          default: {
-            cli.log("Unsupported type for - ", binding.name, " ", binding.args[i])
-            cli.exit(0)
-          }
-        }
+        const type = ABI.inputs[i].type
+        const internalType = ABI.inputs[i].internalType
+
+        handleTypes(binding.name, binding.args[i], type, internalType)
       }
     }
   }

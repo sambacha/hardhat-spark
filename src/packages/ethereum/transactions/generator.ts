@@ -22,7 +22,7 @@ export class EthTxGenerator {
     this.networkId = networkId
   }
 
-  populateTx(bindings: { [p: string]: DeployedContractBinding }): { [p: string]: DeployedContractBinding } {
+  initTx(bindings: { [p: string]: DeployedContractBinding }): { [p: string]: DeployedContractBinding } {
     let rawTxs: TransactionData[] = []
 
     for (let [name, bind] of Object.entries(bindings)) {
