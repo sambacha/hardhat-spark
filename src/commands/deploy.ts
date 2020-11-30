@@ -56,15 +56,16 @@ export default class Deploy extends Command {
       cli.exit(0)
     }
 
-    const provider = new ethers.providers.JsonRpcProvider();
+    const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
 
     let prompter = new Prompter(false)
     if (flags.skipConfirmation) {
       prompter = new Prompter(true)
     }
-    const moduleResolver = new ModuleResolver()
-    const moduleBucket = new ModuleBucketRepo(currentPath)
     const configService = new ConfigService(currentPath)
+    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey())
+    const moduleBucket = new ModuleBucketRepo(currentPath, moduleResolver)
+
     const gasCalculator = new GasCalculator(provider)
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider)
     const txExecutor = new TxExecutor(prompter, moduleBucket, txGenerator, flags.networkId, provider)

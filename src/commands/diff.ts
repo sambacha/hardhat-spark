@@ -24,6 +24,6 @@ export default class Diff extends Command {
       cli.config.outputLevel = "debug"
     }
 
-    command.diff(flags, args)
+    await command.diff(flags, args)
   }
 }

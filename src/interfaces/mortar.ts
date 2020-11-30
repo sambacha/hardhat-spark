@@ -7,6 +7,8 @@ import {JsonFragment} from "../packages/types/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {cli} from "cli-ux";
 import {EventHandler} from "../packages/modules/events/handler";
+import {Contract, ethers} from "ethers";
+import ConfigService from "../packages/config/service";
 
 export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 
@@ -24,22 +26,32 @@ export type Argument = AutoBinding | NamedArguments;
 // to be used when resolving Bindings and Actions.
 export type NamedArguments = { [name: string]: AutoBinding };
 
-// Arguments is the final type that wrapps the Arguments above
+// Arguments is the final type that wraps the Arguments above
 // and is the type that is directly used by Bindings and Actions.
 export type Arguments = Argument[];
 
 export type ActionFn = (...args: any[]) => void;
 
+export type RedeployFn = (b: Binding, ...deps: DeployedContractBinding[]) => void;
+
 export type EventFnDeployed = (b: Binding, ...deps: DeployedContractBinding[]) => void;
 export type EventFnCompiled = (b: Binding, ...deps: CompiledContractBinding[]) => void;
 export type EventFn = (b: Binding, ...deps: ContractBinding[]) => void;
 
+export type BeforeDeployEvent = { fn: EventFnCompiled, deps: ContractBinding[] }
 export type AfterDeployEvent = { fn: EventFnDeployed, deps: ContractBinding[] }
+export type BeforeCompileEvent = { fn: EventFn, deps: ContractBinding[] }
 export type AfterCompileEvent = { fn: EventFnCompiled, deps: ContractBinding[] }
+export type OnChangeEvent = { fn: RedeployFn, deps: ContractBinding[] }
 
 export type Events = {
-  afterDeploy: AfterDeployEvent[]
+  beforeCompile: BeforeCompileEvent[]
   afterCompile: AfterCompileEvent[]
+  beforeDeployment: BeforeDeployEvent[]
+  afterDeployment: AfterDeployEvent[]
+  beforeDeploy: BeforeDeployEvent[]
+  afterDeploy: AfterDeployEvent[]
+  onChange: OnChangeEvent[]
 }
 
 export type ModuleOptions = {
@@ -56,26 +68,46 @@ export abstract class Binding {
   constructor(name: string) {
     this.name = name
     this.events = {
-      afterDeploy: [],
+      beforeCompile: [],
       afterCompile: [],
+      beforeDeployment: [],
+      afterDeployment: [],
+      beforeDeploy: [],
+      afterDeploy: [],
+      onChange: []
+    }
+  }
+
+  instance(): any {
+    return {
+      name: this.name
     }
   }
 
   // beforeDeployment executes each time a deployment command is executed.
-  beforeDeployment(fn: EventFn, ...bindings: ContractBinding[]): void {
-
+  beforeDeployment(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
+    this.events.beforeDeployment.push({
+      fn,
+      deps: bindings,
+    })
   }
 
   // afterDeployment executes each time after a deployment has finished.
   // The deployment doesn't actually have to perform any deployments for this event to trigger.
   afterDeployment(fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
-
+    this.events.afterDeployment.push({
+      fn,
+      deps: bindings,
+    })
   }
 
   // beforeDeploy runs each time the Binding is about to be triggered.
   // This event can be used to force the binding in question to be deployed.
   beforeDeploy(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
-
+    this.events.beforeDeploy.push({
+      fn,
+      deps: bindings,
+    })
   }
 
   // afterDeploy runs after the Binding was deployed.
@@ -88,7 +120,10 @@ export abstract class Binding {
 
   // beforeCompile runs before the source code is compiled.
   beforeCompile(fn: EventFn, ...bindings: ContractBinding[]): void {
-
+    this.events.beforeCompile.push({
+      fn,
+      deps: bindings,
+    })
   }
 
   // afterCompile runs after the source code is compiled and the bytecode is available.
@@ -99,10 +134,13 @@ export abstract class Binding {
     })
   }
 
-  // // onChange runs after the Binding gets redeployed or changed
-  // onChange(fn: RedeployFn): void {
-  //
-  // }
+  // onChange runs after the Binding gets redeployed or changed
+  onChange(fn: RedeployFn, ...bindings: ContractBinding[]): void {
+    this.events.onChange.push({
+      fn,
+      deps: bindings
+    })
+  }
 }
 
 export class ContractBinding extends Binding {
@@ -111,6 +149,13 @@ export class ContractBinding extends Binding {
   constructor(name: string, args: Arguments) {
     super(name)
     this.args = args
+  }
+
+  instance(): any {
+    return {
+      name: this.name,
+      args: this.args
+    }
   }
 }
 
@@ -122,6 +167,15 @@ export class CompiledContractBinding extends ContractBinding {
     super(name, args)
     this.bytecode = bytecode
     this.abi = abi
+  }
+
+  instance(): any {
+    return {
+      name: this.name,
+      args: this.args,
+      abi: this.abi,
+      bytecode: this.bytecode
+    }
   }
 }
 
@@ -155,25 +209,25 @@ export type TransactionData = {
 
 export class DeployedContractBinding extends CompiledContractBinding {
   public txData: TransactionData
+  private readonly signer: ethers.Signer
 
   constructor(
     // metadata
     name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData,
-
     // event hooks
     events: Events,
+    signer: ethers.Signer,
   ) {
     super(name, args, bytecode, abi)
     this.txData = txData
 
     this.events = events
+    this.signer = signer
   }
 
-  instance(): any {
-    // @TODO return whole contract interface with all its data and metadata
-    return {
-      contractAddress: this.txData.contractAddress
-    }
+  instance(): Contract {
+    // @TODO: we will need custom signer
+    return new ethers.Contract(<string>this.txData.contractAddress, this.abi, this.signer)
   }
 }
 
@@ -316,18 +370,24 @@ export class Module {
   }
 }
 
-export async function module(fn: ModuleBuilderFn): Promise<Module> {
+export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<Module> {
   const currentPath = process.cwd()
 
+  const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
+
+  const configService = new ConfigService(currentPath)
   const moduleBuilder = new ModuleBuilder(fn)
-  const moduleBucket = new ModuleBucketRepo(currentPath)
-  const moduleResolver = new ModuleResolver()
+  const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey())
+  const moduleBucket = new ModuleBucketRepo(currentPath, moduleResolver)
   const compiler = new HardhatCompiler()
   const moduleValidator = new ModuleValidator()
 
   let contractBuildNames: string[] = []
-  for (let [_, bind] of Object.entries(moduleBuilder.getAllBindings())) {
+  const moduleBuilderBindings = moduleBuilder.getAllBindings()
+  for (let [bindingName, bind] of Object.entries(moduleBuilderBindings)) {
     contractBuildNames.push(bind.name + '.json')
+
+    await EventHandler.executeBeforeCompileEventHook(bind, moduleBuilderBindings)
   }
 
   compiler.compile() // @TODO: make this more suitable for other compilers
@@ -345,7 +405,7 @@ export async function module(fn: ModuleBuilderFn): Promise<Module> {
 
   moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
 
-  let oldModuleBucketBindings = moduleBucket.getBucketIfExist() as { [p: string]: CompiledContractBinding }
+  let oldModuleBucketBindings = moduleBucket.getBucketIfExist(moduleName) as { [p: string]: CompiledContractBinding }
   if (!checkIfExist(oldModuleBucketBindings)) {
     oldModuleBucketBindings = {}
   }

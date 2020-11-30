@@ -1,4 +1,4 @@
-export {run} from '@oclif/command'
+// export {run} from '@oclif/command'
 
 import {cli} from "cli-ux";
 import ConfigService from "./packages/config/service";
@@ -11,6 +11,8 @@ import {ModuleResolver} from "./packages/modules/module_resolver";
 import {EthTxGenerator} from "./packages/ethereum/transactions/generator";
 import {Prompter} from "./packages/prompter";
 import {TxExecutor} from "./packages/ethereum/transactions/executor";
+import {JsonFragment} from "./packages/types/abi";
+import {HardhatCompiler} from "./packages/ethereum/compiler/hardhat";
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   //@TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
@@ -32,13 +34,9 @@ export async function deploy(
 
   for (let [moduleName, module] of Object.entries(modules)) {
     module = await module
-    console.log(module)
 
     cli.info("\nDeploy module - ", moduleName)
-    let deployedBucket = moduleBucket.getBucketIfExist()
-    if (deployedBucket == null) {
-      deployedBucket = {}
-    }
+    const deployedBucket = moduleBucket.getBucketIfExist(moduleName)
 
     const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve((module as Module).getAllBindings(), deployedBucket)
     if (!checkIfExist(resolvedBindings)) {
@@ -60,5 +58,6 @@ export function diff(flags: OutputFlags<any>, args: OutputArgs<any>) {
   if (filePath == "") {
     cli.info("Path argument missing from command. \nPlease use --help to better understand usage of this command")
   }
+
   require(path.resolve(currentPath, filePath))
 }

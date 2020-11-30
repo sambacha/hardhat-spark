@@ -27,23 +27,24 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`mortar deploy [PATHTOFILE]`](#mortar-deploy-pathtofile)
+* [`mortar deploy [PATH]`](#mortar-deploy-path)
 * [`mortar diff [PATH]`](#mortar-diff-path)
 * [`mortar help [COMMAND]`](#mortar-help-command)
 * [`mortar init`](#mortar-init)
 
-## `mortar deploy [PATHTOFILE]`
+## `mortar deploy [PATH]`
 
 Deploy new migrations, difference between current and already deployed.
 
 ```
 USAGE
-  $ mortar deploy [PATHTOFILE]
+  $ mortar deploy [PATH]
 
 OPTIONS
   -h, --help             show CLI help
   --debug                Used for debugging purposes.
   --networkId=networkId  (required) Network ID of the network you are willing to deploy your contracts.
+  --skipConfirmation     Used to skip confirmation questions.
 ```
 
 _See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/deploy.ts)_

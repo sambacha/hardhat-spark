@@ -28,7 +28,7 @@ export class TxExecutor {
     this.ethers = ethers
   }
 
-  async executeBindings(bindingName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
+  async executeBindings(moduleName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     for (let [name, binding] of Object.entries(bindings)) {
 
       if (checkIfExist(binding.txData.output)) {
@@ -36,13 +36,18 @@ export class TxExecutor {
         await this.prompter.promptContinueToNextBinding()
       }
 
+      await EventHandler.executeBeforeDeploymentEventHook(bindings[name], bindings)
       if (!checkIfExist(binding.txData.output)) {
         cli.info(name, " - deploying")
+        await EventHandler.executeBeforeDeployEventHook(bindings[name], bindings)
         bindings[name] = await this.executeSingleBinding(binding, bindings)
         await EventHandler.executeAfterDeployEventHook(bindings[name], bindings)
-      }
 
-      this.moduleBucket.storeNewBucket(bindings)
+        await EventHandler.executeOnChangeEventHook(bindings[name], bindings)
+      }
+      await EventHandler.executeAfterDeploymentEventHook(bindings[name], bindings)
+
+      this.moduleBucket.storeNewBucket(moduleName, bindings)
     }
 
     return

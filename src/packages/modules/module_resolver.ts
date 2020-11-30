@@ -1,9 +1,13 @@
 import {CompiledContractBinding, DeployedContractBinding, TransactionData} from "../../interfaces/mortar";
 import {checkIfExist} from "../utils/util"
 import {cli} from "cli-ux";
+import {ethers} from "ethers";
 
 export class ModuleResolver {
-  constructor() {
+  private readonly signer: ethers.Wallet;
+
+  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string) {
+    this.signer = new ethers.Wallet(privateKey, provider)
   }
 
   checkIfDiff(oldBindings: { [p: string]: CompiledContractBinding }, newBindings: { [p: string]: CompiledContractBinding }): boolean {
@@ -114,6 +118,7 @@ export class ModuleResolver {
 
         // current event hooks
         currentBinding.events,
+        this.signer,
       )
 
       // @TODO: is there more cases where we want to redeploy bindings
@@ -128,6 +133,7 @@ export class ModuleResolver {
 
           // event hooks
           currentBinding.events,
+          this.signer,
         )
       }
 
@@ -148,6 +154,7 @@ export class ModuleResolver {
 
         // event hooks
         currentBinding.events,
+        this.signer,
       )
       i++
     }
