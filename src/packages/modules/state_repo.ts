@@ -8,26 +8,28 @@ import {
 import {ModuleResolver} from "./module_resolver";
 import {checkIfEventsExist, checkIfExist} from "../utils/util";
 
-const BUCKET_DIR_NAME = '.mortar'
-const BUCKET_NAME = 'deployed_module_builder_bucket.json'
+const STATE_DIR_NAME = '.mortar'
+const STATE_NAME = 'deployed_module_state.json'
 
-export class ModuleBucketRepo {
-  private readonly bucketPath: string
+export class ModuleStateRepo {
+  private readonly networkId: number
+  private readonly statePath: string
   private moduleResolver: ModuleResolver
 
-  constructor(bucketPath: string, moduleResolver: ModuleResolver) {
-    const dir = path.resolve(bucketPath, BUCKET_DIR_NAME)
+  constructor(networkId: number, statePath: string, moduleResolver: ModuleResolver) {
+    const dir = path.resolve(statePath, STATE_DIR_NAME)
 
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
 
-    this.bucketPath = dir
+    this.networkId = networkId
+    this.statePath = dir
     this.moduleResolver = moduleResolver
   }
 
-  getBucketIfExist(moduleName: string): { [p: string]: DeployedContractBinding } {
-    const dir = path.resolve(this.bucketPath, moduleName, BUCKET_NAME)
+  getStateIfExist(moduleName: string): { [p: string]: DeployedContractBinding } {
+    const dir = path.resolve(this.statePath, moduleName, `${this.networkId}_${STATE_NAME}`)
     if (!fs.existsSync(dir)) {
       return {}
     }
@@ -37,19 +39,19 @@ export class ModuleBucketRepo {
     })) || {}
   }
 
-  storeNewBucket(moduleName: string, bindings: { [p: string]: DeployedContractBinding } | null): void {
+  storeNewState(moduleName: string, bindings: { [p: string]: DeployedContractBinding } | null): void {
     if (bindings == null) {
       return
     }
 
-    const moduleDir = path.resolve(this.bucketPath, moduleName)
-    const metaData = ModuleBucketRepo.convertBindingsToMetaData(bindings)
+    const moduleDir = path.resolve(this.statePath, moduleName)
+    const metaData = ModuleStateRepo.convertBindingsToMetaData(bindings)
     if (!fs.existsSync(moduleDir)) {
       fs.mkdirSync(moduleDir)
     }
 
-    const bucketDir = path.resolve(moduleDir, BUCKET_NAME)
-    fs.writeFileSync(bucketDir, JSON.stringify(metaData, null, 4))
+    const stateDir = path.resolve(moduleDir, `${this.networkId}_${STATE_NAME}`)
+    fs.writeFileSync(stateDir, JSON.stringify(metaData, null, 4))
     return
   }
 

@@ -2,12 +2,18 @@ import {CompiledContractBinding, DeployedContractBinding, TransactionData} from 
 import {checkIfExist} from "../utils/util"
 import {cli} from "cli-ux";
 import {ethers} from "ethers";
+import {Prompter} from "../prompter";
+import {EthTxGenerator} from "../ethereum/transactions/generator";
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
+  private readonly prompter: Prompter;
+  private readonly txGenerator: EthTxGenerator;
 
-  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string) {
+  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: Prompter, txGenerator: EthTxGenerator) {
     this.signer = new ethers.Wallet(privateKey, provider)
+    this.prompter = prompter
+    this.txGenerator = txGenerator
   }
 
   checkIfDiff(oldBindings: { [p: string]: CompiledContractBinding }, newBindings: { [p: string]: CompiledContractBinding }): boolean {
@@ -109,22 +115,23 @@ export class ModuleResolver {
       let currentBinding = currentBindings[bindingName]
 
       resolvedBindings[bindingName] = new DeployedContractBinding(
-        // metadata
+        // contract metadata
         deployedBinding.name,
         deployedBinding.args,
         deployedBinding.bytecode,
         deployedBinding.abi,
         deployedBinding.txData,
 
-        // current event hooks
         currentBinding.events,
         this.signer,
+        this.prompter,
+        this.txGenerator
       )
 
       // @TODO: is there more cases where we want to redeploy bindings
       if (deployedBinding.bytecode != currentBinding.bytecode) {
         resolvedBindings[bindingName] = new DeployedContractBinding(
-          // metadata
+          // current metadata
           currentBinding.name,
           currentBinding.args,
           currentBinding.bytecode,
@@ -134,6 +141,8 @@ export class ModuleResolver {
           // event hooks
           currentBinding.events,
           this.signer,
+          this.prompter,
+          this.txGenerator
         )
       }
 
@@ -145,16 +154,17 @@ export class ModuleResolver {
       let currentBinding = currentBindings[bindingName]
 
       resolvedBindings[bindingName] = new DeployedContractBinding(
-        // metadata
+        // current metadata
         currentBinding.name,
         currentBinding.args,
         currentBinding.bytecode,
         currentBinding.abi,
         {} as TransactionData,
 
-        // event hooks
         currentBinding.events,
         this.signer,
+        this.prompter,
+        this.txGenerator
       )
       i++
     }

@@ -1,7 +1,7 @@
 // @ts-ignore
 // @TODO: fix this
-import {getBucketIfExist, storeNewBucket} from "../utils/files";
-import {execSync, spawnSync} from "child_process";
+import {getStateIfExist, storeNewState} from "../utils/files";
+import {execSync} from "child_process";
 import {assert} from "chai";
 
 const networkId = 31337 // hardhat localhost chainId
@@ -61,15 +61,15 @@ describe('mortar deploy - integration', () => {
 })
 
 function runDeployCommand(projectFileName: string): string {
-  const mortarDir = `./test/projects-scenarios/${projectFileName}/.mortar/deployed_module_builder_bucket.json`
-  const currentBucket = getBucketIfExist(mortarDir)
+  const mortarDir = `./test/projects-scenarios/${projectFileName}/.mortar/ExampleModule/${networkId}_deployed_module_state.json`
+  const currentState = getStateIfExist(mortarDir)
 
   const output = execSync(`../../../bin/run deploy ./migrations/migration.ts --networkId=${networkId} --skipConfirmation`, {
     cwd: `./test/projects-scenarios/${projectFileName}`,
     stdio: "pipe",
   })
 
-  storeNewBucket(mortarDir, currentBucket)
+  storeNewState(mortarDir, currentState)
 
   return output.toString()
 }

@@ -1,6 +1,6 @@
 import {DeployedContractBinding} from "../../../interfaces/mortar";
 import {Prompter} from "../../prompter";
-import {ModuleBucketRepo} from "../../modules/bucket_repo";
+import {ModuleStateRepo} from "../../modules/state_repo";
 import {checkIfExist} from "../../utils/util";
 import {EthTxGenerator} from "./generator";
 import {providers} from "ethers";
@@ -11,26 +11,24 @@ import {cli} from "cli-ux";
 import {EventHandler} from "../../modules/events/handler";
 
 const CONSTRUCTOR_TYPE = 'constructor'
-const BLOCK_CONFIRMATION_NUMBER = 0
+export const BLOCK_CONFIRMATION_NUMBER = 0
 
 export class TxExecutor {
   private prompter: Prompter
-  private moduleBucket: ModuleBucketRepo
+  private moduleState: ModuleStateRepo
   private txGenerator: EthTxGenerator
   private ethers: providers.JsonRpcProvider
 
-  constructor(prompter: Prompter, moduleBucket: ModuleBucketRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider) {
+  constructor(prompter: Prompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider) {
     this.prompter = prompter
-    this.moduleBucket = moduleBucket
+    this.moduleState = moduleState
     this.txGenerator = txGenerator
-
 
     this.ethers = ethers
   }
 
   async executeBindings(moduleName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     for (let [name, binding] of Object.entries(bindings)) {
-
       if (checkIfExist(binding.txData.output)) {
         cli.info(name, "is already deployed")
         await this.prompter.promptContinueToNextBinding()
@@ -47,7 +45,7 @@ export class TxExecutor {
       }
       await EventHandler.executeAfterDeploymentEventHook(bindings[name], bindings)
 
-      this.moduleBucket.storeNewBucket(moduleName, bindings)
+      this.moduleState.storeNewState(moduleName, bindings)
     }
 
     return

@@ -1,14 +1,20 @@
-import {ModuleBucketRepo} from "../packages/modules/bucket_repo";
+import {ModuleStateRepo} from "../packages/modules/state_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
 import {HardhatCompiler} from "../packages/ethereum/compiler/hardhat";
 import {checkIfExist} from "../packages/utils/util";
 import {ModuleValidator} from "../packages/modules/module_validator";
 import {JsonFragment} from "../packages/types/abi"
-import {TransactionReceipt} from "@ethersproject/abstract-provider";
+import {TransactionReceipt, TransactionResponse} from "@ethersproject/abstract-provider";
 import {cli} from "cli-ux";
 import {EventHandler} from "../packages/modules/events/handler";
-import {Contract, ethers} from "ethers";
+import {CallOverrides, ethers} from "ethers";
 import ConfigService from "../packages/config/service";
+import {ContractFunction} from "@ethersproject/contracts/src.ts/index";
+import {FunctionFragment} from "@ethersproject/abi";
+import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
+import {GasCalculator} from "../packages/ethereum/gas/calculator";
+import {Prompter} from "../packages/prompter";
+import {BLOCK_CONFIRMATION_NUMBER} from "../packages/ethereum/transactions/executor";
 
 export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 
@@ -59,7 +65,7 @@ export type ModuleOptions = {
   params: { [name: string]: any }
 }
 
-export type ModuleBuilderFn = (m: ModuleBuilder) => void;
+export type ModuleBuilderFn = (m: ModuleBuilder) => Promise<void>;
 
 export abstract class Binding {
   public name: string;
@@ -210,6 +216,8 @@ export type TransactionData = {
 export class DeployedContractBinding extends CompiledContractBinding {
   public txData: TransactionData
   private readonly signer: ethers.Signer
+  private readonly prompter: Prompter
+  private readonly txGenerator: EthTxGenerator
 
   constructor(
     // metadata
@@ -217,17 +225,83 @@ export class DeployedContractBinding extends CompiledContractBinding {
     // event hooks
     events: Events,
     signer: ethers.Signer,
+    prompter: Prompter,
+    txGenerator: EthTxGenerator
   ) {
     super(name, args, bytecode, abi)
     this.txData = txData
 
     this.events = events
     this.signer = signer
+    this.prompter = prompter
+    this.txGenerator = txGenerator
   }
 
-  instance(): Contract {
-    // @TODO: we will need custom signer
-    return new ethers.Contract(<string>this.txData.contractAddress, this.abi, this.signer)
+  instance(): ethers.Contract {
+    return new ContractInstance(<string>this.txData.contractAddress, this.abi, this.signer, this.prompter, this.txGenerator) as unknown as ethers.Contract
+  }
+}
+
+export class ContractInstance {
+  private readonly prompter: Prompter
+
+  [key: string]: any;
+
+  constructor(contractAddress: string, abi: JsonFragment[], signer: ethers.Signer, prompter: Prompter, txGenerator: EthTxGenerator) {
+    this.prompter = prompter
+    this.txGenerator = txGenerator
+    const parent: any = new ethers.Contract(contractAddress, abi, signer)
+
+    // @TODO: think how to achieve same thing with more convenient approach
+    Object.keys(parent.interface.functions).forEach((signature) => {
+      const fragment = parent.interface.functions[signature];
+
+      if (parent[signature] != null) {
+        if (fragment.constant) {
+          return
+        }
+
+        this[signature] = this.buildDefaultWrapper(parent[signature], fragment)
+        this[fragment.name] = this[signature]
+      }
+    })
+
+    Object.keys(parent).forEach((key) => {
+      if (this[key] != null) {
+        return
+      }
+
+      this[key] = parent[key]
+    })
+  }
+
+  private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
+    return async (...args: Array<any>): Promise<TransactionResponse> => {
+      // allow user to override ethers with his override params
+
+      if (args.length === fragment.inputs.length + 1 && typeof (args[args.length - 1]) === "object") {
+        return await contractFunction(...args)
+      }
+
+      const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress())
+      const overrides: CallOverrides = {
+        gasPrice: txData.gasPrice,
+        nonce: txData.nonce,
+      }
+
+      cli.info("Execute contract function - ", fragment.name)
+      cli.debug(fragment.name, ...args)
+      await this.prompter.promptExecuteTx()
+
+      await this.prompter.sendingTx()
+      const tx = await contractFunction(...args, overrides)
+      await this.prompter.sentTx()
+
+
+      await tx.wait(BLOCK_CONFIRMATION_NUMBER)
+
+      return tx
+    }
   }
 }
 
@@ -256,6 +330,8 @@ export class ModuleBuilder extends ModuleUse {
   private bindings: { [name: string]: ContractBinding };
   private actions: { [name: string]: Action };
 
+  private moduleFunction: ModuleBuilderFn
+
   constructor(fn: ModuleBuilderFn, opts?: ModuleOptions) {
     super()
     this.opts = {params: {}}
@@ -265,7 +341,7 @@ export class ModuleBuilder extends ModuleUse {
       this.opts = opts as ModuleOptions
     }
 
-    fn(this)
+    this.moduleFunction = fn
   }
 
   // use links all definitions from the provided Module
@@ -315,7 +391,26 @@ export class ModuleBuilder extends ModuleUse {
     return action
   }
 
-  // getBinding(name: string): Binding;
+  bindModule(m: Module): void {
+    const bindings = m.getAllBindings()
+    const actions = m.getAllActions()
+
+    for(let [bindingName, binding] of Object.entries(bindings)) {
+      if (!checkIfExist(this.bindings[bindingName])) {
+          this.bindings[bindingName] = binding
+      }
+    }
+
+    for(let [actionName, action] of Object.entries(actions)) {
+      if (!checkIfExist(this.actions[actionName])) {
+        this.actions[actionName] = action
+      }
+    }
+  }
+
+  getBinding(name: string): ContractBinding {
+    return this.bindings[name]
+  }
 
   getAllBindings(): { [name: string]: ContractBinding } {
     return this.bindings
@@ -323,6 +418,12 @@ export class ModuleBuilder extends ModuleUse {
 
   getAllActions(): { [name: string]: Action } {
     return this.actions
+  }
+
+  async triggerModuleBuilderFn(): Promise<void> {
+    await this.moduleFunction(this)
+
+    return
   }
 
   use<T extends Module>(m: T, opts?: ModuleOptions): T {
@@ -368,17 +469,28 @@ export class Module {
   getAllActions(): { [name: string]: Action } {
     return this.actions
   }
+
+  getAction(name: string): Action {
+    return this.actions[name]
+  }
 }
 
 export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<Module> {
   const currentPath = process.cwd()
+  const networkId = process.env?.MORTAR_NETWORK_ID || 1 // @TODO think if their is other options for this.
 
   const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
 
   const configService = new ConfigService(currentPath)
   const moduleBuilder = new ModuleBuilder(fn)
-  const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey())
-  const moduleBucket = new ModuleBucketRepo(currentPath, moduleResolver)
+  await moduleBuilder.triggerModuleBuilderFn()
+
+  const gasCalculator = new GasCalculator(provider)
+  const txGenerator = await new EthTxGenerator(configService, gasCalculator, +networkId, provider)
+
+  const prompter = new Prompter()
+  const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
+  const stateRepo = new ModuleStateRepo(+networkId, currentPath, moduleResolver)
   const compiler = new HardhatCompiler()
   const moduleValidator = new ModuleValidator()
 
@@ -393,7 +505,7 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
   compiler.compile() // @TODO: make this more suitable for other compilers
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractBuildNames)
   if (Object.entries(bytecodes).length != contractBuildNames.length) {
-    cli.error("some bytecode is missing or .contract() was not used properly")
+    cli.error(`some bytecode is missing or .contract() was not used properly`)
     cli.exit(0)
   }
 
@@ -405,9 +517,9 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
 
   moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
 
-  let oldModuleBucketBindings = moduleBucket.getBucketIfExist(moduleName) as { [p: string]: CompiledContractBinding }
-  if (!checkIfExist(oldModuleBucketBindings)) {
-    oldModuleBucketBindings = {}
+  let oldModuleStateBindings = stateRepo.getStateIfExist(moduleName) as { [p: string]: CompiledContractBinding }
+  if (!checkIfExist(oldModuleStateBindings)) {
+    oldModuleStateBindings = {}
   }
   let newModuleBindings = moduleBuilder.getAllBindings() as { [p: string]: CompiledContractBinding }
 
@@ -417,9 +529,7 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
     await EventHandler.executeAfterCompileEventHook(newModuleBindings[binding], newModuleBindings)
   }
 
-  if (moduleResolver.checkIfDiff(oldModuleBucketBindings, newModuleBindings)) {
-    moduleResolver.printDiffParams(oldModuleBucketBindings, newModuleBindings)
-  } else {
+  if (!moduleResolver.checkIfDiff(oldModuleStateBindings, newModuleBindings)) {
     cli.info("Nothing changed from last revision.")
     cli.exit(0)
   }

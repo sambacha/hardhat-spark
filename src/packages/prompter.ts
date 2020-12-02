@@ -4,7 +4,7 @@ import cli from "cli-ux";
 export class Prompter {
   private readonly skipConfirmation: boolean
 
-  constructor(skipConfirmation: boolean) {
+  constructor(skipConfirmation: boolean = false) {
     this.skipConfirmation = skipConfirmation
   }
 

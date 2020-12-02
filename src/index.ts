@@ -2,17 +2,14 @@
 
 import {cli} from "cli-ux";
 import ConfigService from "./packages/config/service";
-import path from "path";
-import {OutputArgs, OutputFlags} from "@oclif/parser/lib/parse";
+import {OutputFlags} from "@oclif/parser/lib/parse";
 import {DeployedContractBinding, Module} from "./interfaces/mortar";
 import {checkIfExist} from "./packages/utils/util";
-import {ModuleBucketRepo} from "./packages/modules/bucket_repo";
+import {ModuleStateRepo} from "./packages/modules/state_repo";
 import {ModuleResolver} from "./packages/modules/module_resolver";
 import {EthTxGenerator} from "./packages/ethereum/transactions/generator";
 import {Prompter} from "./packages/prompter";
 import {TxExecutor} from "./packages/ethereum/transactions/executor";
-import {JsonFragment} from "./packages/types/abi";
-import {HardhatCompiler} from "./packages/ethereum/compiler/hardhat";
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   //@TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
@@ -24,7 +21,7 @@ export function init(flags: OutputFlags<any>, configService: ConfigService) {
 
 export async function deploy(
   migrationFilePath: string,
-  moduleBucket: ModuleBucketRepo,
+  moduleState: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
   prompter: Prompter,
@@ -36,9 +33,9 @@ export async function deploy(
     module = await module
 
     cli.info("\nDeploy module - ", moduleName)
-    const deployedBucket = moduleBucket.getBucketIfExist(moduleName)
+    const deployedState = moduleState.getStateIfExist(moduleName)
 
-    const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve((module as Module).getAllBindings(), deployedBucket)
+    const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve((module as Module).getAllBindings(), deployedState)
     if (!checkIfExist(resolvedBindings)) {
       cli.info("Nothing to deploy")
       process.exit(0)
@@ -52,12 +49,16 @@ export async function deploy(
   }
 }
 
-export function diff(flags: OutputFlags<any>, args: OutputArgs<any>) {
-  const currentPath = process.cwd()
-  const filePath = args.path as string
-  if (filePath == "") {
-    cli.info("Path argument missing from command. \nPlease use --help to better understand usage of this command")
-  }
+export async function diff(resolvedPath: string, moduleResolver: ModuleResolver, moduleState: ModuleStateRepo) {
+  const modules = await require(resolvedPath, )
 
-  require(path.resolve(currentPath, filePath))
+  for (let [moduleName, module] of Object.entries(modules)) {
+    const mod = await module as Module
+    const moduleBindings = mod.getAllBindings()
+    const deployedState = moduleState.getStateIfExist(moduleName)
+
+    if (moduleResolver.checkIfDiff(deployedState, moduleBindings)) {
+      moduleResolver.printDiffParams(deployedState, moduleBindings)
+    }
+  }
 }

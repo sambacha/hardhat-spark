@@ -1,7 +1,7 @@
 import {CompiledContractBinding, DeployedContractBinding} from "../../src/interfaces/mortar";
 import fs from "fs";
 
-export function getBucketIfExist(dir: string): { [p: string]: DeployedContractBinding } | null {
+export function getStateIfExist(dir: string): { [p: string]: DeployedContractBinding } | null {
   if (!fs.existsSync(dir)){
     return null
   }
@@ -11,11 +11,11 @@ export function getBucketIfExist(dir: string): { [p: string]: DeployedContractBi
   }))
 }
 
-export function storeNewBucket(dir: string, bucket: { [p: string]: CompiledContractBinding } | null): void {
-  if (bucket == null) {
-    bucket = {}
+export function storeNewState(dir: string, state: { [p: string]: CompiledContractBinding } | null): void {
+  if (state == null) {
+    state = {}
   }
 
-  fs.writeFileSync(dir, JSON.stringify(bucket,null, 4))
+  fs.writeFileSync(dir, JSON.stringify(state,null, 4))
   return
 }
