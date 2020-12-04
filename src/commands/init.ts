@@ -41,4 +41,15 @@ export default class Init extends Command {
 
     command.init(flags, configService)
   }
+
+  async catch(error: Error) {
+    if (error instanceof UserError) {
+      cli.info(error.message)
+      cli.exit(0)
+    }
+
+    cli.error(error)
+    cli.info("If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ")
+    cli.exit(1)
+  }
 }

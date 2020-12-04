@@ -21,7 +21,8 @@ export function init(flags: OutputFlags<any>, configService: ConfigService) {
 
 export async function deploy(
   migrationFilePath: string,
-  moduleState: ModuleStateRepo,
+  states: string[],
+  moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
   prompter: Prompter,
@@ -33,7 +34,12 @@ export async function deploy(
     module = await module
 
     cli.info("\nDeploy module - ", moduleName)
-    const deployedState = moduleState.getStateIfExist(moduleName)
+    let deployedState = moduleStateRepo.getStateIfExist(moduleName)
+    for (let moduleStateName of states) {
+      const moduleState = moduleStateRepo.getStateIfExist(moduleStateName)
+
+      deployedState = moduleStateRepo.mergeStates(deployedState, moduleState)
+    }
 
     const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve((module as Module).getAllBindings(), deployedState)
     if (!checkIfExist(resolvedBindings)) {
@@ -49,13 +55,19 @@ export async function deploy(
   }
 }
 
-export async function diff(resolvedPath: string, moduleResolver: ModuleResolver, moduleState: ModuleStateRepo) {
-  const modules = await require(resolvedPath, )
+export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo) {
+  const modules = await require(resolvedPath)
 
   for (let [moduleName, module] of Object.entries(modules)) {
     const mod = await module as Module
     const moduleBindings = mod.getAllBindings()
-    const deployedState = moduleState.getStateIfExist(moduleName)
+
+    let deployedState = moduleStateRepo.getStateIfExist(moduleName)
+    for (let moduleStateName of states) {
+      const moduleState = moduleStateRepo.getStateIfExist(moduleStateName)
+
+      deployedState = moduleStateRepo.mergeStates(deployedState, moduleState)
+    }
 
     if (moduleResolver.checkIfDiff(deployedState, moduleBindings)) {
       moduleResolver.printDiffParams(deployedState, moduleBindings)

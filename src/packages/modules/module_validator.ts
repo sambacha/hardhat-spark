@@ -1,6 +1,5 @@
 import {ContractBinding} from "../../interfaces/mortar";
 import {JsonFragment} from "../types/abi"
-import {cli} from "cli-ux";
 import {handleTypes} from "../types/checker";
 
 const CONSTRUCTOR_TYPE = 'constructor'
@@ -20,9 +19,8 @@ export class ModuleValidator {
       }
 
       if (binding.args.length != ABI.inputs?.length) {
-        cli.info("Binding did not match number of arguments for contract - ", name)
-        cli.info("  Expected ", String(ABI.inputs?.length || 0), " and got ", String(binding.args.length), " number of arguments.")
-        cli.exit(0)
+        throw new AbiMismatch(`Binding did not match number of arguments for contract - ${name}
+  Expected ${String(ABI.inputs?.length || 0)} and got ${String(binding.args.length)} number of arguments.`)
       }
 
       for (let i = 0; i < binding.args.length; i++) {

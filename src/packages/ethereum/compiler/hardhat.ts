@@ -10,30 +10,38 @@ export class HardhatCompiler extends Compiler {
   }
 
   extractBytecode(contractNames: string[]): { [name: string]: string } {
-    let bytecodes: { [name: string]: string } = {}
+    try {
+      let bytecodes: { [name: string]: string } = {}
 
-    const dir = path.resolve(process.cwd(), "artifacts", "contracts")
-    const buildArtifacts = parseFiles(dir, contractNames, [])
-    for (let artifact of buildArtifacts) {
-      const art = JSON.parse(artifact)
+      const dir = path.resolve(process.cwd(), "artifacts", "contracts")
+      const buildArtifacts = parseFiles(dir, contractNames, [])
+      for (let artifact of buildArtifacts) {
+        const art = JSON.parse(artifact)
 
-      bytecodes[art.contractName] = art.bytecode
+        bytecodes[art.contractName] = art.bytecode
+      }
+
+      return bytecodes
+    } catch (e) {
+      return e
     }
-
-    return bytecodes
   }
 
   extractContractInterface(contractNames: string[]): { [p: string]: JsonFragment[] } {
-    let ABIs: { [p: string]: JsonFragment[] } = {}
+    try {
+      let ABIs: { [p: string]: JsonFragment[] } = {}
 
-    const dir = path.resolve(process.cwd(), "artifacts", "contracts")
-    const buildArtifacts = parseFiles(dir, contractNames, [])
-    for (let artifact of buildArtifacts) {
-      const art = JSON.parse(artifact)
+      const dir = path.resolve(process.cwd(), "artifacts", "contracts")
+      const buildArtifacts = parseFiles(dir, contractNames, [])
+      for (let artifact of buildArtifacts) {
+        const art = JSON.parse(artifact)
 
-      ABIs[art.contractName] = art.abi
+        ABIs[art.contractName] = art.abi
+      }
+
+      return ABIs
+    } catch (e) {
+      throw e
     }
-
-    return ABIs
   }
 }

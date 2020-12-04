@@ -29,21 +29,19 @@ export default class ConfigService {
     this.config = {
       privateKey: privateKey
     }
-    // @TODO: validate private key
+
     try {
       new ethers.utils.SigningKey(privateKey)
     } catch (error) {
       cli.debug(error)
-      cli.error("You have provided string that is not private key.")
-      cli.exit(0)
+
+      throw new PrivateKeyNotValid("You have provided string that is not private key.")
     }
 
     try {
       fs.writeFileSync(this.configPath , JSON.stringify(this.config, null, 4))
     } catch (e) {
-      cli.debug(e)
-      cli.info("Failed to write to file.")
-      return false
+      throw new FailedToWriteToFile("Failed to write to file.")
     }
 
     return true

@@ -107,6 +107,10 @@ export class ModuleResolver {
       deployedBindingsLength = Object.keys(deployedBindings).length
     }
 
+    if (currentBindingsLength < deployedBindingsLength) {
+      throw new StateIsBiggerThanModule("Current module state files has more bindings than current one.")
+    }
+
     let resolvedBindings: { [p: string]: DeployedContractBinding } = {}
     let i = 0
     while (i < deployedBindingsLength) {

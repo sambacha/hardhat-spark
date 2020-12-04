@@ -18,32 +18,35 @@ export class TxExecutor {
   private moduleState: ModuleStateRepo
   private txGenerator: EthTxGenerator
   private ethers: providers.JsonRpcProvider
+  private eventHandler: EventHandler
 
-  constructor(prompter: Prompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider) {
+  constructor(prompter: Prompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider, eventHandler: EventHandler) {
     this.prompter = prompter
     this.moduleState = moduleState
     this.txGenerator = txGenerator
 
     this.ethers = ethers
+    this.eventHandler = eventHandler
   }
 
   async executeBindings(moduleName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     for (let [name, binding] of Object.entries(bindings)) {
+      await EventHandler.executeBeforeDeploymentEventHook(bindings[name], bindings)
       if (checkIfExist(binding.txData.output)) {
         cli.info(name, "is already deployed")
-        await this.prompter.promptContinueToNextBinding()
+        await this.prompter.promptContinueDeployment()
       }
 
-      await EventHandler.executeBeforeDeploymentEventHook(bindings[name], bindings)
       if (!checkIfExist(binding.txData.output)) {
         cli.info(name, " - deploying")
         await EventHandler.executeBeforeDeployEventHook(bindings[name], bindings)
         bindings[name] = await this.executeSingleBinding(binding, bindings)
-        await EventHandler.executeAfterDeployEventHook(bindings[name], bindings)
+        await this.eventHandler.executeAfterDeployEventHook(moduleName, bindings[name], bindings)
 
-        await EventHandler.executeOnChangeEventHook(bindings[name], bindings)
+        await this.eventHandler.executeOnChangeEventHook(moduleName, bindings[name], bindings)
       }
-      await EventHandler.executeAfterDeploymentEventHook(bindings[name], bindings)
+
+      await this.eventHandler.executeAfterDeploymentEventHook(moduleName, bindings[name], bindings)
 
       this.moduleState.storeNewState(moduleName, bindings)
     }
@@ -85,27 +88,21 @@ export class TxExecutor {
           }
 
           if ("contract " + binding.args[i].name != constructorFragmentInputs[i].internalType) {
-            cli.info("Unsupported type for - ", binding.name,
-              " \n provided: ", binding.args[i].name,
-              "\n expected: ", constructorFragmentInputs[i].internalType || "")
-            cli.exit(0)
+            throw new ContractTypeMismatch(`Unsupported type for - ${binding.name} \n provided: ${binding.args[i].name} \n expected: ${constructorFragmentInputs[i].internalType || ""}`)
           }
 
           const dependencyName = binding.args[i].name
           const dependencyTxData = bindings[dependencyName].txData
           if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.output)) {
-            cli.info("Dependency contract not deployed\n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
-            cli.exit(0)
+            throw new ContractTypeMismatch(`Dependency contract not deployed \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`)
           }
 
           if (dependencyTxData.output != null && !dependencyTxData.output.status) {
-            cli.info("Dependency contract not included in the block \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
-            cli.exit(0)
+            throw new ContractTypeMismatch(`Dependency contract not included in the block \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`)
           }
 
           if (!checkIfExist(dependencyTxData.contractAddress)) {
-            cli.info("No contract address in dependency tree \n", "Binding name: ", binding.name, "\n Dependency name: ", binding.args[i].name)
-            cli.exit(0)
+            throw new ContractTypeMismatch(`No contract address in dependency tree \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`)
           }
 
           values.push(dependencyTxData.contractAddress)
@@ -139,8 +136,7 @@ export class TxExecutor {
           break
         }
         default: {
-          cli.info("Unsupported type for - ", binding.name, " ", binding.args[i])
-          cli.exit(0)
+          throw new ContractTypeUnsupported(`Unsupported type for - ${binding.name}  ${binding.args[i]}`)
         }
       }
     }

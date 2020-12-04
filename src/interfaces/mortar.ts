@@ -1,9 +1,9 @@
 import {ModuleStateRepo} from "../packages/modules/state_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
 import {HardhatCompiler} from "../packages/ethereum/compiler/hardhat";
-import {checkIfExist} from "../packages/utils/util";
+import {checkIfExist, checkIfSameInputs} from "../packages/utils/util";
 import {ModuleValidator} from "../packages/modules/module_validator";
-import {JsonFragment} from "../packages/types/abi"
+import {JsonFragment, JsonFragmentType} from "../packages/types/abi"
 import {TransactionReceipt, TransactionResponse} from "@ethersproject/abstract-provider";
 import {cli} from "cli-ux";
 import {EventHandler} from "../packages/modules/events/handler";
@@ -38,9 +38,9 @@ export type Arguments = Argument[];
 
 export type ActionFn = (...args: any[]) => void;
 
-export type RedeployFn = (b: Binding, ...deps: DeployedContractBinding[]) => void;
+export type RedeployFn = (b: Binding, ...deps: DeployedContractBinding[]) => Promise<DeployedContractBinding[]>;
 
-export type EventFnDeployed = (b: Binding, ...deps: DeployedContractBinding[]) => void;
+export type EventFnDeployed = (b: Binding, ...deps: DeployedContractBinding[]) => Promise<DeployedContractBinding[]>;
 export type EventFnCompiled = (b: Binding, ...deps: CompiledContractBinding[]) => void;
 export type EventFn = (b: Binding, ...deps: ContractBinding[]) => void;
 
@@ -207,14 +207,23 @@ export enum TransactionState {
   IN_BLOCK,
 }
 
+export type ContractInput = {
+  functionName: string
+  inputs: JsonFragmentType[]
+}
+
 export type TransactionData = {
-  input: TxData | null,
-  output: TransactionReceipt | null,
-  contractAddress?: string,
+  input: TxData | null
+  output: TransactionReceipt | null
+  contractAddress?: string
+  contractInput: ContractInput[]
+  contractOutput: TransactionResponse[]
 }
 
 export class DeployedContractBinding extends CompiledContractBinding {
   public txData: TransactionData
+  public contractTxProgress: number
+
   private readonly signer: ethers.Signer
   private readonly prompter: Prompter
   private readonly txGenerator: EthTxGenerator
@@ -230,6 +239,7 @@ export class DeployedContractBinding extends CompiledContractBinding {
   ) {
     super(name, args, bytecode, abi)
     this.txData = txData
+    this.contractTxProgress = 0
 
     this.events = events
     this.signer = signer
@@ -238,18 +248,34 @@ export class DeployedContractBinding extends CompiledContractBinding {
   }
 
   instance(): ethers.Contract {
-    return new ContractInstance(<string>this.txData.contractAddress, this.abi, this.signer, this.prompter, this.txGenerator) as unknown as ethers.Contract
+    return new ContractInstance(
+      this,
+      <string>this.txData.contractAddress,
+      this.abi,
+      this.signer,
+      this.prompter,
+      this.txGenerator) as unknown as ethers.Contract
   }
 }
 
 export class ContractInstance {
+  private readonly deployedBinding: DeployedContractBinding
   private readonly prompter: Prompter
+  private ExecutedContractTx: number
 
   [key: string]: any;
 
-  constructor(contractAddress: string, abi: JsonFragment[], signer: ethers.Signer, prompter: Prompter, txGenerator: EthTxGenerator) {
+  constructor(
+    deployedBinding: DeployedContractBinding,
+    contractAddress: string,
+    abi: JsonFragment[],
+    signer: ethers.Signer,
+    prompter: Prompter,
+    txGenerator: EthTxGenerator
+  ) {
     this.prompter = prompter
     this.txGenerator = txGenerator
+    this.deployedBinding = deployedBinding
     const parent: any = new ethers.Contract(contractAddress, abi, signer)
 
     // @TODO: think how to achieve same thing with more convenient approach
@@ -273,6 +299,16 @@ export class ContractInstance {
 
       this[key] = parent[key]
     })
+
+    if (!checkIfExist(this.deployedBinding.txData.contractInput)) {
+      this.deployedBinding.txData.contractInput = []
+    }
+
+    if (!checkIfExist(this.deployedBinding.txData.contractOutput)) {
+      this.deployedBinding.txData.contractOutput = []
+    }
+
+    this.ExecutedContractTx = this.deployedBinding.txData.contractOutput.length
   }
 
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
@@ -283,15 +319,38 @@ export class ContractInstance {
         return await contractFunction(...args)
       }
 
-      const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress())
-      const overrides: CallOverrides = {
-        gasPrice: txData.gasPrice,
-        nonce: txData.nonce,
+      let contractTxIterator = this.deployedBinding.contractTxProgress
+
+      const currentInputs = this.deployedBinding.txData.contractInput[contractTxIterator]
+      const contractOutput = this.deployedBinding.txData.contractOutput[contractTxIterator]
+
+      if (checkIfExist(currentInputs) &&
+        checkIfSameInputs(currentInputs, fragment.name, args) && checkIfExist(contractOutput)) {
+        cli.info("Contract function already executed: ", fragment.name, ...args ,"... skipping")
+
+        this.deployedBinding.contractTxProgress = ++contractTxIterator
+        return contractOutput
+      }
+
+      if (
+        (checkIfExist(currentInputs) && !checkIfSameInputs(currentInputs, fragment.name, args)) ||
+        !checkIfExist(currentInputs)
+      ) {
+        this.deployedBinding.txData.contractInput[contractTxIterator] = {
+          functionName: fragment.name,
+          inputs: args,
+        } as ContractInput
       }
 
       cli.info("Execute contract function - ", fragment.name)
       cli.debug(fragment.name, ...args)
       await this.prompter.promptExecuteTx()
+
+      const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress())
+      const overrides: CallOverrides = {
+        gasPrice: txData.gasPrice,
+        nonce: txData.nonce,
+      }
 
       await this.prompter.sendingTx()
       const tx = await contractFunction(...args, overrides)
@@ -300,6 +359,8 @@ export class ContractInstance {
 
       await tx.wait(BLOCK_CONFIRMATION_NUMBER)
 
+      this.deployedBinding.txData.contractOutput[contractTxIterator] = tx
+      this.deployedBinding.contractTxProgress = ++contractTxIterator
       return tx
     }
   }
@@ -395,13 +456,13 @@ export class ModuleBuilder extends ModuleUse {
     const bindings = m.getAllBindings()
     const actions = m.getAllActions()
 
-    for(let [bindingName, binding] of Object.entries(bindings)) {
+    for (let [bindingName, binding] of Object.entries(bindings)) {
       if (!checkIfExist(this.bindings[bindingName])) {
-          this.bindings[bindingName] = binding
+        this.bindings[bindingName] = binding
       }
     }
 
-    for(let [actionName, action] of Object.entries(actions)) {
+    for (let [actionName, action] of Object.entries(actions)) {
       if (!checkIfExist(this.actions[actionName])) {
         this.actions[actionName] = action
       }
@@ -505,14 +566,12 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
   compiler.compile() // @TODO: make this more suitable for other compilers
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractBuildNames)
   if (Object.entries(bytecodes).length != contractBuildNames.length) {
-    cli.error(`some bytecode is missing or .contract() was not used properly`)
-    cli.exit(0)
+    throw new BytecodeMismatch("some bytecode is missing or .contract() was not used properly")
   }
 
   const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractBuildNames)
   if (Object.entries(abi).length != contractBuildNames.length) {
-    cli.error("some abi is missing or .contract() was not used properly")
-    cli.exit(0)
+    throw new AbiMismatch("some abi is missing or .contract() was not used properly")
   }
 
   moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
@@ -531,7 +590,6 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
 
   if (!moduleResolver.checkIfDiff(oldModuleStateBindings, newModuleBindings)) {
     cli.info("Nothing changed from last revision.")
-    cli.exit(0)
   }
 
   return new Module(

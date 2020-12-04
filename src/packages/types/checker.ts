@@ -1,5 +1,4 @@
 import {BigNumber, ethers} from "ethers";
-import {cli} from "cli-ux";
 
 export function handleTypes(bindingName: string, value: any, type: string, internalType: string | undefined): void {
   switch (typeof value) {
@@ -16,15 +15,13 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
       }
 
       if ("contract " + value.name != internalType) {
-        cli.info("Unsupported type for - ", bindingName, " \n provided: ", value.name, "\n expected: ", internalType || "")
-        cli.exit(0)
+        throw new ContractTypeMismatch(`Unsupported type for - ${bindingName}\n provided: ${value.name}\n expected: ${internalType || ""}`)
       }
       break
     }
     case "number": {
       if (!type.includes("int")) {
-        cli.info("Unsupported type for - ", bindingName, " \n provided: number \n expected: ", type || "")
-        cli.exit(0)
+        throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: number \n expected: ${type || ""}`)
       }
 
       handleInt(bindingName, BigNumber.from(value), type)
@@ -36,14 +33,12 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
     }
     case "boolean": {
       if (!type.includes("bool")) {
-        cli.info("Unsupported type for - ", bindingName, " \n provided: bool \n expected: ", type || "")
-        cli.exit(0)
+        throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: bool \n expected: ${type || ""}`)
       }
       break
     }
     default: {
-      cli.info("Unsupported type for - ", bindingName, " ", value)
-      cli.exit(0)
+      throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} ${value}`)
     }
   }
 }
@@ -68,9 +63,9 @@ function handleString(bindingName: string, value: string, type: string): void {
   // address
   if (type.includes("address")) {
     if (!ethers.utils.isAddress(value)) {
-      cli.info("Not valid address - ", bindingName, " \n provided length: ", value, " \n type: ", type)
-      cli.exit(0)
+      throw new ContractTypeMismatch(`Not valid address - ${bindingName} \n provided length: ${value} \n type: ${type}`)
     }
+
     return
   }
 }
@@ -96,8 +91,7 @@ function handleArray(bindingName: string, values: string[], type: string): void 
 
 function handleInt(bindingName: string, value: BigNumber, type: string) {
   if (value.lt(0) && type.includes("uint")) {
-    cli.info("Unsupported type for - ", bindingName, " \n provided: negative number \n expected:", type || "")
-    cli.exit(0)
+    throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: negative number \n expected: ${type || ""}`)
   }
 
   const bits = type.substring(type.lastIndexOf("int") + 3)
@@ -107,7 +101,6 @@ function handleInt(bindingName: string, value: BigNumber, type: string) {
   range = range.sub(1)
 
   if (BigNumber.from(value).abs().gt(range)) {
-    cli.info("Number out of range - ", bindingName, " \n provided: ", value.toString(), " \n type: ", type || "")
-    cli.exit(0)
+    throw new ContractTypeMismatch(`Number out of range - ${bindingName} \n provided: ${value.toString()} \n expected: ${type || ""}`)
   }
 }

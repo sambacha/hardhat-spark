@@ -29,8 +29,6 @@ export class EthTxGenerator {
   }
 
   initTx(bindings: { [p: string]: DeployedContractBinding }): { [p: string]: DeployedContractBinding } {
-    let rawTxs: TransactionData[] = []
-
     for (let [name, bind] of Object.entries(bindings)) {
       if (checkIfExist(bindings[name].txData.output)) {
         continue
@@ -39,6 +37,8 @@ export class EthTxGenerator {
       let rawTx: TransactionData = {
         input: null,
         output: null,
+        contractInput: [],
+        contractOutput: [],
       }
 
       // @TODO: enable multiple address to send tx. HD wallet, address array
@@ -46,9 +46,6 @@ export class EthTxGenerator {
         from: this.wallet.address,
         input: bind.bytecode
       }
-
-      // @TODO: enable tracking of tx in event hooks. inside contract we have instance function in which we can track all necessary data along the way
-      rawTxs.push(rawTx)
 
       bindings[name].txData = rawTx
     }

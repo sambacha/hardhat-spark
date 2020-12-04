@@ -11,6 +11,7 @@ import {GasCalculator} from "../packages/ethereum/gas/calculator";
 import {ethers} from "ethers";
 import {cli} from "cli-ux";
 import * as command from "../index"
+import {EventHandler} from "../packages/modules/events/handler";
 
 export default class Deploy extends Command {
   static description = 'Deploy new migrations, difference between current and already deployed.'
@@ -42,6 +43,12 @@ export default class Deploy extends Command {
         description: "Used to skip confirmation questions."
       }
     ),
+    state: flags.string(
+      {
+        name: 'state',
+        description: 'Provide name of module\'s that you would want to use as state. Most commonly used if you are deploying more than one module that are dependant on each other.',
+      }
+    ),
     help: flags.help({char: 'h'}),
   }
 
@@ -63,6 +70,7 @@ export default class Deploy extends Command {
       cli.exit(0)
     }
     process.env.MORTAR_NETWORK_ID = String(flags.networkId)
+    const states: string[] = flags.state?.split(",") || []
 
     let provider = new ethers.providers.JsonRpcProvider()
     if (checkIfExist(flags.rpcProvider)) {
@@ -81,11 +89,23 @@ export default class Deploy extends Command {
     const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
     const moduleState = new ModuleStateRepo(flags.networkId, currentPath, moduleResolver)
 
-    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider)
+    const eventHandler = new EventHandler(moduleState)
+    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler)
     const migrationFilePath = path.resolve(currentPath, filePath)
 
-    await command.deploy(migrationFilePath, moduleState, moduleResolver, txGenerator, prompter, txExecutor)
+    await command.deploy(migrationFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor)
 
     cli.exit(0)
+  }
+
+  async catch(error: Error) {
+    if (error instanceof UserError) {
+      cli.info(error.message)
+      cli.exit(0)
+    }
+
+    cli.error(error)
+    cli.info("If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ")
+    cli.exit(1)
   }
 }

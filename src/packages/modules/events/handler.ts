@@ -5,9 +5,12 @@ import {
   DeployedContractBinding
 } from "../../../interfaces/mortar";
 import {checkIfExist} from "../../utils/util";
+import {ModuleStateRepo} from "../state_repo";
 
 export class EventHandler {
-  constructor() {
+  private readonly moduleState: ModuleStateRepo
+  constructor(moduleState: ModuleStateRepo) {
+    this.moduleState = moduleState
   }
 
   static async executeBeforeCompileEventHook(binding: ContractBinding, bindings: { [p: string]: ContractBinding }): Promise<void> {
@@ -30,37 +33,38 @@ export class EventHandler {
     }
   }
 
-  static async executeAfterCompileEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
+   static async executeAfterCompileEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
     const events = binding.events.afterCompile
     await this.handleCompiledBindingsEvents(events, binding, bindings)
   }
 
-  static async executeBeforeDeploymentEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
+   static async executeBeforeDeploymentEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
     const events = binding.events.beforeDeployment
     await this.handleCompiledBindingsEvents(events, binding, bindings)
   }
 
-  static async executeAfterDeploymentEventHook(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
+   async executeAfterDeploymentEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     const events = binding.events.afterDeployment
-    await this.handleDeployedBindingsEvents(events, binding, bindings)
+    await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
   }
 
-  static async executeBeforeDeployEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
+   static async executeBeforeDeployEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
     const events = binding.events.beforeDeploy
     await this.handleCompiledBindingsEvents(events, binding, bindings)
   }
 
-  static async executeAfterDeployEventHook(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
+   async executeAfterDeployEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     const events = binding.events.afterDeploy
-    await this.handleDeployedBindingsEvents(events, binding, bindings)
+    await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
   }
 
-  static async executeOnChangeEventHook(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
+   async executeOnChangeEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
     const events = binding.events.onChange
-    await this.handleDeployedBindingsEvents(events, binding, bindings)
+    await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
   }
 
-  private static async handleDeployedBindingsEvents(
+  private async handleDeployedBindingsEvents(
+    moduleName: string,
     deployEvents: AfterDeployEvent[],
     binding: DeployedContractBinding,
     bindings: { [p: string]: DeployedContractBinding }
@@ -73,14 +77,20 @@ export class EventHandler {
       const fn = event.fn
       const deps = event.deps
 
-
       let binds: DeployedContractBinding[] = []
       for (let dependency of deps) {
         const name = dependency.name
         binds.push(bindings[name])
       }
 
-      await fn(binding, ...binds)
+      const eventBindings = await fn(binding, ...binds)
+
+      for (let bind of eventBindings) {
+        const name = bind.name
+        bindings[name] = bind
+      }
+
+      this.moduleState.storeNewState(moduleName, bindings)
     }
   }
 

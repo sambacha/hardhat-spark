@@ -11,6 +11,8 @@ import {checkIfEventsExist, checkIfExist} from "../utils/util";
 const STATE_DIR_NAME = '.mortar'
 const STATE_NAME = 'deployed_module_state.json'
 
+export type ModuleState = { [p: string]: DeployedContractBinding }
+
 export class ModuleStateRepo {
   private readonly networkId: number
   private readonly statePath: string
@@ -28,7 +30,7 @@ export class ModuleStateRepo {
     this.moduleResolver = moduleResolver
   }
 
-  getStateIfExist(moduleName: string): { [p: string]: DeployedContractBinding } {
+  getStateIfExist(moduleName: string): ModuleState {
     const dir = path.resolve(this.statePath, moduleName, `${this.networkId}_${STATE_NAME}`)
     if (!fs.existsSync(dir)) {
       return {}
@@ -39,7 +41,20 @@ export class ModuleStateRepo {
     })) || {}
   }
 
-  storeNewState(moduleName: string, bindings: { [p: string]: DeployedContractBinding } | null): void {
+  mergeStates(mainModuleState: ModuleState, newModuleState: ModuleState): ModuleState {
+    for (let [bindingName, binding] of Object.entries(newModuleState)) {
+      if (checkIfExist(mainModuleState[bindingName])) {
+        throw new BindingsConflict(`Conflict in bindings when merging multiple state files. \n
+          Check your state files for same binding name. Use --help for more detailed description.`)
+      }
+
+      mainModuleState[bindingName] = binding
+    }
+
+    return mainModuleState
+  }
+
+  storeNewState(moduleName: string, bindings: ModuleState | null): void {
     if (bindings == null) {
       return
     }
@@ -55,7 +70,7 @@ export class ModuleStateRepo {
     return
   }
 
-  private static convertBindingsToMetaData(bindings: { [p: string]: DeployedContractBinding }): { [p: string]: ContractBindingMetaData } {
+  private static convertBindingsToMetaData(bindings: ModuleState): { [p: string]: ContractBindingMetaData } {
     const metaData: { [p: string]: ContractBindingMetaData } = {}
 
     for (let [bindingName, binding] of Object.entries(bindings)) {

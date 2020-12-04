@@ -16,19 +16,33 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
     return "hello"
   })
 
-  Example.afterDeploy(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]) => {
+  Example.afterDeployment(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]>  => {
     const [Example] = bindings
 
     const example = Example.instance()
 
     await example.setExample(100)
-    const value = await example.getExample()
+    let value = await example.getExample()
+
+    await example.setExample(120)
+    value = await example.getExample()
 
     m.registerAction("getName", (): any => {
       return value
     })
 
-    console.log("Result: ", value.toString())
+    return bindings
+  }, Example)
+
+  Example.afterDeployment(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]> => {
+    const [Example] = bindings
+
+    const example = Example.instance()
+
+    await example.setExample(100)
+    await example.setExample(130)
+
+    return bindings
   }, Example)
 
   SecondExample.afterCompile(async (AddressProvider: Binding, ...bindings: CompiledContractBinding[]) => {
@@ -49,10 +63,12 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
     console.log("This is before deployment: ", Example.name)
   }, Example)
 
-  ThirdExample.onChange(async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
+  ThirdExample.onChange(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]> => {
     const [Example] = bindings
 
     console.log("This is on change:", Example.name)
+
+    return bindings
   }, Example)
 })
 

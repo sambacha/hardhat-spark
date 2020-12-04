@@ -143,7 +143,7 @@
 //   // Bindings which will be used as defaults when constructor arguments are bound.
 //   arguments?: NamedArguments;
 //
-//   // An array of glob patterns which define which contracts to exclude from automatic binding.
+//   // An array of glob patterns which define which contracts to exclude from automatic import path from "path";.
 //   excludes?: string[];
 // }
 //
