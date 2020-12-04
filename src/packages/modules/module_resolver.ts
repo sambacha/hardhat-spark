@@ -4,6 +4,7 @@ import {cli} from "cli-ux";
 import {ethers} from "ethers";
 import {Prompter} from "../prompter";
 import {EthTxGenerator} from "../ethereum/transactions/generator";
+import {StateIsBiggerThanModule} from "../types/errors";
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;

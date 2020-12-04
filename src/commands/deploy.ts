@@ -12,6 +12,7 @@ import {ethers} from "ethers";
 import {cli} from "cli-ux";
 import * as command from "../index"
 import {EventHandler} from "../packages/modules/events/handler";
+import {UserError} from "../packages/types/errors";
 
 export default class Deploy extends Command {
   static description = 'Deploy new migrations, difference between current and already deployed.'

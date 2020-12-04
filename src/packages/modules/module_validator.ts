@@ -1,6 +1,7 @@
 import {ContractBinding} from "../../interfaces/mortar";
 import {JsonFragment} from "../types/abi"
 import {handleTypes} from "../types/checker";
+import {AbiMismatch} from "../types/errors";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 

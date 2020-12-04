@@ -1,4 +1,4 @@
-class UserError extends Error{
+export class UserError extends Error{
   public message: string
   constructor(message: string) {
     super();
@@ -6,7 +6,7 @@ class UserError extends Error{
   }
 }
 
-class CliError extends Error{
+export class CliError extends Error{
   public message: string
   constructor(message: string) {
     super();
@@ -14,61 +14,61 @@ class CliError extends Error{
   }
 }
 
-class AbiMismatch extends UserError {
+export class AbiMismatch extends UserError {
     constructor(message: string) {
     super(message);
   }
 }
 
-class BytecodeMismatch extends UserError {
+export class BytecodeMismatch extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class PathNotProvided extends UserError {
+export class PathNotProvided extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class NetworkIdNotProvided extends UserError {
+export class NetworkIdNotProvided extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class BindingsConflict extends UserError {
+export class BindingsConflict extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class StateIsBiggerThanModule extends UserError {
+export class StateIsBiggerThanModule extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class ContractTypeMismatch extends UserError {
+export class ContractTypeMismatch extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class PrivateKeyNotValid extends UserError {
+export class PrivateKeyNotValid extends UserError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class FailedToWriteToFile extends CliError {
+export class FailedToWriteToFile extends CliError {
   constructor(message: string) {
     super(message);
   }
 }
 
-class ContractTypeUnsupported extends UserError {
+export class ContractTypeUnsupported extends UserError {
   constructor(message: string) {
     super(message);
   }

@@ -1,4 +1,5 @@
 import {BigNumber, ethers} from "ethers";
+import {ContractTypeMismatch} from "./errors";
 
 export function handleTypes(bindingName: string, value: any, type: string, internalType: string | undefined): void {
   switch (typeof value) {

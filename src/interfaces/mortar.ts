@@ -15,6 +15,7 @@ import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
 import {GasCalculator} from "../packages/ethereum/gas/calculator";
 import {Prompter} from "../packages/prompter";
 import {BLOCK_CONFIRMATION_NUMBER} from "../packages/ethereum/transactions/executor";
+import {AbiMismatch, BytecodeMismatch} from "../packages/types/errors";
 
 export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 

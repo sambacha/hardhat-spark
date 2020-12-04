@@ -2,6 +2,7 @@ import {Command, flags} from '@oclif/command'
 import ConfigService from "../packages/config/service";
 import {cli} from "cli-ux";
 import * as command from "../index";
+import {UserError} from "../packages/types/errors";
 
 export default class Init extends Command {
   static description = 'Initialize mortar configuration file'

@@ -7,6 +7,7 @@ import {
 } from "../../interfaces/mortar";
 import {ModuleResolver} from "./module_resolver";
 import {checkIfEventsExist, checkIfExist} from "../utils/util";
+import {BindingsConflict} from "../types/errors";
 
 const STATE_DIR_NAME = '.mortar'
 const STATE_NAME = 'deployed_module_state.json'
@@ -44,8 +45,7 @@ export class ModuleStateRepo {
   mergeStates(mainModuleState: ModuleState, newModuleState: ModuleState): ModuleState {
     for (let [bindingName, binding] of Object.entries(newModuleState)) {
       if (checkIfExist(mainModuleState[bindingName])) {
-        throw new BindingsConflict(`Conflict in bindings when merging multiple state files. \n
-          Check your state files for same binding name. Use --help for more detailed description.`)
+        throw new BindingsConflict(`Conflict in bindings when merging multiple state files. \n    Check your state files for same binding name. Use --help for more detailed description.`)
       }
 
       mainModuleState[bindingName] = binding

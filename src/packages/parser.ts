@@ -1,7 +1,7 @@
 import {parseSolFiles} from "./utils/files";
 
 export default class Parser {
-  private sourcePath: string
+  private readonly sourcePath: string
 
   constructor(sourcePath: string) {
     this.sourcePath = sourcePath

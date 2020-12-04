@@ -3,11 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {cli} from "cli-ux";
 import {ethers} from "ethers";
+import {FailedToWriteToFile, PrivateKeyNotValid} from "../types/errors";
 
 const CONFIG_FILENAME = 'mortar-config.json'
 
 export default class ConfigService {
-  private configPath: string
+  private readonly configPath: string
   private config: Config
 
   constructor(dirPath: string) {

@@ -10,6 +10,7 @@ import {Prompter} from "../packages/prompter";
 import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
 import {GasCalculator} from "../packages/ethereum/gas/calculator";
 import {ModuleStateRepo} from "../packages/modules/state_repo";
+import {NetworkIdNotProvided, PathNotProvided, UserError} from "../packages/types/errors";
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current migrations.'
