@@ -5,7 +5,13 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
   switch (typeof value) {
     case "object": {
       if (value?._isBigNumber) {
-        value = value.toString()
+        value = (value as BigNumber).toString()
+        handleString(bindingName, (value as BigNumber).toString(), type)
+        break
+      }
+
+      if (value.type == 'BigNumber') {
+        value = BigNumber.from(value.hex)
         handleString(bindingName, (value as BigNumber).toString(), type)
         break
       }

@@ -2,7 +2,7 @@ export class UserError extends Error{
   public message: string
   constructor(message: string) {
     super();
-    this.message = "User error -" + message
+    this.message = "User error - " + message
   }
 }
 
@@ -10,7 +10,7 @@ export class CliError extends Error{
   public message: string
   constructor(message: string) {
     super();
-    this.message = "CLI error -" + message
+    this.message = "CLI error - " + message
   }
 }
 
@@ -69,6 +69,12 @@ export class FailedToWriteToFile extends CliError {
 }
 
 export class ContractTypeUnsupported extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class StateRegistryDialectNotSet extends CliError {
   constructor(message: string) {
     super(message);
   }

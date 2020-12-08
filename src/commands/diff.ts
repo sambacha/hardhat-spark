@@ -9,7 +9,7 @@ import ConfigService from "../packages/config/service";
 import {Prompter} from "../packages/prompter";
 import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
 import {GasCalculator} from "../packages/ethereum/gas/calculator";
-import {ModuleStateRepo} from "../packages/modules/state_repo";
+import {ModuleStateRepo} from "../packages/modules/states/state_repo";
 import {NetworkIdNotProvided, PathNotProvided, UserError} from "../packages/types/errors";
 
 export default class Diff extends Command {
@@ -67,9 +67,9 @@ export default class Diff extends Command {
     const prompter = new Prompter()
 
     const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
-    const moduleState = new ModuleStateRepo(flags.networkId, currentPath, moduleResolver)
+    const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath)
 
-    await command.diff(resolvedPath, states, moduleResolver, moduleState)
+    await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo)
   }
 
   async catch(error: Error) {

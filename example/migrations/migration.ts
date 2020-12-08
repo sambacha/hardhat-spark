@@ -1,3 +1,6 @@
+import * as path from "path";
+require('dotenv').config({path: path.resolve(__dirname + './../.env')});
+
 import {
   ModuleBuilder,
   module,
@@ -5,9 +8,26 @@ import {
   DeployedContractBinding, CompiledContractBinding, ContractBinding,
 } from "../../src/interfaces/mortar"
 import {BigNumber} from "ethers";
+import {FileSystemStateRegistry} from "../../src/packages/modules/states/registry/file_system";
+import {RemoteBucketStorage} from "../../src/packages/modules/states/registry/remote_bucket_storage";
+
+const {
+  GOOGLE_ACCESS_KEY,
+  GOOGLE_SECRET_ACCESS_KEY,
+} = process.env
 
 export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) => {
-  // Bind contracts for deployment.
+  // const fileSystem = new FileSystemStateRegistry("./")
+  // m.setRegistry(fileSystem)
+  const remoteBucketStorage = new RemoteBucketStorage(
+    "https://storage.googleapis.com",
+    GOOGLE_ACCESS_KEY || "",
+    GOOGLE_SECRET_ACCESS_KEY || "",
+    "europe-west3",
+    "mortar_state_bucket"
+  )
+  m.setRegistry(remoteBucketStorage)
+
   const Example = m.contract('Example', -1, "2", 3, "4", true, BigNumber.from(5), "0xdd2fd4581271e230360230f9337d5c0430bf44c0");
   const SecondExample = m.contract('SecondExample', Example, ["some", "random", "string"], [["hello"]], 123);
   const ThirdExample = m.contract('ThirdExample', SecondExample)
@@ -16,7 +36,7 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
     return "hello"
   })
 
-  Example.afterDeployment(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]>  => {
+  Example.afterDeployment(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]> => {
     const [Example] = bindings
 
     const example = Example.instance()

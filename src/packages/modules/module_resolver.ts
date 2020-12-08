@@ -96,16 +96,16 @@ export class ModuleResolver {
   }
 
   resolve(
-    currentBindings: { [p: string]: CompiledContractBinding },
-    deployedBindings: { [p: string]: DeployedContractBinding }
+    currentBindings: { [p: string]: DeployedContractBinding | CompiledContractBinding },
+    registryBindings: { [p: string]: DeployedContractBinding }
   ): { [p: string]: DeployedContractBinding } | null {
     let currentBindingsLength = 0
     let deployedBindingsLength = 0
     if (checkIfExist(currentBindings)) {
       currentBindingsLength = Object.keys(currentBindings).length
     }
-    if (checkIfExist(deployedBindings)) {
-      deployedBindingsLength = Object.keys(deployedBindings).length
+    if (checkIfExist(registryBindings)) {
+      deployedBindingsLength = Object.keys(registryBindings).length
     }
 
     if (currentBindingsLength < deployedBindingsLength) {
@@ -115,17 +115,17 @@ export class ModuleResolver {
     let resolvedBindings: { [p: string]: DeployedContractBinding } = {}
     let i = 0
     while (i < deployedBindingsLength) {
-      let bindingName = Object.keys(deployedBindings)[i]
-      let deployedBinding = deployedBindings[bindingName]
+      let bindingName = Object.keys(registryBindings)[i]
+      let registryBinding = registryBindings[bindingName]
       let currentBinding = currentBindings[bindingName]
 
       resolvedBindings[bindingName] = new DeployedContractBinding(
         // contract metadata
-        deployedBinding.name,
-        deployedBinding.args,
-        deployedBinding.bytecode,
-        deployedBinding.abi,
-        deployedBinding.txData,
+        registryBinding.name,
+        registryBinding.args,
+        registryBinding.bytecode,
+        registryBinding.abi,
+        registryBinding.txData,
 
         currentBinding.events,
         this.signer,
@@ -134,14 +134,15 @@ export class ModuleResolver {
       )
 
       // @TODO: is there more cases where we want to redeploy bindings
-      if (deployedBinding.bytecode != currentBinding.bytecode) {
+      if (registryBinding.bytecode != currentBinding.bytecode) {
+        const txData = (currentBinding as DeployedContractBinding)?.txData || {}
         resolvedBindings[bindingName] = new DeployedContractBinding(
           // current metadata
           currentBinding.name,
           currentBinding.args,
           currentBinding.bytecode,
           currentBinding.abi,
-          {} as TransactionData,
+          txData,
 
           // event hooks
           currentBinding.events,
@@ -158,13 +159,14 @@ export class ModuleResolver {
       let bindingName = Object.keys(currentBindings)[i]
       let currentBinding = currentBindings[bindingName]
 
+      const txData = (currentBinding as DeployedContractBinding)?.txData || {}
       resolvedBindings[bindingName] = new DeployedContractBinding(
         // current metadata
         currentBinding.name,
         currentBinding.args,
         currentBinding.bytecode,
         currentBinding.abi,
-        {} as TransactionData,
+        txData,
 
         currentBinding.events,
         this.signer,

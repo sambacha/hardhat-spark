@@ -1,4 +1,4 @@
-import {ModuleStateRepo} from "../packages/modules/state_repo";
+import {ModuleStateRepo} from "../packages/modules/states/state_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
 import {HardhatCompiler} from "../packages/ethereum/compiler/hardhat";
 import {checkIfExist, checkIfSameInputs} from "../packages/utils/util";
@@ -16,6 +16,7 @@ import {GasCalculator} from "../packages/ethereum/gas/calculator";
 import {Prompter} from "../packages/prompter";
 import {BLOCK_CONFIRMATION_NUMBER} from "../packages/ethereum/transactions/executor";
 import {AbiMismatch, BytecodeMismatch} from "../packages/types/errors";
+import {IStateRegistryResolver} from "../packages/modules/states/registry";
 
 export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 
@@ -327,7 +328,7 @@ export class ContractInstance {
 
       if (checkIfExist(currentInputs) &&
         checkIfSameInputs(currentInputs, fragment.name, args) && checkIfExist(contractOutput)) {
-        cli.info("Contract function already executed: ", fragment.name, ...args ,"... skipping")
+        cli.info("Contract function already executed: ", fragment.name, ...args, "... skipping")
 
         this.deployedBinding.contractTxProgress = ++contractTxIterator
         return contractOutput
@@ -391,19 +392,19 @@ export class ModuleBuilder extends ModuleUse {
   private opts: ModuleOptions;
   private bindings: { [name: string]: ContractBinding };
   private actions: { [name: string]: Action };
+  private resolver: IStateRegistryResolver | null;
+  private registry: IStateRegistryResolver | null;
 
-  private moduleFunction: ModuleBuilderFn
-
-  constructor(fn: ModuleBuilderFn, opts?: ModuleOptions) {
+  constructor(opts?: ModuleOptions) {
     super()
     this.opts = {params: {}}
     this.bindings = {}
     this.actions = {}
+    this.resolver = null
+    this.registry = null
     if (typeof opts !== 'undefined') {
       this.opts = opts as ModuleOptions
     }
-
-    this.moduleFunction = fn
   }
 
   // use links all definitions from the provided Module
@@ -453,9 +454,17 @@ export class ModuleBuilder extends ModuleUse {
     return action
   }
 
-  bindModule(m: Module): void {
+  async bindModule(m: Module): Promise<void> {
     const bindings = m.getAllBindings()
     const actions = m.getAllActions()
+
+    const networkId = process.env.MORTAR_NETWORK_ID || ""
+    const resolverBindings = await m.getResolver()?.getModuleState(+networkId, m.name) || {}
+    for (let [bindingName, binding] of Object.entries(resolverBindings)) {
+      if (!checkIfExist(this.bindings[bindingName])) {
+        this.bindings[bindingName] = binding
+      }
+    }
 
     for (let [bindingName, binding] of Object.entries(bindings)) {
       if (!checkIfExist(this.bindings[bindingName])) {
@@ -482,12 +491,6 @@ export class ModuleBuilder extends ModuleUse {
     return this.actions
   }
 
-  async triggerModuleBuilderFn(): Promise<void> {
-    await this.moduleFunction(this)
-
-    return
-  }
-
   use<T extends Module>(m: T, opts?: ModuleOptions): T {
     this.bindings = m.getAllBindings()
     this.actions = m.getAllActions()
@@ -495,23 +498,44 @@ export class ModuleBuilder extends ModuleUse {
     return m
   }
 
-  // addResolver(resolver: AddressResolver): void;
-  //
-  // addRegistry(registry: AddressRegistry): void;
+  setResolver(resolver: IStateRegistryResolver): void {
+    this.resolver = resolver
+  }
+
+  getResolver(): IStateRegistryResolver | null {
+    return this.resolver
+  }
+
+  setRegistry(registry: IStateRegistryResolver): void {
+    this.registry = registry
+  }
+
+  getRegistry(): IStateRegistryResolver | null {
+    return this.registry
+  }
 }
 
 export class Module {
+  readonly name: string;
   private opts: ModuleOptions;
   private bindings: { [name: string]: CompiledContractBinding };
   private actions: { [name: string]: Action };
+  private registry: IStateRegistryResolver | null;
+  private resolver: IStateRegistryResolver | null;
 
   constructor(
+    moduleName: string,
     bindings: { [name: string]: CompiledContractBinding },
     actions: { [name: string]: Action },
+    registry: IStateRegistryResolver | null,
+    resolver: IStateRegistryResolver | null,
   ) {
+    this.name = moduleName
     this.opts = {params: {}}
     this.bindings = bindings
     this.actions = actions
+    this.registry = registry
+    this.resolver = resolver
   }
 
   // call(name: string, ...args: any[]): void;
@@ -532,6 +556,22 @@ export class Module {
     return this.actions
   }
 
+  getRegistry(): IStateRegistryResolver | null {
+    return this.registry
+  }
+
+  setRegistry(registry: IStateRegistryResolver): void {
+    this.registry = registry
+  }
+
+  getResolver(): IStateRegistryResolver | null {
+    return this.resolver
+  }
+
+  setResolver(resolver: IStateRegistryResolver): void {
+    this.resolver = resolver
+  }
+
   getAction(name: string): Action {
     return this.actions[name]
   }
@@ -544,15 +584,18 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
   const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
 
   const configService = new ConfigService(currentPath)
-  const moduleBuilder = new ModuleBuilder(fn)
-  await moduleBuilder.triggerModuleBuilderFn()
+  const moduleBuilder = new ModuleBuilder()
+  await fn(moduleBuilder)
 
   const gasCalculator = new GasCalculator(provider)
   const txGenerator = await new EthTxGenerator(configService, gasCalculator, +networkId, provider)
 
   const prompter = new Prompter()
   const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
-  const stateRepo = new ModuleStateRepo(+networkId, currentPath, moduleResolver)
+
+  const stateRepo = new ModuleStateRepo(+networkId, currentPath)
+  stateRepo.setStateRegistry(moduleBuilder.getRegistry())
+
   const compiler = new HardhatCompiler()
   const moduleValidator = new ModuleValidator()
 
@@ -577,7 +620,7 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
 
   moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
 
-  let oldModuleStateBindings = stateRepo.getStateIfExist(moduleName) as { [p: string]: CompiledContractBinding }
+  let oldModuleStateBindings = await stateRepo.getStateIfExist(moduleName) as { [p: string]: CompiledContractBinding }
   if (!checkIfExist(oldModuleStateBindings)) {
     oldModuleStateBindings = {}
   }
@@ -594,8 +637,11 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
   }
 
   return new Module(
+    moduleName,
     newModuleBindings,
-    moduleBuilder.getAllActions()
+    moduleBuilder.getAllActions(),
+    moduleBuilder.getRegistry(),
+    moduleBuilder.getResolver(),
   )
 }
 

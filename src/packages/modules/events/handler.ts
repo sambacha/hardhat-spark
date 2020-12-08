@@ -5,7 +5,7 @@ import {
   DeployedContractBinding
 } from "../../../interfaces/mortar";
 import {checkIfExist} from "../../utils/util";
-import {ModuleStateRepo} from "../state_repo";
+import {ModuleStateRepo} from "../states/state_repo";
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo
@@ -14,7 +14,7 @@ export class EventHandler {
   }
 
   static async executeBeforeCompileEventHook(binding: ContractBinding, bindings: { [p: string]: ContractBinding }): Promise<void> {
-    const events = binding.events.beforeCompile
+    const events = binding?.events?.beforeCompile
     if (!checkIfExist(events)) {
       return
     }
@@ -34,32 +34,32 @@ export class EventHandler {
   }
 
    static async executeAfterCompileEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
-    const events = binding.events.afterCompile
+    const events = binding?.events?.afterCompile
     await this.handleCompiledBindingsEvents(events, binding, bindings)
   }
 
    static async executeBeforeDeploymentEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
-    const events = binding.events.beforeDeployment
+    const events = binding?.events?.beforeDeployment
     await this.handleCompiledBindingsEvents(events, binding, bindings)
   }
 
    async executeAfterDeploymentEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding.events.afterDeployment
+    const events = binding?.events?.afterDeployment
     await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
   }
 
    static async executeBeforeDeployEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
-    const events = binding.events.beforeDeploy
+    const events = binding?.events?.beforeDeploy
     await this.handleCompiledBindingsEvents(events, binding, bindings)
   }
 
    async executeAfterDeployEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding.events.afterDeploy
+    const events = binding?.events?.afterDeploy
     await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
   }
 
    async executeOnChangeEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding.events.onChange
+    const events = binding?.events?.onChange
     await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
   }
 
@@ -90,7 +90,7 @@ export class EventHandler {
         bindings[name] = bind
       }
 
-      this.moduleState.storeNewState(moduleName, bindings)
+      await this.moduleState.storeNewState(moduleName, bindings)
     }
   }
 

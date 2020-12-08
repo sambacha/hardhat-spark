@@ -5,18 +5,18 @@ import ConfigService from "./packages/config/service";
 import {OutputFlags} from "@oclif/parser/lib/parse";
 import {DeployedContractBinding, Module} from "./interfaces/mortar";
 import {checkIfExist} from "./packages/utils/util";
-import {ModuleStateRepo} from "./packages/modules/state_repo";
+import {ModuleStateRepo} from "./packages/modules/states/state_repo";
 import {ModuleResolver} from "./packages/modules/module_resolver";
 import {EthTxGenerator} from "./packages/ethereum/transactions/generator";
 import {Prompter} from "./packages/prompter";
 import {TxExecutor} from "./packages/ethereum/transactions/executor";
+import {StateResolver} from "./packages/modules/states/state_resolver";
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   //@TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
   configService.generateAndSaveConfig(flags.privateKey as string)
 
   cli.info("You have successfully configured mortar.")
-  // @TODO: iterate over abi and generate TS interface
 }
 
 export async function deploy(
@@ -30,18 +30,19 @@ export async function deploy(
 ) {
   const modules = await require(migrationFilePath)
 
-  for (let [moduleName, module] of Object.entries(modules)) {
-    module = await module
+  for (let [moduleName, moduleFunc] of Object.entries(modules)) {
+    const module = (await moduleFunc) as Module
+    moduleStateRepo.setStateRegistry(module.getRegistry())
 
     cli.info("\nDeploy module - ", moduleName)
-    let deployedState = moduleStateRepo.getStateIfExist(moduleName)
+    let stateRegistry = await moduleStateRepo.getStateIfExist(moduleName)
     for (let moduleStateName of states) {
-      const moduleState = moduleStateRepo.getStateIfExist(moduleStateName)
+      const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName)
 
-      deployedState = moduleStateRepo.mergeStates(deployedState, moduleState)
+      stateRegistry = StateResolver.mergeStates(stateRegistry, moduleState)
     }
 
-    const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve((module as Module).getAllBindings(), deployedState)
+    const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve(module.getAllBindings(), stateRegistry)
     if (!checkIfExist(resolvedBindings)) {
       cli.info("Nothing to deploy")
       process.exit(0)
@@ -62,14 +63,17 @@ export async function diff(resolvedPath: string, states: string[], moduleResolve
     const mod = await module as Module
     const moduleBindings = mod.getAllBindings()
 
-    let deployedState = moduleStateRepo.getStateIfExist(moduleName)
-    for (let moduleStateName of states) {
-      const moduleState = moduleStateRepo.getStateIfExist(moduleStateName)
+    moduleStateRepo.setStateRegistry(mod.getRegistry())
 
-      deployedState = moduleStateRepo.mergeStates(deployedState, moduleState)
+    let deployedState = await moduleStateRepo.getStateIfExist(moduleName)
+    for (let moduleStateName of states) {
+      const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName)
+
+      deployedState = StateResolver.mergeStates(deployedState, moduleState)
     }
 
     if (moduleResolver.checkIfDiff(deployedState, moduleBindings)) {
+      cli.info(`\nModule: ${moduleName}`)
       moduleResolver.printDiffParams(deployedState, moduleBindings)
     }
   }

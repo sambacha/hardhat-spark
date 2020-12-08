@@ -1,14 +1,15 @@
 import {DeployedContractBinding} from "../../../interfaces/mortar";
 import {Prompter} from "../../prompter";
-import {ModuleStateRepo} from "../../modules/state_repo";
+import {ModuleStateRepo} from "../../modules/states/state_repo";
 import {checkIfExist} from "../../utils/util";
 import {EthTxGenerator} from "./generator";
-import {providers} from "ethers";
+import {BigNumber, providers} from "ethers";
 import {defaultAbiCoder as abiCoder} from "@ethersproject/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {JsonFragmentType} from "../../types/abi";
 import {cli} from "cli-ux";
 import {EventHandler} from "../../modules/events/handler";
+import {ContractTypeMismatch, ContractTypeUnsupported} from "../../types/errors";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 export const BLOCK_CONFIRMATION_NUMBER = 0
@@ -48,7 +49,7 @@ export class TxExecutor {
 
       await this.eventHandler.executeAfterDeploymentEventHook(moduleName, bindings[name], bindings)
 
-      this.moduleState.storeNewState(moduleName, bindings)
+      await this.moduleState.storeNewState(moduleName, bindings)
     }
 
     return
@@ -75,6 +76,14 @@ export class TxExecutor {
         case "object": {
           if (binding.args[i]?._isBigNumber) {
             let value = binding.args[i].toString()
+
+            values.push(value)
+            types.push(constructorFragmentInputs[i].type)
+            break
+          }
+
+          if (binding.args[i]?.type == 'BigNumber') {
+            let value = BigNumber.from(binding.args[i].hex).toString()
 
             values.push(value)
             types.push(constructorFragmentInputs[i].type)

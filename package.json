@@ -26,6 +26,7 @@
     "@types/chai": "^4",
     "@types/mocha": "^5",
     "@types/node": "^10",
+    "aws-sdk": "^2.805.0",
     "chai": "^4",
     "ethereum-waffle": "^3.2.0",
     "globby": "^10",

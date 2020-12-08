@@ -10,4 +10,5 @@ node_modules
 ./example/artifacts
 ./example/cache
 ./example/.mortar
+./example/.env
 ./.mortar

@@ -1,6 +1,6 @@
 import {Command, flags} from '@oclif/command'
 import * as path from "path";
-import {ModuleStateRepo} from "../packages/modules/state_repo";
+import {ModuleStateRepo} from "../packages/modules/states/state_repo";
 import {ModuleResolver} from "../packages/modules/module_resolver";
 import {checkIfExist} from "../packages/utils/util";
 import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
@@ -88,7 +88,7 @@ export default class Deploy extends Command {
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider)
 
     const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
-    const moduleState = new ModuleStateRepo(flags.networkId, currentPath, moduleResolver)
+    const moduleState = new ModuleStateRepo(flags.networkId, currentPath)
 
     const eventHandler = new EventHandler(moduleState)
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler)
