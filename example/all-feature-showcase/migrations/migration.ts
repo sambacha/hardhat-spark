@@ -6,10 +6,9 @@ import {
   module,
   Binding,
   DeployedContractBinding, CompiledContractBinding, ContractBinding,
-} from "../../src/interfaces/mortar"
+} from "../../../src/interfaces/mortar"
 import {BigNumber} from "ethers";
-import {FileSystemStateRegistry} from "../../src/packages/modules/states/registry/file_system";
-import {RemoteBucketStorage} from "../../src/packages/modules/states/registry/remote_bucket_storage";
+import {RemoteBucketStorage} from "../../../src/packages/modules/states/registry/remote_bucket_storage";
 
 const {
   GOOGLE_ACCESS_KEY,

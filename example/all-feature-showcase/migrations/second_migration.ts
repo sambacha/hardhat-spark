@@ -1,4 +1,4 @@
-import {module, ModuleBuilder} from "../../src/interfaces/mortar";
+import {module, ModuleBuilder} from "../../../src/interfaces/mortar";
 // @ts-ignore
 import {ExampleModule} from "./migration";
 
