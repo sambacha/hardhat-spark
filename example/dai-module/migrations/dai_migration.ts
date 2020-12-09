@@ -15,10 +15,10 @@ export const DaiModule = module("DaiModule", async (m: ModuleBuilder) => {
 
   const remoteBucketStorage = new RemoteBucketStorage(
     "https://storage.googleapis.com",
+    "europe-west3",
+    "mortar_state_bucket",
     GOOGLE_ACCESS_KEY || "",
     GOOGLE_SECRET_ACCESS_KEY || "",
-    "europe-west3",
-    "mortar_state_bucket"
   )
   m.setRegistry(remoteBucketStorage)
 })

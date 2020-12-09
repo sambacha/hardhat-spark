@@ -20,10 +20,10 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
   // m.setRegistry(fileSystem)
   const remoteBucketStorage = new RemoteBucketStorage(
     "https://storage.googleapis.com",
+    "europe-west3",
+    "mortar_state_bucket",
     GOOGLE_ACCESS_KEY || "",
     GOOGLE_SECRET_ACCESS_KEY || "",
-    "europe-west3",
-    "mortar_state_bucket"
   )
   m.setRegistry(remoteBucketStorage)
 

@@ -7,7 +7,7 @@ export class RemoteBucketStorage implements IStateRegistryResolver {
   private readonly bucketName: string
   private readonly accessKey: string
 
-  constructor(endpoint: string, accessKey: string, secretAccessKey: string, region: string, bucketName: string) {
+  constructor(endpoint: string, region: string, bucketName: string, accessKey: string = "", secretAccessKey: string = "") {
     this.bucketName = bucketName
     this.accessKey = accessKey
 
@@ -34,6 +34,11 @@ export class RemoteBucketStorage implements IStateRegistryResolver {
         req.httpRequest.headers["Authorization"] =
           req.httpRequest.headers["Authorization"]
             .replace("Credential=/", `Credential=${this.accessKey}`)
+
+        if (this.accessKey == "") {
+          delete req.httpRequest.headers["Authorization"]
+          req.httpRequest.headers["public-read"] = "public-read"
+        }
       })
 
       const object = await req.promise()
