@@ -1,33 +1,44 @@
-import {CompiledContractBinding, DeployedContractBinding, TransactionData} from "../../interfaces/mortar";
+import {
+  CompiledContractBinding,
+  DeployedContractBinding,
+  Events,
+  StatefulEvent,
+  TransactionData,
+  Event, ContractBinding, ContractBindingMetaData,
+} from "../../interfaces/mortar";
 import {checkIfExist} from "../utils/util"
 import {cli} from "cli-ux";
 import {ethers} from "ethers";
 import {Prompter} from "../prompter";
 import {EthTxGenerator} from "../ethereum/transactions/generator";
-import {StateIsBiggerThanModule} from "../types/errors";
+import {StateIsBiggerThanModule, UserError} from "../types/errors";
+import {ModuleState} from "./states/module";
+import {ModuleStateRepo} from "./states/state_repo";
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
   private readonly prompter: Prompter;
   private readonly txGenerator: EthTxGenerator;
+  private readonly moduleStateRepo: ModuleStateRepo;
 
-  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: Prompter, txGenerator: EthTxGenerator) {
+  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: Prompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo) {
     this.signer = new ethers.Wallet(privateKey, provider)
     this.prompter = prompter
     this.txGenerator = txGenerator
+    this.moduleStateRepo = moduleStateRepo
   }
 
-  checkIfDiff(oldBindings: { [p: string]: CompiledContractBinding }, newBindings: { [p: string]: CompiledContractBinding }): boolean {
+  checkIfDiff(oldModuleState: ModuleState, newModuleStates: ModuleState): boolean {
     // @TODO(filip): be more specific about type of conflict. What fields needs to mismatch in order to consider this different
     // if args match also
 
     let oldBindingsLength = 0
     let newBindingsLength = 0
-    if (checkIfExist(oldBindings)) {
-      oldBindingsLength = Object.keys(oldBindings).length
+    if (checkIfExist(oldModuleState)) {
+      oldBindingsLength = Object.keys(oldModuleState).length
     }
-    if (checkIfExist(newBindings)) {
-      newBindingsLength = Object.keys(newBindings).length
+    if (checkIfExist(newModuleStates)) {
+      newBindingsLength = Object.keys(newModuleStates).length
     }
 
     if (newBindingsLength != oldBindingsLength) {
@@ -36,14 +47,30 @@ export class ModuleResolver {
 
     let i = 0
     while (i < oldBindingsLength) {
-      const oldBinding: CompiledContractBinding = oldBindings[Object.keys(oldBindings)[i]]
-      const newBinding: CompiledContractBinding = newBindings[Object.keys(oldBindings)[i]]
+      let oldModuleElement: DeployedContractBinding | StatefulEvent = oldModuleState[Object.keys(oldModuleState)[i]]
+      let newModuleElement: CompiledContractBinding | StatefulEvent = newModuleStates[Object.keys(newModuleStates)[i]]
 
-      if (oldBinding.bytecode != newBinding.bytecode) {
-        return true
+      // @ts-ignore
+      if (checkIfExist(oldModuleElement?.bytecode) && checkIfExist(newModuleElement?.bytecode)) {
+        oldModuleElement = (oldModuleElement as DeployedContractBinding)
+        newModuleElement = (newModuleElement as CompiledContractBinding)
+
+        if (oldModuleElement.bytecode != newModuleElement .bytecode) {
+          return true
+        }
+
+        if (!checkArgs(oldModuleElement.args, newModuleElement.args)) {
+          return true
+        }
+
+        i++
+        continue
       }
 
-      if (!checkArgs(oldBinding.args, newBinding.args)) {
+      oldModuleElement = (oldModuleElement as StatefulEvent)
+      newModuleElement = (newModuleElement as StatefulEvent)
+
+      if (oldModuleElement.event.name != newModuleElement.event.name) {
         return true
       }
 
@@ -53,42 +80,56 @@ export class ModuleResolver {
     return false
   }
 
-  printDiffParams(oldBindings: { [p: string]: CompiledContractBinding }, newBindings: { [p: string]: CompiledContractBinding }): void {
-    if (!this.checkIfDiff(oldBindings, newBindings)) {
+  printDiffParams(oldModuleStates: ModuleState, newModuleStates: ModuleState): void {
+    if (!this.checkIfDiff(oldModuleStates, newModuleStates)) {
       return
     }
 
-    let oldBindingsLength = 0
-    let newBindingsLength = 0
-    if (checkIfExist(oldBindings)) {
-      oldBindingsLength = Object.keys(oldBindings).length
+    let oldModuleStatesLength = 0
+    let newModuleStatesLength = 0
+    if (checkIfExist(oldModuleStates)) {
+      oldModuleStatesLength = Object.keys(oldModuleStates).length
     }
-    if (checkIfExist(newBindings)) {
-      newBindingsLength = Object.keys(newBindings).length
+    if (checkIfExist(newModuleStates)) {
+      newModuleStatesLength = Object.keys(newModuleStates).length
     }
-    if (newBindingsLength < oldBindingsLength) {
+    if (newModuleStatesLength < oldModuleStatesLength) {
       cli.info("Currently deployed module is bigger than current module.")
       cli.exit(0)
     }
 
     let i = 0
-    while (i < oldBindingsLength) {
-      let oldBinding = oldBindings[Object.keys(oldBindings)[i]]
-      let newBinding = newBindings[Object.keys(oldBindings)[i]]
+    while (i < oldModuleStatesLength) {
+      let oldModuleElement: DeployedContractBinding | StatefulEvent = oldModuleStates[Object.keys(oldModuleStates)[i]]
+      let newModuleElement: CompiledContractBinding | StatefulEvent = newModuleStates[Object.keys(newModuleStates)[i]]
 
-      if (oldBinding.bytecode != newBinding.bytecode) {
-        cli.info("~", newBinding.name)
-        printArgs(newBinding.args, "  ");
+      // @ts-ignore
+      if (checkIfExist(oldModuleElement?.bytecode) && checkIfExist(newModuleElement?.bytecode)) {
+        oldModuleElement = oldModuleElement as DeployedContractBinding
+        newModuleElement = newModuleElement as CompiledContractBinding
+
+        if (oldModuleElement.bytecode != newModuleElement.bytecode) {
+          cli.info("~", newModuleElement.name)
+          printArgs(newModuleElement.args, "  ");
+        }
+
+        i++
+        continue
       }
 
       i++
     }
 
-    while (i < newBindingsLength) {
-      let newBinding = newBindings[Object.keys(newBindings)[i]]
+    while (i < newModuleStatesLength) {
+      let newModuleElement: CompiledContractBinding | StatefulEvent = newModuleStates[Object.keys(newModuleStates)[i]]
 
-      cli.info("+", newBinding.name)
-      printArgs(newBinding.args, "  ");
+      // @ts-ignore
+      if (checkIfExist(newModuleElement?.bytecode) && checkIfExist(newModuleElement?.bytecode)) {
+        newModuleElement = newModuleElement as CompiledContractBinding
+
+        cli.info("+", newModuleElement.name)
+        printArgs(newModuleElement.args, "  ");
+      }
       i++
     }
 
@@ -96,87 +137,224 @@ export class ModuleResolver {
   }
 
   resolve(
-    currentBindings: { [p: string]: DeployedContractBinding | CompiledContractBinding },
-    registryBindings: { [p: string]: DeployedContractBinding }
-  ): { [p: string]: DeployedContractBinding } | null {
-    let currentBindingsLength = 0
-    let deployedBindingsLength = 0
-    if (checkIfExist(currentBindings)) {
-      currentBindingsLength = Object.keys(currentBindings).length
-    }
-    if (checkIfExist(registryBindings)) {
-      deployedBindingsLength = Object.keys(registryBindings).length
+    currentBindings: { [p: string]: CompiledContractBinding },
+    currentEvents: Events,
+    moduleStateFile: ModuleState
+  ): ModuleState {
+    let moduleState: { [p: string]: CompiledContractBinding | StatefulEvent } = {}
+
+    for (let [bindingName, binding] of Object.entries(currentBindings)) {
+      if (checkIfExist(moduleState[bindingName])) {
+        continue
+      }
+
+      moduleState = ModuleResolver.resolveContractsAndEvents(moduleState, currentBindings, binding, currentEvents)
     }
 
-    if (currentBindingsLength < deployedBindingsLength) {
-      throw new StateIsBiggerThanModule("Current module state files has more bindings than current one.")
+    let moduleStateLength = 0
+    let moduleStateFileLength = 0
+    if (checkIfExist(moduleState)) {
+      moduleStateLength = Object.keys(moduleState).length
+    }
+    if (checkIfExist(moduleStateFile)) {
+      moduleStateFileLength = Object.keys(moduleStateFile).length
     }
 
-    let resolvedBindings: { [p: string]: DeployedContractBinding } = {}
+    if (moduleStateLength < moduleStateFileLength) {
+      throw new StateIsBiggerThanModule("Module state files has more bindings than current one.")
+    }
+
+    let resolvedModuleState: ModuleState = {}
     let i = 0
-    while (i < deployedBindingsLength) {
-      let bindingName = Object.keys(registryBindings)[i]
-      let registryBinding = registryBindings[bindingName]
-      let currentBinding = currentBindings[bindingName]
+    const moduleElementNames = Object.keys(moduleState)
+    while (i < moduleStateLength) {
+      let moduleElementName = moduleElementNames[i]
+      let moduleStateElement = moduleState[moduleElementName]
 
-      resolvedBindings[bindingName] = new DeployedContractBinding(
-        // contract metadata
-        registryBinding.name,
-        registryBinding.args,
-        registryBinding.bytecode,
-        registryBinding.abi,
-        registryBinding.txData,
+      let stateFileElement = moduleStateFile[moduleElementName]
+      stateFileElement = stateFileElement as DeployedContractBinding
+      if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
+        if (!(moduleStateElement instanceof ContractBinding)) {
+          throw new UserError("Module and module state file didn't match element.")
+        }
 
-        currentBinding.events,
-        this.signer,
-        this.prompter,
-        this.txGenerator
-      )
+        if (stateFileElement.bytecode != moduleStateElement.bytecode) {
+          const txData = (moduleStateElement as DeployedContractBinding)?.txData || {}
+          resolvedModuleState[moduleElementName] = new DeployedContractBinding(
+            // current metadata
+            moduleStateElement.name,
+            moduleStateElement.args,
+            moduleStateElement.bytecode,
+            moduleStateElement.abi,
+            txData,
 
-      // @TODO: is there more cases where we want to redeploy bindings
-      if (registryBinding.bytecode != currentBinding.bytecode) {
-        const txData = (currentBinding as DeployedContractBinding)?.txData || {}
-        resolvedBindings[bindingName] = new DeployedContractBinding(
+            // event hooks
+            moduleStateElement.events,
+            this.signer,
+            this.prompter,
+            this.txGenerator,
+            this.moduleStateRepo
+          )
+
+          i++
+          continue
+        }
+
+        resolvedModuleState[moduleElementName] = new DeployedContractBinding(
           // current metadata
-          currentBinding.name,
-          currentBinding.args,
-          currentBinding.bytecode,
-          currentBinding.abi,
+          stateFileElement.name,
+          stateFileElement.args,
+          stateFileElement.bytecode,
+          stateFileElement.abi,
+          stateFileElement.txData,
+
+          // event hooks
+          moduleStateElement.events,
+          this.signer,
+          this.prompter,
+          this.txGenerator,
+          this.moduleStateRepo
+        )
+        i++
+        continue
+      }
+
+      stateFileElement = stateFileElement as unknown as StatefulEvent
+      if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement.event)) {
+        if (!(moduleStateElement instanceof StatefulEvent)) {
+          throw new UserError("Module and module state file didn't match element.")
+        }
+
+        stateFileElement.event = moduleStateElement.event
+        resolvedModuleState[moduleElementName] = stateFileElement
+
+        i++
+        continue
+      }
+
+      if (moduleStateElement instanceof ContractBinding) {
+        const txData = (moduleStateElement as DeployedContractBinding)?.txData || {}
+        resolvedModuleState[moduleElementName] = new DeployedContractBinding(
+          // current metadata
+          moduleStateElement.name,
+          moduleStateElement.args,
+          moduleStateElement.bytecode,
+          moduleStateElement.abi,
           txData,
 
           // event hooks
-          currentBinding.events,
+          moduleStateElement.events,
           this.signer,
           this.prompter,
-          this.txGenerator
+          this.txGenerator,
+          this.moduleStateRepo
         )
+      }
+
+      if (moduleStateElement instanceof StatefulEvent) {
+        resolvedModuleState[moduleElementName] = moduleStateElement
       }
 
       i++
     }
 
-    while (i < currentBindingsLength) {
-      let bindingName = Object.keys(currentBindings)[i]
-      let currentBinding = currentBindings[bindingName]
+    return resolvedModuleState
+  }
 
-      const txData = (currentBinding as DeployedContractBinding)?.txData || {}
-      resolvedBindings[bindingName] = new DeployedContractBinding(
-        // current metadata
-        currentBinding.name,
-        currentBinding.args,
-        currentBinding.bytecode,
-        currentBinding.abi,
-        txData,
+  private static resolveContractsAndEvents(
+    moduleState: { [p: string]: CompiledContractBinding | StatefulEvent },
+    bindings: { [p: string]: CompiledContractBinding },
+    binding: CompiledContractBinding,
+    events: Events,
+  ): { [p: string]: CompiledContractBinding | StatefulEvent } {
+    for (let arg of binding.args) {
+      if (!checkIfExist(arg?.name)) {
+        continue
+      }
+      const argBinding = bindings[arg.name]
+      if (!checkIfExist(argBinding)) {
+        continue
+      }
 
-        currentBinding.events,
-        this.signer,
-        this.prompter,
-        this.txGenerator
-      )
-      i++
+      this.resolveContractsAndEvents(moduleState, bindings, argBinding, events)
     }
 
-    return resolvedBindings
+    // @TODO somehow their is some number...
+    this.resolveBeforeDeployEvents(moduleState, binding, events)
+    moduleState[binding.name] = binding
+    this.resolveAfterDeployEvents(moduleState, binding, events)
+
+    return moduleState
+  }
+
+  private static resolveBeforeDeployEvents(
+    moduleState: { [p: string]: CompiledContractBinding | StatefulEvent },
+    binding: CompiledContractBinding,
+    events: Events,
+  ): void {
+    const addEvent = (eventName: string) => {
+      if (checkIfExist(moduleState[eventName])) {
+        return
+      }
+
+      moduleState[eventName] = events[eventName]
+    }
+
+    for (let eventIndex in binding.events.beforeCompile) {
+      const eventName = binding.events.beforeCompile[eventIndex]
+
+      addEvent(eventName)
+    }
+
+    for (let eventIndex in binding.events.afterCompile) {
+      const eventName = binding.events.afterCompile[eventIndex]
+
+      addEvent(eventName)
+    }
+
+    for (let eventIndex in binding.events.beforeDeployment) {
+      const eventName = binding.events.beforeDeployment[eventIndex]
+
+      addEvent(eventName)
+    }
+
+    for (let eventIndex in binding.events.beforeDeploy) {
+      const eventName = binding.events.beforeDeploy[eventIndex]
+
+      addEvent(eventName)
+    }
+  }
+
+  private static resolveAfterDeployEvents(
+    moduleState: { [p: string]: CompiledContractBinding | StatefulEvent },
+    binding: CompiledContractBinding,
+    events: Events,
+  ): void {
+    const handleEvent = (eventName: string) => {
+      if (events[eventName].event.deps.length == 0) {
+        return
+      }
+
+      for (let dep of events[eventName].event.deps) {
+        if (!checkIfExist(moduleState[dep.name])) {
+          return
+        }
+      }
+
+      moduleState[eventName] = events[eventName]
+    }
+
+    for (let eventIndex in binding.events.afterDeploy) {
+      handleEvent(binding.events.afterDeploy[eventIndex])
+    }
+
+    for (let eventIndex in binding.events.onChange) {
+      handleEvent(binding.events.onChange[eventIndex])
+    }
+
+    for (let eventIndex in binding.events.afterDeployment) {
+      handleEvent(binding.events.afterDeployment[eventIndex])
+    }
   }
 }
 

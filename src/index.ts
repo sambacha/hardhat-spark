@@ -11,6 +11,7 @@ import {EthTxGenerator} from "./packages/ethereum/transactions/generator";
 import {Prompter} from "./packages/prompter";
 import {TxExecutor} from "./packages/ethereum/transactions/executor";
 import {StateResolver} from "./packages/modules/states/state_resolver";
+import {ModuleState} from "./packages/modules/states/module";
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   //@TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
@@ -32,49 +33,54 @@ export async function deploy(
 
   for (let [moduleName, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module
-    moduleStateRepo.setStateRegistry(module.getRegistry())
+    moduleStateRepo.initStateRepo(moduleName)
 
-    cli.info("\nDeploy module - ", moduleName)
-    let stateRegistry = await moduleStateRepo.getStateIfExist(moduleName)
+    let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName)
     for (let moduleStateName of states) {
       const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName)
 
-      stateRegistry = StateResolver.mergeStates(stateRegistry, moduleState)
+      stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState)
     }
 
-    const resolvedBindings: { [p: string]: DeployedContractBinding } | null = moduleResolver.resolve(module.getAllBindings(), stateRegistry)
-    if (!checkIfExist(resolvedBindings)) {
+    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), stateFileRegistry)
+    cli.info("\nDeploy module - ", moduleName)
+    if (!checkIfExist(moduleState)) {
       cli.info("Nothing to deploy")
       process.exit(0)
     }
 
-    const bindings = txGenerator.initTx(resolvedBindings as { [p: string]: DeployedContractBinding })
-    prompter.promptDeployerBindings(bindings)
-
+    // initialize empty tx data
+    const initializedTxModuleState = txGenerator.initTx(moduleState)
     await prompter.promptContinueDeployment()
-    await txExecutor.executeBindings(moduleName, bindings)
+
+    await txExecutor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver())
   }
 }
 
 export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo) {
   const modules = await require(resolvedPath)
 
-  for (let [moduleName, module] of Object.entries(modules)) {
-    const mod = await module as Module
-    const moduleBindings = mod.getAllBindings()
+  for (let [moduleName, modFunc] of Object.entries(modules)) {
+    const module = await modFunc as Module
 
-    moduleStateRepo.setStateRegistry(mod.getRegistry())
-
-    let deployedState = await moduleStateRepo.getStateIfExist(moduleName)
+    let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName)
     for (let moduleStateName of states) {
       const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName)
 
-      deployedState = StateResolver.mergeStates(deployedState, moduleState)
+      stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState)
     }
 
-    if (moduleResolver.checkIfDiff(deployedState, moduleBindings)) {
+    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), stateFileRegistry)
+    if (!checkIfExist(moduleState)) {
+      cli.info("Current module state is empty, add something and try again.")
+      process.exit(0)
+    }
+
+    if (moduleResolver.checkIfDiff(stateFileRegistry, moduleState)) {
       cli.info(`\nModule: ${moduleName}`)
-      moduleResolver.printDiffParams(deployedState, moduleBindings)
+      moduleResolver.printDiffParams(stateFileRegistry, moduleState)
+    } else {
+      cli.info(`Nothing changed from last revision - ${moduleName}`)
     }
   }
 }

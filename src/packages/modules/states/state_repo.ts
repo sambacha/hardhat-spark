@@ -1,66 +1,147 @@
 import {
-  Arguments,
   ContractBindingMetaData,
-  DeployedContractBinding
+  ContractInput,
+  DeployedContractBinding,
+  EventTransactionData,
+  StatefulEvent
 } from "../../../interfaces/mortar";
-import {checkIfEventsExist, checkIfExist} from "../../utils/util";
-import {IStateRegistryResolver, ModuleState} from "./registry";
-import {FileSystemStateRegistry} from "./registry/file_system";
+import {CliError} from "../../types/errors";
+import {TransactionResponse} from "@ethersproject/abstract-provider";
+import {checkIfExist} from "../../utils/util";
+import {FileSystemModuleState} from "./module/file_system";
+import {IModuleState, ModuleState} from "./module";
 
 export class ModuleStateRepo {
   private readonly networkId: number
-  private stateRegistry: IStateRegistryResolver
+  private stateRepo: IModuleState
+  private currentModuleName: string
+  private currentEventName: string
 
   constructor(networkId: number, currentPath: string) {
     this.networkId = networkId
-    this.stateRegistry = new FileSystemStateRegistry(currentPath)
+    this.stateRepo = new FileSystemModuleState(currentPath)
+    this.currentModuleName = ""
+    this.currentEventName = ""
   }
 
-  setStateRegistry(stateRegistry: IStateRegistryResolver | null): void {
-    if (stateRegistry == null) {
-      return
-    }
-
-    this.stateRegistry = stateRegistry
+  initStateRepo(moduleName: string): void {
+    // @TODO add possibility to pass custom state repo
+    this.currentModuleName = moduleName
   }
 
   async getStateIfExist(moduleName: string): Promise<ModuleState> {
-    return this.stateRegistry.getModuleState(this.networkId, moduleName)
+    return this.stateRepo.getModuleState(this.networkId, moduleName)
   }
 
-  async storeNewState(moduleName: string, bindings: ModuleState | null): Promise<void> {
-    await this.stateRegistry.storeStates(this.networkId, moduleName, bindings)
+  async storeNewState(moduleName: string, moduleState: ModuleState | null): Promise<void> {
+    await this.stateRepo.storeStates(this.networkId, moduleName, moduleState)
   }
 
-  static convertBindingsToMetaData(bindings: ModuleState): { [p: string]: ContractBindingMetaData } {
-    const metaData: { [p: string]: ContractBindingMetaData } = {}
+  async setSingleEventName(currentEventName: string): Promise<void> {
+    this.currentEventName = currentEventName
+  }
 
-    for (let [bindingName, binding] of Object.entries(bindings)) {
-      binding.args = this.convertArg(binding.args)
-      metaData[bindingName] = new ContractBindingMetaData(binding.name, binding.args, binding.bytecode, binding.abi, binding.txData)
+  async finishCurrentEvent(): Promise<void> {
+    const currentState = (await this.getStateIfExist(this.currentModuleName))
+    const currentEvent = (currentState[this.currentEventName] as StatefulEvent)
+    if (
+      !checkIfExist(currentEvent)
+    ) {
+      throw new CliError("Cant finish event that doesn't exist in state")
     }
 
-    return metaData
+    currentEvent.executed = true
+    currentState[this.currentEventName] = currentEvent
+
+    await this.storeNewState(this.currentModuleName, currentState)
+    this.currentEventName = ""
   }
 
-  private static convertArg(args: Arguments): Arguments {
-    if (!checkIfExist(args)) {
-      return args
+  async getEventTransactionData(bindingName: string): Promise<EventTransactionData> {
+    if (this.currentModuleName == "") {
+      throw new CliError("Current module name is not set")
+    }
+    if (this.currentEventName == "") {
+      throw new CliError("Current event name is not set")
     }
 
-    for (let i = 0; i < args.length; i++) {
-      const events = (args[i] as DeployedContractBinding).events
-      if (!checkIfExist(events)) {
+    const currentState = (await this.getStateIfExist(this.currentModuleName))
+    const eventState = (currentState[this.currentEventName] as StatefulEvent)
+    if (
+      !checkIfExist(eventState) ||
+      !checkIfExist(eventState.txData) ||
+      !checkIfExist(eventState.txData[bindingName])
+    ) {
+      return {
+        contractInput: [],
+        contractOutput: []
+      }
+    }
+
+    return eventState.txData[bindingName]
+  }
+
+  async storeEventTransactionData(bindingName: string, contractInput: ContractInput, contractOutput: TransactionResponse): Promise<void> {
+    if (this.currentModuleName == "") {
+      throw new CliError("Current module name is not set")
+    }
+    if (this.currentEventName == "") {
+      throw new CliError("Current event name is not set")
+    }
+
+    const currentState = (await this.getStateIfExist(this.currentModuleName))
+
+    const currentEvent = (currentState[this.currentEventName] as StatefulEvent)
+    if (
+      !checkIfExist(currentEvent) ||
+      !checkIfExist(currentEvent.txData) ||
+      !checkIfExist(currentEvent.txData[bindingName])
+    ) {
+      currentEvent.txData[bindingName] = {
+        contractInput: [],
+        contractOutput: []
+      }
+    }
+
+    currentEvent.txData[bindingName].contractInput.push(contractInput)
+    currentEvent.txData[bindingName].contractOutput.push(contractOutput)
+
+    currentState[this.currentEventName] = currentEvent
+    await this.storeNewState(this.currentModuleName, currentState)
+  }
+
+  async storeSingleBinding(singleElement: DeployedContractBinding): Promise<void> {
+    if (this.currentModuleName == "") {
+      throw new CliError("Current module name is not set")
+    }
+    const currentState = (await this.getStateIfExist(this.currentModuleName))
+
+    currentState[singleElement.name] = singleElement
+    await this.storeNewState(this.currentModuleName, currentState)
+  }
+
+  static convertBindingToMetaData(binding: DeployedContractBinding): ContractBindingMetaData {
+    return new ContractBindingMetaData(binding.name, binding.args, binding.bytecode, binding.abi, binding.txData)
+  }
+
+  static convertStatesToMetaData(moduleState: ModuleState): { [p: string]: ContractBindingMetaData | StatefulEvent } {
+    const metaData: { [p: string]: ContractBindingMetaData | StatefulEvent } = {}
+
+    for (let [stateElementName, stateElement] of Object.entries(moduleState)) {
+      if (stateElement instanceof DeployedContractBinding) {
+        metaData[stateElementName] = new ContractBindingMetaData(
+          stateElement.name,
+          stateElement.args,
+          stateElement.bytecode,
+          stateElement.abi,
+          stateElement.txData
+        )
         continue
       }
 
-      if (checkIfEventsExist(events)) {
-        args[i] = new ContractBindingMetaData(args[i].name, args[i].args, args[i].bytecode, args[i].abi, args[i].txData)
-      }
-
-      args[i].args = this.convertArg(args[i].args)
+      metaData[stateElementName] = stateElement
     }
 
-    return args
+    return metaData
   }
 }

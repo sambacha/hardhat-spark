@@ -1,11 +1,12 @@
-import {DeployedContractBinding} from "../../../../interfaces/mortar";
+import {
+  DeployedContractBinding,
+  StatefulEvent
+} from "../../../../interfaces/mortar";
 
-export type ModuleState = { [p: string]: DeployedContractBinding }
-export const STATE_DIR_NAME = '.mortar'
-export const STATE_NAME = 'deployed_module_state.json'
+export type ModuleRegistryResolver = {[version: string]: {[bindingName: string]: string}}
+export const REGISTRY_NAME = 'module_registry.json'
 
-export interface IStateRegistryResolver {
-  getModuleState(networkId: number, moduleName: string): Promise<ModuleState>;
-  storeStates(networkId: number, moduleName: string, bindings: ModuleState | null): Promise<boolean>;
-  checkIfSet(moduleName: string ,networkId: number): boolean
+export interface IModuleRegistryResolver {
+  resolveContract(networkId: number, moduleName: string, bindingName: string): Promise<string>;
+  setAddress(networkId: number, moduleName: string, bindingName: string, address: string): Promise<boolean>;
 }

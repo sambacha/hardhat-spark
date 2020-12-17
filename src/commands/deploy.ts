@@ -87,11 +87,12 @@ export default class Deploy extends Command {
     const gasCalculator = new GasCalculator(provider)
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider)
 
-    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
     const moduleState = new ModuleStateRepo(flags.networkId, currentPath)
+    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator, moduleState)
 
     const eventHandler = new EventHandler(moduleState)
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler)
+
     const migrationFilePath = path.resolve(currentPath, filePath)
 
     await command.deploy(migrationFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor)

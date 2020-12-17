@@ -4,8 +4,8 @@ pragma solidity ^0.7.0;
 import "./ThirdExample.sol";
 
 contract FourthExample {
-  ThirdExample addr;
-  constructor(ThirdExample _addr) {
+  SecondExample addr;
+  constructor(SecondExample _addr) {
     addr = _addr;
   }
 

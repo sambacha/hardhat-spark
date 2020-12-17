@@ -1,4 +1,10 @@
-import {DeployedContractBinding} from "../../../interfaces/mortar";
+import {
+  AfterCompileEvent,
+  AfterDeployEvent,
+  AfterDeploymentEvent, BeforeCompileEvent, BeforeDeployEvent, BeforeDeploymentEvent,
+  DeployedContractBinding, OnChangeEvent,
+  StatefulEvent
+} from "../../../interfaces/mortar";
 import {Prompter} from "../../prompter";
 import {ModuleStateRepo} from "../../modules/states/state_repo";
 import {checkIfExist} from "../../utils/util";
@@ -9,12 +15,16 @@ import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import {JsonFragmentType} from "../../types/abi";
 import {cli} from "cli-ux";
 import {EventHandler} from "../../modules/events/handler";
-import {ContractTypeMismatch, ContractTypeUnsupported} from "../../types/errors";
+import {CliError, ContractTypeMismatch, ContractTypeUnsupported} from "../../types/errors";
+import {ModuleState} from "../../modules/states/module";
+import {IModuleRegistryResolver} from "../../modules/states/registry";
 
 const CONSTRUCTOR_TYPE = 'constructor'
 export const BLOCK_CONFIRMATION_NUMBER = 0
 
 export class TxExecutor {
+  private readonly networkId: number
+
   private prompter: Prompter
   private moduleState: ModuleStateRepo
   private txGenerator: EthTxGenerator
@@ -28,34 +38,81 @@ export class TxExecutor {
 
     this.ethers = ethers
     this.eventHandler = eventHandler
+    this.networkId = networkId
   }
 
-  async executeBindings(moduleName: string, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    for (let [name, binding] of Object.entries(bindings)) {
-      await EventHandler.executeBeforeDeploymentEventHook(bindings[name], bindings)
-      if (checkIfExist(binding.txData.output)) {
-        cli.info(name, "is already deployed")
-        await this.prompter.promptContinueDeployment()
+  async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | null, resolver: IModuleRegistryResolver | null): Promise<void> {
+    await this.moduleState.storeNewState(moduleName, moduleState)
+
+    for (let [elementName, element] of Object.entries(moduleState)) {
+      if (checkIfExist((element as DeployedContractBinding)?.bytecode)) {
+        const contractAddress = await resolver?.resolveContract(this.networkId, moduleName, elementName)
+
+        if (checkIfExist(element.txData.contractAddress)) {
+          cli.info(elementName, "is already deployed")
+          await this.prompter.promptContinueDeployment()
+          continue
+        }
+
+        if (checkIfExist(contractAddress)) {
+          element.txData.contractAddress = contractAddress as string
+          await this.moduleState.storeSingleBinding(element as DeployedContractBinding)
+          continue
+        }
+
+        const contractBinding = await this.executeSingleBinding(element as DeployedContractBinding, moduleState)
+        if (checkIfExist(registry) && checkIfExist(contractBinding.txData.contractAddress)) {
+          await registry?.setAddress(this.networkId, moduleName, contractBinding.name, <string>contractBinding.txData.contractAddress)
+        }
+
+        await this.moduleState.storeSingleBinding(contractBinding)
+        continue
       }
 
-      if (!checkIfExist(binding.txData.output)) {
-        cli.info(name, " - deploying")
-        await EventHandler.executeBeforeDeployEventHook(bindings[name], bindings)
-        bindings[name] = await this.executeSingleBinding(binding, bindings)
-        await this.eventHandler.executeAfterDeployEventHook(moduleName, bindings[name], bindings)
-
-        await this.eventHandler.executeOnChangeEventHook(moduleName, bindings[name], bindings)
-      }
-
-      await this.eventHandler.executeAfterDeploymentEventHook(moduleName, bindings[name], bindings)
-
-      await this.moduleState.storeNewState(moduleName, bindings)
+      await this.executeEvent(moduleName, element as StatefulEvent, moduleState)
     }
 
     return
   }
 
-  private async executeSingleBinding(binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<DeployedContractBinding> {
+  private async executeEvent(moduleName: string, event: StatefulEvent, moduleState: ModuleState): Promise<void> {
+
+    switch (event.event.eventType) {
+      case "BeforeDeployEvent": {
+        await this.eventHandler.executeBeforeDeployEventHook(moduleName, event.event as BeforeDeployEvent, moduleState)
+        break;
+      }
+      case "AfterDeployEvent": {
+        await this.eventHandler.executeAfterDeployEventHook(moduleName, event.event as AfterDeployEvent, moduleState)
+        break;
+      }
+      case "AfterDeploymentEvent": {
+        await this.eventHandler.executeAfterDeploymentEventHook(moduleName, event.event as AfterDeploymentEvent, moduleState)
+        break;
+      }
+      case "BeforeDeploymentEvent": {
+        await this.eventHandler.executeBeforeDeploymentEventHook(moduleName, event.event as BeforeDeploymentEvent, moduleState)
+        break;
+      }
+      case "BeforeCompileEvent": {
+        await this.eventHandler.executeBeforeCompileEventHook(moduleName, event.event as BeforeCompileEvent, moduleState)
+        break;
+      }
+      case "AfterCompileEvent": {
+        await this.eventHandler.executeAfterCompileEventHook(moduleName, event.event as AfterCompileEvent, moduleState)
+        break;
+      }
+      case "OnChangeEvent": {
+        await this.eventHandler.executeOnChangeEventHook(moduleName, event.event as OnChangeEvent, moduleState)
+        break;
+      }
+      default: {
+        throw new CliError("Failed to match event type with user event hooks.")
+      }
+    }
+  }
+
+  private async executeSingleBinding(binding: DeployedContractBinding, moduleState: ModuleState): Promise<DeployedContractBinding> {
     let constructorFragmentInputs = [] as JsonFragmentType[]
 
     for (let i = 0; i < binding.abi.length; i++) {
@@ -101,13 +158,9 @@ export class TxExecutor {
           }
 
           const dependencyName = binding.args[i].name
-          const dependencyTxData = bindings[dependencyName].txData
-          if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.output)) {
+          const dependencyTxData = moduleState[dependencyName].txData
+          if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.contractAddress)) {
             throw new ContractTypeMismatch(`Dependency contract not deployed \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`)
-          }
-
-          if (dependencyTxData.output != null && !dependencyTxData.output.status) {
-            throw new ContractTypeMismatch(`Dependency contract not included in the block \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`)
           }
 
           if (!checkIfExist(dependencyTxData.contractAddress)) {

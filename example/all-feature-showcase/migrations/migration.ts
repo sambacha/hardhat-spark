@@ -9,6 +9,7 @@ import {
 } from "../../../src/interfaces/mortar"
 import {BigNumber} from "ethers";
 import {RemoteBucketStorage} from "../../../src/packages/modules/states/registry/remote_bucket_storage";
+import {FileSystemRegistry} from "../../../src/packages/modules/states/registry/file_system";
 
 const {
   GOOGLE_ACCESS_KEY,
@@ -16,7 +17,7 @@ const {
 } = process.env
 
 export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) => {
-  // const fileSystem = new FileSystemStateRegistry("./")
+  // const fileSystem = new FileSystemRegistry("./")
   // m.setRegistry(fileSystem)
   const remoteBucketStorage = new RemoteBucketStorage(
     "https://storage.googleapis.com",
@@ -35,7 +36,7 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
     return "hello"
   })
 
-  Example.afterDeployment(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]> => {
+  Example.afterDeployment(m, "firstAfterDeployment", async (...bindings: DeployedContractBinding[]): Promise<void> => {
     const [Example] = bindings
 
     const example = Example.instance()
@@ -49,45 +50,39 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
     m.registerAction("getName", (): any => {
       return value
     })
+  })
 
-    return bindings
-  }, Example)
-
-  Example.afterDeployment(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]> => {
+  Example.afterDeployment(m, "secondAfterDeployment",async (...bindings: DeployedContractBinding[]): Promise<void> => {
     const [Example] = bindings
 
     const example = Example.instance()
 
     await example.setExample(100)
     await example.setExample(130)
+  }, Example, SecondExample)
 
-    return bindings
-  }, Example)
-
-  SecondExample.afterCompile(async (AddressProvider: Binding, ...bindings: CompiledContractBinding[]) => {
+  SecondExample.afterCompile(m, "firstAfterCompile",async (AddressProvider: Binding, ...bindings: CompiledContractBinding[]) => {
     const [SecondExample] = bindings
 
     console.log("This is after compile: ", SecondExample.bytecode)
   }, SecondExample)
 
-  ThirdExample.beforeCompile(async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
+  ThirdExample.beforeCompile(m, "firstBeforeCompile",async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
     const [Example] = bindings
 
     console.log("This is before compile: ", Example.name)
   }, Example)
 
-  ThirdExample.beforeDeployment(async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
+  ThirdExample.beforeDeployment(m, "firstBeforeDeployment", async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
     const [Example] = bindings
 
     console.log("This is before deployment: ", Example.name)
   }, Example)
 
-  ThirdExample.onChange(async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<DeployedContractBinding[]> => {
+  ThirdExample.onChange(m, "firstOnChange", async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<void> => {
     const [Example] = bindings
 
     console.log("This is on change:", Example.name)
-
-    return bindings
   }, Example)
 })
 
