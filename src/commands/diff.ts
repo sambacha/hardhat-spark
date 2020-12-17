@@ -66,8 +66,8 @@ export default class Diff extends Command {
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider)
     const prompter = new Prompter()
 
-    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath)
+    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator, moduleStateRepo)
 
     await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo)
   }

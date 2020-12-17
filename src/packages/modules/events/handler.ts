@@ -1,120 +1,125 @@
 import {
-  AfterDeployEvent, BeforeDeployEvent,
+  AfterCompileEvent,
+  AfterDeployEvent, AfterDeploymentEvent, BeforeCompileEvent, BeforeDeployEvent, BeforeDeploymentEvent,
   CompiledContractBinding,
   ContractBinding,
-  DeployedContractBinding
+  DeployedContractBinding, EventFnCompiled, EventFnDeployed, Events, ModuleBuilder, OnChangeEvent, StatefulEvent
 } from "../../../interfaces/mortar";
 import {checkIfExist} from "../../utils/util";
 import {ModuleStateRepo} from "../states/state_repo";
+import {ModuleState} from "../states/module";
+import {CliError} from "../../types/errors";
+import cli from "cli-ux";
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo
+
   constructor(moduleState: ModuleStateRepo) {
     this.moduleState = moduleState
   }
 
-  static async executeBeforeCompileEventHook(binding: ContractBinding, bindings: { [p: string]: ContractBinding }): Promise<void> {
-    const events = binding?.events?.beforeCompile
-    if (!checkIfExist(events)) {
+  async executeBeforeCompileEventHook(moduleName: string, event: BeforeCompileEvent, moduleState: ModuleState): Promise<void> {
+    const eventElement = moduleState[event.name] as StatefulEvent
+    if (eventElement.executed) {
+      cli.info(`Event is already executed - ${event.name}`)
       return
     }
 
-    for (let event of events) {
-      const fn = event.fn
-      const deps = event.deps
+    const deps = event.deps
+    const fn = event.fn
+    const eventName = event.name
 
-      let binds: ContractBinding[] = []
-      for (let dependency of deps) {
-        const name = dependency.name
-        binds.push(bindings[name])
+    let binds: ContractBinding[] = []
+    for (let dependency of deps) {
+      const name = dependency.name
+      if (!checkIfExist(moduleState[name]) && checkIfExist((moduleState[name] as CompiledContractBinding).bytecode)) {
+        throw new CliError("Module state element that is part of event dependency is not contract.")
       }
 
-      await fn(binding, ...binds)
+      binds.push(moduleState[name] as DeployedContractBinding)
     }
+
+    await this.moduleState.setSingleEventName(eventName)
+    // @TODO enable user to change module state variable
+    await fn(...binds)
+    await this.moduleState.finishCurrentEvent()
   }
 
-   static async executeAfterCompileEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
-    const events = binding?.events?.afterCompile
-    await this.handleCompiledBindingsEvents(events, binding, bindings)
+  async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleCompiledBindingsEvents(event.name, event.fn, event.deps, moduleState)
   }
 
-   static async executeBeforeDeploymentEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
-    const events = binding?.events?.beforeDeployment
-    await this.handleCompiledBindingsEvents(events, binding, bindings)
+  async executeBeforeDeploymentEventHook(moduleName: string, event: BeforeDeploymentEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleCompiledBindingsEvents(event.name, event.fn, event.deps, moduleState)
   }
 
-   async executeAfterDeploymentEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding?.events?.afterDeployment
-    await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
+  async executeAfterDeploymentEventHook(moduleName: string, event: AfterDeploymentEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState)
   }
 
-   static async executeBeforeDeployEventHook(binding: CompiledContractBinding, bindings: { [p: string]: CompiledContractBinding }): Promise<void> {
-    const events = binding?.events?.beforeDeploy
-    await this.handleCompiledBindingsEvents(events, binding, bindings)
+  async executeBeforeDeployEventHook(moduleName: string, event: BeforeDeployEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleCompiledBindingsEvents(event.name, event.fn, event.deps, moduleState)
   }
 
-   async executeAfterDeployEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding?.events?.afterDeploy
-    await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
+  async executeAfterDeployEventHook(moduleName: string, event: AfterDeployEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState)
   }
 
-   async executeOnChangeEventHook(moduleName: string, binding: DeployedContractBinding, bindings: { [p: string]: DeployedContractBinding }): Promise<void> {
-    const events = binding?.events?.onChange
-    await this.handleDeployedBindingsEvents(moduleName, events, binding, bindings)
+  async executeOnChangeEventHook(moduleName: string, event: OnChangeEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState)
   }
 
   private async handleDeployedBindingsEvents(
-    moduleName: string,
-    deployEvents: AfterDeployEvent[],
-    binding: DeployedContractBinding,
-    bindings: { [p: string]: DeployedContractBinding }
+    eventName: string,
+    fn: EventFnDeployed,
+    deps: ContractBinding[],
+    moduleStates: ModuleState,
   ) {
-    if (!checkIfExist(deployEvents)) {
+    const eventElement = moduleStates[eventName] as StatefulEvent
+    if (eventElement.executed) {
+      cli.info(`Event is already executed - ${eventName}`)
       return
     }
 
-    for (let event of deployEvents) {
-      const fn = event.fn
-      const deps = event.deps
-
-      let binds: DeployedContractBinding[] = []
-      for (let dependency of deps) {
-        const name = dependency.name
-        binds.push(bindings[name])
+    let binds: DeployedContractBinding[] = []
+    for (let dependency of deps) {
+      const name = dependency.name
+      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as CompiledContractBinding).bytecode)) {
+        throw new CliError("Module state element that is part of event dependency is not contract.")
       }
 
-      const eventBindings = await fn(binding, ...binds)
-
-      for (let bind of eventBindings) {
-        const name = bind.name
-        bindings[name] = bind
-      }
-
-      await this.moduleState.storeNewState(moduleName, bindings)
+      binds.push(moduleStates[name] as DeployedContractBinding)
     }
+
+    await this.moduleState.setSingleEventName(eventName)
+    await fn(...binds)
+    await this.moduleState.finishCurrentEvent()
   }
 
-  private static async handleCompiledBindingsEvents(
-    beforeDeployEvents: BeforeDeployEvent[],
-    binding: CompiledContractBinding,
-    bindings: { [p: string]: CompiledContractBinding }
+  private async handleCompiledBindingsEvents(
+    eventName: string,
+    fn: EventFnCompiled,
+    deps: ContractBinding[],
+    moduleStates: ModuleState,
   ) {
-    if (!checkIfExist(beforeDeployEvents)) {
+    const eventElement = moduleStates[eventName] as StatefulEvent
+    if (eventElement.executed) {
+      cli.info(`Event is already executed - ${eventName}`)
       return
     }
 
-    for (let event of beforeDeployEvents) {
-      const fn = event.fn
-      const deps = event.deps
-
-
-      let binds: CompiledContractBinding[] = []
-      for (let dependency of deps) {
-        const name = dependency.name
-        binds.push(bindings[name])
+    let binds: CompiledContractBinding[] = []
+    for (let dependency of deps) {
+      const name = dependency.name
+      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as CompiledContractBinding).bytecode)) {
+        throw new CliError("Module state element that is part of event dependency is not contract.")
       }
 
-      await fn(binding, ...binds)
+      binds.push(moduleStates[name] as CompiledContractBinding)
     }
+
+    await this.moduleState.setSingleEventName(eventName)
+    await fn(...binds)
+    await this.moduleState.finishCurrentEvent()
   }
 }

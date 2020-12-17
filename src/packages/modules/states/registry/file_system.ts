@@ -1,53 +1,56 @@
-import {IStateRegistryResolver, ModuleState, STATE_DIR_NAME, STATE_NAME} from "./index";
+import {IModuleRegistryResolver, ModuleRegistryResolver, REGISTRY_NAME} from "./index";
 import path from "path";
 import fs from "fs";
-import {ModuleStateRepo} from "../state_repo";
+import {checkIfExist} from "../../../utils/util";
 
-export class FileSystemStateRegistry implements IStateRegistryResolver {
-  private readonly statePath: string
+export class FileSystemRegistry implements IModuleRegistryResolver {
+  private readonly version: string
+  private readonly registryPath: string
 
-  constructor(currentProjectPath: string) {
-    const dir = path.resolve(currentProjectPath, STATE_DIR_NAME)
+  constructor(registryDir: string, version: string = "v0.0.1") {
+    this.version = version
+
+    const dir = path.resolve(registryDir)
 
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
-    this.statePath = dir
+    this.registryPath = dir
   }
 
-  async getModuleState(networkId: number, moduleName: string): Promise<ModuleState> {
-    const dir = path.resolve(this.statePath, moduleName, `${networkId}_${STATE_NAME}`)
+  async resolveContract(networkId: number, moduleName: string, bindingName: string): Promise<string> {
+    const stateObject = await this.getRegistry(moduleName, networkId)
+    if (!checkIfExist(stateObject[this.version])) {
+      stateObject[this.version] = {}
+    }
+
+    return stateObject[this.version][bindingName]
+  }
+
+  async setAddress(networkId: number, moduleName: string, bindingName: string, contractAddress: string): Promise<boolean> {
+    const stateObject = await this.getRegistry(moduleName, networkId)
+    if (!checkIfExist(stateObject[this.version])) {
+      stateObject[this.version] = {}
+    }
+
+    stateObject[this.version][bindingName] = contractAddress
+    if (!fs.existsSync(this.registryPath)) {
+      fs.mkdirSync(this.registryPath)
+    }
+
+    const stateDir = path.resolve(this.registryPath, `${moduleName}_${networkId}_${REGISTRY_NAME}`)
+    fs.writeFileSync(stateDir, JSON.stringify(stateObject, null, 4))
+    return true
+  }
+
+  private async getRegistry(moduleName: string, networkId: number): Promise<ModuleRegistryResolver> {
+    const dir = path.resolve(this.registryPath, `${moduleName}_${networkId}_${REGISTRY_NAME}`)
     if (!fs.existsSync(dir)) {
       return {}
     }
 
-    return JSON.parse(fs.readFileSync(dir, {
+    return (JSON.parse(fs.readFileSync(dir, {
       encoding: 'UTF-8'
-    })) || {}
-  }
-
-  async storeStates(networkId: number, moduleName: string, bindings: ModuleState | null): Promise<boolean> {
-    if (bindings == null) {
-      return true
-    }
-
-    const moduleDir = path.resolve(this.statePath, moduleName)
-    const metaData = ModuleStateRepo.convertBindingsToMetaData(bindings)
-    if (!fs.existsSync(moduleDir)) {
-      fs.mkdirSync(moduleDir)
-    }
-
-    const stateDir = path.resolve(moduleDir, `${networkId}_${STATE_NAME}`)
-    fs.writeFileSync(stateDir, JSON.stringify(metaData, null, 4))
-    return true
-  }
-
-  checkIfSet(moduleName: string ,networkId: number): boolean {
-    const dir = path.resolve(this.statePath, moduleName, `${networkId}_${STATE_NAME}`)
-    if (!fs.existsSync(dir)) {
-      return false
-    }
-
-    return true
+    })) || {}) as ModuleRegistryResolver
   }
 }

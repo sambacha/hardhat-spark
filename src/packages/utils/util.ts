@@ -1,4 +1,4 @@
-import {ContractInput, Events} from "../../interfaces/mortar";
+import {ContractInput} from "../../interfaces/mortar";
 
 export function checkIfExist(object: any): boolean {
   return object != null && typeof object != 'undefined';
@@ -6,16 +6,6 @@ export function checkIfExist(object: any): boolean {
 
 export function checkIfFuncExist(func: any): boolean {
   return typeof func === "function"
-}
-
-export function checkIfEventsExist(events: Events): boolean {
-  return events.onChange.length > 0 ||
-    events.beforeCompile.length > 0 ||
-    events.afterCompile.length > 0 ||
-    events.beforeDeploy.length > 0 ||
-    events.afterDeploy.length > 0 ||
-    events.beforeDeployment.length > 0 ||
-    events.afterDeployment.length > 0;
 }
 
 export function checkIfSameInputs(input: ContractInput, fragmentName: string, args: any[]): boolean {

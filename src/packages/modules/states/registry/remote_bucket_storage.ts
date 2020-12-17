@@ -1,15 +1,19 @@
-import {IStateRegistryResolver, ModuleState, STATE_NAME} from "./index";
+import {IModuleRegistryResolver, ModuleRegistryResolver, REGISTRY_NAME} from "./index";
 import AWS from 'aws-sdk';
-import {ModuleStateRepo} from "../state_repo";
+import {checkIfExist} from "../../../utils/util";
 
-export class RemoteBucketStorage implements IStateRegistryResolver {
+export class RemoteBucketStorage implements IModuleRegistryResolver {
   private s3: AWS.S3
   private readonly bucketName: string
   private readonly accessKey: string
+  private readonly version: string
+  private registryFile: ModuleRegistryResolver
 
-  constructor(endpoint: string, region: string, bucketName: string, accessKey: string = "", secretAccessKey: string = "") {
+  constructor(endpoint: string, region: string, bucketName: string, accessKey: string = "", secretAccessKey: string = "", version: string = "v0.0.1") {
     this.bucketName = bucketName
     this.accessKey = accessKey
+    this.version = version
+    this.registryFile = {}
 
     this.s3 = new AWS.S3({
       region: region,
@@ -23,53 +27,71 @@ export class RemoteBucketStorage implements IStateRegistryResolver {
   }
 
 
-  async getModuleState(networkId: number, moduleName: string): Promise<ModuleState> {
+  async resolveContract(networkId: number, moduleName: string, bindingName: string): Promise<string> {
     try {
-      const req = this.s3.getObject({
-        Bucket: this.bucketName,
-        Key: `${moduleName}_${networkId}_${STATE_NAME}`,
-      })
+      if (!checkIfExist(this.registryFile[this.version])) {
+        this.registryFile = await this.getRemoteRegistry(moduleName, networkId)
+      }
 
-      req.on("sign", () => {
-        req.httpRequest.headers["Authorization"] =
-          req.httpRequest.headers["Authorization"]
-            .replace("Credential=/", `Credential=${this.accessKey}`)
-
-        if (this.accessKey == "") {
-          delete req.httpRequest.headers["Authorization"]
-          req.httpRequest.headers["public-read"] = "public-read"
-        }
-      })
-
-      const object = await req.promise()
-
-      return JSON.parse(object.Body as string) as ModuleState
+      return this.registryFile[this.version][bindingName]
     } catch (err) {
       if (err.statusCode == 404) {
-        return {}
+        return ""
       }
 
       throw err
     }
   }
 
-  async storeStates(networkId: number, moduleName: string, bindings: ModuleState | null): Promise<boolean> {
-    if (bindings == null) {
+  async setAddress(networkId: number, moduleName: string, bindingName: string, contractAddress: string): Promise<boolean> {
+    if (contractAddress == "") {
       return true
     }
 
-    const metaData = ModuleStateRepo.convertBindingsToMetaData(bindings)
+    try {
+      if (!checkIfExist(this.registryFile)) {
+        this.registryFile = await this.getRemoteRegistry(moduleName, networkId)
+      }
+    } catch (err) {
+      if (err?.statusCode != 404) {
+        throw err
+      }
+    }
+    if (!checkIfExist(this.registryFile[this.version])) {
+      this.registryFile[this.version] = {}
+    }
+    this.registryFile[this.version][bindingName] = contractAddress
 
     const params: AWS.S3.Types.PutObjectRequest = {
       Bucket: this.bucketName,
-      Key: `${moduleName}_${networkId}_${STATE_NAME}`,
-      Body: JSON.stringify(metaData, null, 4)
+      Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,
+      Body: JSON.stringify(this.registryFile, null, 4)
     }
-    const resp = await this.s3.upload(params).promise()
+
+    await this.s3.upload(params).promise()
+
     return true
   }
 
-  checkIfSet(moduleName: string, networkId: number): boolean {
-    return false;
+  private async getRemoteRegistry(moduleName: string, networkId: number): Promise<ModuleRegistryResolver> {
+    const req = this.s3.getObject({
+      Bucket: this.bucketName,
+      Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,
+    })
+
+    req.on("sign", () => {
+      req.httpRequest.headers["Authorization"] =
+        req.httpRequest.headers["Authorization"]
+          .replace("Credential=/", `Credential=${this.accessKey}`)
+
+      if (this.accessKey == "") {
+        delete req.httpRequest.headers["Authorization"]
+        req.httpRequest.headers["public-read"] = "public-read"
+      }
+    })
+
+    const object = await req.promise()
+
+    return JSON.parse(object.Body as string) as ModuleRegistryResolver
   }
 }

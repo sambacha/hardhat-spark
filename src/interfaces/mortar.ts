@@ -15,8 +15,10 @@ import {EthTxGenerator} from "../packages/ethereum/transactions/generator";
 import {GasCalculator} from "../packages/ethereum/gas/calculator";
 import {Prompter} from "../packages/prompter";
 import {BLOCK_CONFIRMATION_NUMBER} from "../packages/ethereum/transactions/executor";
-import {AbiMismatch, BytecodeMismatch} from "../packages/types/errors";
-import {IStateRegistryResolver} from "../packages/modules/states/registry";
+import {AbiMismatch, BytecodeMismatch, UserError} from "../packages/types/errors";
+import {IModuleRegistryResolver} from "../packages/modules/states/registry";
+import {ModuleState} from "../packages/modules/states/module";
+import * as net from "net";
 
 export type AutoBinding = any | Binding | ContractBinding | CompiledContractBinding | DeployedContractBinding;
 
@@ -40,26 +42,52 @@ export type Arguments = Argument[];
 
 export type ActionFn = (...args: any[]) => void;
 
-export type RedeployFn = (b: Binding, ...deps: DeployedContractBinding[]) => Promise<DeployedContractBinding[]>;
+export type RedeployFn = (...deps: DeployedContractBinding[]) => Promise<void>;
 
-export type EventFnDeployed = (b: Binding, ...deps: DeployedContractBinding[]) => Promise<DeployedContractBinding[]>;
-export type EventFnCompiled = (b: Binding, ...deps: CompiledContractBinding[]) => void;
-export type EventFn = (b: Binding, ...deps: ContractBinding[]) => void;
+export type EventFnDeployed = (...deps: DeployedContractBinding[]) => Promise<void>;
+export type EventFnCompiled = (...deps: CompiledContractBinding[]) => void;
+export type EventFn = (...deps: ContractBinding[]) => void;
 
-export type BeforeDeployEvent = { fn: EventFnCompiled, deps: ContractBinding[] }
-export type AfterDeployEvent = { fn: EventFnDeployed, deps: ContractBinding[] }
-export type BeforeCompileEvent = { fn: EventFn, deps: ContractBinding[] }
-export type AfterCompileEvent = { fn: EventFnCompiled, deps: ContractBinding[] }
-export type OnChangeEvent = { fn: RedeployFn, deps: ContractBinding[] }
+// @TODO simplify
+export type BeforeDeployEvent = { name: string, eventType: string, fn: EventFnCompiled, deps: ContractBinding[] }
+export type BeforeDeploymentEvent = { name: string, eventType: string, fn: EventFnCompiled, deps: ContractBinding[] }
+export type AfterDeployEvent = { name: string, eventType: string, fn: EventFnDeployed, deps: ContractBinding[] }
+export type AfterDeploymentEvent = { name: string, eventType: string, fn: EventFnDeployed, deps: ContractBinding[] }
+export type BeforeCompileEvent = { name: string, eventType: string, fn: EventFn, deps: ContractBinding[] }
+export type AfterCompileEvent = { name: string, eventType: string, fn: EventFnCompiled, deps: ContractBinding[] }
+export type OnChangeEvent = { name: string, eventType: string, fn: RedeployFn, deps: ContractBinding[] }
 
-export type Events = {
-  beforeCompile: BeforeCompileEvent[]
-  afterCompile: AfterCompileEvent[]
-  beforeDeployment: BeforeDeployEvent[]
-  afterDeployment: AfterDeployEvent[]
-  beforeDeploy: BeforeDeployEvent[]
-  afterDeploy: AfterDeployEvent[]
-  onChange: OnChangeEvent[]
+export type Event =
+  BeforeDeployEvent |
+  AfterDeployEvent |
+  AfterDeploymentEvent |
+  BeforeDeploymentEvent |
+  BeforeCompileEvent |
+  AfterCompileEvent |
+  OnChangeEvent
+
+export type Events = { [name: string]: StatefulEvent }
+
+export type BindingEventsRef = {
+  beforeCompile: string[]
+  afterCompile: string[]
+  beforeDeployment: string[]
+  afterDeployment: string[]
+  beforeDeploy: string[]
+  afterDeploy: string[]
+  onChange: string[]
+}
+
+export class StatefulEvent {
+  public event: Event
+  public executed: boolean
+  public txData: { [bindingName: string]: EventTransactionData }
+
+  constructor(event: Event, executed: boolean, txData: { [bindingName: string]: EventTransactionData }) {
+    this.event = event
+    this.executed = executed
+    this.txData = txData
+  }
 }
 
 export type ModuleOptions = {
@@ -71,10 +99,25 @@ export type ModuleBuilderFn = (m: ModuleBuilder) => Promise<void>;
 
 export abstract class Binding {
   public name: string;
-  public events: Events
 
   constructor(name: string) {
     this.name = name
+  }
+
+  instance(m: ModuleBuilder): any {
+    return {
+      name: this.name
+    }
+  }
+}
+
+export class ContractBinding extends Binding {
+  public args: Arguments;
+  public events: BindingEventsRef
+
+  constructor(name: string, args: Arguments) {
+    super(name)
+    this.args = args
     this.events = {
       beforeCompile: [],
       afterCompile: [],
@@ -86,84 +129,160 @@ export abstract class Binding {
     }
   }
 
-  instance(): any {
-    return {
-      name: this.name
-    }
-  }
-
-  // beforeDeployment executes each time a deployment command is executed.
-  beforeDeployment(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
-    this.events.beforeDeployment.push({
-      fn,
-      deps: bindings,
-    })
-  }
-
-  // afterDeployment executes each time after a deployment has finished.
-  // The deployment doesn't actually have to perform any deployments for this event to trigger.
-  afterDeployment(fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
-    this.events.afterDeployment.push({
-      fn,
-      deps: bindings,
-    })
-  }
-
-  // beforeDeploy runs each time the Binding is about to be triggered.
-  // This event can be used to force the binding in question to be deployed.
-  beforeDeploy(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
-    this.events.beforeDeploy.push({
-      fn,
-      deps: bindings,
-    })
-  }
-
-  // afterDeploy runs after the Binding was deployed.
-  afterDeploy(fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
-    this.events.afterDeploy.push({
-      fn,
-      deps: bindings,
-    })
-  }
-
-  // beforeCompile runs before the source code is compiled.
-  beforeCompile(fn: EventFn, ...bindings: ContractBinding[]): void {
-    this.events.beforeCompile.push({
-      fn,
-      deps: bindings,
-    })
-  }
-
-  // afterCompile runs after the source code is compiled and the bytecode is available.
-  afterCompile(fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
-    this.events.afterCompile.push({
-      fn,
-      deps: bindings,
-    })
-  }
-
-  // onChange runs after the Binding gets redeployed or changed
-  onChange(fn: RedeployFn, ...bindings: ContractBinding[]): void {
-    this.events.onChange.push({
-      fn,
-      deps: bindings
-    })
-  }
-}
-
-export class ContractBinding extends Binding {
-  public args: Arguments;
-
-  constructor(name: string, args: Arguments) {
-    super(name)
-    this.args = args
-  }
-
-  instance(): any {
+  instance(m: ModuleBuilder): any {
     return {
       name: this.name,
       args: this.args
     }
+  }
+
+  // beforeDeployment executes each time a deployment command is executed.
+  beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
+    if (this.events.beforeDeployment.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.beforeDeployment.push(eventName)
+    for (let binding of bindings) {
+      binding.events.beforeDeployment.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const beforeDeployment: BeforeDeploymentEvent = {
+      name: eventName,
+      eventType: "BeforeDeploymentEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, beforeDeployment)
+  }
+
+  // afterDeployment executes each time after a deployment has finished.
+  // The deployment doesn't actually have to perform any deployments for this event to trigger.
+  afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
+    if (this.events.afterDeployment.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.afterDeployment.push(eventName)
+    for (let binding of bindings) {
+      binding.events.afterDeployment.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const afterDeploymentEvent: AfterDeploymentEvent = {
+      name: eventName,
+      eventType: "AfterDeploymentEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, afterDeploymentEvent)
+  }
+
+  // beforeDeploy runs each time the Binding is about to be triggered.
+  // This event can be used to force the binding in question to be deployed.
+  beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
+    if (this.events.beforeDeploy.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.beforeDeploy.push(eventName)
+    for (let binding of bindings) {
+      binding.events.beforeDeploy.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const beforeDeployEvent: BeforeDeployEvent = {
+      name: eventName,
+      eventType: "BeforeDeployEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, beforeDeployEvent)
+  }
+
+  // afterDeploy runs after the Binding was deployed.
+  afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...bindings: ContractBinding[]): void {
+    if (this.events.beforeDeploy.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.afterDeploy.push(eventName)
+    for (let binding of bindings) {
+      binding.events.afterDeploy.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const afterDeployEvent: AfterDeployEvent = {
+      name: eventName,
+      eventType: "AfterDeployEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, afterDeployEvent)
+  }
+
+  // beforeCompile runs before the source code is compiled.
+  beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...bindings: ContractBinding[]): void {
+    if (this.events.beforeDeploy.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.beforeCompile.push(eventName)
+    for (let binding of bindings) {
+      binding.events.beforeCompile.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const beforeCompileEvent: BeforeCompileEvent = {
+      name: eventName,
+      eventType: "BeforeCompileEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, beforeCompileEvent)
+  }
+
+  // afterCompile runs after the source code is compiled and the bytecode is available.
+  afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...bindings: ContractBinding[]): void {
+    if (this.events.beforeDeploy.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.afterCompile.push(eventName)
+    for (let binding of bindings) {
+      binding.events.afterCompile.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const afterCompileEvent: AfterCompileEvent = {
+      name: eventName,
+      eventType: "AfterCompileEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, afterCompileEvent)
+  }
+
+  // onChange runs after the Binding gets redeployed or changed
+  onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...bindings: ContractBinding[]): void {
+    if (this.events.beforeDeploy.includes(eventName)) {
+      throw new UserError(`Event with same name already initialized - ${eventName}`)
+    }
+
+    this.events.onChange.push(eventName)
+    for (let binding of bindings) {
+      binding.events.onChange.push(eventName)
+    }
+
+    bindings.unshift(this)
+    const onChangeEvent: OnChangeEvent = {
+      name: eventName,
+      eventType: "OnChangeEvent",
+      fn,
+      deps: bindings,
+    }
+    m.addEvent(eventName, onChangeEvent)
   }
 }
 
@@ -177,7 +296,7 @@ export class CompiledContractBinding extends ContractBinding {
     this.abi = abi
   }
 
-  instance(): any {
+  instance(m: ModuleBuilder): any {
     return {
       name: this.name,
       args: this.args,
@@ -218,8 +337,29 @@ export type TransactionData = {
   input: TxData | null
   output: TransactionReceipt | null
   contractAddress?: string
+}
+
+export type EventTransactionData = {
   contractInput: ContractInput[]
   contractOutput: TransactionResponse[]
+}
+
+export class RegistryContractBinding extends CompiledContractBinding {
+  public txData: TransactionData
+
+  constructor(
+    // metadata
+    name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData,
+    // event hooks
+    events: BindingEventsRef | null,
+  ) {
+    super(name, args, bytecode, abi)
+    this.txData = txData
+
+    if (events) {
+      this.events = events
+    }
+  }
 }
 
 export class DeployedContractBinding extends CompiledContractBinding {
@@ -229,15 +369,17 @@ export class DeployedContractBinding extends CompiledContractBinding {
   private readonly signer: ethers.Signer
   private readonly prompter: Prompter
   private readonly txGenerator: EthTxGenerator
+  private readonly moduleStateRepo: ModuleStateRepo
 
   constructor(
     // metadata
     name: string, args: Arguments, bytecode: string, abi: JsonFragment[], txData: TransactionData,
     // event hooks
-    events: Events,
+    events: BindingEventsRef,
     signer: ethers.Signer,
     prompter: Prompter,
-    txGenerator: EthTxGenerator
+    txGenerator: EthTxGenerator,
+    moduleStateRepo: ModuleStateRepo,
   ) {
     super(name, args, bytecode, abi)
     this.txData = txData
@@ -247,6 +389,7 @@ export class DeployedContractBinding extends CompiledContractBinding {
     this.signer = signer
     this.prompter = prompter
     this.txGenerator = txGenerator
+    this.moduleStateRepo = moduleStateRepo
   }
 
   instance(): ethers.Contract {
@@ -256,14 +399,16 @@ export class DeployedContractBinding extends CompiledContractBinding {
       this.abi,
       this.signer,
       this.prompter,
-      this.txGenerator) as unknown as ethers.Contract
+      this.txGenerator,
+      this.moduleStateRepo
+    ) as unknown as ethers.Contract
   }
 }
 
 export class ContractInstance {
   private readonly deployedBinding: DeployedContractBinding
   private readonly prompter: Prompter
-  private ExecutedContractTx: number
+  private readonly moduleStateRepo: ModuleStateRepo
 
   [key: string]: any;
 
@@ -273,11 +418,13 @@ export class ContractInstance {
     abi: JsonFragment[],
     signer: ethers.Signer,
     prompter: Prompter,
-    txGenerator: EthTxGenerator
+    txGenerator: EthTxGenerator,
+    moduleStateRepo: ModuleStateRepo,
   ) {
     this.prompter = prompter
     this.txGenerator = txGenerator
     this.deployedBinding = deployedBinding
+    this.moduleStateRepo = moduleStateRepo
     const parent: any = new ethers.Contract(contractAddress, abi, signer)
 
     // @TODO: think how to achieve same thing with more convenient approach
@@ -301,21 +448,11 @@ export class ContractInstance {
 
       this[key] = parent[key]
     })
-
-    if (!checkIfExist(this.deployedBinding.txData.contractInput)) {
-      this.deployedBinding.txData.contractInput = []
-    }
-
-    if (!checkIfExist(this.deployedBinding.txData.contractOutput)) {
-      this.deployedBinding.txData.contractOutput = []
-    }
-
-    this.ExecutedContractTx = this.deployedBinding.txData.contractOutput.length
   }
 
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
     return async (...args: Array<any>): Promise<TransactionResponse> => {
-      // allow user to override ethers with his override params
+      // allowing user to override ethers with his override params
 
       if (args.length === fragment.inputs.length + 1 && typeof (args[args.length - 1]) === "object") {
         return await contractFunction(...args)
@@ -323,8 +460,15 @@ export class ContractInstance {
 
       let contractTxIterator = this.deployedBinding.contractTxProgress
 
-      const currentInputs = this.deployedBinding.txData.contractInput[contractTxIterator]
-      const contractOutput = this.deployedBinding.txData.contractOutput[contractTxIterator]
+      const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.deployedBinding.name)
+
+      if (currentEventTransactionData.contractOutput.length > contractTxIterator) {
+        this.deployedBinding.contractTxProgress++
+        return currentEventTransactionData.contractOutput[contractTxIterator]
+      }
+
+      const currentInputs = currentEventTransactionData.contractInput[contractTxIterator]
+      const contractOutput = currentEventTransactionData.contractOutput[contractTxIterator]
 
       if (checkIfExist(currentInputs) &&
         checkIfSameInputs(currentInputs, fragment.name, args) && checkIfExist(contractOutput)) {
@@ -338,7 +482,7 @@ export class ContractInstance {
         (checkIfExist(currentInputs) && !checkIfSameInputs(currentInputs, fragment.name, args)) ||
         !checkIfExist(currentInputs)
       ) {
-        this.deployedBinding.txData.contractInput[contractTxIterator] = {
+        currentEventTransactionData.contractInput[contractTxIterator] = {
           functionName: fragment.name,
           inputs: args,
         } as ContractInput
@@ -358,11 +502,11 @@ export class ContractInstance {
       const tx = await contractFunction(...args, overrides)
       await this.prompter.sentTx()
 
-
       await tx.wait(BLOCK_CONFIRMATION_NUMBER)
 
-      this.deployedBinding.txData.contractOutput[contractTxIterator] = tx
+      await this.moduleStateRepo.storeEventTransactionData(this.deployedBinding.name, currentEventTransactionData.contractInput[contractTxIterator], tx)
       this.deployedBinding.contractTxProgress = ++contractTxIterator
+
       return tx
     }
   }
@@ -384,6 +528,18 @@ export class ContractBindingMetaData {
   }
 }
 
+export class EventMetaData {
+  public name: string
+  public dependencyNames: string[]
+  public txData: { [name: string]: EventTransactionData }
+
+  constructor(name: string, dependencyNames: string[], txData: { [name: string]: EventTransactionData }) {
+    this.name = name
+    this.dependencyNames = dependencyNames
+    this.txData = txData
+  }
+}
+
 export abstract class ModuleUse {
   abstract use<T extends Module>(m: T, opts?: ModuleOptions): T;
 }
@@ -391,9 +547,11 @@ export abstract class ModuleUse {
 export class ModuleBuilder extends ModuleUse {
   private opts: ModuleOptions;
   private bindings: { [name: string]: ContractBinding };
+  // @TODO module based event hook - onStart, OnFail etc.
+  private readonly contractEvents: Events;
   private actions: { [name: string]: Action };
-  private resolver: IStateRegistryResolver | null;
-  private registry: IStateRegistryResolver | null;
+  private resolver: IModuleRegistryResolver | null;
+  private registry: IModuleRegistryResolver | null;
 
   constructor(opts?: ModuleOptions) {
     super()
@@ -402,6 +560,8 @@ export class ModuleBuilder extends ModuleUse {
     this.actions = {}
     this.resolver = null
     this.registry = null
+    this.contractEvents = {}
+
     if (typeof opts !== 'undefined') {
       this.opts = opts as ModuleOptions
     }
@@ -447,6 +607,30 @@ export class ModuleBuilder extends ModuleUse {
   //
   // autoBind(opts: AutoBindOptions): Binding[];
   //
+  addEvent(eventName: string, event: Event): void {
+    if (checkIfExist(this.contractEvents[eventName])) {
+      throw new UserError(`Event with same name is already initialized in module - ${eventName}`)
+    }
+
+    this.contractEvents[eventName] = new StatefulEvent(
+      event,
+      false,
+      {}
+    )
+  }
+
+  getEvent(eventName: string): StatefulEvent {
+    if (!checkIfExist(this.contractEvents[eventName])) {
+      throw new UserError(`Event with this name ${eventName} doesn't exist.`)
+    }
+
+    return this.contractEvents[eventName]
+  }
+
+  getAllEvents(): Events {
+    return this.contractEvents
+  }
+
   registerAction(name: string, fn: ActionFn): Action {
     const action = new Action(name, fn)
     this.actions[name] = action
@@ -456,26 +640,29 @@ export class ModuleBuilder extends ModuleUse {
 
   async bindModule(m: Module): Promise<void> {
     const bindings = m.getAllBindings()
-    const actions = m.getAllActions()
 
     const networkId = process.env.MORTAR_NETWORK_ID || ""
-    const resolverBindings = await m.getResolver()?.getModuleState(+networkId, m.name) || {}
-    for (let [bindingName, binding] of Object.entries(resolverBindings)) {
-      if (!checkIfExist(this.bindings[bindingName])) {
-        this.bindings[bindingName] = binding
-      }
-    }
+    const resolver = await m.getRegistry()
 
     for (let [bindingName, binding] of Object.entries(bindings)) {
-      if (!checkIfExist(this.bindings[bindingName])) {
-        this.bindings[bindingName] = binding
+      if (checkIfExist(this.bindings[bindingName])) {
+        throw new UserError("Conflict when merging two modules, check if their is same binding name.")
       }
-    }
 
-    for (let [actionName, action] of Object.entries(actions)) {
-      if (!checkIfExist(this.actions[actionName])) {
-        this.actions[actionName] = action
-      }
+      const contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName)
+
+      this.bindings[bindingName] = new RegistryContractBinding(
+        binding.name,
+        binding.args,
+        binding.bytecode,
+        binding.abi,
+        {
+          contractAddress: contractAddress,
+          input: null,
+          output: null
+        },
+        null,
+      )
     }
   }
 
@@ -498,19 +685,19 @@ export class ModuleBuilder extends ModuleUse {
     return m
   }
 
-  setResolver(resolver: IStateRegistryResolver): void {
+  setResolver(resolver: IModuleRegistryResolver): void {
     this.resolver = resolver
   }
 
-  getResolver(): IStateRegistryResolver | null {
+  getResolver(): IModuleRegistryResolver | null {
     return this.resolver
   }
 
-  setRegistry(registry: IStateRegistryResolver): void {
+  setRegistry(registry: IModuleRegistryResolver): void {
     this.registry = registry
   }
 
-  getRegistry(): IStateRegistryResolver | null {
+  getRegistry(): IModuleRegistryResolver | null {
     return this.registry
   }
 }
@@ -518,25 +705,30 @@ export class ModuleBuilder extends ModuleUse {
 export class Module {
   readonly name: string;
   private opts: ModuleOptions;
-  private bindings: { [name: string]: CompiledContractBinding };
-  private actions: { [name: string]: Action };
-  private registry: IStateRegistryResolver | null;
-  private resolver: IStateRegistryResolver | null;
+  private readonly bindings: { [name: string]: CompiledContractBinding };
+  private readonly events: Events;
+  private readonly actions: { [name: string]: Action };
+  private registry: IModuleRegistryResolver | null;
+  private resolver: IModuleRegistryResolver | null;
 
   constructor(
     moduleName: string,
     bindings: { [name: string]: CompiledContractBinding },
+    events: Events,
     actions: { [name: string]: Action },
-    registry: IStateRegistryResolver | null,
-    resolver: IStateRegistryResolver | null,
+    registry: IModuleRegistryResolver | null,
+    resolver: IModuleRegistryResolver | null,
   ) {
     this.name = moduleName
     this.opts = {params: {}}
     this.bindings = bindings
+    this.bindings = bindings
     this.actions = actions
     this.registry = registry
     this.resolver = resolver
+    this.events = events
   }
+
 
   // call(name: string, ...args: any[]): void;
   //
@@ -552,23 +744,27 @@ export class Module {
     return this.bindings
   }
 
+  getAllEvents(): Events {
+    return this.events
+  }
+
   getAllActions(): { [name: string]: Action } {
     return this.actions
   }
 
-  getRegistry(): IStateRegistryResolver | null {
+  getRegistry(): IModuleRegistryResolver | null {
     return this.registry
   }
 
-  setRegistry(registry: IStateRegistryResolver): void {
+  setRegistry(registry: IModuleRegistryResolver): void {
     this.registry = registry
   }
 
-  getResolver(): IStateRegistryResolver | null {
+  getResolver(): IModuleRegistryResolver | null {
     return this.resolver
   }
 
-  setResolver(resolver: IStateRegistryResolver): void {
+  setResolver(resolver: IModuleRegistryResolver): void {
     this.resolver = resolver
   }
 
@@ -581,30 +777,18 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
   const currentPath = process.cwd()
   const networkId = process.env?.MORTAR_NETWORK_ID || 1 // @TODO think if their is other options for this.
 
-  const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
-
-  const configService = new ConfigService(currentPath)
   const moduleBuilder = new ModuleBuilder()
   await fn(moduleBuilder)
 
-  const gasCalculator = new GasCalculator(provider)
-  const txGenerator = await new EthTxGenerator(configService, gasCalculator, +networkId, provider)
-
-  const prompter = new Prompter()
-  const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator)
-
   const stateRepo = new ModuleStateRepo(+networkId, currentPath)
-  stateRepo.setStateRegistry(moduleBuilder.getRegistry())
 
   const compiler = new HardhatCompiler()
   const moduleValidator = new ModuleValidator()
 
   let contractBuildNames: string[] = []
   const moduleBuilderBindings = moduleBuilder.getAllBindings()
-  for (let [bindingName, bind] of Object.entries(moduleBuilderBindings)) {
+  for (let [_, bind] of Object.entries(moduleBuilderBindings)) {
     contractBuildNames.push(bind.name + '.json')
-
-    await EventHandler.executeBeforeCompileEventHook(bind, moduleBuilderBindings)
   }
 
   compiler.compile() // @TODO: make this more suitable for other compilers
@@ -618,27 +802,19 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
     throw new AbiMismatch("some abi is missing or .contract() was not used properly")
   }
 
-  moduleValidator.validate(moduleBuilder.getAllBindings(), abi)
+  moduleValidator.validate(moduleBuilderBindings, abi)
 
-  let oldModuleStateBindings = await stateRepo.getStateIfExist(moduleName) as { [p: string]: CompiledContractBinding }
-  if (!checkIfExist(oldModuleStateBindings)) {
-    oldModuleStateBindings = {}
-  }
-  let newModuleBindings = moduleBuilder.getAllBindings() as { [p: string]: CompiledContractBinding }
+  let newModuleBindings = moduleBuilderBindings as { [p: string]: CompiledContractBinding }
 
   for (let binding of Object.keys(newModuleBindings)) {
     newModuleBindings[binding].bytecode = bytecodes[binding]
     newModuleBindings[binding].abi = abi[binding]
-    await EventHandler.executeAfterCompileEventHook(newModuleBindings[binding], newModuleBindings)
-  }
-
-  if (!moduleResolver.checkIfDiff(oldModuleStateBindings, newModuleBindings)) {
-    cli.info("Nothing changed from last revision.")
   }
 
   return new Module(
     moduleName,
     newModuleBindings,
+    moduleBuilder.getAllEvents(),
     moduleBuilder.getAllActions(),
     moduleBuilder.getRegistry(),
     moduleBuilder.getResolver(),

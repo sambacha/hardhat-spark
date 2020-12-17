@@ -4,6 +4,7 @@ import {GasCalculator} from "../gas/calculator";
 import {checkIfExist} from "../../utils/util";
 import {Wallet, providers, BigNumber} from "ethers"
 import {TransactionRequest} from "@ethersproject/abstract-provider"
+import {ModuleState} from "../../modules/states/module";
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -16,7 +17,7 @@ export class EthTxGenerator {
   private readonly ethers: providers.JsonRpcProvider
   private readonly wallet: Wallet
   private readonly networkId: number
-  private nonceMap: {[address: string]: number}
+  private nonceMap: { [address: string]: number }
 
   constructor(configService: ConfigService, gasCalculator: GasCalculator, networkId: number, ethers: providers.JsonRpcProvider) {
     this.configService = configService
@@ -28,29 +29,29 @@ export class EthTxGenerator {
     this.nonceMap = {}
   }
 
-  initTx(bindings: { [p: string]: DeployedContractBinding }): { [p: string]: DeployedContractBinding } {
-    for (let [name, bind] of Object.entries(bindings)) {
-      if (checkIfExist(bindings[name].txData.output)) {
-        continue
-      }
+  initTx(moduleState: ModuleState): ModuleState {
+    for (let [stateElementName, stateElement] of Object.entries(moduleState)) {
+      if (stateElement instanceof DeployedContractBinding) {
+        if (checkIfExist(moduleState[stateElementName]?.txData)) {
+          continue
+        }
 
-      let rawTx: TransactionData = {
-        input: null,
-        output: null,
-        contractInput: [],
-        contractOutput: [],
-      }
+        let rawTx: TransactionData = {
+          input: null,
+          output: null,
+        }
 
-      // @TODO: enable multiple address to send tx. HD wallet, address array
-      rawTx.input = {
-        from: this.wallet.address,
-        input: bind.bytecode
-      }
+        // @TODO: enable multiple address to send tx. HD wallet, address array
+        rawTx.input = {
+          from: this.wallet.address,
+          input: stateElement.bytecode
+        }
 
-      bindings[name].txData = rawTx
+        moduleState[stateElementName].txData = rawTx
+      }
     }
 
-    return bindings
+    return moduleState
   }
 
   async getTransactionCount(walletAddress: string): Promise<number> {
