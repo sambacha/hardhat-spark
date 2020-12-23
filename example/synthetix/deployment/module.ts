@@ -6,11 +6,11 @@ import {
   ModuleBuilder,
   Prototype
 } from "../../../src/interfaces/mortar";
-import {ethers} from "ethers";
+import { ethers } from "ethers";
 import * as web3utils from 'web3-utils'
-import {checkIfExist} from "../../../src/packages/utils/util";
+import { checkIfExist } from "../../../src/packages/utils/util";
 
-require('dotenv').config({path: path.resolve(__dirname + './../.env')});
+require('dotenv').config({ path: path.resolve(__dirname + './../.env') });
 
 const {
   ETH_ADDRESS,
@@ -23,7 +23,7 @@ const useOvm = false
 const currentSynthetixSupply = ethers.BigNumber.from("100000")
 const currentWeekOfInflation = 0
 const currentLastMintEvent = 0
-const toBytes32 = key => web3utils.rightPad(web3utils.asciiToHex(key), 64);
+const toBytes32 = (key: string) => web3utils.rightPad(web3utils.asciiToHex(key), 64);
 
 const defaults = {
   WAITING_PERIOD_SECS: (60 * 5).toString(), // 5 mins
@@ -80,13 +80,13 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const EmptyEtherCollateral = new Prototype("EmptyEtherCollateral")
 
   const SafeDecimalMath = m.contract("SafeDecimalMath")
-  const Math = m.contract("Math")
+  const MathLib = m.contract("Math")
 
   const AddressResolver = m.contract("AddressResolver", deployerAddress)
   const ReadProxyAddressResolver = m.bindPrototype("ReadProxyAddressResolver", ReadProxy, deployerAddress)
 
   ReadProxyAddressResolver.afterDeploy(m, "setTargetInResolverFromReadProxy", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [ReadProxyAddressResolver, AddressResolver] = bindings
+    const [ ReadProxyAddressResolver, AddressResolver ] = bindings
 
     await ReadProxyAddressResolver.instance().setTarget(AddressResolver.txData.contractAddress) //@TODO should be just binding
 
@@ -111,7 +111,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const DelegateApprovals = m.contract("DelegateApprovals", deployerAddress, DelegateApprovalsEternalStorage)
 
   DelegateApprovalsEternalStorage.afterDeploy(m, "afterDeployDelegateApprovalsEternalStorage", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [DelegateApprovalsEternalStorage, DelegateApprovals] = bindings
+    const [ DelegateApprovalsEternalStorage, DelegateApprovals ] = bindings
 
     await DelegateApprovalsEternalStorage.instance().setAssociatedContract(DelegateApprovals.txData.contractAddress) //@TODO should be just binding
 
@@ -125,7 +125,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const EternalStorageLiquidations = m.bindPrototype("EternalStorageLiquidations", EternalStorage, deployerAddress, Liquidations)
 
   EternalStorageLiquidations.afterDeploy(m, "afterDeployEternalStorageLiquidations", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [EternalStorageLiquidations, Liquidations] = bindings
+    const [ EternalStorageLiquidations, Liquidations ] = bindings
 
     await EternalStorageLiquidations.instance().setAssociatedContract(Liquidations.txData.contractAddress) //@TODO should be just binding
 
@@ -139,7 +139,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const FeePool = m.contract("FeePool", ProxyFeePool, AddressResolver, ReadProxyAddressResolver)
 
   FeePoolEternalStorage.afterDeploy(m, "afterDeployFeePoolEternalStorage", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [FeePoolEternalStorage, FeePool] = bindings
+    const [ FeePoolEternalStorage, FeePool ] = bindings
 
     await FeePoolEternalStorage.instance().setAssociatedContract(FeePool.txData.contractAddress) //@TODO should be just binding
 
@@ -151,7 +151,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
 
 
   FeePool.afterDeploy(m, "afterDeployFeePool", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [FeePool, ProxyFeePoll] = bindings
+    const [ FeePool, ProxyFeePoll ] = bindings
 
     await ProxyFeePoll.instance().setTarget(FeePool.txData.contractAddress)
 
@@ -164,7 +164,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const FeePoolState = m.contract("FeePoolState", deployerAddress, FeePool)
 
   FeePoolState.afterDeploy(m, "afterDeployFeePoolState", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [FeePoolState, FeePool] = bindings
+    const [ FeePoolState, FeePool ] = bindings
 
     await FeePoolState.instance().setFeePool(FeePool.txData.contractAddress)
 
@@ -197,7 +197,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   )
 
   synthetix.afterDeploy(m, "afterDeploySynthetixProxyERC20Synthetix", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Synthetix, ProxyERC20Synthetix] = bindings
+    const [ Synthetix, ProxyERC20Synthetix ] = bindings
 
     await ProxyERC20Synthetix.instance().setTarget(Synthetix.txData.contractAddress)
 
@@ -208,7 +208,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }, ProxyERC20Synthetix)
 
   synthetix.afterDeploy(m, "afterDeployProxyERC20SynthetixSynthetix", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Synthetix, ProxyERC20Synthetix] = bindings
+    const [ Synthetix, ProxyERC20Synthetix ] = bindings
 
     await Synthetix.instance().setProxy(ProxyERC20Synthetix.txData.contractAddress)
 
@@ -221,7 +221,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const ProxySynthetix = m.bindPrototype("ProxySynthetix", Proxy, deployerAddress)
 
   ProxySynthetix.afterDeploy(m, "afterDeployProxySynthetix", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [ProxySynthetix, Synthetix] = bindings
+    const [ ProxySynthetix, Synthetix ] = bindings
 
     await ProxySynthetix.instance().setTarget(Synthetix.txData.contractAddress)
 
@@ -247,7 +247,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const exchangeState = m.contract("ExchangeState", deployerAddress, exchanger)
 
   exchangeState.afterDeploy(m, "afterDeployExchangeState", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [ExchangeState, Exchanger] = bindings
+    const [ ExchangeState, Exchanger ] = bindings
 
     await ExchangeState.instance().setAssociatedContract(Exchanger.txData.contractAddress) //@TODO should be just binding
 
@@ -258,7 +258,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }, exchanger)
 
   exchanger.afterDeploy(m, "afterDeployExchanger", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Exchanger, SystemStatus] = bindings
+    const [ Exchanger, SystemStatus ] = bindings
 
     await SystemStatus.instance().updateAccessControl(
       toBytes32('Synth'),
@@ -280,7 +280,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }, SystemStatus)
 
   TokenStateSynthetix.afterDeploy(m, "afterDeployTokenStateSynthetix", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [TokenStateSynthetix] = bindings
+    const [ TokenStateSynthetix ] = bindings
 
     await TokenStateSynthetix.instance().setBalanceOf(deployerAddress, currentSynthetixSupply)
 
@@ -291,7 +291,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   })
 
   TokenStateSynthetix.afterDeploy(m, "afterDeployTokenStateSynthetixAndSynthetix", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [TokenStateSynthetix, Synthetix] = bindings
+    const [ TokenStateSynthetix, Synthetix ] = bindings
 
     await TokenStateSynthetix.instance().setAssociatedContract(Synthetix.txData.contractAddress) //@TODO should be just binding
 
@@ -310,7 +310,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   m.contract("TradingRewards", deployerAddress, deployerAddress, ReadProxyAddressResolver)
 
   issuer.afterDeploy(m, "afterDeployIssueSynthetixState", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Issuer, SynthetixState] = bindings
+    const [ Issuer, SynthetixState ] = bindings
 
     await SynthetixState.instance().setAssociatedContract(Issuer.txData.contractAddress) //@TODO should be just binding
 
@@ -323,7 +323,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   m.contract("EscrowChecker", SynthetixEscrow)
 
   synthetix.afterDeploy(m, "afterDeployRewardEscrowSynthetics", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Synthetix, RewardEscrow] = bindings
+    const [ Synthetix, RewardEscrow ] = bindings
 
     await RewardEscrow.instance().setSynthetix(Synthetix.txData.contractAddress) //@TODO should be just binding
 
@@ -334,7 +334,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }, RewardEscrow)
 
   RewardEscrow.afterDeploy(m, "afterDeployRewardEscrowFeePool", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardEscrow, FeePool] = bindings
+    const [ RewardEscrow, FeePool ] = bindings
 
     await RewardEscrow.instance().setFeePool(FeePool.txData.contractAddress)
 
@@ -368,7 +368,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
     const supplySchedule = m.contract("SupplySchedule", deployerAddress, currentLastMintEvent, currentWeekOfInflation)
 
     supplySchedule.afterDeploy(m, "afterDeploySupplySchedule", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [SupplySchedule, Synthetix] = bindings
+      const [ SupplySchedule, Synthetix ] = bindings
 
       await SupplySchedule.instance().setSynthetixProxy(Synthetix.txData.contractAddress)
 
@@ -380,7 +380,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }
 
   RewardsDistribution.afterDeploy(m, "afterDeployRewardDistribution", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardsDistribution, Synthetix] = bindings
+    const [ RewardsDistribution, Synthetix ] = bindings
 
     await RewardsDistribution.instance().setAuthority(Synthetix.txData.contractAddress)
 
@@ -391,7 +391,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }, synthetix)
 
   RewardsDistribution.afterDeploy(m, "afterDeployRewardDistributionProxySynthetix", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardsDistribution, Synthetix, ProxyERC20Synthetix] = bindings
+    const [ RewardsDistribution, Synthetix, ProxyERC20Synthetix ] = bindings
 
     await RewardsDistribution.instance().setSynthetixProxy(ProxyERC20Synthetix.txData.contractAddress)
 
@@ -402,7 +402,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }, synthetix, ProxyERC20Synthetix)
 
   SynthetixEscrow.afterDeploy(m, "afterDeploySynthetixEscrow", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardsDistribution, Synthetix, ProxyERC20Synthetix] = bindings
+    const [ RewardsDistribution, Synthetix, ProxyERC20Synthetix ] = bindings
 
     await RewardsDistribution.instance().setSynthetix(ProxyERC20Synthetix.txData.contractAddress)
 
@@ -421,7 +421,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
 
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
 
-  for (const {name: currencyKey, subclass, asset} of synths) {
+  for (const { name: currencyKey, subclass, asset } of synths) {
     const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, TokenState, deployerAddress, ethers.constants.AddressZero)
 
     const synthProxyIsLegacy = currencyKey === 'sUSD' && MORTAR_NETWORK_ID === '1';
@@ -440,8 +440,8 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
     const currencyKeyInBytes = toBytes32(currencyKey);
     let originalTotalSupply = 0;
     const additionalConstructorArgsMap: { [p: string]: string[] } = {
-      MultiCollateralSynthsETH: [toBytes32('EtherCollateral')],
-      MultiCollateralSynthsUSD: [toBytes32('EtherCollateralsUSD')],
+      MultiCollateralSynthsETH: [ toBytes32('EtherCollateral') ],
+      MultiCollateralSynthsUSD: [ toBytes32('EtherCollateralsUSD') ],
       // future subclasses...
       // future specific synths args...
     };
@@ -463,7 +463,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
     )
 
     Synth.afterDeploy(m, `afterDeploySynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Synth, TokenStateForSynth] = bindings
+      const [ Synth, TokenStateForSynth ] = bindings
 
       await TokenStateForSynth.instance().setAssociatedContract(Synth.txData.contractAddress) //@TODO should be just binding
 
@@ -474,7 +474,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
     }, TokenStateForSynth)
 
     Synth.afterDeploy(m, `afterDeploySynthProxyForSynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Synth, ProxyForSynth] = bindings
+      const [ Synth, ProxyForSynth ] = bindings
 
       await ProxyForSynth.instance().setTarget(Synth.txData.contractAddress) //@TODO should be just binding
 
@@ -486,7 +486,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
 
     if (proxyERC20ForSynth) {
       Synth.afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [Synth, ProxyForSynth, ProxyERC20ForSynth] = bindings
+        const [ Synth, ProxyForSynth, ProxyERC20ForSynth ] = bindings
 
         await Synth.instance().setProxy(ProxyERC20ForSynth.txData.contractAddress) //@TODO should be just binding
 
@@ -497,7 +497,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
       }, ProxyForSynth, proxyERC20ForSynth)
 
       proxyERC20ForSynth.afterDeploy(m, `afterDeployProxyERC20ForSynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [ProxyERC20ForSynth, ProxyForSynth, Synth] = bindings
+        const [ ProxyERC20ForSynth, ProxyForSynth, Synth ] = bindings
 
         await ProxyForSynth.instance().setTarget(Synth.txData.contractAddress) //@TODO should be just binding
 
@@ -508,7 +508,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
       }, ProxyForSynth, Synth)
     } else {
       Synth.afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [Synth, ProxyForSynth] = bindings
+        const [ Synth, ProxyForSynth ] = bindings
 
         await Synth.instance().setProxy(ProxyForSynth.txData.contractAddress) //@TODO should be just binding
 
@@ -524,10 +524,10 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
       currencyKeyInBytes,
     });
 
-    const {feed} = feeds[asset] || {};
+    const { feed } = feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
       ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesFeed${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [ExchangeRates] = bindings
+        const [ ExchangeRates ] = bindings
 
         await ExchangeRates.instance().addAggregator(currencyKeyInBytes, feed) //@TODO should be just binding
 
@@ -581,11 +581,11 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   m.contract("DappMaintenance", deployerAddress)
   m.contract("BinaryOptionMarketData")
 
-  for (const {asset, feed} of standaloneFeeds) {
+  for (const { asset, feed } of standaloneFeeds) {
     if (ethers.utils.isAddress(feed)) {
 
       ExchangeRates.afterDeploy(m, "afterDeployExchangeRates", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [ExchangeRates] = bindings
+        const [ ExchangeRates ] = bindings
 
         await ExchangeRates.instance().addAggregator(toBytes32(asset), feed)
 
@@ -598,7 +598,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   }
 
   AddressResolver.afterDeploy(m, "afterAllContractsDeployed", async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [AddressResolver] = bindings
+    const [ AddressResolver ] = bindings
     const contractAddresses: string[] = []
     const contractBytes: string[] = []
     bindings.shift()
@@ -624,7 +624,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
   const filteredSynths: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   for (const synth of synthsToAdd) {
     issuer.afterDeploy(m, `afterDeployIssuerForSynth${synth.synth.name}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Issuer, Synth] = bindings
+      const [ Issuer, Synth ] = bindings
 
       const issuerSynthAddress = await Issuer.instance().synths(synth.currencyKeyInBytes)
       const currentSynthAddress = Synth.txData.contractAddress;
@@ -641,12 +641,12 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
     const chunkBindings = chunk.map(synth => synth.synth)
 
     issuer.afterDeploy(m, `afterDeployIssuerWithSynth${(i + synthChunkSize) / synthChunkSize}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Issuer] = bindings
+      const [ Issuer ] = bindings
 
       bindings.unshift()
-      await Issuer.instance().addSynths([bindings.map(synth => synth.txData.contractAddress)])
+      await Issuer.instance().addSynths([ bindings.map(synth => synth.txData.contractAddress) ])
 
-      const data = await Issuer.instance().getSynths([chunk.map(synth => synth.currencyKeyInBytes)])
+      const data = await Issuer.instance().getSynths([ chunk.map(synth => synth.currencyKeyInBytes) ])
       if (
         data.length !== chunk.length ||
         data.every((cur: string, index: number) => cur !== bindings[index].txData.contractAddress)) {
@@ -655,16 +655,16 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
     }, ...chunkBindings)
   }
 
-  for (const {name: currencyKey, inverted} of synths) {
+  for (const { name: currencyKey, inverted } of synths) {
     if (inverted) {
-      const {entryPoint, upperLimit, lowerLimit} = inverted;
+      const { entryPoint, upperLimit, lowerLimit } = inverted;
 
-      const setInversePricing = ({freezeAtUpperLimit, freezeAtLowerLimit}: {
+      const setInversePricing = ({ freezeAtUpperLimit, freezeAtLowerLimit }: {
         freezeAtUpperLimit: boolean,
         freezeAtLowerLimit: boolean
       }) =>
         ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesSynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-          const [ExchangeRates] = bindings
+          const [ ExchangeRates ] = bindings
 
           await ExchangeRates.instance().setInversePricing(
             toBytes32(currencyKey),
@@ -679,7 +679,7 @@ export const SynthetixModule = module("SynthetixModule", async (m: ModuleBuilder
       if (false) {
         // this deployment is for local network and we will not use oldExrates
       } else {
-        await setInversePricing({freezeAtUpperLimit: false, freezeAtLowerLimit: false});
+        await setInversePricing({ freezeAtUpperLimit: false, freezeAtLowerLimit: false });
       }
     }
   }
