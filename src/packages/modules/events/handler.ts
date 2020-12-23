@@ -1,9 +1,20 @@
 import {
   AfterCompileEvent,
-  AfterDeployEvent, AfterDeploymentEvent, BeforeCompileEvent, BeforeDeployEvent, BeforeDeploymentEvent,
+  AfterDeployEvent,
+  AfterDeploymentEvent,
+  BeforeCompileEvent,
+  BeforeDeployEvent,
+  BeforeDeploymentEvent,
   CompiledContractBinding,
   ContractBinding,
-  DeployedContractBinding, EventFnCompiled, EventFnDeployed, Events, ModuleBuilder, OnChangeEvent, StatefulEvent
+  DeployedContractBinding,
+  EventFnCompiled,
+  EventFnDeployed,
+  Events,
+  ModuleBuilder,
+  ModuleEvent, ModuleEventFn,
+  OnChangeEvent,
+  StatefulEvent
 } from "../../../interfaces/mortar";
 import {checkIfExist} from "../../utils/util";
 import {ModuleStateRepo} from "../states/state_repo";
@@ -67,6 +78,30 @@ export class EventHandler {
 
   async executeOnChangeEventHook(moduleName: string, event: OnChangeEvent, moduleState: ModuleState): Promise<void> {
     await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState)
+  }
+
+  async executeOnStartModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleModuleEventHooks(event.name, event.fn, moduleState)
+  }
+
+  async executeOnCompletionModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleModuleEventHooks(event.name, event.fn, moduleState)
+  }
+
+  private async handleModuleEventHooks(
+    eventName: string,
+    fn: ModuleEventFn,
+    moduleStates: ModuleState,
+  ) {
+    const eventElement = moduleStates[eventName] as StatefulEvent
+    if (eventElement.executed) {
+      cli.info(`Event is already executed - ${eventName}`)
+      return
+    }
+
+    await this.moduleState.setSingleEventName(eventName)
+    await fn()
+    await this.moduleState.finishCurrentEvent()
   }
 
   private async handleDeployedBindingsEvents(

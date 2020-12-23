@@ -84,6 +84,22 @@ export const ExampleModule = module("ExampleModule", async (m: ModuleBuilder) =>
 
     console.log("This is on change:", Example.name)
   }, Example)
+
+  m.onStart("OnStart", async (): Promise<void> => {
+    console.log("onStart")
+  })
+
+  m.onCompletion("onCompletion", async (): Promise<void> => {
+    console.log("onCompletion")
+  })
+
+  m.onFail("onFail", async (): Promise<void> => {
+    console.log("onFail")
+  })
+
+  m.onSuccess("onSuccess", async (): Promise<void> => {
+    console.log("onSuccess")
+  })
 })
 
 export const SecondModule = module("SecondExample", async (m: ModuleBuilder) => {

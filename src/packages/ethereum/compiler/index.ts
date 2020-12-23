@@ -1,4 +1,4 @@
-import {JsonFragment} from "../../types/abi";
+import {JsonFragment} from "../../types/artifacts/abi";
 
 export abstract class Compiler {
   abstract compile(): void

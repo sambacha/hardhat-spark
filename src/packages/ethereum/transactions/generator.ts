@@ -1,10 +1,12 @@
-import {DeployedContractBinding, TransactionData} from "../../../interfaces/mortar";
+import {CompiledContractBinding, DeployedContractBinding, TransactionData} from "../../../interfaces/mortar";
 import ConfigService from "../../config/service";
 import {GasCalculator} from "../gas/calculator";
 import {checkIfExist} from "../../utils/util";
 import {Wallet, providers, BigNumber} from "ethers"
 import {TransactionRequest} from "@ethersproject/abstract-provider"
 import {ModuleState} from "../../modules/states/module";
+import {SingleContractLinkReference} from "../../types/artifacts/libraries";
+import {CliError} from "../../types/errors";
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -78,6 +80,29 @@ export class EthTxGenerator {
     }
 
     return this.wallet.signTransaction(tx)
+  }
+
+  addLibraryAddresses(bytecode: string, binding: CompiledContractBinding, moduleState: ModuleState): string {
+    const libraries: SingleContractLinkReference = binding.libraries
+
+    for (let [libraryName, libraryOccurrences] of Object.entries(libraries)) {
+      const contractAddress = moduleState[libraryName].txData?.contractAddress as string
+      if (!checkIfExist(contractAddress)) {
+        throw new CliError(`Library is not deployed - ${libraryName}`)
+      }
+
+      for (let occurrence of libraryOccurrences) {
+        const start = (occurrence.start + 1) * 2
+        const length = occurrence.length * 2
+
+        const firstPart = bytecode.slice(0, start)
+        const secondPart = bytecode.slice(start + length)
+
+        bytecode = firstPart.concat(contractAddress.substring(2), secondPart)
+      }
+    }
+
+    return bytecode
   }
 
   async fetchTxData(walletAddress: string): Promise<TxMetaData> {

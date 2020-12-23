@@ -121,7 +121,7 @@ export class ModuleStateRepo {
   }
 
   static convertBindingToMetaData(binding: DeployedContractBinding): ContractBindingMetaData {
-    return new ContractBindingMetaData(binding.name, binding.args, binding.bytecode, binding.abi, binding.txData)
+    return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.libraries, binding.txData)
   }
 
   static convertStatesToMetaData(moduleState: ModuleState): { [p: string]: ContractBindingMetaData | StatefulEvent } {
@@ -131,9 +131,11 @@ export class ModuleStateRepo {
       if (stateElement instanceof DeployedContractBinding) {
         metaData[stateElementName] = new ContractBindingMetaData(
           stateElement.name,
+          stateElement.contractName,
           stateElement.args,
           stateElement.bytecode,
           stateElement.abi,
+          stateElement.libraries,
           stateElement.txData
         )
         continue

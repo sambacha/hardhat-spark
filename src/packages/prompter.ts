@@ -87,7 +87,7 @@ export class Prompter {
     cli.action.start("Block is mining")
   }
 
-  transactionConfirmation(name: string, confirmationNumber: number): void {
+  transactionConfirmation(confirmationNumber: number): void {
     cli.action.stop(`\n Current block confirmation: ${confirmationNumber}`)
   }
 }

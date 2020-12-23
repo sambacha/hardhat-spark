@@ -16,12 +16,15 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
         break
       }
 
-      if (value.length > 0) {
+      if (value.length >= 0) {
         handleArray(bindingName, value, type)
         break
       }
 
-      if ("contract " + value.name != internalType) {
+      if (
+        "contract " + value.name != internalType &&
+        "address" != type
+      ) {
         throw new ContractTypeMismatch(`Unsupported type for - ${bindingName}\n provided: ${value.name}\n expected: ${internalType || ""}`)
       }
       break
@@ -57,7 +60,7 @@ function handleString(bindingName: string, value: string, type: string): void {
   }
 
   // bytes
-  if (type == "bytes") {
+  if (type == "bytes" || type == "bytes32") {
     return
   }
 

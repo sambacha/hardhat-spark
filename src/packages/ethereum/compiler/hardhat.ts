@@ -2,7 +2,9 @@ import {Compiler} from "./index";
 import {execSync} from "child_process";
 import * as path from "path";
 import {parseFiles} from "../../utils/files";
-import {JsonFragment} from "../../types/abi"
+import {JsonFragment} from "../../types/artifacts/abi";
+import {Artifact} from "hardhat/src/types/artifacts";
+import {LinkReferences} from "../../types/artifacts/libraries";
 
 export class HardhatCompiler extends Compiler {
   compile(): void {
@@ -40,6 +42,31 @@ export class HardhatCompiler extends Compiler {
       }
 
       return ABIs
+    } catch (e) {
+      throw e
+    }
+  }
+
+  extractContractLibraries(contractNames: string[]): LinkReferences {
+    try {
+      let libraries: { [p: string]: any } = {}
+
+      const dir = path.resolve(process.cwd(), "artifacts", "contracts")
+      const buildArtifacts = parseFiles(dir, contractNames, [])
+      for (let artifact of buildArtifacts) {
+        const art = JSON.parse(artifact) as Artifact
+
+        let contractLibDep: {[libraryName: string]: Array<{ length: number; start: number }>} = {}
+        for (let [, linkDeps] of Object.entries(art.linkReferences)) {
+          for (let [libraryName, librariesOccurrence] of Object.entries(linkDeps)) {
+            contractLibDep[libraryName] = librariesOccurrence
+          }
+        }
+
+        libraries[art.contractName] = contractLibDep
+      }
+
+      return libraries
     } catch (e) {
       throw e
     }

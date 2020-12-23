@@ -2,7 +2,7 @@ import {
   AfterCompileEvent,
   AfterDeployEvent,
   AfterDeploymentEvent, BeforeCompileEvent, BeforeDeployEvent, BeforeDeploymentEvent,
-  DeployedContractBinding, OnChangeEvent,
+  DeployedContractBinding, ModuleEvent, ModuleEvents, OnChangeEvent,
   StatefulEvent
 } from "../../../interfaces/mortar";
 import {Prompter} from "../../prompter";
@@ -12,15 +12,16 @@ import {EthTxGenerator} from "./generator";
 import {BigNumber, providers} from "ethers";
 import {defaultAbiCoder as abiCoder} from "@ethersproject/abi"
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
-import {JsonFragmentType} from "../../types/abi";
+import {JsonFragmentType} from "../../types/artifacts/abi";
 import {cli} from "cli-ux";
 import {EventHandler} from "../../modules/events/handler";
 import {CliError, ContractTypeMismatch, ContractTypeUnsupported} from "../../types/errors";
 import {ModuleState} from "../../modules/states/module";
 import {IModuleRegistryResolver} from "../../modules/states/registry";
+import {ModuleResolver} from "../../modules/module_resolver";
 
 const CONSTRUCTOR_TYPE = 'constructor'
-export const BLOCK_CONFIRMATION_NUMBER = 0
+export const BLOCK_CONFIRMATION_NUMBER = 1
 
 export class TxExecutor {
   private readonly networkId: number
@@ -63,6 +64,7 @@ export class TxExecutor {
         const contractBinding = await this.executeSingleBinding(element as DeployedContractBinding, moduleState)
         if (checkIfExist(registry) && checkIfExist(contractBinding.txData.contractAddress)) {
           await registry?.setAddress(this.networkId, moduleName, contractBinding.name, <string>contractBinding.txData.contractAddress)
+          // @TODO fill in module event?
         }
 
         await this.moduleState.storeSingleBinding(contractBinding)
@@ -75,8 +77,12 @@ export class TxExecutor {
     return
   }
 
-  private async executeEvent(moduleName: string, event: StatefulEvent, moduleState: ModuleState): Promise<void> {
+  async executeModuleEvents(moduleName: string, moduleEvents: {[name: string]: ModuleEvent}): Promise<void> {
+    const moduleState = await this.moduleState.getStateIfExist(moduleName)
+    ModuleResolver.handleModuleEvents(moduleState, moduleEvents)
+  }
 
+  private async executeEvent(moduleName: string, event: StatefulEvent, moduleState: ModuleState): Promise<void> {
     switch (event.event.eventType) {
       case "BeforeDeployEvent": {
         await this.eventHandler.executeBeforeDeployEventHook(moduleName, event.event as BeforeDeployEvent, moduleState)
@@ -104,6 +110,14 @@ export class TxExecutor {
       }
       case "OnChangeEvent": {
         await this.eventHandler.executeOnChangeEventHook(moduleName, event.event as OnChangeEvent, moduleState)
+        break;
+      }
+      case "OnStart": {
+        await this.eventHandler.executeOnStartModuleEventHook(moduleName, event.event as OnChangeEvent, moduleState)
+        break;
+      }
+      case "OnCompletion": {
+        await this.eventHandler.executeOnCompletionModuleEventHook(moduleName, event.event as OnChangeEvent, moduleState)
         break;
       }
       default: {
@@ -147,13 +161,16 @@ export class TxExecutor {
             break
           }
 
-          if (binding.args[i].length > 0) {
+          if (binding.args[i].length >= 0) {
             values.push(binding.args[i])
             types.push(constructorFragmentInputs[i].type)
             break
           }
 
-          if ("contract " + binding.args[i].name != constructorFragmentInputs[i].internalType) {
+          if (
+            "contract " + binding.args[i].name != constructorFragmentInputs[i].internalType &&
+            "address" != constructorFragmentInputs[i].type
+          ) {
             throw new ContractTypeMismatch(`Unsupported type for - ${binding.name} \n provided: ${binding.args[i].name} \n expected: ${constructorFragmentInputs[i].internalType || ""}`)
           }
 
@@ -204,6 +221,7 @@ export class TxExecutor {
     }
 
     bytecode = bytecode + abiCoder.encode(types, values).substring(2)
+    bytecode = await this.txGenerator.addLibraryAddresses(bytecode, binding, moduleState)
 
     const signedTx = await this.txGenerator.generateSingedTx(
       0,
@@ -212,7 +230,7 @@ export class TxExecutor {
 
     await this.prompter.promptSignedTransaction(signedTx)
     await this.prompter.promptExecuteTx()
-    const txReceipt = await this.sendTransaction(binding.name, signedTx)
+    const txReceipt = await this.sendTransaction(binding, signedTx)
 
     binding.txData.contractAddress = txReceipt.contractAddress
     binding.txData.output = txReceipt
@@ -220,19 +238,26 @@ export class TxExecutor {
     return binding
   }
 
-  private async sendTransaction(name: string, signedTx: string): Promise<TransactionReceipt> {
+  private async sendTransaction(binding: DeployedContractBinding, signedTx: string): Promise<TransactionReceipt> {
     return new Promise(async (resolve) => {
 
       this.prompter.sendingTx()
       const txResp = await this.ethers.sendTransaction(signedTx)
       this.prompter.sentTx()
-      const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER)
-      this.prompter.transactionReceipt()
+
       this.prompter.waitTransactionConfirmation()
-      this.prompter.transactionConfirmation(name, BLOCK_CONFIRMATION_NUMBER)
+      let txReceipt = await txResp.wait(1)
+      binding.txData.output = txReceipt
+      await this.moduleState.storeSingleBinding(binding)
+      this.prompter.transactionConfirmation( 1)
+
+      this.prompter.waitTransactionConfirmation()
+      txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER)
+      binding.txData.output = txReceipt
+      await this.moduleState.storeSingleBinding(binding)
+      this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER)
 
       resolve(txReceipt)
-      return txReceipt
     })
   }
 }

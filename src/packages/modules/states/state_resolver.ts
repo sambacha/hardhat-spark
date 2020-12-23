@@ -1,6 +1,7 @@
 import {ModuleState} from "./module";
 import {checkIfExist} from "../../utils/util";
 import {BindingsConflict} from "../../types/errors";
+import {StatefulEvent} from "../../../interfaces/mortar";
 
 export class StateResolver {
   static mergeStates(mainModuleState: ModuleState, newModuleState: ModuleState): ModuleState {

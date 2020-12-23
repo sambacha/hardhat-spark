@@ -3,15 +3,14 @@ import {
   DeployedContractBinding,
   Events,
   StatefulEvent,
-  TransactionData,
-  Event, ContractBinding, ContractBindingMetaData,
+  ContractBinding, ModuleEvents, ModuleEvent, ContractEvent,
 } from "../../interfaces/mortar";
 import {checkIfExist} from "../utils/util"
 import {cli} from "cli-ux";
 import {ethers} from "ethers";
 import {Prompter} from "../prompter";
 import {EthTxGenerator} from "../ethereum/transactions/generator";
-import {StateIsBiggerThanModule, UserError} from "../types/errors";
+import {UserError} from "../types/errors";
 import {ModuleState} from "./states/module";
 import {ModuleStateRepo} from "./states/state_repo";
 
@@ -55,7 +54,7 @@ export class ModuleResolver {
         oldModuleElement = (oldModuleElement as DeployedContractBinding)
         newModuleElement = (newModuleElement as CompiledContractBinding)
 
-        if (oldModuleElement.bytecode != newModuleElement .bytecode) {
+        if (oldModuleElement.bytecode != newModuleElement.bytecode) {
           return true
         }
 
@@ -139,7 +138,8 @@ export class ModuleResolver {
   resolve(
     currentBindings: { [p: string]: CompiledContractBinding },
     currentEvents: Events,
-    moduleStateFile: ModuleState
+    moduleEvents: ModuleEvents,
+    moduleStateFile: ModuleState,
   ): ModuleState {
     let moduleState: { [p: string]: CompiledContractBinding | StatefulEvent } = {}
 
@@ -148,20 +148,12 @@ export class ModuleResolver {
         continue
       }
 
-      moduleState = ModuleResolver.resolveContractsAndEvents(moduleState, currentBindings, binding, currentEvents)
+      moduleState = ModuleResolver.resolveContractsAndEvents(moduleState, currentBindings, binding, currentEvents, moduleEvents)
     }
 
     let moduleStateLength = 0
-    let moduleStateFileLength = 0
     if (checkIfExist(moduleState)) {
       moduleStateLength = Object.keys(moduleState).length
-    }
-    if (checkIfExist(moduleStateFile)) {
-      moduleStateFileLength = Object.keys(moduleStateFile).length
-    }
-
-    if (moduleStateLength < moduleStateFileLength) {
-      throw new StateIsBiggerThanModule("Module state files has more bindings than current one.")
     }
 
     let resolvedModuleState: ModuleState = {}
@@ -178,14 +170,16 @@ export class ModuleResolver {
           throw new UserError("Module and module state file didn't match element.")
         }
 
-        if (stateFileElement.bytecode != moduleStateElement.bytecode) {
+        if (stateFileElement.bytecode != moduleStateElement.bytecode || !checkIfExist(stateFileElement.txData?.contractAddress)) {
           const txData = (moduleStateElement as DeployedContractBinding)?.txData || {}
           resolvedModuleState[moduleElementName] = new DeployedContractBinding(
             // current metadata
             moduleStateElement.name,
+            moduleStateElement.contractName,
             moduleStateElement.args,
             moduleStateElement.bytecode,
             moduleStateElement.abi,
+            moduleStateElement.libraries,
             txData,
 
             // event hooks
@@ -203,9 +197,11 @@ export class ModuleResolver {
         resolvedModuleState[moduleElementName] = new DeployedContractBinding(
           // current metadata
           stateFileElement.name,
+          stateFileElement.contractName,
           stateFileElement.args,
           stateFileElement.bytecode,
           stateFileElement.abi,
+          stateFileElement.libraries,
           stateFileElement.txData,
 
           // event hooks
@@ -237,9 +233,11 @@ export class ModuleResolver {
         resolvedModuleState[moduleElementName] = new DeployedContractBinding(
           // current metadata
           moduleStateElement.name,
+          moduleStateElement.contractName,
           moduleStateElement.args,
           moduleStateElement.bytecode,
           moduleStateElement.abi,
+          moduleStateElement.libraries,
           txData,
 
           // event hooks
@@ -266,6 +264,7 @@ export class ModuleResolver {
     bindings: { [p: string]: CompiledContractBinding },
     binding: CompiledContractBinding,
     events: Events,
+    moduleEvents: ModuleEvents,
   ): { [p: string]: CompiledContractBinding | StatefulEvent } {
     for (let arg of binding.args) {
       if (!checkIfExist(arg?.name)) {
@@ -276,13 +275,24 @@ export class ModuleResolver {
         continue
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, argBinding, events)
+      this.resolveContractsAndEvents(moduleState, bindings, argBinding, events, moduleEvents)
+    }
+
+    for (let [bindingName] of Object.entries(binding.libraries)) {
+      const libBinding = bindings[bindingName]
+      if (!checkIfExist(libBinding)) {
+        continue
+      }
+
+      this.resolveContractsAndEvents(moduleState, bindings, libBinding, events, moduleEvents)
     }
 
     // @TODO somehow their is some number...
+    this.handleModuleEvents(moduleState, moduleEvents.onStart)
     this.resolveBeforeDeployEvents(moduleState, binding, events)
     moduleState[binding.name] = binding
     this.resolveAfterDeployEvents(moduleState, binding, events)
+    this.handleModuleEvents(moduleState, moduleEvents.onCompletion)
 
     return moduleState
   }
@@ -331,11 +341,11 @@ export class ModuleResolver {
     events: Events,
   ): void {
     const handleEvent = (eventName: string) => {
-      if (events[eventName].event.deps.length == 0) {
+      if ((events[eventName].event as ContractEvent).deps.length == 0) {
         return
       }
 
-      for (let dep of events[eventName].event.deps) {
+      for (let dep of (events[eventName].event as ContractEvent).deps) {
         if (!checkIfExist(moduleState[dep.name])) {
           return
         }
@@ -354,6 +364,19 @@ export class ModuleResolver {
 
     for (let eventIndex in binding.events.afterDeployment) {
       handleEvent(binding.events.afterDeployment[eventIndex])
+    }
+  }
+
+  static handleModuleEvents(
+    moduleState: ModuleState | { [p: string]: CompiledContractBinding | StatefulEvent },
+    moduleEvents: { [name: string]: ModuleEvent },
+  ) {
+    for (let [eventName, moduleEvent] of Object.entries(moduleEvents)) {
+      moduleState[eventName] = new StatefulEvent(
+        moduleEvent,
+        false,
+        {}
+      )
     }
   }
 }

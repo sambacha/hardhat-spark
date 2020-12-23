@@ -27,7 +27,7 @@ export async function deploy(
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
   prompter: Prompter,
-  txExecutor: TxExecutor
+  executor: TxExecutor
 ) {
   const modules = await require(migrationFilePath)
 
@@ -42,7 +42,7 @@ export async function deploy(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState)
     }
 
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), stateFileRegistry)
+    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry)
     cli.info("\nDeploy module - ", moduleName)
     if (!checkIfExist(moduleState)) {
       cli.info("Nothing to deploy")
@@ -53,7 +53,14 @@ export async function deploy(
     const initializedTxModuleState = txGenerator.initTx(moduleState)
     await prompter.promptContinueDeployment()
 
-    await txExecutor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver())
+    try {
+      await executor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver())
+      await executor.executeModuleEvents(moduleName, module.getAllModuleEvents().onSuccess)
+    } catch (error) {
+      await executor.executeModuleEvents(moduleName, module.getAllModuleEvents().onFail)
+
+      throw error
+    }
   }
 }
 
@@ -70,7 +77,7 @@ export async function diff(resolvedPath: string, states: string[], moduleResolve
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState)
     }
 
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), stateFileRegistry)
+    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry)
     if (!checkIfExist(moduleState)) {
       cli.info("Current module state is empty, add something and try again.")
       process.exit(0)
