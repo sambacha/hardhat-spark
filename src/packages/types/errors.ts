@@ -1,16 +1,16 @@
-export class UserError extends Error{
-  public message: string
+export class UserError extends Error {
+  public message: string;
   constructor(message: string) {
     super();
-    this.message = "User error - " + message
+    this.message = 'User error - ' + message;
   }
 }
 
-export class CliError extends Error{
-  public message: string
+export class CliError extends Error {
+  public message: string;
   constructor(message: string) {
     super();
-    this.message = "CLI error - " + message
+    this.message = 'CLI error - ' + message;
   }
 }
 

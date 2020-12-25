@@ -48,7 +48,7 @@
 //   // @TODO: Think about this in more detail, but this is a potentially good option to put Mortar brains.
 //   instance(): any;
 //
-//   // @TODO: Define complete set of lifecycle events.
+//   // @TODO: Define complete set of lifecycle eventsDeps.
 //   // Example: Deployment Start -> Planning Before -> Planning After
 //   //      -> onChange -> Apply Before -> Apply After -> Deployment End.
 //

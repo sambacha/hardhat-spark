@@ -1,5 +1,5 @@
 export interface LinkReferences {
-    [contractName: string]: SingleContractLinkReference
+    [contractName: string]: SingleContractLinkReference;
 }
 
 export interface SingleContractLinkReference {

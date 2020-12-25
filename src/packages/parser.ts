@@ -1,13 +1,13 @@
-import {parseSolFiles} from "./utils/files";
+import { parseSolFiles } from './utils/files';
 
 export default class Parser {
-  private readonly sourcePath: string
+  private readonly sourcePath: string;
 
   constructor(sourcePath: string) {
-    this.sourcePath = sourcePath
+    this.sourcePath = sourcePath;
   }
 
   parseSolFiles(contractNames: string[]): string[] {
-    return parseSolFiles(this.sourcePath, contractNames, [])
+    return parseSolFiles(this.sourcePath, contractNames, []);
   }
 }

@@ -1,11 +1,11 @@
-import {Command, flags} from '@oclif/command'
-import ConfigService from "../packages/config/service";
-import {cli} from "cli-ux";
-import * as command from "../index";
-import {UserError} from "../packages/types/errors";
+import { Command, flags } from '@oclif/command';
+import ConfigService from '../packages/config/service';
+import { cli } from 'cli-ux';
+import * as command from '../index';
+import { UserError } from '../packages/types/errors';
 
 export default class Init extends Command {
-  static description = 'Initialize mortar configuration file'
+  static description = 'Initialize mortar configuration file';
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -26,31 +26,31 @@ export default class Init extends Command {
     debug: flags.boolean(
       {
         name: 'debug',
-        description: "Flag used for debugging"
+        description: 'Flag used for debugging'
       }
     )
-  }
+  };
 
 
   async run() {
-    const {flags} = this.parse(Init)
+    const {flags} = this.parse(Init);
     if (flags.debug) {
-      cli.config.outputLevel = "debug"
+      cli.config.outputLevel = 'debug';
     }
 
-    const configService = new ConfigService(process.cwd())
+    const configService = new ConfigService(process.cwd());
 
-    command.init(flags, configService)
+    command.init(flags, configService);
   }
 
   async catch(error: Error) {
     if (error instanceof UserError) {
-      cli.info(error.message)
-      cli.exit(0)
+      cli.info(error.message);
+      cli.exit(0);
     }
 
-    cli.error(error)
-    cli.info("If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ")
-    cli.exit(1)
+    cli.error(error);
+    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ');
+    cli.exit(1);
   }
 }

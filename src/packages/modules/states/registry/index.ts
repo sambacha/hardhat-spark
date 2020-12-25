@@ -1,10 +1,10 @@
 import {
   DeployedContractBinding,
   StatefulEvent
-} from "../../../../interfaces/mortar";
+} from '../../../../interfaces/mortar';
 
-export type ModuleRegistryResolver = {[version: string]: {[bindingName: string]: string}}
-export const REGISTRY_NAME = 'module_registry.json'
+export type ModuleRegistryResolver = {[version: string]: {[bindingName: string]: string}};
+export const REGISTRY_NAME = 'module_registry.json';
 
 export interface IModuleRegistryResolver {
   resolveContract(networkId: number, moduleName: string, bindingName: string): Promise<string>;
