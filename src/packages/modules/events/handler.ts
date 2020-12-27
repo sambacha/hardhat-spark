@@ -5,13 +5,9 @@ import {
   BeforeCompileEvent,
   BeforeDeployEvent,
   BeforeDeploymentEvent,
-  CompiledContractBinding,
   ContractBinding, ContractEvent,
-  DeployedContractBinding,
   EventFnCompiled,
   EventFnDeployed,
-  Events,
-  ModuleBuilder,
   ModuleEvent, ModuleEventFn,
   OnChangeEvent,
   StatefulEvent
@@ -40,19 +36,23 @@ export class EventHandler {
     const fn = event.fn;
     const eventName = event.name;
 
-    const binds: ContractBinding[] = [];
     for (const dependency of deps) {
       const name = dependency.name;
-      if (!checkIfExist(moduleState[name]) && checkIfExist((moduleState[name] as CompiledContractBinding).bytecode)) {
+      if (!checkIfExist(moduleState[name])) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
-      binds.push(moduleState[name] as DeployedContractBinding);
+      if (
+        !checkIfExist((moduleState[name] as ContractBinding).name) ||
+        !checkIfExist((moduleState[name] as ContractBinding).args)
+      ) {
+        throw new CliError('Desired contract is not yet been compiled.');
+      }
     }
 
     await this.moduleState.setSingleEventName(eventName);
     // @TODO enable user to change module state variable
-    await fn(...binds);
+    await fn();
     await this.moduleState.finishCurrentEvent();
   }
 
@@ -87,11 +87,16 @@ export class EventHandler {
   async executeOnCompletionModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
     await this.handleModuleEventHooks(event.name, event.fn, moduleState);
   }
+
   async executeOnErrorModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
     await this.handleModuleEventHooks(event.name, event.fn, moduleState);
   }
 
   async executeOnSuccessModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
+    await this.handleModuleEventHooks(event.name, event.fn, moduleState);
+  }
+
+  async executeOnFailModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
     await this.handleModuleEventHooks(event.name, event.fn, moduleState);
   }
 
@@ -123,19 +128,23 @@ export class EventHandler {
       return;
     }
 
-    const binds: DeployedContractBinding[] = [];
     for (const dependency of deps) {
       const name = dependency.name;
 
-      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as CompiledContractBinding).bytecode)) {
+      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as ContractBinding).bytecode)) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
-      binds.push(moduleStates[name] as DeployedContractBinding);
+      if (
+        !checkIfExist((moduleStates[name] as ContractBinding).bytecode) ||
+        !checkIfExist((moduleStates[name] as ContractBinding).txData?.contractAddress)
+      ) {
+        throw new CliError('Desired contract is not yet deployed.');
+      }
     }
 
     await this.moduleState.setSingleEventName(eventName);
-    await fn(...binds);
+    await fn();
     await this.moduleState.finishCurrentEvent();
   }
 
@@ -151,18 +160,22 @@ export class EventHandler {
       return;
     }
 
-    const binds: CompiledContractBinding[] = [];
     for (const dependency of deps) {
       const name = dependency.name;
-      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as CompiledContractBinding).bytecode)) {
+      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as ContractBinding).bytecode)) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
-      binds.push(moduleStates[name] as CompiledContractBinding);
+      if (
+        !checkIfExist((moduleStates[name] as ContractBinding).bytecode) ||
+        !checkIfExist((moduleStates[name] as ContractBinding).abi)
+      ) {
+        throw new CliError('Desired contract is not yet been compiled.');
+      }
     }
 
     await this.moduleState.setSingleEventName(eventName);
-    await fn(...binds);
+    await fn();
     await this.moduleState.finishCurrentEvent();
   }
 }

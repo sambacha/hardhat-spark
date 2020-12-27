@@ -38,11 +38,20 @@ export class FileSystemModuleState implements IModuleState {
     }
 
     const stateDir = path.resolve(moduleDir, `${networkId}_${STATE_NAME}`);
-    fs.writeFileSync(stateDir, JSON.stringify(metaData, null, 4));
+    try {
+      fs.writeFileSync(stateDir, JSON.stringify(metaData, undefined, 4));
+    } catch (error) {
+      console.log(Object.keys(metaData));
+      console.log(Object.entries(metaData));
+      console.log(error);
+
+      throw error;
+    }
+
     return true;
   }
 
-  checkIfSet(moduleName: string , networkId: number): boolean {
+  checkIfSet(moduleName: string, networkId: number): boolean {
     const dir = path.resolve(this.statePath, moduleName, `${networkId}_${STATE_NAME}`);
 
     return fs.existsSync(dir);

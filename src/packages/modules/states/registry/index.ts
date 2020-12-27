@@ -1,8 +1,3 @@
-import {
-  DeployedContractBinding,
-  StatefulEvent
-} from '../../../../interfaces/mortar';
-
 export type ModuleRegistryResolver = {[version: string]: {[bindingName: string]: string}};
 export const REGISTRY_NAME = 'module_registry.json';
 

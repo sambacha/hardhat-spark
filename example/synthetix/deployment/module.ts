@@ -1,7 +1,6 @@
 import path from 'path';
 import {
   ContractBinding,
-  DeployedContractBinding,
   module,
   ModuleBuilder,
   Prototype
@@ -54,13 +53,11 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   const AddressResolver = m.contract('AddressResolver', deployerAddress);
   const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', ReadProxy, deployerAddress);
 
-  ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [ReadProxyAddressResolver, AddressResolver] = bindings;
-
-    await ReadProxyAddressResolver.instance().setTarget(AddressResolver.txData.contractAddress); // @TODO should be just binding
+  const setTargetInResolverFromReadProxy = ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (): Promise<void> => {
+    await ReadProxyAddressResolver.instance().setTarget(AddressResolver);
 
     const target = await ReadProxyAddressResolver.instance().target() as string;
-    if (target != AddressResolver.txData.contractAddress) {
+    if (target != AddressResolver?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, AddressResolver);
@@ -79,13 +76,11 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   const DelegateApprovalsEternalStorage = m.bindPrototype('DelegateApprovalsEternalStorage', EternalStorage, deployerAddress, ethers.constants.AddressZero);
   const DelegateApprovals = m.contract('DelegateApprovals', deployerAddress, DelegateApprovalsEternalStorage);
 
-  DelegateApprovalsEternalStorage.afterDeploy(m, 'afterDeployDelegateApprovalsEternalStorage', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [DelegateApprovalsEternalStorage, DelegateApprovals] = bindings;
-
-    await DelegateApprovalsEternalStorage.instance().setAssociatedContract(DelegateApprovals.txData.contractAddress); // @TODO should be just binding
+  DelegateApprovalsEternalStorage.afterDeploy(m, 'afterDeployDelegateApprovalsEternalStorage', async (): Promise<void> => {
+    await DelegateApprovalsEternalStorage.instance().setAssociatedContract(DelegateApprovals); // @TODO should be just binding
 
     const associatedContract = await DelegateApprovalsEternalStorage.instance().associatedContract() as string;
-    if (associatedContract != DelegateApprovals.txData.contractAddress) {
+    if (associatedContract != DelegateApprovals?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, DelegateApprovals);
@@ -93,13 +88,11 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   const Liquidations = m.contract('Liquidations', deployerAddress, ReadProxyAddressResolver);
   const EternalStorageLiquidations = m.bindPrototype('EternalStorageLiquidations', EternalStorage, deployerAddress, Liquidations);
 
-  EternalStorageLiquidations.afterDeploy(m, 'afterDeployEternalStorageLiquidations', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [EternalStorageLiquidations, Liquidations] = bindings;
-
-    await EternalStorageLiquidations.instance().setAssociatedContract(Liquidations.txData.contractAddress); // @TODO should be just binding
+  EternalStorageLiquidations.afterDeploy(m, 'afterDeployEternalStorageLiquidations', async (): Promise<void> => {
+    await EternalStorageLiquidations.instance().setAssociatedContract(Liquidations);
 
     const associatedContract = await EternalStorageLiquidations.instance().associatedContract() as string;
-    if (associatedContract != Liquidations.txData.contractAddress) {
+    if (associatedContract != Liquidations?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, Liquidations);
@@ -107,38 +100,32 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   const FeePoolEternalStorage = m.contract('FeePoolEternalStorage', deployerAddress, ethers.constants.AddressZero);
   const FeePool = m.contract('FeePool', ProxyFeePool, AddressResolver, ReadProxyAddressResolver);
 
-  FeePoolEternalStorage.afterDeploy(m, 'afterDeployFeePoolEternalStorage', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [FeePoolEternalStorage, FeePool] = bindings;
-
-    await FeePoolEternalStorage.instance().setAssociatedContract(FeePool.txData.contractAddress); // @TODO should be just binding
+  FeePoolEternalStorage.afterDeploy(m, 'afterDeployFeePoolEternalStorage', async (): Promise<void> => {
+    await FeePoolEternalStorage.instance().setAssociatedContract(FeePool);
 
     const associatedContract = await FeePoolEternalStorage.instance().associatedContract() as string;
-    if (associatedContract != FeePool.txData.contractAddress) {
+    if (associatedContract != FeePool?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, FeePool);
 
 
-  FeePool.afterDeploy(m, 'afterDeployFeePool', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [FeePool, ProxyFeePoll] = bindings;
+  FeePool.afterDeploy(m, 'afterDeployFeePool', async (): Promise<void> => {
+    await ProxyFeePool.instance().setTarget(FeePool);
 
-    await ProxyFeePoll.instance().setTarget(FeePool.txData.contractAddress);
-
-    const target = await ProxyFeePoll.instance().target() as string;
-    if (target != FeePool.txData.contractAddress) {
+    const target = await ProxyFeePool.instance().target() as string;
+    if (target != FeePool?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, ProxyFeePool);
 
   const FeePoolState = m.contract('FeePoolState', deployerAddress, FeePool);
 
-  FeePoolState.afterDeploy(m, 'afterDeployFeePoolState', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [FeePoolState, FeePool] = bindings;
-
-    await FeePoolState.instance().setFeePool(FeePool.txData.contractAddress);
+  FeePoolState.afterDeploy(m, 'afterDeployFeePoolState', async (): Promise<void> => {
+    await FeePoolState.instance().setFeePool(FeePool);
 
     const target = await FeePoolState.instance().feePool() as string;
-    if (target != FeePool.txData.contractAddress) {
+    if (target != FeePool?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, FeePool);
@@ -165,37 +152,31 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     ReadProxyAddressResolver
   );
 
-  synthetix.afterDeploy(m, 'afterDeploySynthetixProxyERC20Synthetix', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Synthetix, ProxyERC20Synthetix] = bindings;
-
-    await ProxyERC20Synthetix.instance().setTarget(Synthetix.txData.contractAddress);
+  synthetix.afterDeploy(m, 'afterDeploySynthetixProxyERC20Synthetix', async (): Promise<void> => {
+    await ProxyERC20Synthetix.instance().setTarget(synthetix);
 
     const target = await ProxyERC20Synthetix.instance().target() as string;
-    if (target != Synthetix.txData.contractAddress) {
+    if (target != synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, ProxyERC20Synthetix);
 
-  synthetix.afterDeploy(m, 'afterDeployProxyERC20SynthetixSynthetix', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Synthetix, ProxyERC20Synthetix] = bindings;
+  synthetix.afterDeploy(m, 'afterDeployProxyERC20SynthetixSynthetix', async (): Promise<void> => {
+    await synthetix.instance().setProxy(ProxyERC20Synthetix);
 
-    await Synthetix.instance().setProxy(ProxyERC20Synthetix.txData.contractAddress);
-
-    const target = await Synthetix.instance().proxy() as string;
-    if (target != ProxyERC20Synthetix.txData.contractAddress) {
+    const target = await synthetix.instance().proxy() as string;
+    if (target != ProxyERC20Synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, ProxyERC20Synthetix);
 
   const ProxySynthetix = m.bindPrototype('ProxySynthetix', Proxy, deployerAddress);
 
-  ProxySynthetix.afterDeploy(m, 'afterDeployProxySynthetix', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [ProxySynthetix, Synthetix] = bindings;
-
-    await ProxySynthetix.instance().setTarget(Synthetix.txData.contractAddress);
+  ProxySynthetix.afterDeploy(m, 'afterDeployProxySynthetix', async (): Promise<void> => {
+    await ProxySynthetix.instance().setTarget(synthetix);
 
     const target = await ProxySynthetix.instance().target() as string;
-    if (target != Synthetix.txData.contractAddress) {
+    if (target != synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, synthetix);
@@ -215,31 +196,28 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   );
   const exchangeState = m.contract('ExchangeState', deployerAddress, exchanger);
 
-  exchangeState.afterDeploy(m, 'afterDeployExchangeState', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [ExchangeState, Exchanger] = bindings;
+  exchangeState.afterDeploy(m, 'afterDeployExchangeState', async (): Promise<void> => {
+    await exchangeState.instance().setAssociatedContract(exchanger);
 
-    await ExchangeState.instance().setAssociatedContract(Exchanger.txData.contractAddress); // @TODO should be just binding
-
-    const associatedContract = await ExchangeState.instance().associatedContract() as string;
-    if (associatedContract != Exchanger.txData.contractAddress) {
+    const associatedContract = await exchangeState.instance().associatedContract() as string;
+    if (associatedContract != exchanger?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, exchanger);
 
-  exchanger.afterDeploy(m, 'afterDeployExchanger', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Exchanger, SystemStatus] = bindings;
-
+  exchanger.afterDeploy(m, 'afterDeployExchanger', async (): Promise<void> => {
     await SystemStatus.instance().updateAccessControl(
       toBytes32('Synth'),
-      Exchanger.txData.contractAddress,
+      exchanger,
       true,
       false
-    ); // @TODO should be just binding
+    );
 
     const accessControl = await SystemStatus.instance().accessControl(
       toBytes32('Synth'),
-      Exchanger.txData.contractAddress,
+      exchanger,
     );
+
     if (
       accessControl[0] != true &&
       accessControl[1] != false
@@ -248,9 +226,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     }
   }, SystemStatus);
 
-  TokenStateSynthetix.afterDeploy(m, 'afterDeployTokenStateSynthetix', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [TokenStateSynthetix] = bindings;
-
+  TokenStateSynthetix.afterDeploy(m, 'afterDeployTokenStateSynthetix', async (): Promise<void> => {
     await TokenStateSynthetix.instance().setBalanceOf(deployerAddress, currentSynthetixSupply);
 
     const balanceOf = await TokenStateSynthetix.instance().balanceOf(deployerAddress);
@@ -259,13 +235,11 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     }
   });
 
-  TokenStateSynthetix.afterDeploy(m, 'afterDeployTokenStateSynthetixAndSynthetix', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [TokenStateSynthetix, Synthetix] = bindings;
-
-    await TokenStateSynthetix.instance().setAssociatedContract(Synthetix.txData.contractAddress); // @TODO should be just binding
+  TokenStateSynthetix.afterDeploy(m, 'afterDeployTokenStateSynthetixAndSynthetix', async (): Promise<void> => {
+    await TokenStateSynthetix.instance().setAssociatedContract(synthetix);
 
     const associatedContract = await TokenStateSynthetix.instance().associatedContract() as string;
-    if (associatedContract != Synthetix.txData.contractAddress) {
+    if (associatedContract != synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, synthetix);
@@ -278,37 +252,31 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
 
   m.contract('TradingRewards', deployerAddress, deployerAddress, ReadProxyAddressResolver);
 
-  issuer.afterDeploy(m, 'afterDeployIssueSynthetixState', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Issuer, SynthetixState] = bindings;
-
-    await SynthetixState.instance().setAssociatedContract(Issuer.txData.contractAddress); // @TODO should be just binding
+  issuer.afterDeploy(m, 'afterDeployIssueSynthetixState', async (): Promise<void> => {
+    await SynthetixState.instance().setAssociatedContract(issuer);
 
     const associatedContract = await SynthetixState.instance().associatedContract() as string;
-    if (associatedContract != Issuer.txData.contractAddress) {
+    if (associatedContract != issuer?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, SynthetixState);
 
   m.contract('EscrowChecker', SynthetixEscrow);
 
-  synthetix.afterDeploy(m, 'afterDeployRewardEscrowSynthetics', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Synthetix, RewardEscrow] = bindings;
-
-    await RewardEscrow.instance().setSynthetix(Synthetix.txData.contractAddress); // @TODO should be just binding
+  synthetix.afterDeploy(m, 'afterDeployRewardEscrowSynthetics', async (): Promise<void> => {
+    await RewardEscrow.instance().setSynthetix(synthetix);
 
     const associatedContract = await RewardEscrow.instance().synthetix() as string;
-    if (associatedContract != Synthetix.txData.contractAddress) {
+    if (associatedContract != synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, RewardEscrow);
 
-  RewardEscrow.afterDeploy(m, 'afterDeployRewardEscrowFeePool', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardEscrow, FeePool] = bindings;
-
-    await RewardEscrow.instance().setFeePool(FeePool.txData.contractAddress);
+  RewardEscrow.afterDeploy(m, 'afterDeployRewardEscrowFeePool', async (): Promise<void> => {
+    await RewardEscrow.instance().setFeePool(FeePool);
 
     const target = await RewardEscrow.instance().feePool() as string;
-    if (target != FeePool.txData.contractAddress) {
+    if (target != FeePool?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, FeePool);
@@ -336,47 +304,39 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   } else {
     const supplySchedule = m.contract('SupplySchedule', deployerAddress, currentLastMintEvent, currentWeekOfInflation);
 
-    supplySchedule.afterDeploy(m, 'afterDeploySupplySchedule', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [SupplySchedule, Synthetix] = bindings;
+    supplySchedule.afterDeploy(m, 'afterDeploySupplySchedule', async (): Promise<void> => {
+      await supplySchedule.instance().setSynthetixProxy(synthetix);
 
-      await SupplySchedule.instance().setSynthetixProxy(Synthetix.txData.contractAddress);
-
-      const target = await SupplySchedule.instance().synthetixProxy() as string;
-      if (target != Synthetix.txData.contractAddress) {
+      const target = await supplySchedule.instance().synthetixProxy() as string;
+      if (target != synthetix?.txData?.contractAddress) {
         throw new Error('Address mismatch');
       }
     }, synthetix);
   }
 
-  RewardsDistribution.afterDeploy(m, 'afterDeployRewardDistribution', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardsDistribution, Synthetix] = bindings;
-
-    await RewardsDistribution.instance().setAuthority(Synthetix.txData.contractAddress);
+  RewardsDistribution.afterDeploy(m, 'afterDeployRewardDistribution', async (): Promise<void> => {
+    await RewardsDistribution.instance().setAuthority(synthetix);
 
     const target = await RewardsDistribution.instance().authority() as string;
-    if (target != Synthetix.txData.contractAddress) {
+    if (target != synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, synthetix);
 
-  RewardsDistribution.afterDeploy(m, 'afterDeployRewardDistributionProxySynthetix', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardsDistribution, Synthetix, ProxyERC20Synthetix] = bindings;
-
-    await RewardsDistribution.instance().setSynthetixProxy(ProxyERC20Synthetix.txData.contractAddress);
+  RewardsDistribution.afterDeploy(m, 'afterDeployRewardDistributionProxySynthetix', async (): Promise<void> => {
+    await RewardsDistribution.instance().setSynthetixProxy(ProxyERC20Synthetix);
 
     const target = await RewardsDistribution.instance().synthetixProxy() as string;
-    if (target != ProxyERC20Synthetix.txData.contractAddress) {
+    if (target != ProxyERC20Synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, synthetix, ProxyERC20Synthetix);
 
-  SynthetixEscrow.afterDeploy(m, 'afterDeploySynthetixEscrow', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [RewardsDistribution, Synthetix, ProxyERC20Synthetix] = bindings;
+  SynthetixEscrow.afterDeploy(m, 'afterDeploySynthetixEscrow', async (): Promise<void> => {
+    await SynthetixEscrow.instance().setSynthetix(ProxyERC20Synthetix);
 
-    await RewardsDistribution.instance().setSynthetix(ProxyERC20Synthetix.txData.contractAddress);
-
-    const target = await RewardsDistribution.instance().synthetix() as string;
-    if (target != ProxyERC20Synthetix.txData.contractAddress) {
+    const target = await SynthetixEscrow.instance().synthetix() as string;
+    if (target != ProxyERC20Synthetix?.txData?.contractAddress) {
       throw new Error('Address mismatch');
     }
   }, synthetix, ProxyERC20Synthetix);
@@ -431,58 +391,48 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
       ...(additionalConstructorArgsMap[(sourceContractName + currencyKey)] || [])
     );
 
-    Synth.afterDeploy(m, `afterDeploySynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Synth, TokenStateForSynth] = bindings;
-
-      await TokenStateForSynth.instance().setAssociatedContract(Synth.txData.contractAddress); // @TODO should be just binding
+    Synth.afterDeploy(m, `afterDeploySynth${currencyKey}`, async (): Promise<void> => {
+      await TokenStateForSynth.instance().setAssociatedContract(Synth);
 
       const associatedContract = await TokenStateForSynth.instance().associatedContract() as string;
-      if (associatedContract != Synth.txData.contractAddress) {
+      if (associatedContract != Synth?.txData?.contractAddress) {
         throw new Error('Address mismatch');
       }
     }, TokenStateForSynth);
 
-    Synth.afterDeploy(m, `afterDeploySynthProxyForSynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Synth, ProxyForSynth] = bindings;
-
-      await ProxyForSynth.instance().setTarget(Synth.txData.contractAddress); // @TODO should be just binding
+    Synth.afterDeploy(m, `afterDeploySynthProxyForSynth${currencyKey}`, async (): Promise<void> => {
+      await ProxyForSynth.instance().setTarget(Synth);
 
       const associatedContract = await ProxyForSynth.instance().target() as string;
-      if (associatedContract != Synth.txData.contractAddress) {
+      if (associatedContract != Synth?.txData?.contractAddress) {
         throw new Error('Address mismatch');
       }
     }, ProxyForSynth);
 
     if (proxyERC20ForSynth) {
-      Synth.afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [Synth, ProxyForSynth, ProxyERC20ForSynth] = bindings;
-
-        await Synth.instance().setProxy(ProxyERC20ForSynth.txData.contractAddress); // @TODO should be just binding
+      Synth.afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (): Promise<void> => {
+        await Synth.instance().setProxy(proxyERC20ForSynth); // @TODO should be just binding
 
         const associatedContract = await Synth.instance().proxy() as string;
-        if (associatedContract != (ProxyERC20ForSynth.txData.contractAddress)) {
+        if (associatedContract != (proxyERC20ForSynth?.txData?.contractAddress)) {
           throw new Error('Address mismatch');
         }
       }, ProxyForSynth, proxyERC20ForSynth);
 
-      proxyERC20ForSynth.afterDeploy(m, `afterDeployProxyERC20ForSynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [ProxyERC20ForSynth, ProxyForSynth, Synth] = bindings;
-
-        await ProxyForSynth.instance().setTarget(Synth.txData.contractAddress); // @TODO should be just binding
+      proxyERC20ForSynth.afterDeploy(m, `afterDeployProxyERC20ForSynth${currencyKey}`, async (): Promise<void> => {
+        await ProxyForSynth.instance().setTarget(Synth);
 
         const target = await ProxyForSynth.instance().target() as string;
-        if (target != (Synth.txData.contractAddress)) {
+        if (target != (Synth?.txData?.contractAddress)) {
           throw new Error('Address mismatch');
         }
       }, ProxyForSynth, Synth);
     } else {
-      Synth.afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [Synth, ProxyForSynth] = bindings;
-
-        await Synth.instance().setProxy(ProxyForSynth.txData.contractAddress); // @TODO should be just binding
+      Synth.afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (): Promise<void> => {
+        await Synth.instance().setProxy(ProxyForSynth?.txData?.contractAddress);
 
         const associatedContract = await Synth.instance().proxy() as string;
-        if (associatedContract != ProxyForSynth.txData.contractAddress) {
+        if (associatedContract != ProxyForSynth?.txData?.contractAddress) {
           throw new Error('Address mismatch');
         }
       }, ProxyForSynth);
@@ -495,10 +445,8 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
 
     const {feed} = feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
-      ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesFeed${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [ExchangeRates] = bindings;
-
-        await ExchangeRates.instance().addAggregator(currencyKeyInBytes, feed); // @TODO should be just binding
+      ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesFeed${currencyKey}`, async (): Promise<void> => {
+        await ExchangeRates.instance().addAggregator(currencyKeyInBytes, feed);
 
         const aggregator = await ExchangeRates.instance().aggregators(currencyKeyInBytes) as string;
         if (aggregator != feed) {
@@ -552,10 +500,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
 
   for (const {asset, feed} of standaloneFeeds) {
     if (ethers.utils.isAddress(feed)) {
-
-      ExchangeRates.afterDeploy(m, 'afterDeployExchangeRates', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-        const [ExchangeRates] = bindings;
-
+      ExchangeRates.afterDeploy(m, 'afterDeployExchangeRates', async (): Promise<void> => {
         await ExchangeRates.instance().addAggregator(toBytes32(asset), feed);
 
         const associatedContract = await ExchangeRates.instance().aggregators();
@@ -566,15 +511,15 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     }
   }
 
-  const allContractDeployed = AddressResolver.afterDeploy(m, 'afterAllContractsDeployed', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [AddressResolver] = bindings;
+  const allContractDeployed = AddressResolver.afterDeploy(m, 'afterAllContractsDeployed', async (): Promise<void> => {
     const contractAddresses: string[] = [];
     const contractBytes: string[] = [];
-    bindings.shift();
+
+    const bindings = m.getAllBindings();
     Object.keys(bindings).map((key, index) => {
-      if (checkIfExist(bindings[index].txData?.contractAddress)) {
-        contractBytes.push(toBytes32(bindings[index].name));
-        contractAddresses.push(bindings[index].txData.contractAddress as string);
+      if (checkIfExist(bindings[key].txData?.contractAddress)) {
+        contractBytes.push(toBytes32(bindings[key].name));
+        contractAddresses.push(bindings[key]?.txData?.contractAddress as string);
       }
     });
 
@@ -587,11 +532,8 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
   }, ...Object.values(m.getAllBindings()));
 
 
-  const rebuildCache = AddressResolver.afterDeploy(m, 'afterDeployAllContracts', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [AddressResolver, ReadProxyAddressResolver, SystemSettings] = bindings;
-    bindings.shift();
-    bindings.shift();
-    bindings.shift();
+  const rebuildCache = AddressResolver.afterDeploy(m, 'afterDeployAllContracts', async (): Promise<void> => {
+    const bindings = m.getAllBindings();
 
     const addressesAreImported = false;
     const filterTargetsWith = ({functionName}: { functionName: string }) =>
@@ -609,11 +551,13 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
       ([
          ,
          {
+           name: name,
            txData: {
+             // @ts-ignore
              contractAddress
            }
          }
-       ]) => contractAddress
+       ]) => [name, contractAddress]
     );
 
     if (useOvm) {
@@ -626,12 +570,27 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
       }
     } else {
       // @TODO their is a revert here, tackle this problem later.
-      await AddressResolver.instance().rebuildCaches(addressesToCache, {
-        gasLimit: 7e6
-      });
+      for (const addressToCache of addressesToCache) {
+        if (
+          addressToCache[0] === 'SynthetixBridgeToOptimism' ||
+          addressToCache[0] === 'SynthetixBridgeToBase'
+        ) {
+          continue;
+        }
+
+        await AddressResolver.instance().rebuildCaches([addressToCache[1]], {
+          gasLimit: 7e6
+        });
+      }
     }
 
     for (const [, contractBinding] of contractsWithRebuildableCache) {
+      if (
+        contractBinding.name === 'SynthetixBridgeToOptimism' ||
+        contractBinding.name === 'SynthetixBridgeToBase'
+      ) {
+        continue;
+      }
 
       await contractBinding.instance().rebuildCache({
         gasLimit: 500e3,
@@ -640,7 +599,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
       const isResolverCached = await contractBinding.instance().isResolverCached({
         gasLimit: 500e3,
       });
-      if (isResolverCached) {
+      if (!isResolverCached) {
         throw new Error('Resolver cached is not set ');
       }
     }
@@ -651,7 +610,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
       functionName: 'setResolverAndSyncCache',
     });
     for (const [, target] of contractsWithLegacyResolverCaching) {
-      await target.instance().setResolverAndSyncCache(ReadProxyAddressResolver.txData.contractAddress, {
+      await target.instance().setResolverAndSyncCache(ReadProxyAddressResolver, {
         gasLimit: 500e3,
       });
 
@@ -668,31 +627,29 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
       functionName: 'setResolver',
     });
     for (const [, target] of contractsWithLegacyResolverNoCache) {
-      await target.instance().setResolver(ReadProxyAddressResolver.txData.contractAddress, {
+      await target.instance().setResolver(ReadProxyAddressResolver, {
         gasLimit: 500e3,
       });
 
       const resolver = await target.instance().resolver({
         gasLimit: 500e3,
       });
-      if (resolver != ReadProxyAddressResolver.txData.contractAddress) {
+      if (resolver != ReadProxyAddressResolver?.txData?.contractAddress) {
         throw new Error('Cache is not resolved');
       }
     }
-  }, ReadProxyAddressResolver, SystemSettings, ...Object.values(m.getAllBindings()), allContractDeployed);
+  }, ...Object.values(m.getAllBindings()), setTargetInResolverFromReadProxy, allContractDeployed);
 
 
   const filteredSynths: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
-  for (const synth of synthsToAdd) {
-    issuer.afterDeploy(m, `afterDeployIssuerForSynth${synth.synth.name}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Issuer, Synth] = bindings;
-
-      const issuerSynthAddress = await Issuer.instance().synths(synth.currencyKeyInBytes);
-      const currentSynthAddress = Synth.txData.contractAddress;
+  for (const Synth of synthsToAdd) {
+    issuer.afterDeploy(m, `afterDeployIssuerForSynth${Synth.synth.name}`, async (): Promise<void> => {
+      const issuerSynthAddress = await issuer.instance().synths(Synth.currencyKeyInBytes);
+      const currentSynthAddress = Synth?.synth.txData?.contractAddress;
       if (issuerSynthAddress != currentSynthAddress) {
-        filteredSynths.push(synth);
+        filteredSynths.push(Synth);
       }
-    }, synth.synth);
+    }, Synth.synth);
   }
 
   const synthChunkSize = 15;
@@ -701,16 +658,13 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     const chunk = filteredSynths.slice(i, i + synthChunkSize);
     const chunkBindings = chunk.map(synth => synth.synth);
 
-    issuer.afterDeploy(m, `afterDeployIssuerWithSynth${(i + synthChunkSize) / synthChunkSize}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-      const [Issuer] = bindings;
+    issuer.afterDeploy(m, `afterDeployIssuerWithSynth${(i + synthChunkSize) / synthChunkSize}`, async (): Promise<void> => {
+      await issuer.instance().addSynths([chunkBindings.map(synth => synth)]);
 
-      bindings.unshift();
-      await Issuer.instance().addSynths([bindings.map(synth => synth.txData.contractAddress)]);
-
-      const data = await Issuer.instance().getSynths([chunk.map(synth => synth.currencyKeyInBytes)]);
+      const data = await issuer.instance().getSynths([chunk.map(synth => synth.currencyKeyInBytes)]);
       if (
         data.length !== chunk.length ||
-        data.every((cur: string, index: number) => cur !== bindings[index].txData.contractAddress)) {
+        data.every((cur: string, index: number) => cur !== chunkBindings[index]?.txData?.contractAddress)) {
         throw new Error('failed to match synths');
       }
     }, ...chunkBindings);
@@ -724,9 +678,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
         freezeAtUpperLimit: boolean,
         freezeAtLowerLimit: boolean
       }) =>
-        ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesSynth${currencyKey}`, async (...bindings: DeployedContractBinding[]): Promise<void> => {
-          const [ExchangeRates] = bindings;
-
+        ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesSynth${currencyKey}`, async (): Promise<void> => {
           await ExchangeRates.instance().setInversePricing(
             toBytes32(currencyKey),
             web3utils.toWei(entryPoint.toString()),
@@ -745,14 +697,14 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     }
   }
 
-  SystemSettings.afterDeploy(m, 'afterDeploySystemSetting', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [SystemSettings] = bindings;
-    bindings.shift();
+  const afterDeploySystemSetting = SystemSettings.afterDeploy(m, 'afterDeploySystemSetting', async (): Promise<void> => {
+    const bindings = synthsToAdd.map(synth => synth.synth);
+
     const synthRates: any = [];
     for (const binding of bindings) {
       const feeRate = await SystemSettings.instance().exchangeFeeRate(toBytes32(binding.name));
 
-      synthRates.push(feeRate);
+      synthRates.push(feeRate.toString());
     }
 
     const synthExchangeRateOverride: { [name: string]: string } = {
@@ -776,13 +728,13 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
           synth
         )
       )
-      .filter(({currentRate}) => currentRate === '0');
+      .filter(({currentRate}) => currentRate);
 
     if (synthsRatesToUpdate.length) {
-      await SystemSettings.instance().setExchangeFeeRateForSynths([
+      await SystemSettings.instance().setExchangeFeeRateForSynths(
         synthsRatesToUpdate.map(({name}) => toBytes32(name)),
         synthsRatesToUpdate.map(({targetRate}) => targetRate),
-      ]);
+      );
     }
 
     await SystemSettings.instance().setWaitingPeriodSecs(constants['WAITING_PERIOD_SECS']);
@@ -809,7 +761,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     await SystemSettings.instance().setIssuanceRatio(constants['ISSUANCE_RATIO']);
 
     const issuanceRation = await SystemSettings.instance().issuanceRatio();
-    if (issuanceRation != '0') {
+    if (issuanceRation.toString() === '0') {
       throw new Error('issuance ration is different');
     }
 
@@ -817,14 +769,14 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     await SystemSettings.instance().setFeePeriodDuration(constants['FEE_PERIOD_DURATION']);
 
     const feePeriodDuration = await SystemSettings.instance().feePeriodDuration();
-    if (feePeriodDuration != '0') {
+    if (feePeriodDuration.toString() === '0') {
       throw new Error('fee period duration is different');
     }
 
     await SystemSettings.instance().setTargetThreshold(constants['TARGET_THRESHOLD']);
 
     const targetThreshold = await SystemSettings.instance().targetThreshold();
-    if (targetThreshold != '0') {
+    if (targetThreshold.toString() === '0') {
       throw new Error('target threshold is different');
     }
 
@@ -832,28 +784,28 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     await SystemSettings.instance().setLiquidationDelay(constants['LIQUIDATION_DELAY']);
 
     const liquidationDelay = await SystemSettings.instance().liquidationDelay();
-    if (liquidationDelay != '0') {
+    if (liquidationDelay.toString() === '0') {
       throw new Error('liquidation delay is different');
     }
 
     await SystemSettings.instance().setLiquidationRatio(constants['LIQUIDATION_RATIO']);
 
     const liquidationRation = await SystemSettings.instance().liquidationRatio();
-    if (liquidationRation != '0') {
+    if (liquidationRation.toString() === '0') {
       throw new Error('liquidation ratio is different');
     }
 
     await SystemSettings.instance().setLiquidationPenalty(constants['LIQUIDATION_PENALTY']);
 
     const liquidationPenalty = await SystemSettings.instance().liquidationPenalty();
-    if (liquidationPenalty != '0') {
+    if (liquidationPenalty.toString() === '0') {
       throw new Error('liquidation penalty is different');
     }
 
     await SystemSettings.instance().setRateStalePeriod(constants['RATE_STALE_PERIOD']);
 
     const rateStalePeriod = await SystemSettings.instance().rateStalePeriod();
-    if (rateStalePeriod != '0') {
+    if (rateStalePeriod.toString() === '0') {
       throw new Error('rate stale period is different');
     }
 
@@ -861,7 +813,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     await SystemSettings.instance().setMinimumStakeTime(constants['MINIMUM_STAKE_TIME']);
 
     const minimumStakeTime = await SystemSettings.instance().minimumStakeTime();
-    if (minimumStakeTime != '0') {
+    if (minimumStakeTime.toString() === '0') {
       throw new Error('minimum stake time is different');
     }
 
@@ -869,23 +821,26 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     await SystemSettings.instance().setDebtSnapshotStaleTime(constants['DEBT_SNAPSHOT_STALE_TIME']);
 
     const debtSnapshotStaleTime = await SystemSettings.instance().debtSnapshotStaleTime();
-    if (debtSnapshotStaleTime != '0') {
+    if (debtSnapshotStaleTime.toString() === '0') {
       throw new Error('debt snapshot stale time is different');
     }
 
     await SystemSettings.instance().setCrossDomainMessageGasLimit(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT']);
 
     const crossDomainMessageGasLimit = await SystemSettings.instance().crossDomainMessageGasLimit();
-    if (crossDomainMessageGasLimit != '0') {
+    if (crossDomainMessageGasLimit.toString() === '0') {
       throw new Error('cross domain message gas limit is different');
     }
 
     // @ts-ignore
-    await SystemSettings.instance().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+MORTAR_NETWORK_ID]]);
+    if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+MORTAR_NETWORK_ID]])) {
+      // @ts-ignore
+      await SystemSettings.instance().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+MORTAR_NETWORK_ID]]);
 
-    const aggregatorWarningFlags = await SystemSettings.instance().aggregatorWarningFlags();
-    if (aggregatorWarningFlags != ethers.constants.AddressZero) {
-      throw new Error('cross domain message gas limit is different');
+      const aggregatorWarningFlags = await SystemSettings.instance().aggregatorWarningFlags();
+      if (aggregatorWarningFlags.toString() === ethers.constants.AddressZero) {
+        throw new Error('cross domain message gas limit is different');
+      }
     }
   }, ...synthsToAdd.map(synth => synth.synth), rebuildCache);
 });

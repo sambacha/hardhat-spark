@@ -1,9 +1,10 @@
 import {
-  ContractBindingMetaData,
+  ContractBinding,
+  ContractBindingMetaData, ContractEvent,
   ContractInput,
-  DeployedContractBinding,
   EventTransactionData,
-  StatefulEvent
+  StatefulEvent,
+  MetaDataEvent
 } from '../../../interfaces/mortar';
 import { CliError } from '../../types/errors';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
@@ -110,7 +111,7 @@ export class ModuleStateRepo {
     await this.storeNewState(this.currentModuleName, currentState);
   }
 
-  async storeSingleBinding(singleElement: DeployedContractBinding): Promise<void> {
+  async storeSingleBinding(singleElement: ContractBinding): Promise<void> {
     if (this.currentModuleName == '') {
       throw new CliError('Current module name is not set');
     }
@@ -120,15 +121,20 @@ export class ModuleStateRepo {
     await this.storeNewState(this.currentModuleName, currentState);
   }
 
-  static convertBindingToMetaData(binding: DeployedContractBinding): ContractBindingMetaData {
+  static convertBindingToMetaData(binding: ContractBinding): ContractBindingMetaData {
     return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.libraries, binding.txData);
   }
 
-  static convertStatesToMetaData(moduleState: ModuleState): { [p: string]: ContractBindingMetaData | StatefulEvent } {
+  static convertStatesToMetaData(moduleState: ModuleState | { [p: string]: ContractBindingMetaData | StatefulEvent }): { [p: string]: ContractBindingMetaData | StatefulEvent } {
     const metaData: { [p: string]: ContractBindingMetaData | StatefulEvent } = {};
 
-    for (const [stateElementName, stateElement] of Object.entries(moduleState)) {
-      if (stateElement instanceof DeployedContractBinding) {
+    for (let [stateElementName, stateElement] of Object.entries(moduleState)) {
+      if (
+        stateElement instanceof ContractBinding ||
+        stateElement instanceof ContractBindingMetaData ||
+        checkIfExist((stateElement as unknown as ContractBinding)?.bytecode)
+      ) {
+        stateElement = stateElement as ContractBinding;
         metaData[stateElementName] = new ContractBindingMetaData(
           stateElement.name,
           stateElement.contractName,
@@ -138,10 +144,38 @@ export class ModuleStateRepo {
           stateElement.libraries,
           stateElement.txData
         );
+
         continue;
       }
 
-      metaData[stateElementName] = stateElement;
+      const eventMetaData: MetaDataEvent = {
+        name: stateElement.event.name,
+        eventType: stateElement.event.eventType,
+      };
+
+      if (
+        checkIfExist((stateElement.event as ContractEvent).deps) &&
+        (stateElement.event as ContractEvent).deps.length > 0
+      ) {
+        eventMetaData.deps = (stateElement.event as ContractEvent).deps.filter((value) => {
+          return !value?.name;
+        }).map(value => value.name);
+      }
+
+      if (
+        checkIfExist((stateElement.event as ContractEvent).eventDeps) &&
+        (stateElement.event as ContractEvent).eventDeps.length > 0
+      ) {
+        eventMetaData.eventDeps = (stateElement.event as ContractEvent).eventDeps.filter((value) => {
+          return !value?.name;
+        }).map(value => value.name);
+      }
+
+      metaData[stateElementName] = new StatefulEvent(
+        eventMetaData,
+        stateElement.executed,
+        stateElement.txData
+      );
     }
 
     return metaData;

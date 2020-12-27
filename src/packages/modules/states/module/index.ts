@@ -1,9 +1,9 @@
 import {
-  DeployedContractBinding,
+  ContractBinding,
   StatefulEvent
 } from '../../../../interfaces/mortar';
 
-export type ModuleState = { [p: string]: DeployedContractBinding | StatefulEvent };
+export type ModuleState = { [p: string]: ContractBinding | StatefulEvent };
 export const STATE_DIR_NAME = '.mortar';
 export const STATE_NAME = 'deployed_module_state.json';
 

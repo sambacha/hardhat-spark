@@ -5,8 +5,6 @@ require('dotenv').config({path: path.resolve(__dirname + './../.env')});
 import {
   ModuleBuilder,
   module,
-  Binding,
-  DeployedContractBinding, CompiledContractBinding, ContractBinding,
 } from '../../../src/interfaces/mortar';
 import { BigNumber } from 'ethers';
 import { RemoteBucketStorage } from '../../../src/packages/modules/states/registry/remote_bucket_storage';
@@ -37,9 +35,7 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) =>
     return 'hello';
   });
 
-  const firstAfterDeployment = Example.afterDeployment(m, 'firstAfterDeployment', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Example] = bindings;
-
+  const firstAfterDeployment = Example.afterDeployment(m, 'firstAfterDeployment', async (): Promise<void> => {
     const example = Example.instance();
 
     await example.setExample(100);
@@ -48,41 +44,33 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) =>
     await example.setExample(120);
     value = await example.getExample();
 
+    await SecondExample.instance().setExample(Example);
+
     m.registerAction('getName', (): any => {
       return value;
     });
   }, SecondExample);
 
-  Example.afterDeployment(m, 'secondAfterDeployment', async (...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Example] = bindings;
-
+  Example.afterDeployment(m, 'secondAfterDeployment', async (): Promise<void> => {
     const example = Example.instance();
 
     await example.setExample(100);
     await example.setExample(130);
   }, firstAfterDeployment);
 
-  SecondExample.afterCompile(m, 'firstAfterCompile', async (AddressProvider: Binding, ...bindings: CompiledContractBinding[]) => {
-    const [SecondExample] = bindings;
-
+  SecondExample.afterCompile(m, 'firstAfterCompile', async () => {
     console.log('This is after compile: ', SecondExample.bytecode);
   }, SecondExample);
 
-  ThirdExample.beforeCompile(m, 'firstBeforeCompile', async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
-    const [Example] = bindings;
-
+  ThirdExample.beforeCompile(m, 'firstBeforeCompile', async () => {
     console.log('This is before compile: ', Example.name);
   }, Example);
 
-  ThirdExample.beforeDeployment(m, 'firstBeforeDeployment', async (AddressProvider: Binding, ...bindings: ContractBinding[]) => {
-    const [Example] = bindings;
-
+  ThirdExample.beforeDeployment(m, 'firstBeforeDeployment', async () => {
     console.log('This is before deployment: ', Example.name);
   }, Example);
 
-  ThirdExample.onChange(m, 'firstOnChange', async (AddressProvider: Binding, ...bindings: DeployedContractBinding[]): Promise<void> => {
-    const [Example] = bindings;
-
+  ThirdExample.onChange(m, 'firstOnChange', async (): Promise<void> => {
     console.log('This is on change:', Example.name);
   }, Example);
 

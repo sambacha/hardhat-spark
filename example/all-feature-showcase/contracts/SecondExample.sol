@@ -10,6 +10,11 @@ contract SecondExample {
     addr = _addr;
   }
 
+  function setExample(Example _addr) public returns (bool) {
+    addr = _addr;
+    return true;
+  }
+
   function hello() public pure returns (string memory) {
     return "hello";
   }

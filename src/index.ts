@@ -3,7 +3,7 @@
 import { cli } from 'cli-ux';
 import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
-import { DeployedContractBinding, Module } from './interfaces/mortar';
+import { Module } from './interfaces/mortar';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';

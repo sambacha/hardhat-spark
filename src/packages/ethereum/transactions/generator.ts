@@ -1,4 +1,4 @@
-import { CompiledContractBinding, DeployedContractBinding, TransactionData } from '../../../interfaces/mortar';
+import { ContractBinding, TransactionData } from '../../../interfaces/mortar';
 import ConfigService from '../../config/service';
 import { GasCalculator } from '../gas/calculator';
 import { checkIfExist } from '../../utils/util';
@@ -33,20 +33,20 @@ export class EthTxGenerator {
 
   initTx(moduleState: ModuleState): ModuleState {
     for (const [stateElementName, stateElement] of Object.entries(moduleState)) {
-      if (stateElement instanceof DeployedContractBinding) {
+      if (stateElement instanceof ContractBinding) {
         if (checkIfExist(moduleState[stateElementName]?.txData)) {
           continue;
         }
 
         const rawTx: TransactionData = {
-          input: null,
-          output: null,
+          input: undefined,
+          output: undefined,
         };
 
         // @TODO: enable multiple address to send tx. HD wallet, address array
         rawTx.input = {
           from: this.wallet.address,
-          input: stateElement.bytecode
+          input: stateElement.bytecode as string
         };
 
         moduleState[stateElementName].txData = rawTx;
@@ -67,7 +67,7 @@ export class EthTxGenerator {
   }
 
   async generateSingedTx(value: number, data: string): Promise<string> {
-    const gas = await this.gasCalculator.estimateGas(this.wallet.address, null, data);
+    const gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
 
     const tx: TransactionRequest = {
       from: this.wallet.address,
@@ -82,8 +82,8 @@ export class EthTxGenerator {
     return this.wallet.signTransaction(tx);
   }
 
-  addLibraryAddresses(bytecode: string, binding: CompiledContractBinding, moduleState: ModuleState): string {
-    const libraries: SingleContractLinkReference = binding.libraries;
+  addLibraryAddresses(bytecode: string, binding: ContractBinding, moduleState: ModuleState): string {
+    const libraries = binding.libraries as SingleContractLinkReference;
 
     for (const [libraryName, libraryOccurrences] of Object.entries(libraries)) {
       const contractAddress = moduleState[libraryName].txData?.contractAddress as string;
