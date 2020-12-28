@@ -1,7 +1,7 @@
 import {
   Events,
   StatefulEvent,
-  ContractBinding, ModuleEvents, ModuleEvent, ContractEvent,
+  ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, EventsDepRef,
 } from '../../interfaces/mortar';
 import { checkIfExist } from '../utils/util';
 import { cli } from 'cli-ux';
@@ -109,6 +109,7 @@ export class ModuleResolver {
         if (oldModuleElement.bytecode != newModuleElement.bytecode) {
           cli.info('~', newModuleElement.name);
           printArgs(newModuleElement.args, '  ');
+          printEvents(newModuleElement.eventsDeps, '  ');
         }
 
         i++;
@@ -127,6 +128,7 @@ export class ModuleResolver {
 
         cli.info('+', newModuleElement.name);
         printArgs(newModuleElement.args, '  ');
+        printEvents(newModuleElement.eventsDeps, '  ');
       }
       i++;
     }
@@ -403,13 +405,26 @@ function printArgs(args: any[], indent: string): void {
     for (const arg of args) {
       // @TODO: make this prettier
       if (checkIfExist(arg.name)) {
-        cli.info(indent + '└── ' + arg.name);
+        cli.info(indent + '└── Contract: ' + arg.name);
         return printArgs(arg.args, indent + '  ');
       }
     }
   }
 
   return;
+}
+
+function printEvents(events: EventsDepRef, indent: string) {
+  for (const [eventType, eventArray] of Object.entries(events)) {
+    if (eventArray.length === 0) {
+      continue;
+    }
+
+    cli.info(indent + '└── Event: ' + eventType);
+    for (const event of eventArray) {
+      cli.info(indent + '  └── ' + event);
+    }
+  }
 }
 
 function checkArgs(currentArgs: any[], deployedArgs: any[]): boolean {

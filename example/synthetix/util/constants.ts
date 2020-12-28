@@ -1,4 +1,5 @@
 import * as web3utils from 'web3-utils';
+import * as path from 'path';
 
 export const chainIdToNetwork: {[name: number]: string} = {
   1: 'mainnet',
@@ -38,4 +39,12 @@ export const constants = {
   },
   INITIAL_ISSUANCE: web3utils.toWei(`${100e6}`),
   CROSS_DOMAIN_MESSAGE_GAS_LIMIT: `${3e6}`,
+};
+
+export const DEFAULTS = {
+  gasPrice: '1',
+  methodCallGasLimit: 250e3, // 250k
+  contractDeploymentGasLimit: 6.9e6, // TODO split out into separate limits for different contracts, Proxys, Synths, Synthetix
+  debtSnapshotMaxDeviation: 0.01, // a 1 percent deviation will trigger a snapshot
+  network: 'kovan',
 };
