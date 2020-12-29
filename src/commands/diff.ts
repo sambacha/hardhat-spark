@@ -78,7 +78,7 @@ export default class Diff extends Command {
       cli.exit(0);
     }
 
-    cli.error(error);
+    cli.info(error.message);
     cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ');
     cli.exit(1);
   }

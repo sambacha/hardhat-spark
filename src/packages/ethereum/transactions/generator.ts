@@ -86,7 +86,7 @@ export class EthTxGenerator {
     const libraries = binding.libraries as SingleContractLinkReference;
 
     for (const [libraryName, libraryOccurrences] of Object.entries(libraries)) {
-      const contractAddress = moduleState[libraryName].txData?.contractAddress as string;
+      const contractAddress = (moduleState[libraryName] as ContractBinding).deployMetaData?.contractAddress as string;
       if (!checkIfExist(contractAddress)) {
         throw new CliError(`Library is not deployed - ${libraryName}`);
       }

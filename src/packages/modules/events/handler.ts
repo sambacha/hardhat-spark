@@ -5,7 +5,7 @@ import {
   BeforeCompileEvent,
   BeforeDeployEvent,
   BeforeDeploymentEvent,
-  ContractBinding, ContractEvent,
+  ContractBinding,
   EventFnCompiled,
   EventFnDeployed,
   ModuleEvent, ModuleEventFn,
@@ -36,17 +36,20 @@ export class EventHandler {
     const fn = event.fn;
     const eventName = event.name;
 
-    for (const dependency of deps) {
-      const name = dependency.name;
-      if (!checkIfExist(moduleState[name])) {
+    for (const dependencyName of deps) {
+      if (!checkIfExist(moduleState[dependencyName])) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
       if (
-        !checkIfExist((moduleState[name] as ContractBinding).name) ||
-        !checkIfExist((moduleState[name] as ContractBinding).args)
+        !checkIfExist((moduleState[dependencyName] as ContractBinding).name) ||
+        !checkIfExist((moduleState[dependencyName] as ContractBinding).args)
       ) {
         throw new CliError('Desired contract is not yet been compiled.');
+      }
+
+      if ((moduleState[dependencyName] as ContractBinding).deployMetaData.lastEventName === eventName) {
+        (moduleState[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
       }
     }
 
@@ -81,27 +84,28 @@ export class EventHandler {
   }
 
   async executeOnStartModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.fn, moduleState);
+    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnCompletionModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.fn, moduleState);
+    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnErrorModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.fn, moduleState);
+    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnSuccessModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.fn, moduleState);
+    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnFailModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.fn, moduleState);
+    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
   }
 
   private async handleModuleEventHooks(
     eventName: string,
+    eventType: string,
     fn: ModuleEventFn,
     moduleStates: ModuleState,
   ) {
@@ -113,13 +117,13 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentEvent();
+    await this.moduleState.finishCurrentModuleEvent(eventType);
   }
 
   private async handleDeployedBindingsEvents(
     eventName: string,
     fn: EventFnDeployed,
-    deps: (ContractBinding | ContractEvent)[],
+    deps: string[],
     moduleStates: ModuleState,
   ) {
     const eventElement = moduleStates[eventName] as StatefulEvent;
@@ -128,18 +132,20 @@ export class EventHandler {
       return;
     }
 
-    for (const dependency of deps) {
-      const name = dependency.name;
-
-      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as ContractBinding).bytecode)) {
+    for (const dependencyName of deps) {
+      if (!checkIfExist(moduleStates[dependencyName]) && checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode)) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
       if (
-        !checkIfExist((moduleStates[name] as ContractBinding).bytecode) ||
-        !checkIfExist((moduleStates[name] as ContractBinding).txData?.contractAddress)
+        !checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode) ||
+        !checkIfExist((moduleStates[dependencyName] as ContractBinding).deployMetaData?.contractAddress)
       ) {
         throw new CliError('Desired contract is not yet deployed.');
+      }
+
+      if ((moduleStates[dependencyName] as ContractBinding).deployMetaData?.lastEventName == eventName) {
+        (moduleStates[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
       }
     }
 
@@ -151,7 +157,7 @@ export class EventHandler {
   private async handleCompiledBindingsEvents(
     eventName: string,
     fn: EventFnCompiled,
-    deps: ContractBinding[],
+    deps: string[],
     moduleStates: ModuleState,
   ) {
     const eventElement = moduleStates[eventName] as StatefulEvent;
@@ -160,17 +166,20 @@ export class EventHandler {
       return;
     }
 
-    for (const dependency of deps) {
-      const name = dependency.name;
-      if (!checkIfExist(moduleStates[name]) && checkIfExist((moduleStates[name] as ContractBinding).bytecode)) {
+    for (const dependencyName of deps) {
+      if (!checkIfExist(moduleStates[dependencyName]) && checkIfExist((moduleStates[dependencyName] as ContractBinding)?.bytecode)) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
       if (
-        !checkIfExist((moduleStates[name] as ContractBinding).bytecode) ||
-        !checkIfExist((moduleStates[name] as ContractBinding).abi)
+        !checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode) ||
+        !checkIfExist((moduleStates[dependencyName] as ContractBinding).abi)
       ) {
         throw new CliError('Desired contract is not yet been compiled.');
+      }
+
+      if ((moduleStates[dependencyName] as ContractBinding).deployMetaData.lastEventName === eventName) {
+        (moduleStates[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
       }
     }
 

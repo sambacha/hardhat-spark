@@ -44,18 +44,62 @@ export type EventFnCompiled = () => void;
 export type EventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
 
-// @TODO simplify
-export type BeforeDeployEvent = { name: string, eventType: string, fn: EventFnCompiled, deps: ContractBinding[], eventDeps: ContractEvent[] };
-export type BeforeDeploymentEvent = { name: string, eventType: string, fn: EventFnCompiled, deps: ContractBinding[], eventDeps: ContractEvent[] };
-export type AfterDeployEvent = { name: string, eventType: string, fn: EventFnDeployed, deps: ContractBinding[], eventDeps: ContractEvent[] };
-export type AfterDeploymentEvent = { name: string, eventType: string, fn: EventFnDeployed, deps: ContractBinding[], eventDeps: ContractEvent[] };
-export type BeforeCompileEvent = { name: string, eventType: string, fn: EventFn, deps: ContractBinding[], eventDeps: ContractEvent[] };
-export type AfterCompileEvent = { name: string, eventType: string, fn: EventFnCompiled, deps: ContractBinding[], eventDeps: ContractEvent[] };
-export type OnChangeEvent = { name: string, eventType: string, fn: RedeployFn, deps: ContractBinding[], eventDeps: ContractEvent[] };
+export enum EventType {
+  'OnChangeEvent' = 'OnChangeEvent',
+  'BeforeDeploymentEvent' = 'BeforeDeploymentEvent',
+  'AfterDeploymentEvent' = 'AfterDeploymentEvent',
+  'BeforeDeployEvent' = 'BeforeDeployEvent',
+  'AfterDeployEvent' = 'AfterDeployEvent',
+  'AfterCompileEvent' = 'AfterCompileEvent',
+  'BeforeCompileEvent' = 'BeforeCompileEvent',
+  'OnStart' = 'OnStart',
+  'OnFail' = 'OnFail',
+  'OnCompletion' = 'OnCompletion',
+  'OnSuccess' = 'OnSuccess',
+}
+
+export type BaseEvent = {
+  name: string,
+  eventType: EventType,
+
+  deps: string[],
+  eventDeps: string[], // @TODO add tuple with event type
+
+  usage: string[],
+  eventUsage: string[],
+};
+
+export interface BeforeDeployEvent extends BaseEvent {
+  fn: EventFnCompiled;
+}
+
+export interface BeforeDeploymentEvent extends BaseEvent {
+  fn: EventFnCompiled;
+}
+
+export interface AfterDeployEvent extends BaseEvent {
+  fn: EventFnDeployed;
+}
+
+export interface AfterDeploymentEvent extends BaseEvent {
+  fn: EventFnDeployed;
+}
+
+export interface BeforeCompileEvent extends BaseEvent {
+  fn: EventFn;
+}
+
+export interface AfterCompileEvent extends BaseEvent {
+  fn: EventFnCompiled;
+}
+
+export interface OnChangeEvent extends BaseEvent {
+  fn: RedeployFn;
+}
 
 export type ModuleEvent = { name: string, eventType: string, fn: ModuleEventFn };
 
-export type MetaDataEvent = { name: string, eventType: string, deps?: string[], eventDeps?: string[]};
+export type MetaDataEvent = { name: string, eventType: string, deps?: string[], eventDeps?: string[], usage?: string[], eventUsage?: string[] };
 
 export type ContractEvent =
   BeforeDeployEvent |
@@ -85,6 +129,12 @@ export type EventsDepRef = {
   beforeDeploy: string[]
   afterDeploy: string[]
   onChange: string[]
+};
+
+export type Deployed = {
+  lastEventName: string | undefined,
+  logicallyDeployed: boolean | undefined,
+  contractAddress: string | undefined
 };
 
 export class StatefulEvent {
@@ -120,10 +170,174 @@ export abstract class Binding {
   }
 }
 
+export class GroupedDependencies {
+  dependencies: (ContractBinding | ContractEvent)[];
+
+  constructor(dependencies: (ContractBinding | ContractEvent)[]) {
+    this.dependencies = dependencies;
+  }
+
+  beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeploymentEvent'], this.dependencies, usages);
+    const beforeDeployment: BeforeDeploymentEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.beforeDeployment.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.beforeDeployment.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, beforeDeployment);
+    return beforeDeployment;
+  }
+
+  // afterDeployment executes each time after a deployment has finished.
+  // The deployment doesn't actually have to perform any deployments for this event to trigger.
+  afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeploymentEvent'], this.dependencies, usages);
+    const afterDeployment: AfterDeploymentEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.afterDeployment.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.afterDeployment.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, afterDeployment);
+    return afterDeployment;
+  }
+
+  // beforeDeploy runs each time the Binding is about to be triggered.
+  // This event can be used to force the binding in question to be deployed.
+  beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeployEvent'], this.dependencies, usages);
+    const beforeDeploy: BeforeDeployEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.beforeDeploy.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.beforeDeploy.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, beforeDeploy);
+    return beforeDeploy;
+  }
+
+  // afterDeploy runs after the Binding was deployed.
+  afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeployEvent'], this.dependencies, usages);
+    const afterDeploy: AfterDeployEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.afterDeploy.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.afterDeploy.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, afterDeploy);
+    return afterDeploy;
+  }
+
+  // beforeCompile runs before the source code is compiled.
+  beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeCompileEvent'], this.dependencies, usages);
+    const beforeCompile: BeforeCompileEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.beforeCompile.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.beforeCompile.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, beforeCompile);
+    return beforeCompile;
+  }
+
+  // afterCompile runs after the source code is compiled and the bytecode is available.
+  afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterCompileEvent'], this.dependencies, usages);
+    const afterCompile: AfterCompileEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.afterCompile.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.afterCompile.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, afterCompile);
+    return afterCompile;
+  }
+
+  // onChange runs after the Binding gets redeployed or changed
+  onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['OnChangeEvent'], this.dependencies, usages);
+    const onChangeEvent: OnChangeEvent = {
+      ...generateBaseEvent,
+      fn,
+    };
+
+    for (const dep of this.dependencies) {
+      if (dep instanceof ContractBinding) {
+        if (dep.eventsDeps.onChange.includes(eventName)) {
+          continue;
+        }
+
+        dep.eventsDeps.onChange.push(eventName);
+      }
+    }
+
+    m.addEvent(eventName, onChangeEvent);
+    return onChangeEvent;
+  }
+}
+
 export class ContractBinding extends Binding {
   public contractName: string;
   public args: Arguments;
   public eventsDeps: EventsDepRef;
+  public deployMetaData: Deployed;
 
   public bytecode: string | undefined;
   public abi: JsonFragment[] | undefined;
@@ -142,7 +356,7 @@ export class ContractBinding extends Binding {
   constructor(
     // metadata
     name: string, contractName: string, args: Arguments,
-    bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, txData?: TransactionData,
+    bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, deployMetaData?: Deployed, txData?: TransactionData,
     // event hooks
     events?: EventsDepRef,
     signer?: ethers.Signer,
@@ -153,6 +367,11 @@ export class ContractBinding extends Binding {
     super(name);
     this.args = args;
     this.contractName = contractName;
+    this.deployMetaData = deployMetaData || {
+      logicallyDeployed: undefined,
+      contractAddress: undefined,
+      lastEventName: undefined,
+    };
     this.eventsDeps = events || {
       beforeCompile: [],
       afterCompile: [],
@@ -184,12 +403,13 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
+      console.log(this.deployMetaData);
       throw new UserError('Binding is not suitable to be instantiated, please deploy it first');
     }
 
     this.contractInstance = new ContractInstance(
       this,
-      this.txData?.contractAddress as string,
+      this.deployMetaData?.contractAddress as string,
       this.abi as JsonFragment[],
       this.signer as ethers.Signer,
       this.prompter as Prompter,
@@ -201,30 +421,17 @@ export class ContractBinding extends Binding {
   }
 
   // beforeDeployment executes each time a deployment command is executed.
-  beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
+  beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeDeployment.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
+    this.eventsDeps.beforeDeployment.push(eventName);
 
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
-    dependencies.unshift(this);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.beforeDeployment.push(eventName);
-
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeploymentEvent'], [this], usages);
 
     const beforeDeployment: BeforeDeploymentEvent = {
-      name: eventName,
-      eventType: 'BeforeDeploymentEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, beforeDeployment);
 
@@ -233,31 +440,17 @@ export class ContractBinding extends Binding {
 
   // afterDeployment executes each time after a deployment has finished.
   // The deployment doesn't actually have to perform any deployments for this event to trigger.
-  afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
+  afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.afterDeployment.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
-
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
-    dependencies.unshift(this);
     this.eventsDeps.afterDeployment.push(eventName);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.afterDeployment.push(eventName);
 
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeploymentEvent'], [this], usages);
 
     const afterDeploymentEvent: AfterDeploymentEvent = {
-      name: eventName,
-      eventType: 'AfterDeploymentEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, afterDeploymentEvent);
 
@@ -266,31 +459,17 @@ export class ContractBinding extends Binding {
 
   // beforeDeploy runs each time the Binding is about to be triggered.
   // This event can be used to force the binding in question to be deployed.
-  beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
+  beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeDeploy.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
-
-    dependencies.unshift(this);
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
     this.eventsDeps.beforeDeploy.push(eventName);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.beforeDeploy.push(eventName);
 
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeployEvent'], [this], usages);
 
     const beforeDeployEvent: BeforeDeployEvent = {
-      name: eventName,
-      eventType: 'BeforeDeployEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, beforeDeployEvent);
 
@@ -298,31 +477,17 @@ export class ContractBinding extends Binding {
   }
 
   // afterDeploy runs after the Binding was deployed.
-  afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
-    if (this.eventsDeps.beforeDeploy.includes(eventName)) {
+  afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    if (this.eventsDeps.afterDeploy.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
-
-    dependencies.unshift(this);
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
     this.eventsDeps.afterDeploy.push(eventName);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.afterDeploy.push(eventName);
 
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeployEvent'], [this], usages);
 
     const afterDeployEvent: AfterDeployEvent = {
-      name: eventName,
-      eventType: 'AfterDeployEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, afterDeployEvent);
 
@@ -330,30 +495,17 @@ export class ContractBinding extends Binding {
   }
 
   // beforeCompile runs before the source code is compiled.
-  beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
-    if (this.eventsDeps.beforeDeploy.includes(eventName)) {
+  beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    if (this.eventsDeps.beforeCompile.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
-
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
-    dependencies.unshift(this);
     this.eventsDeps.beforeCompile.push(eventName);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.beforeCompile.push(eventName);
 
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeCompileEvent'], [this], usages);
+
     const beforeCompileEvent: BeforeCompileEvent = {
-      name: eventName,
-      eventType: 'BeforeCompileEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, beforeCompileEvent);
 
@@ -361,31 +513,17 @@ export class ContractBinding extends Binding {
   }
 
   // afterCompile runs after the source code is compiled and the bytecode is available.
-  afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
-    if (this.eventsDeps.beforeDeploy.includes(eventName)) {
+  afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    if (this.eventsDeps.afterCompile.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
-
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
-    dependencies.unshift(this);
     this.eventsDeps.afterCompile.push(eventName);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.afterCompile.push(eventName);
 
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterCompileEvent'], [this], usages);
 
     const afterCompileEvent: AfterCompileEvent = {
-      name: eventName,
-      eventType: 'AfterCompileEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, afterCompileEvent);
 
@@ -393,35 +531,53 @@ export class ContractBinding extends Binding {
   }
 
   // onChange runs after the Binding gets redeployed or changed
-  onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...dependencies: (ContractBinding | ContractEvent)[]): ContractEvent {
-    if (this.eventsDeps.beforeDeploy.includes(eventName)) {
+  onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
+    if (this.eventsDeps.onChange.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
     }
-
-    const bindings: ContractBinding[] = [];
-    const events: ContractEvent[] = [];
-    dependencies.unshift(this);
     this.eventsDeps.onChange.push(eventName);
-    for (const dep of dependencies) {
-      if (dep instanceof ContractBinding) {
-        dep.eventsDeps.onChange.push(eventName);
 
-        bindings.push(dep);
-      } else {
-        events.push(dep as ContractEvent);
-      }
-    }
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['OnChangeEvent'], [this], usages);
 
     const onChangeEvent: OnChangeEvent = {
-      name: eventName,
-      eventType: 'OnChangeEvent',
+      ...generateBaseEvent,
       fn,
-      deps: bindings,
-      eventDeps: events,
     };
     m.addEvent(eventName, onChangeEvent);
 
     return onChangeEvent;
+  }
+
+  public static generateBaseEvent(eventName: string, eventType: EventType, dependencies: (ContractBinding | ContractEvent)[], usages: (ContractBinding | ContractEvent)[]): BaseEvent {
+    const usageBindings: string[] = [];
+    const eventUsages: string[] = [];
+
+    for (const usage of usages) {
+      if (usage instanceof ContractBinding) {
+        usageBindings.push(usage.name);
+      } else {
+        eventUsages.push((usage as ContractEvent).name);
+      }
+    }
+
+    const depBindings: string[] = [];
+    const depEvents: string[] = [];
+    for (const dep of dependencies) {
+      if (dep instanceof ContractBinding) {
+        depBindings.push(dep.name);
+      } else {
+        depEvents.push((dep as ContractEvent).name);
+      }
+    }
+
+    return {
+      name: eventName,
+      eventType: eventType,
+      deps: depBindings,
+      eventDeps: depEvents,
+      usage: usageBindings,
+      eventUsage: eventUsages,
+    };
   }
 }
 
@@ -455,7 +611,6 @@ export type ContractInput = {
 export type TransactionData = {
   input: TxData | undefined
   output: TransactionReceipt | undefined
-  contractAddress?: string
 };
 
 export type EventTransactionData = {
@@ -466,11 +621,11 @@ export type EventTransactionData = {
 export class RegistryContractBinding extends ContractBinding {
   constructor(
     // metadata
-    name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, txData?: TransactionData,
+    name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, deployMetaData?: Deployed, txData?: TransactionData,
     // event hooks
     events?: EventsDepRef | undefined
   ) {
-    super(name, contractName, args, bytecode, abi, libraries, txData, events);
+    super(name, contractName, args, bytecode, abi, libraries, deployMetaData, txData, events);
   }
 }
 
@@ -618,14 +773,14 @@ export class ContractInstance {
   private static formatArgs(args: Array<any>): Array<any> {
     let i = 0;
     for (let arg of args) {
-      if (checkIfExist(arg?.contractName) && !checkIfExist(arg?.txData.contractAddress)) {
+      if (checkIfExist(arg?.contractName) && !checkIfExist(arg?.deployMetaData.contractAddress)) {
         throw new UserError(`You are trying to use contract that is not deployed ${arg.name}`);
       }
 
-      if (checkIfExist(arg?.txData?.contractAddress)) {
+      if (checkIfExist(arg?.deployMetaData?.contractAddress)) {
         arg = arg as ContractBinding;
 
-        args[i] = arg.txData.contractAddress;
+        args[i] = arg.deployMetaData.contractAddress;
       }
 
       i++;
@@ -643,8 +798,9 @@ export class ContractBindingMetaData {
   public abi: JsonFragment[] | undefined;
   public libraries: SingleContractLinkReference | undefined;
   public txData: TransactionData | undefined;
+  public deployMetaData: Deployed;
 
-  constructor(name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, txData?: TransactionData) {
+  constructor(name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, txData?: TransactionData, deployMetaData?: Deployed) {
     this.name = name;
     this.contractName = contractName;
     this.args = args;
@@ -652,6 +808,11 @@ export class ContractBindingMetaData {
     this.abi = abi;
     this.libraries = libraries;
     this.txData = txData;
+    this.deployMetaData = deployMetaData || {
+      logicallyDeployed: undefined,
+      contractAddress: undefined,
+      lastEventName: undefined,
+    };
   }
 }
 
@@ -697,6 +858,10 @@ export class ModuleBuilder {
     return this.bindings[name];
   }
 
+  group(...dependencies: (ContractBinding | ContractEvent)[]): GroupedDependencies {
+    return new GroupedDependencies(dependencies);
+  }
+
   bindPrototype(name: string, prototype: Prototype, ...args: Arguments): ContractBinding {
 
     if (checkIfExist(this.bindings[name])) {
@@ -704,7 +869,7 @@ export class ModuleBuilder {
       cli.exit(0);
     }
 
-    this.bindings[name] = new ContractBinding(name, prototype.contractName, args);;
+    this.bindings[name] = new ContractBinding(name, prototype.contractName, args);
     return this.bindings[name];
   }
 
@@ -787,6 +952,10 @@ export class ModuleBuilder {
         binding.libraries,
         {
           contractAddress: contractAddress,
+          logicallyDeployed: true,
+          lastEventName: undefined,
+        },
+        {
           input: undefined,
           output: undefined
         },

@@ -55,14 +55,14 @@ export async function deploy(
 
     try {
       await executor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver());
-      await executor.executeModuleEvents(moduleName, module.getAllModuleEvents().onSuccess);
+      await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onSuccess);
     } catch (error) {
-      await executor.executeModuleEvents(moduleName, module.getAllModuleEvents().onFail);
+      await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
 
       throw error;
     }
 
-    await executor.executeModuleEvents(moduleName, module.getAllModuleEvents().onCompletion);
+    await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onCompletion);
   }
 }
 

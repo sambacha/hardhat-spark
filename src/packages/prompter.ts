@@ -1,5 +1,5 @@
-import { DeployedContractBinding } from '../interfaces/mortar';
 import cli from 'cli-ux';
+import { DeniedConfirmation } from './types/errors';
 
 export class Prompter {
   private readonly skipConfirmation: boolean;
@@ -8,27 +8,16 @@ export class Prompter {
     this.skipConfirmation = skipConfirmation;
   }
 
-  promptDeployerBindings(bindings: { [p: string]: DeployedContractBinding }): void {
-    for (const [name, bind] of Object.entries(bindings)) {
-      cli.debug('Contract name: ', name);
-      cli.debug('   Tx Data: ');
-      cli.debug('            Input', bind.txData.input?.input || '');
-      cli.debug('            From', bind.txData.input?.from || '');
-    }
-  }
-
   async promptContinueDeployment(): Promise<void> {
     if (this.skipConfirmation) {
       return;
     }
 
-    const con = await cli.prompt('Do you wish to continue with deployment of this module? (Y/n)');
-    if (con != 'n' && con != 'Y') {
-      return await this.promptContinueDeployment();
-    }
-
+    const con = await cli.prompt('Do you wish to continue with deployment of this module? (Y/n)', {
+      required: false
+    });
     if (con == 'n') {
-      cli.exit();
+      throw new DeniedConfirmation('Confirmation has been declined.');
     }
   }
 
@@ -37,13 +26,11 @@ export class Prompter {
       return;
     }
 
-    const con = await cli.prompt('Do you wish to continue to the next binding? (Y/n)');
-    if (con != 'n' && con != 'Y') {
-      return await this.promptContinueDeployment();
-    }
-
+    const con = await cli.prompt('Do you wish to continue to the next binding? (Y/n)', {
+      required: false
+    });
     if (con == 'n') {
-      cli.exit();
+      throw new DeniedConfirmation('Confirmation has been declined.');
     }
   }
 
@@ -52,14 +39,11 @@ export class Prompter {
       return;
     }
 
-    const con = await cli.prompt('Execute transactions? (Y/n)');
-    if (con != 'n' && con != 'Y') {
-      return await this.promptExecuteTx();
-    }
-
+    const con = await cli.prompt('Execute transactions? (Y/n)', {
+      required: false
+    });
     if (con == 'n') {
-      cli.exit();
-      process.exit();
+      throw new DeniedConfirmation('Confirmation has been declined.');
     }
   }
 

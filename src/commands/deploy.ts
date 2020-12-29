@@ -2,7 +2,7 @@ import { Command, flags } from '@oclif/command';
 import * as path from 'path';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { ModuleResolver } from '../packages/modules/module_resolver';
-import { checkIfExist } from '../packages/utils/util';
+import { checkIfExist, checkMutex } from '../packages/utils/util';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import ConfigService from '../packages/config/service';
 import { Prompter } from '../packages/prompter';
@@ -15,6 +15,7 @@ import { EventHandler } from '../packages/modules/events/handler';
 import { UserError } from '../packages/types/errors';
 
 export default class Deploy extends Command {
+  private mutex = false;
   static description = 'Deploy new migrations, difference between current and already deployed.';
 
   static flags = {
@@ -38,9 +39,9 @@ export default class Deploy extends Command {
         description: 'Used for debugging purposes.'
       }
     ),
-    skipConfirmation: flags.boolean(
+    yes: flags.boolean(
       {
-        name: 'skipConfirmation',
+        name: 'yes',
         description: 'Used to skip confirmation questions.'
       }
     ),
@@ -56,6 +57,12 @@ export default class Deploy extends Command {
   static args = [{name: 'path'}];
 
   async run() {
+    process.on('SIGINT', () => {
+      checkMutex(this.mutex, 50, 10);
+
+      process.exit(1);
+    });
+
     const {args, flags} = this.parse(Deploy);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
@@ -68,7 +75,7 @@ export default class Deploy extends Command {
     }
     if (!checkIfExist(flags.networkId)) {
       cli.info('Network id flag not provided, please use --help');
-      cli.exit(0);
+      cli.exit(1);
     }
     process.env.MORTAR_NETWORK_ID = String(flags.networkId);
     const states: string[] = flags.state?.split(',') || [];
@@ -79,7 +86,7 @@ export default class Deploy extends Command {
     }
 
     let prompter = new Prompter(false);
-    if (flags.skipConfirmation) {
+    if (flags.yes) {
       prompter = new Prompter(true);
     }
     const configService = new ConfigService(currentPath);
@@ -87,7 +94,7 @@ export default class Deploy extends Command {
     const gasCalculator = new GasCalculator(provider);
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider);
 
-    const moduleState = new ModuleStateRepo(flags.networkId, currentPath);
+    const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex);
     const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator, moduleState);
 
     const eventHandler = new EventHandler(moduleState);
@@ -96,18 +103,15 @@ export default class Deploy extends Command {
     const migrationFilePath = path.resolve(currentPath, filePath);
 
     await command.deploy(migrationFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor);
-
-    cli.exit(0);
   }
 
   async catch(error: Error) {
     if (error instanceof UserError) {
       cli.info(error.message);
-      cli.exit(0);
+      cli.exit(1);
     }
 
+    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you at issue_page_link');
     cli.error(error);
-    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ');
-    cli.exit(1);
   }
 }

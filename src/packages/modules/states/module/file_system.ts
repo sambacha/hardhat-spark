@@ -1,12 +1,14 @@
-import { IModuleState, ModuleState, STATE_DIR_NAME, STATE_NAME } from './index';
+import { IModuleState, ModuleState, ModuleStateFile, STATE_DIR_NAME, STATE_NAME } from './index';
 import path from 'path';
 import fs from 'fs';
 import { ModuleStateRepo } from '../state_repo';
 
 export class FileSystemModuleState implements IModuleState {
+  private mutex: boolean;
   private readonly statePath: string;
 
-  constructor(currentProjectPath: string) {
+  constructor(currentProjectPath: string, mutex: boolean) {
+    this.mutex = mutex;
     const dir = path.resolve(currentProjectPath, STATE_DIR_NAME);
 
     if (!fs.existsSync(dir)) {
@@ -15,7 +17,7 @@ export class FileSystemModuleState implements IModuleState {
     this.statePath = dir;
   }
 
-  async getModuleState(networkId: number, moduleName: string): Promise<ModuleState> {
+  async getModuleState(networkId: number, moduleName: string): Promise<ModuleStateFile> {
     const dir = path.resolve(this.statePath, moduleName, `${networkId}_${STATE_NAME}`);
     if (!fs.existsSync(dir)) {
       return {};
@@ -38,15 +40,9 @@ export class FileSystemModuleState implements IModuleState {
     }
 
     const stateDir = path.resolve(moduleDir, `${networkId}_${STATE_NAME}`);
-    try {
-      fs.writeFileSync(stateDir, JSON.stringify(metaData, undefined, 4));
-    } catch (error) {
-      console.log(Object.keys(metaData));
-      console.log(Object.entries(metaData));
-      console.log(error);
-
-      throw error;
-    }
+    this.acquireLock();
+    fs.writeFileSync(stateDir, JSON.stringify(metaData, undefined, 4));
+    this.unlock();
 
     return true;
   }
@@ -55,5 +51,17 @@ export class FileSystemModuleState implements IModuleState {
     const dir = path.resolve(this.statePath, moduleName, `${networkId}_${STATE_NAME}`);
 
     return fs.existsSync(dir);
+  }
+
+  private acquireLock() {
+    if (this.mutex) {
+      throw new Error('Lock is already acquired');
+    }
+
+    this.mutex = true;
+  }
+
+  private unlock() {
+    this.mutex = false;
   }
 }

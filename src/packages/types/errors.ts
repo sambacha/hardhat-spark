@@ -79,3 +79,21 @@ export class StateRegistryDialectNotSet extends CliError {
     super(message);
   }
 }
+
+export class DeniedConfirmation extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class UsageBindingNotFound extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class UsageEventNotFound extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}

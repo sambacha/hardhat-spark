@@ -35,7 +35,7 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) =>
     return 'hello';
   });
 
-  const firstAfterDeployment = Example.afterDeployment(m, 'firstAfterDeployment', async (): Promise<void> => {
+  const firstAfterDeployment = m.group(Example, SecondExample).afterDeployment(m, 'firstAfterDeployment', async (): Promise<void> => {
     const example = Example.instance();
 
     await example.setExample(100);
@@ -49,18 +49,18 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) =>
     m.registerAction('getName', (): any => {
       return value;
     });
-  }, SecondExample);
+  }, Example, SecondExample);
 
-  Example.afterDeployment(m, 'secondAfterDeployment', async (): Promise<void> => {
+  m.group(Example, firstAfterDeployment).afterDeployment(m, 'secondAfterDeployment', async () => {
     const example = Example.instance();
 
     await example.setExample(100);
     await example.setExample(130);
-  }, firstAfterDeployment);
+  }, Example);
 
   SecondExample.afterCompile(m, 'firstAfterCompile', async () => {
     console.log('This is after compile: ', SecondExample.bytecode);
-  }, SecondExample);
+  });
 
   ThirdExample.beforeCompile(m, 'firstBeforeCompile', async () => {
     console.log('This is before compile: ', Example.name);
@@ -70,23 +70,23 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) =>
     console.log('This is before deployment: ', Example.name);
   }, Example);
 
-  ThirdExample.onChange(m, 'firstOnChange', async (): Promise<void> => {
+  ThirdExample.onChange(m, 'firstOnChange', async () => {
     console.log('This is on change:', Example.name);
   }, Example);
 
-  m.onStart('OnStart', async (): Promise<void> => {
+  m.onStart('OnStart', async () => {
     console.log('onStart');
   });
 
-  m.onCompletion('onCompletion', async (): Promise<void> => {
+  m.onCompletion('onCompletion', async () => {
     console.log('onCompletion');
   });
 
-  m.onFail('onFail', async (): Promise<void> => {
+  m.onFail('onFail', async () => {
     console.log('onFail');
   });
 
-  m.onSuccess('onSuccess', async (): Promise<void> => {
+  m.onSuccess('onSuccess', async () => {
     console.log('onSuccess');
   });
 });

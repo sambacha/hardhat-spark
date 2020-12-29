@@ -1,9 +1,17 @@
 import {
   AfterCompileEvent,
   AfterDeployEvent,
-  AfterDeploymentEvent, BeforeCompileEvent, BeforeDeployEvent, BeforeDeploymentEvent, ContractBinding,
-  ModuleEvent, OnChangeEvent,
-  StatefulEvent, TransactionData
+  AfterDeploymentEvent,
+  BeforeCompileEvent,
+  BeforeDeployEvent,
+  BeforeDeploymentEvent,
+  ContractBinding,
+  ContractEvent,
+  Deployed,
+  ModuleEvent,
+  OnChangeEvent,
+  StatefulEvent,
+  TransactionData
 } from '../../../interfaces/mortar';
 import { Prompter } from '../../prompter';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
@@ -49,22 +57,22 @@ export class TxExecutor {
       if (checkIfExist((element as ContractBinding)?.bytecode)) {
         const contractAddress = await resolver?.resolveContract(this.networkId, moduleName, elementName);
 
-        element.txData = element.txData as TransactionData;
-        if (checkIfExist(element.txData?.contractAddress)) {
+        element = element as ContractBinding;
+        if (checkIfExist(element.deployMetaData?.contractAddress)) {
           cli.info(elementName, 'is already deployed');
           await this.prompter.promptContinueDeployment();
           continue;
         }
 
         if (checkIfExist(contractAddress)) {
-          element.txData.contractAddress = contractAddress as string;
+          element.deployMetaData.contractAddress = contractAddress as string;
           await this.moduleState.storeSingleBinding(element as ContractBinding);
           continue;
         }
 
         element = await this.executeSingleBinding(element as ContractBinding, moduleState);
-        if (checkIfExist(registry) && checkIfExist(element?.txData?.contractAddress)) {
-          await registry?.setAddress(this.networkId, moduleName, element.name, element?.txData?.contractAddress as string);
+        if (checkIfExist(registry) && checkIfExist(element?.deployMetaData?.contractAddress)) {
+          await registry?.setAddress(this.networkId, moduleName, element.name, element?.deployMetaData?.contractAddress as string);
         }
 
         await this.moduleState.storeSingleBinding(element);
@@ -77,10 +85,8 @@ export class TxExecutor {
     return;
   }
 
-  async executeModuleEvents(moduleName: string, moduleEvents: { [name: string]: ModuleEvent }): Promise<void> {
-    const moduleState = await this.moduleState.getStateIfExist(moduleName);
+  async executeModuleEvents(moduleName: string, moduleState: ModuleState, moduleEvents: { [name: string]: ModuleEvent }): Promise<void> {
     ModuleResolver.handleModuleEvents(moduleState, moduleEvents);
-    await this.moduleState.storeNewState(moduleName, moduleState);
 
     for (const [eventName] of Object.entries(moduleEvents)) {
       await this.executeEvent(moduleName, moduleState[eventName] as StatefulEvent, moduleState);
@@ -125,10 +131,6 @@ export class TxExecutor {
         await this.eventHandler.executeOnCompletionModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
         break;
       }
-      case 'OnError': {
-        await this.eventHandler.executeOnErrorModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
-        break;
-      }
       case 'OnSuccess': {
         await this.eventHandler.executeOnSuccessModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
         break;
@@ -139,6 +141,13 @@ export class TxExecutor {
       }
       default: {
         throw new CliError(`Failed to match event type with user event hooks - ${event.event.eventType}`);
+      }
+    }
+
+    if (checkIfExist((event.event as ContractEvent)?.deps)) {
+       const deps = (event.event as ContractEvent).deps;
+      for (const depName of deps) {
+        await this.moduleState.storeSingleBinding(moduleState[depName] as ContractBinding);
       }
     }
   }
@@ -199,15 +208,16 @@ export class TxExecutor {
           const dependencyName = binding.args[i].name;
           binding.args[i] = dependencyName;
           const dependencyTxData = moduleState[dependencyName].txData as TransactionData;
-          if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.contractAddress)) {
+          const dependencyDeployData = (moduleState[dependencyName] as ContractBinding).deployMetaData as Deployed;
+          if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.input) || !checkIfExist(dependencyTxData.output)) {
             throw new ContractTypeMismatch(`Dependency contract not deployed \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`);
           }
 
-          if (!checkIfExist(dependencyTxData.contractAddress)) {
+          if (!checkIfExist(dependencyDeployData.contractAddress)) {
             throw new ContractTypeMismatch(`No contract address in dependency tree \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i].name}`);
           }
 
-          values.push(dependencyTxData.contractAddress);
+          values.push(dependencyDeployData.contractAddress);
           types.push(constructorFragmentInputs[i].type);
 
           break;
@@ -256,8 +266,12 @@ export class TxExecutor {
     const txReceipt = await this.sendTransaction(binding, signedTx);
 
     binding.txData = binding.txData as TransactionData;
-    binding.txData.contractAddress = txReceipt.contractAddress;
     binding.txData.output = txReceipt;
+
+    binding.deployMetaData.contractAddress = txReceipt.contractAddress;
+    if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
+      binding.deployMetaData.logicallyDeployed = true;
+    }
 
     moduleState[binding.name] = binding;
 

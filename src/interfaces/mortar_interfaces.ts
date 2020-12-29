@@ -1,4 +1,4 @@
-// // This is desired functionality that
+  // // This is desired functionality that
 //
 // // AutoBinding is a special type of binding that extends the Binding
 // // type and automatically detects which binding to instantiate for
