@@ -33,10 +33,10 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
     }
   }, AddressResolver);
 
-  const FlexibleStorage = m.contract('FlexibleStorage', ReadProxyAddressResolver);
-  const SystemSettings = m.contract('SystemSettings', ETH_ADDRESS, ReadProxyAddressResolver);
+  m.contract('FlexibleStorage', ReadProxyAddressResolver);
+  m.contract('SystemSettings', ETH_ADDRESS, ReadProxyAddressResolver);
   const SystemStatus = m.contract('SystemStatus', ETH_ADDRESS);
-  const ExchangeRates = m.contract('ExchangeRates', ETH_ADDRESS, oracleExRatesContractAddress, ReadProxyAddressResolver, [], []);
+  m.contract('ExchangeRates', ETH_ADDRESS, oracleExRatesContractAddress, ReadProxyAddressResolver, [], []);
 
   const RewardEscrow = m.contract('RewardEscrow', ETH_ADDRESS, ethers.constants.AddressZero, ethers.constants.AddressZero);
   const SynthetixEscrow = m.contract('SynthetixEscrow', ETH_ADDRESS, ethers.constants.AddressZero);

@@ -37,7 +37,7 @@ export async function checkMutex(mutex: boolean, delayTime: number, retries: num
 
   if (mutex) {
     await delay(delayTime);
-    await checkMutex(mutex, delayTime * 2, retries - 1);
+    await checkMutex(mutex, delayTime, retries - 1);
   }
 
   return;

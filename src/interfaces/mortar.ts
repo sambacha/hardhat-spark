@@ -567,7 +567,8 @@ export class ContractBinding extends Binding {
 
     const depBindings: string[] = [];
     const depEvents: string[] = [];
-    for (const dep of dependencies) {
+    for (let i = 0; i < dependencies.length; i++) {
+      const dep = dependencies[i];
       if (dep instanceof ContractBinding) {
         depBindings.push(dep.name);
       } else {

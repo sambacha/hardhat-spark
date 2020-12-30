@@ -58,7 +58,7 @@ export default class Deploy extends Command {
 
   async run() {
     process.on('SIGINT', () => {
-      checkMutex(this.mutex, 50, 10);
+      checkMutex(this.mutex, 20, 10);
 
       process.exit(1);
     });
