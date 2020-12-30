@@ -44,6 +44,12 @@ export class BindingsConflict extends UserError {
   }
 }
 
+export class PrototypeNotFound extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class StateIsBiggerThanModule extends UserError {
   constructor(message: string) {
     super(message);

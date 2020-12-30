@@ -7,7 +7,7 @@ import {
   BeforeDeploymentEvent,
   ContractBinding,
   ContractEvent,
-  Deployed,
+  Deployed, ModuleConfig,
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent,
@@ -50,7 +50,7 @@ export class TxExecutor {
     this.networkId = networkId;
   }
 
-  async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined): Promise<void> {
+  async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined): Promise<void> {
     await this.moduleState.storeNewState(moduleName, moduleState);
 
     for (let [elementName, element] of Object.entries(moduleState)) {
@@ -67,6 +67,10 @@ export class TxExecutor {
         if (checkIfExist(contractAddress)) {
           element.deployMetaData.contractAddress = contractAddress as string;
           await this.moduleState.storeSingleBinding(element as ContractBinding);
+          continue;
+        }
+
+        if (moduleConfig && checkIfExist(moduleConfig[element.name]) && !moduleConfig[element.name].deploy) {
           continue;
         }
 
@@ -145,7 +149,7 @@ export class TxExecutor {
     }
 
     if (checkIfExist((event.event as ContractEvent)?.deps)) {
-       const deps = (event.event as ContractEvent).deps;
+      const deps = (event.event as ContractEvent).deps;
       for (const depName of deps) {
         await this.moduleState.storeSingleBinding(moduleState[depName] as ContractBinding);
       }

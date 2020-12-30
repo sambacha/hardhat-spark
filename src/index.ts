@@ -54,7 +54,7 @@ export async function deploy(
     await prompter.promptContinueDeployment();
 
     try {
-      await executor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver());
+      await executor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver(), module.getModuleConfig());
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onSuccess);
     } catch (error) {
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);

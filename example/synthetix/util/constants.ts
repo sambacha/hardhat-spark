@@ -1,5 +1,6 @@
 import * as web3utils from 'web3-utils';
 import * as path from 'path';
+import { ethers } from 'ethers';
 
 export const chainIdToNetwork: {[name: number]: string} = {
   1: 'mainnet',

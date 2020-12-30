@@ -5,6 +5,7 @@ import { parseFiles } from '../../utils/files';
 import { JsonFragment } from '../../types/artifacts/abi';
 import { Artifact } from 'hardhat/src/types/artifacts';
 import { LinkReferences } from '../../types/artifacts/libraries';
+import { checkIfExist } from '../../utils/util';
 
 export class HardhatCompiler extends Compiler {
   compile(): void {
@@ -56,7 +57,11 @@ export class HardhatCompiler extends Compiler {
       for (const artifact of buildArtifacts) {
         const art = JSON.parse(artifact) as Artifact;
 
-        const contractLibDep: {[libraryName: string]: Array<{ length: number; start: number }>} = {};
+        const contractLibDep: { [libraryName: string]: Array<{ length: number; start: number }> } = {};
+        if (!checkIfExist(art.linkReferences)) {
+          continue;
+        }
+
         for (const [, linkDeps] of Object.entries(art.linkReferences)) {
           for (const [libraryName, librariesOccurrence] of Object.entries(linkDeps)) {
             contractLibDep[libraryName] = librariesOccurrence;

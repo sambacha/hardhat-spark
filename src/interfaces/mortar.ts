@@ -11,7 +11,7 @@ import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { Prompter } from '../packages/prompter';
 import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/executor';
-import { UserError } from '../packages/types/errors';
+import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 
@@ -135,6 +135,12 @@ export type Deployed = {
   lastEventName: string | undefined,
   logicallyDeployed: boolean | undefined,
   contractAddress: string | undefined
+};
+
+export type ModuleConfig = {
+  [contractName: string]: {
+    deploy: boolean
+  }
 };
 
 export class StatefulEvent {
@@ -403,7 +409,6 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      console.log(this.deployMetaData);
       throw new UserError('Binding is not suitable to be instantiated, please deploy it first');
     }
 
@@ -822,6 +827,7 @@ export class ModuleBuilder {
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
   private readonly actions: { [name: string]: Action };
+  private prototypes: { [name: string]: Prototype };
   private resolver: IModuleRegistryResolver | undefined;
   private registry: IModuleRegistryResolver | undefined;
 
@@ -829,6 +835,7 @@ export class ModuleBuilder {
     this.opts = {params: {}};
     this.bindings = {};
     this.actions = {};
+    this.prototypes = {};
     this.resolver = undefined;
     this.registry = undefined;
     this.contractEvents = {};
@@ -862,14 +869,22 @@ export class ModuleBuilder {
     return new GroupedDependencies(dependencies);
   }
 
-  bindPrototype(name: string, prototype: Prototype, ...args: Arguments): ContractBinding {
+  prototype(name: string): Prototype {
+    this.prototypes[name] = new Prototype(name);
 
+    return this.prototypes[name];
+  }
+
+  bindPrototype(name: string, prototypeName: string, ...args: Arguments): ContractBinding {
     if (checkIfExist(this.bindings[name])) {
-      cli.info('Contract already bind to the module - ', name);
-      cli.exit(0);
+      throw new BindingsConflict(`Contract already bind to the module - ${name}`);
     }
 
-    this.bindings[name] = new ContractBinding(name, prototype.contractName, args);
+    if (!checkIfExist(this.prototypes[prototypeName])) {
+      throw new PrototypeNotFound(`Prototype with name ${prototypeName} is not found in this module`);
+    }
+
+    this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args);
     return this.bindings[name];
   }
 
@@ -930,38 +945,43 @@ export class ModuleBuilder {
     return action;
   }
 
+  async bindModules(...modules: Module[]): Promise<void> {
+    for (const module of modules) {
+      await this.bindModule(module);
+    }
+  }
+
   async bindModule(m: Module): Promise<void> {
     const bindings = m.getAllBindings();
+    const events = m.getAllEvents();
 
     const networkId = process.env.MORTAR_NETWORK_ID || '';
     const resolver = await m.getRegistry();
 
+    for (const [eventName, event] of Object.entries(events)) {
+      if (
+        checkIfExist(this.contractEvents[eventName]) // @TODO add error logic here instead of skipping
+      ) {
+        continue;
+      }
+
+      this.addEvent(eventName, event.event);
+    }
+
     for (const [bindingName, binding] of Object.entries(bindings)) {
-      if (checkIfExist(this.bindings[bindingName])) {
+      if (
+        checkIfExist(this.bindings[bindingName]) &&
+        this.bindings[bindingName] &&
+        this.bindings[bindingName].bytecode != binding.bytecode // @TODO add args also
+      ) {
         throw new UserError('Conflict when merging two modules, check if their is same binding name.');
       }
 
-      const contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName);
-
-      this.bindings[bindingName] = new RegistryContractBinding(
-        binding.name,
-        binding.contractName,
-        binding.args,
-        binding.bytecode,
-        binding.abi,
-        binding.libraries,
-        {
-          contractAddress: contractAddress,
-          logicallyDeployed: true,
-          lastEventName: undefined,
-        },
-        {
-          input: undefined,
-          output: undefined
-        },
-        undefined,
-      );
+      binding.deployMetaData.contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName);
+      this.bindings[bindingName] = binding;
     }
+
+    this.prototypes = m.getAllPrototypes();
   }
 
   getBinding(name: string): ContractBinding {
@@ -990,6 +1010,10 @@ export class ModuleBuilder {
 
   getRegistry(): IModuleRegistryResolver | undefined {
     return this.registry;
+  }
+
+  getAllPrototypes(): {[name: string]: Prototype} {
+    return this.prototypes
   }
 
   // module eventsDeps below
@@ -1041,6 +1065,8 @@ export class Module {
   private readonly events: Events;
   private readonly moduleEvents: ModuleEvents;
   private readonly actions: { [name: string]: Action };
+  private readonly moduleConfig: ModuleConfig | undefined;
+  private readonly prototypes: { [name: string]: Prototype };
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
 
@@ -1052,6 +1078,8 @@ export class Module {
     actions: { [name: string]: Action },
     registry: IModuleRegistryResolver | undefined,
     resolver: IModuleRegistryResolver | undefined,
+    moduleConfig: ModuleConfig | undefined,
+    prototypes: { [name: string]: Prototype },
   ) {
     this.name = moduleName;
     this.opts = {params: {}};
@@ -1061,8 +1089,9 @@ export class Module {
     this.resolver = resolver;
     this.events = events;
     this.moduleEvents = moduleEvents;
+    this.moduleConfig = moduleConfig;
+    this.prototypes = prototypes;
   }
-
 
   // call(name: string, ...args: any[]): void;
   //
@@ -1109,9 +1138,17 @@ export class Module {
   getAction(name: string): Action {
     return this.actions[name];
   }
+
+  getModuleConfig(): ModuleConfig | undefined {
+    return this.moduleConfig;
+  }
+
+  getAllPrototypes(): { [name: string]: Prototype } {
+    return this.prototypes;
+  }
 }
 
-export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<Module> {
+export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
   const moduleBuilder = new ModuleBuilder();
   await fn(moduleBuilder);
 
@@ -1145,6 +1182,8 @@ export async function module(moduleName: string, fn: ModuleBuilderFn): Promise<M
     moduleBuilder.getAllActions(),
     moduleBuilder.getRegistry(),
     moduleBuilder.getResolver(),
+    moduleConfig,
+    moduleBuilder.getAllPrototypes()
   );
 }
 
