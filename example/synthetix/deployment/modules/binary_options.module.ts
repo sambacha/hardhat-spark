@@ -1,19 +1,19 @@
-import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { module } from '../../../../src/interfaces/mortar';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import * as web3utils from 'web3-utils';
 import path from 'path';
 import { SynthetixCore } from './core.module';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
   ETH_ADDRESS,
 } = process.env;
 
-export const BinaryOptionsModule = module('BinaryOptionsModule', async (m: ModuleBuilder) => {
-  const libraries = await SynthetixLibraries;
-  const prototypes = await SynthetixPrototypes;
-  const core = await SynthetixCore;
-  await m.bindModules(libraries, prototypes, core);
+export const BinaryOptionsModule = module('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {
+  await m.bindModule(SynthetixLibraries);
+  await m.bindModule(SynthetixPrototypes);
+  await m.bindModule(SynthetixCore);
 
   const day = 24 * 60 * 60;
   const maxOraclePriceAge = 120 * 60; // Price updates are accepted from up to two hours before maturity to allow for delayed chainlink heartbeats.
@@ -25,7 +25,7 @@ export const BinaryOptionsModule = module('BinaryOptionsModule', async (m: Modul
   const creatorFee = web3utils.toWei('0.002'); // 0.2% of the market's value goes to the creator.
   const refundFee = web3utils.toWei('0.05'); // 5% of a bid stays in the pot if it is refunded.
 
-  const ReadProxyAddressResolver = m.getBinding('ReadProxyAddressResolver');
+  const ReadProxyAddressResolver = m.ReadProxyAddressResolver;
   m.contract(
     'BinaryOptionMarketManager',
     ETH_ADDRESS,

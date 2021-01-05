@@ -1,9 +1,10 @@
-import { ContractBinding, module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { ContractBinding, module } from '../../../../src/interfaces/mortar';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { SynthetixCore } from './core.module';
 import path from 'path';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
@@ -11,12 +12,11 @@ const {
   MORTAR_NETWORK_ID
 } = process.env;
 
-export const SynthetixSynths = module('SynthetixSynths', async (m: ModuleBuilder) => {
-  const libraries = await SynthetixLibraries;
-  const prototypes = await SynthetixPrototypes;
-  const core = await SynthetixCore;
-  await m.bindModules(libraries, prototypes, core);
-  const ExchangeRates = m.getBinding('ExchangeRates');
+export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
+  await m.bindModule(SynthetixLibraries);
+  await m.bindModule(SynthetixPrototypes);
+  await m.bindModule(SynthetixCore);
+  const ExchangeRates = m.ExchangeRates;
 
   const synths = require('./../local/synths.json');
   const feeds = require('./../local/feeds.json');
@@ -58,7 +58,7 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: ModuleBuilder
       ETH_ADDRESS,
       currencyKeyInBytes,
       originalTotalSupply,
-      m.getBinding('ReadProxyAddressResolver'),
+      m.ReadProxyAddressResolver,
       ...(additionalConstructorArgsMap[(sourceContractName + currencyKey)] || [])
     );
 

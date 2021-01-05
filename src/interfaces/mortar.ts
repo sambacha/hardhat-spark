@@ -176,6 +176,10 @@ export abstract class Binding {
   }
 }
 
+export type SearchParams = {
+  functionName?: string;
+};
+
 export class GroupedDependencies {
   dependencies: (ContractBinding | ContractEvent)[];
 
@@ -183,6 +187,39 @@ export class GroupedDependencies {
     this.dependencies = dependencies;
   }
 
+  // util
+  find(searchParams: SearchParams): GroupedDependencies {
+    const bindings = this.dependencies.filter((target: ContractBinding | ContractEvent) => {
+        return ((target as ContractBinding)?.abi as JsonFragment[]).find(({name}) => name === searchParams?.functionName);
+      }
+    ) as ContractBinding[];
+
+    return new GroupedDependencies(bindings);
+  }
+
+  exclude(...bindingNames: string[]): GroupedDependencies {
+    const newBindings = this.dependencies.filter((target) => {
+      const fullExpr = new RegExp(bindingNames
+        .map((bindingName: string) => bindingName)
+        .join('|')
+      );
+
+      return !fullExpr.test(target.name);
+    });
+
+    return new GroupedDependencies(newBindings);
+  }
+
+  map(fn: (value: ContractBinding, index: number, array: (ContractBinding | ContractEvent)[]) => any): (ContractBinding | ContractEvent)[] {
+    const resultArray = [];
+    for (let index = 0; index < this.dependencies.length; index++) {
+      resultArray.push(fn(this.dependencies[index] as ContractBinding, index, this.dependencies));
+    }
+
+    return resultArray;
+  }
+
+  // event hooks
   beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeploymentEvent'], this.dependencies, usages);
     const beforeDeployment: BeforeDeploymentEvent = {
@@ -823,7 +860,9 @@ export class ContractBindingMetaData {
 }
 
 export class ModuleBuilder {
-  private opts: ModuleOptions;
+  [key: string]: ContractBinding | Event | Action | any;
+
+  // private opts: ModuleOptions;
   private readonly bindings: { [name: string]: ContractBinding };
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
@@ -833,7 +872,6 @@ export class ModuleBuilder {
   private registry: IModuleRegistryResolver | undefined;
 
   constructor(opts?: ModuleOptions) {
-    this.opts = {params: {}};
     this.bindings = {};
     this.actions = {};
     this.prototypes = {};
@@ -863,6 +901,7 @@ export class ModuleBuilder {
     }
 
     this.bindings[name] = new ContractBinding(name, name, args);
+    this[name] = this.bindings[name];
     return this.bindings[name];
   }
 
@@ -886,6 +925,7 @@ export class ModuleBuilder {
     }
 
     this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args);
+    this[name] = this.bindings[name];
     return this.bindings[name];
   }
 
@@ -921,6 +961,7 @@ export class ModuleBuilder {
       false,
       {}
     );
+    this[eventName] = this.contractEvents[eventName];
   }
 
   getEvent(eventName: string): StatefulEvent {
@@ -942,17 +983,22 @@ export class ModuleBuilder {
   registerAction(name: string, fn: ActionFn): Action {
     const action = new Action(name, fn);
     this.actions[name] = action;
+    this[name] = this.actions[name];
 
     return action;
   }
 
-  async bindModules(...modules: Module[]): Promise<void> {
+  async bindModules(...modules: (Module | Promise<Module>)[]): Promise<void> {
     for (const module of modules) {
       await this.bindModule(module);
     }
   }
 
-  async bindModule(m: Module): Promise<void> {
+  async bindModule(m: Module | Promise<Module>): Promise<void> {
+    if (m instanceof Promise) {
+      m = await m;
+    }
+
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
 
@@ -979,6 +1025,7 @@ export class ModuleBuilder {
       }
 
       binding.deployMetaData.contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName);
+      this[bindingName] = binding;
       this.bindings[bindingName] = binding;
     }
 
@@ -1013,8 +1060,8 @@ export class ModuleBuilder {
     return this.registry;
   }
 
-  getAllPrototypes(): {[name: string]: Prototype} {
-    return this.prototypes
+  getAllPrototypes(): { [name: string]: Prototype } {
+    return this.prototypes;
   }
 
   // module eventsDeps below
@@ -1061,7 +1108,7 @@ export class Prototype {
 
 export class Module {
   readonly name: string;
-  private opts: ModuleOptions;
+  // private opts: ModuleOptions;
   private readonly bindings: { [name: string]: ContractBinding };
   private readonly events: Events;
   private readonly moduleEvents: ModuleEvents;
@@ -1083,7 +1130,6 @@ export class Module {
     prototypes: { [name: string]: Prototype },
   ) {
     this.name = moduleName;
-    this.opts = {params: {}};
     this.bindings = bindings;
     this.actions = actions;
     this.registry = registry;
@@ -1158,7 +1204,7 @@ export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConf
 
   const contractBuildNames: string[] = [];
   const moduleBuilderBindings = moduleBuilder.getAllBindings();
-  for (const [_, bind] of Object.entries(moduleBuilderBindings)) {
+  for (const [, bind] of Object.entries(moduleBuilderBindings)) {
     contractBuildNames.push(bind.contractName + '.json');
   }
 

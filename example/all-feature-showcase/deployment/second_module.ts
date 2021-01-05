@@ -3,9 +3,8 @@ import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
 import { ExampleModule } from './migration';
 
 export const ThirdExampleModule = module('ThirdExampleModule', async (m: ModuleBuilder) => {
-  const module = await ExampleModule;
-  await m.bindModule(module);
+  await m.bindModule(ExampleModule);
 
-  const secondExample = m.getBinding('SecondExample');
+  const secondExample = m.SecondExample;
   m.contract('FourthExample', secondExample);
 });

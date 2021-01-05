@@ -41,10 +41,15 @@ USAGE
   $ mortar deploy [PATH]
 
 OPTIONS
-  -h, --help             show CLI help
-  --debug                Used for debugging purposes.
-  --networkId=networkId  (required) Network ID of the network you are willing to deploy your contracts.
-  --skipConfirmation     Used to skip confirmation questions.
+  -h, --help                 show CLI help
+  --debug                    Used for debugging purposes.
+  --networkId=networkId      (required) Network ID of the network you are willing to deploy your contracts.
+  --rpcProvider=rpcProvider  RPC Provider - URL of open RPC interface for your ethereum node.
+
+  --state=state              Provide name of module's that you would want to use as state. Most commonly used if you are
+                             deploying more than one module that are dependant on each other.
+
+  --yes                      Used to skip confirmation questions.
 ```
 
 _See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/deploy.ts)_
@@ -58,8 +63,12 @@ USAGE
   $ mortar diff [PATH]
 
 OPTIONS
-  -h, --help  show CLI help
-  --debug     Flag used for debugging
+  -h, --help             show CLI help
+  --debug                Flag used for debugging
+  --networkId=networkId  (required) Network ID of the network you are willing to deploy your contracts.
+
+  --state=state          Provide name of module's that you would want to use as states. Most commonly used if you are
+                         deploying more than one module that are dependant on each other.
 ```
 
 _See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/diff.ts)_

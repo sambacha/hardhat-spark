@@ -17,14 +17,13 @@ export const currentWeekOfInflation = 0;
 export const currentLastMintEvent = 0;
 
 export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) => {
-  const libraries = await SynthetixLibraries;
-  const prototypes = await SynthetixPrototypes;
-  await m.bindModules(libraries, prototypes);
+  await m.bindModule(SynthetixLibraries);
+  await m.bindModule(SynthetixPrototypes);
 
   const AddressResolver = m.contract('AddressResolver', ETH_ADDRESS);
   const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', 'ReadProxy', ETH_ADDRESS);
 
-  const setTargetInResolverFromReadProxy = ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (): Promise<void> => {
+  ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (): Promise<void> => {
     await ReadProxyAddressResolver.instance().setTarget(AddressResolver);
 
     const target = await ReadProxyAddressResolver.instance().target() as string;
@@ -151,7 +150,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
     }
   });
 
-  const debtCache = m.bindPrototype(
+  m.bindPrototype(
     'DebtCache',
     useOvm ? 'RealtimeDebtCache' : 'DebtCache',
     ETH_ADDRESS,

@@ -1,12 +1,12 @@
-import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { module } from '../../../src/interfaces/mortar';
 // @ts-ignore
-import { DaiModule } from './dai_migration';
+import { DaiModule } from './dai_module';
+import { DaiExampleModuleBuilder } from '../.mortar/DaiExampleModule/DaiExampleModule';
 
-export const DaiExampleModule = module('DaiExampleModule', async (m: ModuleBuilder) => {
-  const module = await DaiModule;
-  await m.bindModule(module);
+export const DaiExampleModule = module('DaiExampleModule', async (m: DaiExampleModuleBuilder) => {
+  await m.bindModule(DaiModule);
 
-  const Dai = m.getBinding('Dai');
+  const Dai = m.Dai;
   const Example = m.contract('Example', Dai);
 
   Example.afterDeployment(m, 'firstAfterDeployment', async (): Promise<void> => {

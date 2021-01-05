@@ -3,19 +3,20 @@ import * as path from 'path';
 require('dotenv').config({path: path.resolve(__dirname + './../.env')});
 
 import {
-  ModuleBuilder,
   module,
 } from '../../../src/interfaces/mortar';
 import { BigNumber } from 'ethers';
 import { RemoteBucketStorage } from '../../../src/packages/modules/states/registry/remote_bucket_storage';
-import { FileSystemRegistry } from '../../../src/packages/modules/states/registry/file_system';
+import { ExampleModuleBuilder } from '../.mortar/ExampleModule/ExampleModule';
+import { SecondModuleBuilder } from '../.mortar/SecondModule/SecondModule';
+// import { FileSystemRegistry } from '../../../src/packages/modules/states/registry/file_system';
 
 const {
   GOOGLE_ACCESS_KEY,
   GOOGLE_SECRET_ACCESS_KEY,
 } = process.env;
 
-export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) => {
+export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuilder) => {
   // const fileSystem = new FileSystemRegistry("./")
   // m.setRegistry(fileSystem)
   const remoteBucketStorage = new RemoteBucketStorage(
@@ -91,7 +92,7 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder) =>
   });
 });
 
-export const SecondModule = module('SecondExample', async (m: ModuleBuilder) => {
+export const SecondModule = module('SecondExample', async (m: SecondModuleBuilder) => {
   const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0');
   const SecondExample = m.contract('SecondExample', Example, ['some', 'random', 'string'], [['hello']], 123);
   m.contract('ThirdExample', SecondExample);

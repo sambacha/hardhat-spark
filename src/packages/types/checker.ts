@@ -81,12 +81,12 @@ function handleString(bindingName: string, value: string, type: string): void {
 }
 
 function handleArray(bindingName: string, values: string[], type: string): void {
-  let arrayLength = 0;
-
-  const rawType = type.substring(0, type.indexOf('['));
-  if (type.includes('[') && type.includes(']')) {
-    arrayLength = +type.substring(type.indexOf('[') + 1, type.indexOf(']'));
-  }
+  // let arrayLength = 0;
+  //
+  // const rawType = type.substring(0, type.indexOf('['));
+  // if (type.includes('[') && type.includes(']')) {
+  //   arrayLength = +type.substring(type.indexOf('[') + 1, type.indexOf(']'));
+  // }
 
   // @TODO: handle handle length in multiple array dimension
   // if (values.length != arrayLength) {

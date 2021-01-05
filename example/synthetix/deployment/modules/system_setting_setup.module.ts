@@ -14,17 +14,15 @@ const {
 } = process.env;
 
 export const SystemSettingsModule = module('SystemSettingsModule', async (m: ModuleBuilder) => {
-  const libraries = await SynthetixLibraries;
-  const prototypes = await SynthetixPrototypes;
-  const core = await SynthetixCore;
-  const synthsModule = await SynthetixSynths;
-  const synthetixRebuildCache = await SynthetixRebuildCache;
-
-  await m.bindModules(libraries, prototypes, core, synthsModule, synthetixRebuildCache);
+  await m.bindModule(SynthetixLibraries);
+  await m.bindModule(SynthetixPrototypes);
+  await m.bindModule(SynthetixCore);
+  await m.bindModule(SynthetixSynths);
+  await m.bindModule(SynthetixRebuildCache);
 
   const synths = require('../local/synths.json');
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
-  for (const {name: currencyKey, subclass, asset} of synths) {
+  for (const {name: currencyKey} of synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);
     const Synth = m.getBinding(`Synth${currencyKey}`);
 
@@ -33,8 +31,8 @@ export const SystemSettingsModule = module('SystemSettingsModule', async (m: Mod
       currencyKeyInBytes,
     });
   }
-  const SystemSettings = m.getBinding('SystemSettings');
-  const rebuildCache = m.getEvent('rebuildCacheAfterDeployAllContracts').event as ContractEvent;
+  const SystemSettings = m.SystemSettings;
+  const rebuildCache = m.rebuildCacheAfterDeployAllContracts.event as ContractEvent;
   m.group(...synthsToAdd.map(synth => synth.synth), rebuildCache).afterDeploy(m, 'afterDeploySystemSetting', async (): Promise<void> => {
     const bindings = synthsToAdd.map(synth => synth.synth);
 

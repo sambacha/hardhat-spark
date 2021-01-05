@@ -1,9 +1,9 @@
-import { CompiledContractBinding, DeployedContractBinding } from '../../src/interfaces/mortar';
+import { ContractBinding } from '../../src/interfaces/mortar';
 import fs from 'fs';
 
-export function getStateIfExist(dir: string): { [p: string]: DeployedContractBinding } | null {
+export function getStateIfExist(dir: string): { [p: string]: ContractBinding } | null {
   if (!fs.existsSync(dir)) {
-    return null;
+    return undefined;
   }
 
   return JSON.parse(fs.readFileSync(dir, {
@@ -11,11 +11,11 @@ export function getStateIfExist(dir: string): { [p: string]: DeployedContractBin
   }));
 }
 
-export function storeNewState(dir: string, state: { [p: string]: CompiledContractBinding } | null): void {
+export function storeNewState(dir: string, state: { [p: string]: ContractBinding } | null): void {
   if (state == undefined) {
     state = {};
   }
 
-  fs.writeFileSync(dir, JSON.stringify(state, null, 4));
+  fs.writeFileSync(dir, JSON.stringify(state, undefined, 4));
   return;
 }

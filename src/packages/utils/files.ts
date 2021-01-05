@@ -4,7 +4,7 @@ import * as path from 'path';
 export function parseSolFiles(sourcePath: string, contractNames: string[], result: string[]): string[] {
   const filenames = fs.readdirSync(sourcePath);
 
-  filenames.forEach((name) => {
+  filenames.forEach((name: string) => {
       if (fs.lstatSync(path.resolve(sourcePath, name)).isDirectory()) {
         return parseSolFiles(path.resolve(sourcePath, name), contractNames, result);
       }
@@ -13,13 +13,17 @@ export function parseSolFiles(sourcePath: string, contractNames: string[], resul
         const content = fs.readFileSync(path.resolve(sourcePath, name), 'utf-8');
         if (contractNames.length > 0) {
           result.push(content);
-          return;
+          return [];
         }
 
         if (new RegExp(contractNames.join('|')).test(content)) {
           result.push(content);
         }
+
+        return [];
       }
+
+      return result;
     }
   );
 
@@ -29,7 +33,7 @@ export function parseSolFiles(sourcePath: string, contractNames: string[], resul
 export function parseFiles(sourcePath: string, contractNames: string[], result: string[]): string[] {
   const filenames = fs.readdirSync(sourcePath);
 
-  filenames.forEach((name) => {
+  filenames.forEach((name: string) => {
       if (fs.lstatSync(path.resolve(sourcePath, name)).isDirectory()) {
         return parseFiles(path.resolve(sourcePath, name), contractNames, result);
       }
@@ -38,7 +42,7 @@ export function parseFiles(sourcePath: string, contractNames: string[], result: 
         const content = fs.readFileSync(path.resolve(sourcePath, name), 'utf-8');
 
         result.push(content);
-        return;
+        return [];
       }
 
       if (contractNames.includes(name)) {
@@ -46,6 +50,8 @@ export function parseFiles(sourcePath: string, contractNames: string[], result: 
 
         result.push(content);
       }
+
+      return result;
     }
   );
 

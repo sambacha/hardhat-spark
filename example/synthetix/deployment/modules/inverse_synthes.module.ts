@@ -9,12 +9,11 @@ import { SynthetixCore } from './core.module';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 export const SynthetixInverseSynths = module('SynthetixInverseSynths', async (m: ModuleBuilder) => {
-  const libraries = await SynthetixLibraries;
-  const prototypes = await SynthetixPrototypes;
-  const core = await SynthetixCore;
-  await m.bindModules(libraries, prototypes, core);
+  await m.bindModule(SynthetixLibraries);
+  await m.bindModule(SynthetixPrototypes);
+  await m.bindModule(SynthetixCore);
 
-  const ExchangeRates = m.getBinding('ExchangeRates');
+  const ExchangeRates = m.ExchangeRates;
   const synths = require('../local/synths.json');
   for (const {name: currencyKey, inverted} of synths) {
     if (inverted) {

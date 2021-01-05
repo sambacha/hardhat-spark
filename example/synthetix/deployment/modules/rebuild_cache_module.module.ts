@@ -1,5 +1,4 @@
-import { ContractEvent, module, ModuleBuilder } from '../../../../src/interfaces/mortar';
-import { JsonFragment } from '../../../../src/packages/types/artifacts/abi';
+import { ContractBinding, ContractEvent, module } from '../../../../src/interfaces/mortar';
 import { SynthetixCore, useOvm } from './core.module';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';
@@ -8,24 +7,24 @@ import { SynthetixSynths } from './synths.module';
 import { BinaryOptionsModule } from './binary_options.module';
 import { DappUtilities } from './dapp_utilities.module';
 import { SynthetixInverseSynths } from './inverse_synthes.module';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: ModuleBuilder) => {
-  const core = await SynthetixCore;
-  const synthsModule = await SynthetixSynths;
-  const binaryOptionsModule = await BinaryOptionsModule;
-  const dappUtilities = await DappUtilities;
-  const synthetixAncillary = await SynthetixAncillary;
-  const synthetixInverseSynths = await SynthetixInverseSynths;
-  await m.bindModules(core, synthsModule, binaryOptionsModule, dappUtilities, synthetixAncillary, synthetixInverseSynths);
+export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
+  await m.bindModule(SynthetixCore);
+  await m.bindModule(SynthetixSynths);
+  await m.bindModule(BinaryOptionsModule);
+  await m.bindModule(DappUtilities);
+  await m.bindModule(SynthetixAncillary);
+  await m.bindModule(SynthetixInverseSynths);
 
-  const ReadProxyAddressResolver = m.getBinding('ReadProxyAddressResolver');
-  const AddressResolver = m.getBinding('AddressResolver');
+  const ReadProxyAddressResolver = m.ReadProxyAddressResolver;
+  const AddressResolver = m.AddressResolver;
   const allContractDeployed = m.group(...Object.values(m.getAllBindings())).afterDeploy(m, 'afterAllContractsDeployed', async (): Promise<void> => {
     const contractAddresses: string[] = [];
     const contractBytes: string[] = [];
 
     const bindings = m.getAllBindings();
-    Object.keys(bindings).map((key, index) => {
+    Object.keys(bindings).map((key) => {
       if (checkIfExist(bindings[key].deployMetaData?.contractAddress)) {
         contractBytes.push(toBytes32(bindings[key].name));
         contractAddresses.push(bindings[key]?.deployMetaData?.contractAddress as string);
@@ -40,7 +39,7 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: M
     }
   });
 
-  const setTargetInResolverFromReadProxy = m.getEvent('setTargetInResolverFromReadProxy').event as ContractEvent;
+  const setTargetInResolverFromReadProxy = m.setTargetInResolverFromReadProxy.event as ContractEvent;
   m.group(
     ...Object.values(m.getAllBindings()),
     setTargetInResolverFromReadProxy,
@@ -48,29 +47,21 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: M
   ).afterDeploy(m, 'rebuildCacheAfterDeployAllContracts', async (): Promise<void> => {
     const bindings = m.getAllBindings();
 
-    const filterTargetsWith = ({functionName}: { functionName: string }) =>
-      Object.entries(bindings).filter(([, target]) =>
-        (target.abi as JsonFragment[]).find(({name}) => name === functionName)
-      );
+    const contractsWithRebuildableCache = m.group(...Object.values(bindings))
+      .find({
+        functionName: 'rebuildCache'
+      })
+      .exclude('SynthetixBridgeToOptimism', 'SynthetixBridgeToBase');
 
-    const contractsWithRebuildableCache = filterTargetsWith({functionName: 'rebuildCache'})
-      // And filter out the bridge contracts as they have resolver requirements that cannot be met in this deployment
-      .filter(([contract]) => {
-        return !/^(SynthetixBridgeToOptimism|SynthetixBridgeToBase)$/.test(contract);
-      });
-
-    const addressesToCache = contractsWithRebuildableCache.map(
-      ([
-         ,
-         {
-           name: name,
-           deployMetaData: {
-             // @ts-ignore
-             contractAddress
-           }
-         }
-       ]) => [name, contractAddress]
-    );
+    const addressesToCache = contractsWithRebuildableCache.map((
+      {
+        deployMetaData: {
+          // @ts-ignore
+          contractAddress
+        }
+      }) => {
+      return contractAddress;
+    });
 
     if (useOvm) {
       const chunks = splitArrayIntoChunks(addressesToCache, 4);
@@ -81,29 +72,13 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: M
         });
       }
     } else {
-      // @TODO their is a revert here, tackle this problem later.
-      for (const addressToCache of addressesToCache) {
-        if (
-          addressToCache[0] === 'SynthetixBridgeToOptimism' ||
-          addressToCache[0] === 'SynthetixBridgeToBase'
-        ) {
-          continue;
-        }
-
-        await AddressResolver.instance().rebuildCaches([addressToCache[1]], {
-          gasLimit: 7e6
-        });
-      }
+      await AddressResolver.instance().rebuildCaches(addressesToCache, {
+        gasLimit: 7e6
+      });
     }
 
-    for (const [, contractBinding] of contractsWithRebuildableCache) {
-      if (
-        contractBinding.name === 'SynthetixBridgeToOptimism' ||
-        contractBinding.name === 'SynthetixBridgeToBase'
-      ) {
-        continue;
-      }
-
+    for (let contractBinding of contractsWithRebuildableCache.dependencies) {
+      contractBinding = contractBinding as ContractBinding;
       await contractBinding.instance().rebuildCache({
         gasLimit: 500e3,
       });
@@ -118,10 +93,13 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: M
 
     // Now perform a sync of legacy contracts that have not been replaced in Shaula (v2.35.x)
     // EtherCollateral, EtherCollateralsUSD
-    const contractsWithLegacyResolverCaching = filterTargetsWith({
-      functionName: 'setResolverAndSyncCache',
-    });
-    for (const [, target] of contractsWithLegacyResolverCaching) {
+    const contractsWithLegacyResolverCaching = m.group(...Object.values(bindings))
+      .find({
+        functionName: 'setResolverAndSyncCache'
+      });
+
+    for (let target of contractsWithLegacyResolverCaching.dependencies) {
+      target = target as ContractBinding;
       await target.instance().setResolverAndSyncCache(ReadProxyAddressResolver, {
         gasLimit: 500e3,
       });
@@ -135,10 +113,12 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: M
     }
 
     // Finally set resolver on contracts even older than legacy (Depot)
-    const contractsWithLegacyResolverNoCache = filterTargetsWith({
-      functionName: 'setResolver',
-    });
-    for (const [, target] of contractsWithLegacyResolverNoCache) {
+    const contractsWithLegacyResolverNoCache = m.group(...Object.values(bindings))
+      .find({
+        functionName: 'setResolver'
+      });
+    for (let target of contractsWithLegacyResolverNoCache.dependencies) {
+      target = target as ContractBinding;
       await target.instance().setResolver(ReadProxyAddressResolver, {
         gasLimit: 500e3,
       });

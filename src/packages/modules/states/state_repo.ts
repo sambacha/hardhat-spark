@@ -14,6 +14,7 @@ import { FileSystemModuleState } from './module/file_system';
 import { IModuleState, ModuleState, ModuleStateFile } from './module';
 
 export class ModuleStateRepo {
+  // @ts-ignore
   private mutex: boolean;
 
   private readonly networkId: number;

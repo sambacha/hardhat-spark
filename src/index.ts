@@ -12,6 +12,7 @@ import { Prompter } from './packages/prompter';
 import { TxExecutor } from './packages/ethereum/transactions/executor';
 import { StateResolver } from './packages/modules/states/state_resolver';
 import { ModuleState } from './packages/modules/states/module';
+import { ModuleTypings } from './packages/modules/typings';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   // @TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
@@ -91,5 +92,15 @@ export async function diff(resolvedPath: string, states: string[], moduleResolve
     } else {
       cli.info(`Nothing changed from last revision - ${moduleName}`);
     }
+  }
+}
+
+export async function genTypes(resolvedPath: string, moduleTypings: ModuleTypings, ) {
+  const modules = await require(resolvedPath);
+
+  for (const [moduleName, modFunc] of Object.entries(modules)) {
+    const module = await modFunc as Module;
+
+    moduleTypings.generate(moduleName, module);
   }
 }

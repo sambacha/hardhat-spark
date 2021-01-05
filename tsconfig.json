@@ -9,7 +9,12 @@
     "target": "es2017",
     "esModuleInterop": true
   },
+  "exclude": [
+    "node_modules",
+    "example",
+    "lib"
+  ],
   "include": [
-    "src/**/*"
+    "src/**/*",
   ]
 }

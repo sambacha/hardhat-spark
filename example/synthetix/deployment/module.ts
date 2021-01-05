@@ -1,4 +1,4 @@
-import { ContractBinding, ContractEvent, module, ModuleBuilder, ModuleConfig } from '../../../src/interfaces/mortar';
+import { ContractBinding, ContractEvent, module, ModuleConfig } from '../../../src/interfaces/mortar';
 import * as web3utils from 'web3-utils';
 import { toBytes32 } from '../util/util';
 import { DEFAULTS } from '../util/constants';
@@ -11,31 +11,33 @@ import { SynthetixAncillary } from './modules/ancillary.module';
 import { SynthetixInverseSynths } from './modules/inverse_synthes.module';
 import { SynthetixRebuildCache } from './modules/rebuild_cache_module.module';
 import { SystemSettingsModule } from './modules/system_setting_setup.module';
+import { SynthetixModuleBuilder } from '../.mortar/SynthetixModule/SynthetixModule';
 
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
-export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder) => {
-  const libraries = await SynthetixLibraries;
-  const prototypes = await SynthetixPrototypes;
-  const core = await SynthetixCore;
-  const synthsModule = await SynthetixSynths;
-  const binaryOptionsModule = await BinaryOptionsModule;
-  const dappUtilities = await DappUtilities;
-  const synthetixAncillary = await SynthetixAncillary;
-  const synthetixInverseSynths = await SynthetixInverseSynths;
-  const synthetixRebuildCache = await SynthetixRebuildCache;
-  const systemSettingsModule = await SystemSettingsModule;
-  await m.bindModules(libraries, prototypes, core, synthsModule, binaryOptionsModule, dappUtilities, synthetixAncillary, synthetixInverseSynths, synthetixRebuildCache, systemSettingsModule);
+export const SynthetixModule = module('SynthetixModule', async (m: SynthetixModuleBuilder) => {
+  await m.bindModule(SynthetixLibraries);
+  await m.bindModule(SynthetixPrototypes);
 
-  const Issuer = m.getBinding('Issuer');
-  const DebtCache = m.getBinding('DebtCache');
+  await m.bindModule(SynthetixCore);
+
+  await m.bindModule(SynthetixSynths);
+  await m.bindModule(BinaryOptionsModule);
+  await m.bindModule(DappUtilities);
+  await m.bindModule(SynthetixAncillary);
+  await m.bindModule(SynthetixInverseSynths);
+  await m.bindModule(SynthetixRebuildCache);
+  await m.bindModule(SystemSettingsModule);
+
+  const Issuer = m.Issuer;
+  const DebtCache = m.DebtCache;
 
   const synths = require('./local/synths.json');
   const filteredSynths: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
-  for (const {name: currencyKey, subclass, asset} of synths) {
+  for (const {name: currencyKey} of synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);
-    const Synth = m.getBinding(`Synth${currencyKey}`);
+    const Synth = m[`Synth${currencyKey}`];
 
     synthsToAdd.push({
       synth: Synth,
@@ -70,7 +72,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder
     });
   }
 
-  const afterDeploySystemSetting = m.getEvent('afterDeploySystemSetting').event as ContractEvent;
+  const afterDeploySystemSetting = m.afterDeploySystemSetting.event as ContractEvent;
   m.group(...Object.values(m.getAllBindings()), afterDeploySystemSetting).afterDeploy(m, 'afterDeployDebtCacheAndAllBindingsAndEvents', async (): Promise<void> => {
     await checkSnapshot();
   });
