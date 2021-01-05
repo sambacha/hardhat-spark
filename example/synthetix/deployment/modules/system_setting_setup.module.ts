@@ -95,7 +95,9 @@ export const SystemSettingsModule = module('SystemSettingsModule', async (m: Mod
     await expectFuncRead(constants['FEE_PERIOD_DURATION'], SystemSettings.instance().feePeriodDuration);
 
     await SystemSettings.instance().setTargetThreshold(constants['TARGET_THRESHOLD']);
-    await expectFuncRead(constants['TARGET_THRESHOLD'], SystemSettings.instance().targetThreshold);
+    await expectFuncRead(
+      ethers.BigNumber.from(constants['TARGET_THRESHOLD']).mul('10000000000000000').toString()
+      , SystemSettings.instance().targetThreshold);
 
     await SystemSettings.instance().setLiquidationDelay(constants['LIQUIDATION_DELAY']);
     await expectFuncRead(constants['LIQUIDATION_DELAY'], SystemSettings.instance().liquidationDelay);
