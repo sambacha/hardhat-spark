@@ -1195,6 +1195,79 @@ export class Module {
   }
 }
 
+export async function expectFuncRead(expectedValue: ContractBinding | any | undefined, readFunc: ContractFunction, ...readArgs: any): Promise<boolean> {
+  const value = await readFunc(...readArgs);
+  if (!checkIfExist(expectedValue)) {
+    if (checkIfExist(value)) {
+      return true;
+    }
+
+    throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+  }
+
+  if (expectedValue instanceof ContractBinding
+    && value == expectedValue.deployMetaData.contractAddress) {
+    return true;
+  }
+
+  if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
+    && value.length != 0 && expectedValue.length != 0) {
+    if (value.length != expectedValue.length) {
+      throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+    }
+
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] != expectedValue[i]) {
+        throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+      }
+    }
+
+    return true;
+  }
+
+  if (expectedValue instanceof ethers.BigNumber) {
+    if (expectedValue.eq(value)) {
+      return true;
+    }
+  }
+
+  if (value instanceof ethers.BigNumber) {
+    if (value.eq(expectedValue)) {
+      return true;
+    }
+  }
+
+  if (expectedValue == value) {
+    return true;
+  }
+
+
+  throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+}
+
+export async function gracefulExpectFuncRead(expectedValue: ContractBinding | any, readFunc: ContractFunction, ...readArgs: any): Promise<boolean> {
+  const value = await readFunc(...readArgs);
+
+  if (expectedValue instanceof ContractBinding
+    && value == expectedValue.deployMetaData.contractAddress) {
+    return true;
+  }
+
+  return expectedValue == value;
+}
+
+export function expect(firstValue: any, secondValue: any): boolean {
+  if (firstValue == secondValue) {
+    return true;
+  }
+
+  throw new UserError(`Failed on expectFuncRead - couldn't match ${firstValue} with ${secondValue}`);
+}
+
+export function gracefulExpect(firstValue: any, secondValue: any): boolean {
+  return firstValue == secondValue;
+}
+
 export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
   const moduleBuilder = new ModuleBuilder();
   await fn(moduleBuilder);

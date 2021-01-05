@@ -13,7 +13,7 @@ const {
 export const SynthetixAncillary = module('SynthetixAncillary', async (m: SynthetixModuleBuilder) => {
   await m.bindModule(SynthetixLibraries);
   await m.bindModule(SynthetixPrototypes);
-  await m.bindModule(await SynthetixCore);
+  await m.bindModule(SynthetixCore);
 
   const ReadProxyAddressResolver = m.ReadProxyAddressResolver;
   m.contract('Depot', ETH_ADDRESS, ETH_ADDRESS, ReadProxyAddressResolver);

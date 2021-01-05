@@ -1,4 +1,4 @@
-import { ContractBinding, ContractEvent, module } from '../../../../src/interfaces/mortar';
+import { ContractBinding, ContractEvent, expectFuncRead, module } from '../../../../src/interfaces/mortar';
 import { SynthetixCore, useOvm } from './core.module';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';
@@ -33,10 +33,7 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
 
     await AddressResolver.instance().importAddresses(contractBytes, contractAddresses);
 
-    const associatedContract = await AddressResolver.instance().areAddressesImported(contractBytes, contractAddresses);
-    if (!associatedContract) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(undefined, AddressResolver.instance().areAddressesImported, contractBytes, contractAddresses);
   });
 
   const setTargetInResolverFromReadProxy = m.setTargetInResolverFromReadProxy.event as ContractEvent;
@@ -83,12 +80,9 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
         gasLimit: 500e3,
       });
 
-      const isResolverCached = await contractBinding.instance().isResolverCached({
+      await expectFuncRead(true, contractBinding.instance().isResolverCached, {
         gasLimit: 500e3,
       });
-      if (!isResolverCached) {
-        throw new Error('Resolver cached is not set ');
-      }
     }
 
     // Now perform a sync of legacy contracts that have not been replaced in Shaula (v2.35.x)
@@ -104,12 +98,9 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
         gasLimit: 500e3,
       });
 
-      const input = await target.instance().isResolverCached({
+      await expectFuncRead(true, target.instance().isResolverCached, {
         gasLimit: 500e3,
       });
-      if (!input) {
-        throw new Error('Cache is not resolved');
-      }
     }
 
     // Finally set resolver on contracts even older than legacy (Depot)
@@ -123,12 +114,9 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
         gasLimit: 500e3,
       });
 
-      const resolver = await target.instance().resolver({
+      await expectFuncRead(ReadProxyAddressResolver, target.instance().resolver, {
         gasLimit: 500e3,
       });
-      if (resolver != ReadProxyAddressResolver?.deployMetaData?.contractAddress) {
-        throw new Error('Cache is not resolved');
-      }
     }
   });
 });

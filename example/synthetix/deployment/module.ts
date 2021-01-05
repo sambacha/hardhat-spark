@@ -1,4 +1,11 @@
-import { ContractBinding, ContractEvent, module, ModuleConfig } from '../../../src/interfaces/mortar';
+import {
+  ContractBinding,
+  ContractEvent,
+  expectFuncRead,
+  gracefulExpectFuncRead,
+  module,
+  ModuleConfig
+} from '../../../src/interfaces/mortar';
 import * as web3utils from 'web3-utils';
 import { toBytes32 } from '../util/util';
 import { DEFAULTS } from '../util/constants';
@@ -46,9 +53,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: SynthetixModu
   }
   for (const Synth of synthsToAdd) {
     m.group(Issuer, Synth.synth).afterDeploy(m, `afterDeployIssuerForSynth${Synth.synth.name}`, async (): Promise<void> => {
-      const issuerSynthAddress = await Issuer.instance().synths(Synth.currencyKeyInBytes);
-      const currentSynthAddress = Synth?.synth.deployMetaData?.contractAddress;
-      if (issuerSynthAddress != currentSynthAddress) {
+      if (!await gracefulExpectFuncRead(Synth.synth, Issuer.instance().synths, Synth.currencyKeyInBytes)) {
         filteredSynths.push(Synth);
       }
     });
@@ -62,13 +67,7 @@ export const SynthetixModule = module('SynthetixModule', async (m: SynthetixModu
 
     m.group(Issuer, ...chunkBindings).afterDeploy(m, `afterDeployIssuerWithSynth${(i + synthChunkSize) / synthChunkSize}`, async (): Promise<void> => {
       await Issuer.instance().addSynths([chunkBindings.map(synth => synth)]);
-
-      const data = await Issuer.instance().getSynths([chunk.map(synth => synth.currencyKeyInBytes)]);
-      if (
-        data.length !== chunk.length ||
-        data.every((cur: string, index: number) => cur !== chunkBindings[index]?.deployMetaData?.contractAddress)) {
-        throw new Error('failed to match synths');
-      }
+      await expectFuncRead(chunkBindings, Issuer.instance().getSynths, [chunk.map(synth => synth.currencyKeyInBytes)]);
     });
   }
 

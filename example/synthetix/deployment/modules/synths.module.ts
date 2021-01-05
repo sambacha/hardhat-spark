@@ -1,4 +1,4 @@
-import { ContractBinding, module } from '../../../../src/interfaces/mortar';
+import { ContractBinding, expectFuncRead, module } from '../../../../src/interfaces/mortar';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
@@ -65,47 +65,32 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModu
     m.group(Synth, TokenStateForSynth).afterDeploy(m, `afterDeploySynth${currencyKey}`, async (): Promise<void> => {
       await TokenStateForSynth.instance().setAssociatedContract(Synth);
 
-      const associatedContract = await TokenStateForSynth.instance().associatedContract() as string;
-      if (associatedContract != Synth?.deployMetaData?.contractAddress) {
-        throw new Error('Address mismatch');
-      }
+      await expectFuncRead(Synth, TokenStateForSynth.instance().associatedContract);
     });
 
     m.group(Synth, ProxyForSynth).afterDeploy(m, `afterDeploySynthProxyForSynth${currencyKey}`, async (): Promise<void> => {
       await ProxyForSynth.instance().setTarget(Synth);
 
-      const associatedContract = await ProxyForSynth.instance().target() as string;
-      if (associatedContract != Synth?.deployMetaData?.contractAddress) {
-        throw new Error('Address mismatch');
-      }
+      await expectFuncRead(Synth, ProxyForSynth.instance().target);
     });
 
     if (proxyERC20ForSynth) {
       m.group(Synth, ProxyForSynth, proxyERC20ForSynth).afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (): Promise<void> => {
-        await Synth.instance().setProxy(proxyERC20ForSynth); // @TODO should be just binding
+        await Synth.instance().setProxy(proxyERC20ForSynth);
 
-        const associatedContract = await Synth.instance().proxy() as string;
-        if (associatedContract != (proxyERC20ForSynth?.deployMetaData?.contractAddress)) {
-          throw new Error('Address mismatch');
-        }
+        await expectFuncRead(proxyERC20ForSynth, Synth.instance().proxy);
       });
 
       m.group(proxyERC20ForSynth, ProxyForSynth, Synth).afterDeploy(m, `afterDeployProxyERC20ForSynth${currencyKey}`, async (): Promise<void> => {
         await ProxyForSynth.instance().setTarget(Synth);
 
-        const target = await ProxyForSynth.instance().target() as string;
-        if (target != (Synth?.deployMetaData?.contractAddress)) {
-          throw new Error('Address mismatch');
-        }
+        await expectFuncRead(Synth, ProxyForSynth.instance().target);
       });
     } else {
       m.group(Synth, ProxyForSynth).afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (): Promise<void> => {
         await Synth.instance().setProxy(ProxyForSynth?.deployMetaData?.contractAddress);
 
-        const associatedContract = await Synth.instance().proxy() as string;
-        if (associatedContract != ProxyForSynth?.deployMetaData?.contractAddress) {
-          throw new Error('Address mismatch');
-        }
+        await expectFuncRead(ProxyForSynth, Synth.instance().proxy);
       });
     }
 
@@ -114,10 +99,7 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModu
       ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesFeed${currencyKey}`, async (): Promise<void> => {
         await ExchangeRates.instance().addAggregator(currencyKeyInBytes, feed);
 
-        const aggregator = await ExchangeRates.instance().aggregators(currencyKeyInBytes) as string;
-        if (aggregator != feed) {
-          throw new Error('Address mismatch');
-        }
+        await expectFuncRead(feed, ExchangeRates.instance().aggregators, currencyKeyInBytes);
       });
     }
   }

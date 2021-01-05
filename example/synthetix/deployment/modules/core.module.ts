@@ -1,9 +1,10 @@
-import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { expectFuncRead, module, ModuleBuilder } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import path from 'path';
+
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
@@ -26,10 +27,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (): Promise<void> => {
     await ReadProxyAddressResolver.instance().setTarget(AddressResolver);
 
-    const target = await ReadProxyAddressResolver.instance().target() as string;
-    if (target != AddressResolver?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(AddressResolver, ReadProxyAddressResolver.instance().target);
   }, AddressResolver);
 
   m.contract('FlexibleStorage', ReadProxyAddressResolver);
@@ -49,10 +47,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(DelegateApprovalsEternalStorage, DelegateApprovals).afterDeploy(m, 'afterDeployDelegateApprovalsEternalStorage', async (): Promise<void> => {
     await DelegateApprovalsEternalStorage.instance().setAssociatedContract(DelegateApprovals);
 
-    const associatedContract = await DelegateApprovalsEternalStorage.instance().associatedContract() as string;
-    if (associatedContract != DelegateApprovals?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(DelegateApprovals, DelegateApprovalsEternalStorage.instance().associatedContract);
   });
 
   const Liquidations = m.contract('Liquidations', ETH_ADDRESS, ReadProxyAddressResolver);
@@ -61,10 +56,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(EternalStorageLiquidations, Liquidations).afterDeploy(m, 'afterDeployEternalStorageLiquidations', async (): Promise<void> => {
     await EternalStorageLiquidations.instance().setAssociatedContract(Liquidations);
 
-    const associatedContract = await EternalStorageLiquidations.instance().associatedContract() as string;
-    if (associatedContract != Liquidations?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(Liquidations, EternalStorageLiquidations.instance().associatedContract);
   });
 
   const FeePoolEternalStorage = m.contract('FeePoolEternalStorage', ETH_ADDRESS, ethers.constants.AddressZero);
@@ -73,19 +65,13 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(FeePoolEternalStorage, FeePool).afterDeploy(m, 'afterDeployFeePoolEternalStorage', async (): Promise<void> => {
     await FeePoolEternalStorage.instance().setAssociatedContract(FeePool);
 
-    const associatedContract = await FeePoolEternalStorage.instance().associatedContract() as string;
-    if (associatedContract != FeePool?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(FeePool, FeePoolEternalStorage.instance().associatedContract);
   });
 
   m.group(FeePool, ProxyFeePool).afterDeploy(m, 'afterDeployFeePool', async (): Promise<void> => {
     await ProxyFeePool.instance().setTarget(FeePool);
 
-    const target = await ProxyFeePool.instance().target() as string;
-    if (target != FeePool?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(FeePool, ProxyFeePool.instance().target);
   });
 
   const FeePoolState = m.contract('FeePoolState', ETH_ADDRESS, FeePool);
@@ -93,10 +79,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(FeePoolState, FeePool).afterDeploy(m, 'afterDeployFeePoolState', async (): Promise<void> => {
     await FeePoolState.instance().setFeePool(FeePool);
 
-    const target = await FeePoolState.instance().feePool() as string;
-    if (target != FeePool?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(FeePool, FeePoolState.instance().feePool);
   });
 
   const RewardsDistribution = m.contract(
@@ -124,19 +107,15 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(synthetix, ProxyERC20Synthetix).afterDeploy(m, 'afterDeploySynthetixProxyERC20Synthetix', async (): Promise<void> => {
     await ProxyERC20Synthetix.instance().setTarget(synthetix);
 
-    const target = await ProxyERC20Synthetix.instance().target() as string;
-    if (target != synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+
+    await expectFuncRead(synthetix, ProxyERC20Synthetix.instance().target);
   });
 
   m.group(synthetix, ProxyERC20Synthetix).afterDeploy(m, 'afterDeployProxyERC20SynthetixSynthetix', async (): Promise<void> => {
     await synthetix.instance().setProxy(ProxyERC20Synthetix);
 
-    const target = await synthetix.instance().proxy() as string;
-    if (target != ProxyERC20Synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+
+    await expectFuncRead(ProxyERC20Synthetix, synthetix.instance().proxy);
   });
 
   const ProxySynthetix = m.bindPrototype('ProxySynthetix', 'Proxy', ETH_ADDRESS);
@@ -144,10 +123,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(ProxySynthetix, synthetix).afterDeploy(m, 'afterDeployProxySynthetix', async (): Promise<void> => {
     await ProxySynthetix.instance().setTarget(synthetix);
 
-    const target = await ProxySynthetix.instance().target() as string;
-    if (target != synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(synthetix, ProxySynthetix.instance().target);
   });
 
   m.bindPrototype(
@@ -168,10 +144,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(exchangeState, exchanger).afterDeploy(m, 'afterDeployExchangeState', async (): Promise<void> => {
     await exchangeState.instance().setAssociatedContract(exchanger);
 
-    const associatedContract = await exchangeState.instance().associatedContract() as string;
-    if (associatedContract != exchanger?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(exchanger, exchangeState.instance().associatedContract);
   });
 
   m.group(SystemStatus, exchanger).afterDeploy(m, 'afterDeployExchanger', async (): Promise<void> => {
@@ -182,35 +155,19 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
       false
     );
 
-    const accessControl = await SystemStatus.instance().accessControl(
-      toBytes32('Synth'),
-      exchanger,
-    );
-
-    if (
-      accessControl[0] != true &&
-      accessControl[1] != false
-    ) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead([true, false], SystemStatus.instance().accessControl, toBytes32('Synth'), exchanger);
   });
 
   TokenStateSynthetix.afterDeploy(m, 'afterDeployTokenStateSynthetix', async (): Promise<void> => {
     await TokenStateSynthetix.instance().setBalanceOf(ETH_ADDRESS, currentSynthetixSupply);
 
-    const balanceOf = await TokenStateSynthetix.instance().balanceOf(ETH_ADDRESS);
-    if (!currentSynthetixSupply.eq(balanceOf)) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(currentSynthetixSupply, TokenStateSynthetix.instance().balanceOf, ETH_ADDRESS);
   });
 
   m.group(TokenStateSynthetix, synthetix).afterDeploy(m, 'afterDeployTokenStateSynthetixAndSynthetix', async (): Promise<void> => {
     await TokenStateSynthetix.instance().setAssociatedContract(synthetix);
 
-    const associatedContract = await TokenStateSynthetix.instance().associatedContract() as string;
-    if (associatedContract != synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(synthetix, TokenStateSynthetix.instance().associatedContract);
   });
 
   const issuer = m.bindPrototype('Issuer',
@@ -224,10 +181,7 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(issuer, SynthetixState).afterDeploy(m, 'afterDeployIssueSynthetixState', async (): Promise<void> => {
     await SynthetixState.instance().setAssociatedContract(issuer);
 
-    const associatedContract = await SynthetixState.instance().associatedContract() as string;
-    if (associatedContract != issuer?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(issuer, SynthetixState.instance().associatedContract);
   });
 
   m.contract('EscrowChecker', SynthetixEscrow);
@@ -235,19 +189,13 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   m.group(synthetix, RewardEscrow).afterDeploy(m, 'afterDeployRewardEscrowSynthetics', async (): Promise<void> => {
     await RewardEscrow.instance().setSynthetix(synthetix);
 
-    const associatedContract = await RewardEscrow.instance().synthetix() as string;
-    if (associatedContract != synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(synthetix, RewardEscrow.instance().synthetix);
   });
 
   m.group(RewardEscrow, FeePool).afterDeploy(m, 'afterDeployRewardEscrowFeePool', async (): Promise<void> => {
     await RewardEscrow.instance().setFeePool(FeePool);
 
-    const target = await RewardEscrow.instance().feePool() as string;
-    if (target != FeePool?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(FeePool, RewardEscrow.instance().feePool);
   });
 
   if (useOvm) {
@@ -276,37 +224,25 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
     m.group(supplySchedule, synthetix).afterDeploy(m, 'afterDeploySupplySchedule', async (): Promise<void> => {
       await supplySchedule.instance().setSynthetixProxy(synthetix);
 
-      const target = await supplySchedule.instance().synthetixProxy() as string;
-      if (target != synthetix?.deployMetaData?.contractAddress) {
-        throw new Error('Address mismatch');
-      }
+      await expectFuncRead(synthetix, supplySchedule.instance().synthetixProxy);
     });
   }
 
   m.group(RewardsDistribution, synthetix).afterDeploy(m, 'afterDeployRewardDistribution', async (): Promise<void> => {
     await RewardsDistribution.instance().setAuthority(synthetix);
 
-    const target = await RewardsDistribution.instance().authority() as string;
-    if (target != synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(synthetix, RewardsDistribution.instance().authority);
   });
 
   m.group(RewardsDistribution, synthetix).afterDeploy(m, 'afterDeployRewardDistributionProxySynthetix', async (): Promise<void> => {
     await RewardsDistribution.instance().setSynthetixProxy(ProxyERC20Synthetix);
 
-    const target = await RewardsDistribution.instance().synthetixProxy() as string;
-    if (target != ProxyERC20Synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(ProxyERC20Synthetix, RewardsDistribution.instance().synthetixProxy);
   }, ProxyERC20Synthetix);
 
   m.group(SynthetixEscrow, synthetix).afterDeploy(m, 'afterDeploySynthetixEscrow', async (): Promise<void> => {
     await SynthetixEscrow.instance().setSynthetix(ProxyERC20Synthetix);
 
-    const target = await SynthetixEscrow.instance().synthetix() as string;
-    if (target != ProxyERC20Synthetix?.deployMetaData?.contractAddress) {
-      throw new Error('Address mismatch');
-    }
+    await expectFuncRead(ProxyERC20Synthetix, SynthetixEscrow.instance().synthetix);
   }, ProxyERC20Synthetix);
 });
