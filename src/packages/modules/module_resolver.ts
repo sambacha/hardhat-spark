@@ -433,7 +433,8 @@ State file: ${stateFileElement.event.eventType}`);
 
       for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
         if (!checkIfExist(moduleState[usageBindingName])) {
-          throw new UsageBindingNotFound('Binding that you want to use is not present in your module, please check dependencies.');
+          return;
+          // throw new UsageBindingNotFound(`Binding that you want to use is not present in your module, please check dependencies. ${usageBindingName}`);
         }
       }
 

@@ -1,4 +1,5 @@
-import { ContractBinding, ContractEvent, expectFuncRead, module } from '../../../../src/interfaces/mortar';
+import { ContractBinding, ContractEvent, module } from '../../../../src/interfaces/mortar';
+import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { SynthetixCore, useOvm } from './core.module';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';

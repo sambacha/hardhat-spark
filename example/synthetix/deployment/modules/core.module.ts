@@ -1,9 +1,11 @@
-import { expectFuncRead, module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import path from 'path';
+import { mutator } from '../../../../src/interfaces/helper/macros';
 
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
@@ -44,43 +46,63 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   const DelegateApprovalsEternalStorage = m.bindPrototype('DelegateApprovalsEternalStorage', 'EternalStorage', ETH_ADDRESS, ethers.constants.AddressZero);
   const DelegateApprovals = m.contract('DelegateApprovals', ETH_ADDRESS, DelegateApprovalsEternalStorage);
 
-  m.group(DelegateApprovalsEternalStorage, DelegateApprovals).afterDeploy(m, 'afterDeployDelegateApprovalsEternalStorage', async (): Promise<void> => {
-    await DelegateApprovalsEternalStorage.instance().setAssociatedContract(DelegateApprovals);
-
-    await expectFuncRead(DelegateApprovals, DelegateApprovalsEternalStorage.instance().associatedContract);
-  });
+  await mutator(m,
+    'afterDeployDelegateApprovalsEternalStorage',
+    DelegateApprovalsEternalStorage,
+    'setAssociatedContract',
+    'associatedContract',
+    [DelegateApprovals],
+    [],
+    DelegateApprovals,
+  );
 
   const Liquidations = m.contract('Liquidations', ETH_ADDRESS, ReadProxyAddressResolver);
   const EternalStorageLiquidations = m.bindPrototype('EternalStorageLiquidations', 'EternalStorage', ETH_ADDRESS, Liquidations);
 
-  m.group(EternalStorageLiquidations, Liquidations).afterDeploy(m, 'afterDeployEternalStorageLiquidations', async (): Promise<void> => {
-    await EternalStorageLiquidations.instance().setAssociatedContract(Liquidations);
-
-    await expectFuncRead(Liquidations, EternalStorageLiquidations.instance().associatedContract);
-  });
+  await mutator(m,
+    'afterDeployEternalStorageLiquidations',
+    EternalStorageLiquidations,
+    'setAssociatedContract',
+    'associatedContract',
+    [Liquidations],
+    [],
+    Liquidations
+  );
 
   const FeePoolEternalStorage = m.contract('FeePoolEternalStorage', ETH_ADDRESS, ethers.constants.AddressZero);
   const FeePool = m.contract('FeePool', ProxyFeePool, AddressResolver, ReadProxyAddressResolver);
 
-  m.group(FeePoolEternalStorage, FeePool).afterDeploy(m, 'afterDeployFeePoolEternalStorage', async (): Promise<void> => {
-    await FeePoolEternalStorage.instance().setAssociatedContract(FeePool);
+  await mutator(m,
+    'afterDeployFeePoolEternalStorage',
+    FeePoolEternalStorage,
+    'setAssociatedContract',
+    'associatedContract',
+    [FeePool],
+    [],
+    FeePool,
+  );
 
-    await expectFuncRead(FeePool, FeePoolEternalStorage.instance().associatedContract);
-  });
-
-  m.group(FeePool, ProxyFeePool).afterDeploy(m, 'afterDeployFeePool', async (): Promise<void> => {
-    await ProxyFeePool.instance().setTarget(FeePool);
-
-    await expectFuncRead(FeePool, ProxyFeePool.instance().target);
-  });
+  await mutator(m,
+    'afterDeployFeePool',
+    ProxyFeePool,
+    'setTarget',
+    'target',
+    [FeePool],
+    [],
+    FeePool,
+  );
 
   const FeePoolState = m.contract('FeePoolState', ETH_ADDRESS, FeePool);
 
-  m.group(FeePoolState, FeePool).afterDeploy(m, 'afterDeployFeePoolState', async (): Promise<void> => {
-    await FeePoolState.instance().setFeePool(FeePool);
-
-    await expectFuncRead(FeePool, FeePoolState.instance().feePool);
-  });
+  await mutator(m,
+    'afterDeployFeePoolState',
+    FeePoolState,
+    'setFeePool',
+    'feePool',
+    [FeePool],
+    [],
+    FeePool,
+  );
 
   const RewardsDistribution = m.contract(
     'RewardsDistribution',
@@ -104,27 +126,37 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
     ReadProxyAddressResolver
   );
 
-  m.group(synthetix, ProxyERC20Synthetix).afterDeploy(m, 'afterDeploySynthetixProxyERC20Synthetix', async (): Promise<void> => {
-    await ProxyERC20Synthetix.instance().setTarget(synthetix);
+  await mutator(m,
+    'afterDeploySynthetixProxyERC20Synthetix',
+    ProxyERC20Synthetix,
+    'setTarget',
+    'target',
+    [synthetix],
+    [],
+    synthetix,
+  );
 
-
-    await expectFuncRead(synthetix, ProxyERC20Synthetix.instance().target);
-  });
-
-  m.group(synthetix, ProxyERC20Synthetix).afterDeploy(m, 'afterDeployProxyERC20SynthetixSynthetix', async (): Promise<void> => {
-    await synthetix.instance().setProxy(ProxyERC20Synthetix);
-
-
-    await expectFuncRead(ProxyERC20Synthetix, synthetix.instance().proxy);
-  });
+  await mutator(m,
+    'afterDeployProxyERC20SynthetixSynthetix',
+    synthetix,
+    'setProxy',
+    'proxy',
+    [ProxyERC20Synthetix],
+    [],
+    ProxyERC20Synthetix,
+  );
 
   const ProxySynthetix = m.bindPrototype('ProxySynthetix', 'Proxy', ETH_ADDRESS);
 
-  m.group(ProxySynthetix, synthetix).afterDeploy(m, 'afterDeployProxySynthetix', async (): Promise<void> => {
-    await ProxySynthetix.instance().setTarget(synthetix);
-
-    await expectFuncRead(synthetix, ProxySynthetix.instance().target);
-  });
+  await mutator(m,
+    'afterDeployProxySynthetix',
+    ProxySynthetix,
+    'setTarget',
+    'target',
+    [synthetix],
+    [],
+    synthetix,
+  );
 
   m.bindPrototype(
     'DebtCache',
@@ -141,34 +173,45 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   );
   const exchangeState = m.contract('ExchangeState', ETH_ADDRESS, exchanger);
 
-  m.group(exchangeState, exchanger).afterDeploy(m, 'afterDeployExchangeState', async (): Promise<void> => {
-    await exchangeState.instance().setAssociatedContract(exchanger);
+  await mutator(m,
+    'afterDeployExchangeState',
+    exchangeState,
+    'setAssociatedContract',
+    'associatedContract',
+    [exchanger],
+    [],
+    exchanger,
+  );
 
-    await expectFuncRead(exchanger, exchangeState.instance().associatedContract);
-  });
+  await mutator(m,
+    'afterDeployExchanger',
+    SystemStatus,
+    'updateAccessControl',
+    'accessControl',
+    [toBytes32('Synth'), exchanger, true, false],
+    [toBytes32('Synth'), exchanger],
+    [true, false],
+  );
 
-  m.group(SystemStatus, exchanger).afterDeploy(m, 'afterDeployExchanger', async (): Promise<void> => {
-    await SystemStatus.instance().updateAccessControl(
-      toBytes32('Synth'),
-      exchanger,
-      true,
-      false
-    );
+  await mutator(m,
+    'afterDeployTokenStateSynthetix',
+    TokenStateSynthetix,
+    'setBalanceOf',
+    'balanceOf',
+    [ETH_ADDRESS, currentSynthetixSupply],
+    [ETH_ADDRESS],
+    currentSynthetixSupply,
+  );
 
-    await expectFuncRead([true, false], SystemStatus.instance().accessControl, toBytes32('Synth'), exchanger);
-  });
-
-  TokenStateSynthetix.afterDeploy(m, 'afterDeployTokenStateSynthetix', async (): Promise<void> => {
-    await TokenStateSynthetix.instance().setBalanceOf(ETH_ADDRESS, currentSynthetixSupply);
-
-    await expectFuncRead(currentSynthetixSupply, TokenStateSynthetix.instance().balanceOf, ETH_ADDRESS);
-  });
-
-  m.group(TokenStateSynthetix, synthetix).afterDeploy(m, 'afterDeployTokenStateSynthetixAndSynthetix', async (): Promise<void> => {
-    await TokenStateSynthetix.instance().setAssociatedContract(synthetix);
-
-    await expectFuncRead(synthetix, TokenStateSynthetix.instance().associatedContract);
-  });
+  await mutator(m,
+    'afterDeployTokenStateSynthetixAndSynthetix',
+    TokenStateSynthetix,
+    'setAssociatedContract',
+    'associatedContract',
+    [synthetix],
+    [],
+    synthetix,
+  );
 
   const issuer = m.bindPrototype('Issuer',
     useOvm ? 'Issuer' : 'IssuerWithoutLiquidations',
@@ -178,25 +221,38 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
 
   m.contract('TradingRewards', ETH_ADDRESS, ETH_ADDRESS, ReadProxyAddressResolver);
 
-  m.group(issuer, SynthetixState).afterDeploy(m, 'afterDeployIssueSynthetixState', async (): Promise<void> => {
-    await SynthetixState.instance().setAssociatedContract(issuer);
 
-    await expectFuncRead(issuer, SynthetixState.instance().associatedContract);
-  });
+  await mutator(m,
+    'afterDeployIssueSynthetixState',
+    SynthetixState,
+    'setAssociatedContract',
+    'associatedContract',
+    [issuer],
+    [],
+    issuer,
+  );
 
   m.contract('EscrowChecker', SynthetixEscrow);
 
-  m.group(synthetix, RewardEscrow).afterDeploy(m, 'afterDeployRewardEscrowSynthetics', async (): Promise<void> => {
-    await RewardEscrow.instance().setSynthetix(synthetix);
+  await mutator(m,
+    'afterDeployRewardEscrowSynthetics',
+    RewardEscrow,
+    'setSynthetix',
+    'synthetix',
+    [synthetix],
+    [],
+    synthetix,
+  );
 
-    await expectFuncRead(synthetix, RewardEscrow.instance().synthetix);
-  });
-
-  m.group(RewardEscrow, FeePool).afterDeploy(m, 'afterDeployRewardEscrowFeePool', async (): Promise<void> => {
-    await RewardEscrow.instance().setFeePool(FeePool);
-
-    await expectFuncRead(FeePool, RewardEscrow.instance().feePool);
-  });
+  await mutator(m,
+    'afterDeployRewardEscrowFeePool',
+    RewardEscrow,
+    'setFeePool',
+    'feePool',
+    [FeePool],
+    [],
+    FeePool,
+  );
 
   if (useOvm) {
     const inflationStartDate = (Math.round(new Date().getTime() / 1000) - 3600 * 24 * 7).toString(); // 1 week ago
@@ -221,28 +277,44 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   } else {
     const supplySchedule = m.contract('SupplySchedule', ETH_ADDRESS, currentLastMintEvent, currentWeekOfInflation);
 
-    m.group(supplySchedule, synthetix).afterDeploy(m, 'afterDeploySupplySchedule', async (): Promise<void> => {
-      await supplySchedule.instance().setSynthetixProxy(synthetix);
-
-      await expectFuncRead(synthetix, supplySchedule.instance().synthetixProxy);
-    });
+    await mutator(m,
+      'afterDeploySupplySchedule',
+      supplySchedule,
+      'setSynthetixProxy',
+      'synthetixProxy',
+      [synthetix],
+      [],
+      synthetix,
+    );
   }
 
-  m.group(RewardsDistribution, synthetix).afterDeploy(m, 'afterDeployRewardDistribution', async (): Promise<void> => {
-    await RewardsDistribution.instance().setAuthority(synthetix);
+  await mutator(m,
+    'afterDeployRewardDistribution',
+    RewardsDistribution,
+    'setAuthority',
+    'authority',
+    [synthetix],
+    [],
+    synthetix,
+  );
 
-    await expectFuncRead(synthetix, RewardsDistribution.instance().authority);
-  });
+  await mutator(m,
+    'afterDeployRewardDistributionProxySynthetix',
+    RewardsDistribution,
+    'setSynthetixProxy',
+    'synthetixProxy',
+    [ProxyERC20Synthetix],
+    [],
+    ProxyERC20Synthetix,
+  );
 
-  m.group(RewardsDistribution, synthetix).afterDeploy(m, 'afterDeployRewardDistributionProxySynthetix', async (): Promise<void> => {
-    await RewardsDistribution.instance().setSynthetixProxy(ProxyERC20Synthetix);
-
-    await expectFuncRead(ProxyERC20Synthetix, RewardsDistribution.instance().synthetixProxy);
-  }, ProxyERC20Synthetix);
-
-  m.group(SynthetixEscrow, synthetix).afterDeploy(m, 'afterDeploySynthetixEscrow', async (): Promise<void> => {
-    await SynthetixEscrow.instance().setSynthetix(ProxyERC20Synthetix);
-
-    await expectFuncRead(ProxyERC20Synthetix, SynthetixEscrow.instance().synthetix);
-  }, ProxyERC20Synthetix);
+  await mutator(m,
+    'afterDeploySynthetixEscrow',
+    SynthetixEscrow,
+    'setSynthetix',
+    'synthetix',
+    [synthetix],
+    [],
+    synthetix,
+  );
 });

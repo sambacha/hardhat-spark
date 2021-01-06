@@ -1,10 +1,11 @@
-import { ContractBinding, expectFuncRead, module } from '../../../../src/interfaces/mortar';
+import { ContractBinding, module } from '../../../../src/interfaces/mortar';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { SynthetixCore } from './core.module';
 import path from 'path';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { mutator } from '../../../../src/interfaces/helper/macros';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
@@ -62,45 +63,69 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModu
       ...(additionalConstructorArgsMap[(sourceContractName + currencyKey)] || [])
     );
 
-    m.group(Synth, TokenStateForSynth).afterDeploy(m, `afterDeploySynth${currencyKey}`, async (): Promise<void> => {
-      await TokenStateForSynth.instance().setAssociatedContract(Synth);
+    await mutator(m,
+      `afterDeploySynth${currencyKey}`,
+      TokenStateForSynth,
+      'setAssociatedContract',
+      'associatedContract',
+      [Synth],
+      [],
+      Synth,
+    );
 
-      await expectFuncRead(Synth, TokenStateForSynth.instance().associatedContract);
-    });
-
-    m.group(Synth, ProxyForSynth).afterDeploy(m, `afterDeploySynthProxyForSynth${currencyKey}`, async (): Promise<void> => {
-      await ProxyForSynth.instance().setTarget(Synth);
-
-      await expectFuncRead(Synth, ProxyForSynth.instance().target);
-    });
+    await mutator(m,
+      `afterDeploySynthProxyForSynth${currencyKey}`,
+      ProxyForSynth,
+      'setTarget',
+      'target',
+      [Synth],
+      [],
+      Synth,
+    );
 
     if (proxyERC20ForSynth) {
-      m.group(Synth, ProxyForSynth, proxyERC20ForSynth).afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (): Promise<void> => {
-        await Synth.instance().setProxy(proxyERC20ForSynth);
+      await mutator(m,
+        `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`,
+        Synth,
+        'setProxy',
+        'proxy',
+        [proxyERC20ForSynth],
+        [],
+        proxyERC20ForSynth,
+      );
 
-        await expectFuncRead(proxyERC20ForSynth, Synth.instance().proxy);
-      });
-
-      m.group(proxyERC20ForSynth, ProxyForSynth, Synth).afterDeploy(m, `afterDeployProxyERC20ForSynth${currencyKey}`, async (): Promise<void> => {
-        await ProxyForSynth.instance().setTarget(Synth);
-
-        await expectFuncRead(Synth, ProxyForSynth.instance().target);
-      });
+      await mutator(m,
+        `afterDeployProxyERC20ForSynth${currencyKey}`,
+        ProxyForSynth,
+        'setTarget',
+        'target',
+        [Synth],
+        [],
+        Synth,
+      );
     } else {
-      m.group(Synth, ProxyForSynth).afterDeploy(m, `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`, async (): Promise<void> => {
-        await Synth.instance().setProxy(ProxyForSynth?.deployMetaData?.contractAddress);
-
-        await expectFuncRead(ProxyForSynth, Synth.instance().proxy);
-      });
+      await mutator(m,
+        `afterDeployProxyERC20ForSynth${currencyKey}`,
+        Synth,
+        'setProxy',
+        'proxy',
+        [ProxyForSynth],
+        [],
+        ProxyForSynth,
+      );
     }
 
     const {feed} = feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
-      ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesFeed${currencyKey}`, async (): Promise<void> => {
-        await ExchangeRates.instance().addAggregator(currencyKeyInBytes, feed);
-
-        await expectFuncRead(feed, ExchangeRates.instance().aggregators, currencyKeyInBytes);
-      });
+      await mutator(m,
+        `afterDeployExchangeRatesFeed${currencyKey}`,
+        ExchangeRates,
+        'setProxy',
+        'proxy',
+        [currencyKeyInBytes, feed],
+        [currencyKeyInBytes],
+        feed,
+      );
     }
   }
 });

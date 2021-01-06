@@ -1,10 +1,10 @@
 import {
   ContractBinding,
   ContractEvent,
-  expectFuncRead,
   module,
   ModuleBuilder
 } from '../../../../src/interfaces/mortar';
+import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';
@@ -14,6 +14,7 @@ import { SynthetixCore } from './core.module';
 import { SynthetixRebuildCache } from './rebuild_cache_module.module';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { SynthetixSynths } from './synths.module';
+import { mutator } from '../../../../src/interfaces/helper/macros';
 
 const {
   MORTAR_NETWORK_ID

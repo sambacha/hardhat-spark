@@ -33,12 +33,8 @@ export const SynthetixInverseSynths = module('SynthetixInverseSynths', async (m:
             freezeAtLowerLimit);
         });
 
-      // oldExrates = false
-      if (false) {
-        // this deployment is for local network and we will not use oldExrates
-      } else {
-        await setInversePricing({freezeAtUpperLimit: false, freezeAtLowerLimit: false});
-      }
+
+      await setInversePricing({freezeAtUpperLimit: false, freezeAtLowerLimit: false});
     }
   }
 });
