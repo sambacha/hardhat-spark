@@ -19,7 +19,6 @@ export const mutator = async (
   }
 
   return m.group(setter).afterDeploy(m, name, async (): Promise<void> => {
-    console.log(name, setterFunc);
     await setter.instance()[`${setterFunc}`](...writeArgs);
 
     await expectFuncRead(expectedValue, setter.instance()[`${getterFunc}`], ...readArgs);
