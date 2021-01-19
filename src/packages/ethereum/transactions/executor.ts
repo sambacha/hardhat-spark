@@ -9,7 +9,7 @@ import {
   ContractEvent,
   Deployed, ModuleConfig,
   ModuleEvent,
-  OnChangeEvent,
+  OnChangeEvent, ShouldRedeployFn,
   StatefulEvent,
   TransactionData
 } from '../../../interfaces/mortar';
@@ -72,6 +72,12 @@ export class TxExecutor {
 
         if (moduleConfig && checkIfExist(moduleConfig[element.name]) && !moduleConfig[element.name].deploy) {
           continue;
+        }
+
+        if (
+          element.deployMetaData.shouldRedeploy &&
+          !element.deployMetaData.shouldRedeploy(element)) {
+            continue;
         }
 
         element = await this.executeSingleBinding(element as ContractBinding, moduleState);
@@ -171,6 +177,21 @@ export class TxExecutor {
         constructorFragmentInputs = abi.inputs;
         break;
       }
+    }
+
+    if (binding.deployMetaData.deployFn) {
+      await this.moduleState.setSingleEventName(`Deploy${binding.name}`);
+      const contractAddress = await binding.deployMetaData.deployFn();
+      await this.moduleState.finishCurrentEvent();
+
+      binding.deployMetaData.contractAddress = contractAddress;
+      if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
+        binding.deployMetaData.logicallyDeployed = true;
+      }
+
+      moduleState[binding.name] = binding;
+
+      return binding;
     }
 
     let bytecode: string = binding.bytecode as string;

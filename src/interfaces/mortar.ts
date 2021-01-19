@@ -44,6 +44,9 @@ export type EventFnCompiled = () => void;
 export type EventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
 
+export type ShouldRedeployFn = (diff: ContractBinding) => boolean;
+export type DeployFn = () => Promise<string>;
+
 export enum EventType {
   'OnChangeEvent' = 'OnChangeEvent',
   'BeforeDeploymentEvent' = 'BeforeDeploymentEvent',
@@ -56,6 +59,7 @@ export enum EventType {
   'OnFail' = 'OnFail',
   'OnCompletion' = 'OnCompletion',
   'OnSuccess' = 'OnSuccess',
+  'Deploy' = 'Deploy',
 }
 
 export type BaseEvent = {
@@ -97,6 +101,10 @@ export interface OnChangeEvent extends BaseEvent {
   fn: RedeployFn;
 }
 
+export interface DeployEvent extends BaseEvent {
+  fn: RedeployFn;
+}
+
 export type ModuleEvent = { name: string, eventType: string, fn: ModuleEventFn };
 
 export type MetaDataEvent = { name: string, eventType: string, deps?: string[], eventDeps?: string[], usage?: string[], eventUsage?: string[] };
@@ -134,7 +142,9 @@ export type EventsDepRef = {
 export type Deployed = {
   lastEventName: string | undefined,
   logicallyDeployed: boolean | undefined,
-  contractAddress: string | undefined
+  contractAddress: string | undefined,
+  shouldRedeploy: ShouldRedeployFn | undefined,
+  deployFn: DeployFn | undefined,
 };
 
 export type ModuleConfig = {
@@ -217,6 +227,18 @@ export class GroupedDependencies {
     }
 
     return resultArray;
+  }
+
+  shouldRedeploy(fn: ShouldRedeployFn): void {
+    for (const dependency of this.dependencies) {
+      if (dependency instanceof ContractBinding) {
+        if (dependency.deployMetaData.shouldRedeploy) {
+          throw new UserError('Should redeploy function is already set.');
+        }
+
+        dependency.deployMetaData.shouldRedeploy = fn;
+      }
+    }
   }
 
   // event hooks
@@ -414,6 +436,8 @@ export class ContractBinding extends Binding {
       logicallyDeployed: undefined,
       contractAddress: undefined,
       lastEventName: undefined,
+      shouldRedeploy: undefined,
+      deployFn: undefined,
     };
     this.eventsDeps = events || {
       beforeCompile: [],
@@ -460,6 +484,20 @@ export class ContractBinding extends Binding {
     ) as unknown as ethers.Contract;
 
     return this.contractInstance;
+  }
+
+  asProxy(): ProxyContract {
+    return new ProxyContract(this);
+  }
+
+  asFactory(): FactoryContractBinding {
+    return new FactoryContractBinding(this);
+  }
+
+  deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding {
+    this.deployMetaData.deployFn = deployFn;
+
+    return this;
   }
 
   // beforeDeployment executes each time a deployment command is executed.
@@ -534,6 +572,10 @@ export class ContractBinding extends Binding {
     m.addEvent(eventName, afterDeployEvent);
 
     return afterDeployEvent;
+  }
+
+  shouldRedeploy(fn: ShouldRedeployFn): void {
+    this.deployMetaData.shouldRedeploy = fn;
   }
 
   // beforeCompile runs before the source code is compiled.
@@ -621,6 +663,69 @@ export class ContractBinding extends Binding {
       usage: usageBindings,
       eventUsage: eventUsages,
     };
+  }
+}
+
+export class FactoryContractBinding extends ContractBinding {
+  constructor(
+    contractBinding: ContractBinding
+  ) {
+    super(
+      contractBinding.name,
+      contractBinding.contractName,
+      contractBinding.args,
+      contractBinding.bytecode,
+      contractBinding.abi,
+      contractBinding.libraries,
+      contractBinding.deployMetaData,
+      contractBinding.txData,
+      contractBinding.eventsDeps,
+      contractBinding.signer,
+      contractBinding.prompter,
+      contractBinding.txGenerator,
+      contractBinding.moduleStateRepo,
+    );
+  }
+
+  create(m: ModuleBuilder, childName: string, createFuncName: string, ...args: any): ContractBinding {
+    const child = m.contract(childName);
+    child.deployFn(async () => {
+      const tx = await this.instance()[createFuncName](123);
+
+      const children = await this.instance().getChildren();
+
+      return children[0];
+    }, this);
+
+    return child;
+  }
+}
+
+export class ProxyContract extends ContractBinding {
+  constructor(
+    contractBinding: ContractBinding
+  ) {
+    super(
+      contractBinding.name,
+      contractBinding.contractName,
+      contractBinding.args,
+      contractBinding.bytecode,
+      contractBinding.abi,
+      contractBinding.libraries,
+      contractBinding.deployMetaData,
+      contractBinding.txData,
+      contractBinding.eventsDeps,
+      contractBinding.signer,
+      contractBinding.prompter,
+      contractBinding.txGenerator,
+      contractBinding.moduleStateRepo,
+    );
+  }
+
+  setNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void {
+    m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
+      await proxy.instance()[setLogicName](logic);
+    });
   }
 }
 
@@ -872,6 +977,8 @@ export class ContractBindingMetaData {
       logicallyDeployed: undefined,
       contractAddress: undefined,
       lastEventName: undefined,
+      shouldRedeploy: undefined,
+      deployFn: undefined,
     };
   }
 }

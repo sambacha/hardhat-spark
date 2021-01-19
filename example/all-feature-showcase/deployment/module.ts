@@ -3,6 +3,7 @@ import * as path from 'path';
 require('dotenv').config({path: path.resolve(__dirname + './../.env')});
 
 import {
+  ContractBinding,
   module,
 } from '../../../src/interfaces/mortar';
 import { BigNumber } from 'ethers';
@@ -29,6 +30,10 @@ export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuil
   m.setRegistry(remoteBucketStorage);
 
   const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0');
+  Example.shouldRedeploy((diff: ContractBinding) => {
+    return true;
+  });
+
   const SecondExample = m.contract('SecondExample', Example, ['some', 'random', 'string'], [['hello']], 123);
   const ThirdExample = m.contract('ThirdExample', SecondExample);
 

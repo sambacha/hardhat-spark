@@ -14,7 +14,6 @@ import { SynthetixCore } from './core.module';
 import { SynthetixRebuildCache } from './rebuild_cache_module.module';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { SynthetixSynths } from './synths.module';
-import { mutator } from '../../../../src/interfaces/helper/macros';
 
 const {
   MORTAR_NETWORK_ID

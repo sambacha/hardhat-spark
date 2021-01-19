@@ -5,7 +5,7 @@ import {
   EventTransactionData,
   StatefulEvent,
   MetaDataEvent,
-  ModuleEvent,
+  ModuleEvent, EventType,
 } from '../../../interfaces/mortar';
 import { CliError } from '../../types/errors';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
@@ -121,9 +121,21 @@ export class ModuleStateRepo {
 
     const currentState = (await this.getStateIfExist(this.currentModuleName));
 
-    const currentEvent = (currentState[this.currentEventName] as StatefulEvent);
+    let currentEvent = (currentState[this.currentEventName] as StatefulEvent);
     if (
-      !checkIfExist(currentEvent) ||
+      !checkIfExist(currentEvent)) {
+      // if event is not define in module it is custom deploy event..
+      const event = {
+        name: this.currentEventName,
+        eventType: EventType.Deploy
+      } as MetaDataEvent;
+      currentEvent = new StatefulEvent(
+        event,
+        false,
+        {});
+    }
+
+    if (
       !checkIfExist(currentEvent.txData) ||
       !checkIfExist(currentEvent.txData[bindingName])
     ) {

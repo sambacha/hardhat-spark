@@ -195,7 +195,14 @@ export class ModuleResolver {
           throw new UserError("Module and module state file didn't match element.");
         }
 
-        if (stateFileElement.bytecode != resolvedModuleStateElement.bytecode || !checkIfExist(stateFileElement.deployMetaData?.contractAddress)) {
+        if (
+          (
+            stateFileElement.bytecode != resolvedModuleStateElement.bytecode &&
+            !(!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
+            resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement))
+          )
+          || !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
+        ) {
           resolvedModuleStateElement.signer = this.signer;
           resolvedModuleStateElement.prompter = this.prompter;
           resolvedModuleStateElement.txGenerator = this.txGenerator;
@@ -222,6 +229,7 @@ export class ModuleResolver {
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
+
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
         // this is necessary in order to surface contract metadata to consumer;

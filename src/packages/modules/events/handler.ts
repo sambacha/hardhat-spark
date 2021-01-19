@@ -141,7 +141,7 @@ export class EventHandler {
         !checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode) ||
         !checkIfExist((moduleStates[dependencyName] as ContractBinding).deployMetaData?.contractAddress)
       ) {
-        throw new CliError('Desired contract is not yet deployed.');
+        throw new CliError(`Desired contract is not yet deployed - ${dependencyName}`);
       }
 
       if ((moduleStates[dependencyName] as ContractBinding).deployMetaData?.lastEventName == eventName) {
