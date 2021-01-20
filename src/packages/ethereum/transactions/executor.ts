@@ -9,7 +9,7 @@ import {
   ContractEvent,
   Deployed, ModuleConfig,
   ModuleEvent,
-  OnChangeEvent, ShouldRedeployFn,
+  OnChangeEvent,
   StatefulEvent,
   TransactionData
 } from '../../../interfaces/mortar';
@@ -284,6 +284,7 @@ export class TxExecutor {
     const signedTx = await this.txGenerator.generateSingedTx(
       0,
       bytecode,
+      binding.wallet,
     );
 
     await this.prompter.promptSignedTransaction(signedTx);

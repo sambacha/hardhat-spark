@@ -9,18 +9,25 @@ export default class Init extends Command {
 
   static flags = {
     help: flags.help({char: 'h'}),
-    networkId: flags.integer(
+    privateKeys: flags.string(
       {
-        name: 'network_id',
-        description: 'Network ID of the network you are willing to deploy your contracts',
-        required: true
+        name: 'private_keys',
+        description: 'Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123',
+        required: true,
       }
     ),
-    privateKey: flags.string(
+    mnemonic: flags.string(
       {
-        name: 'private_key',
-        description: 'Private Key of the deployer account',
-        required: true
+        name: 'mnemonic',
+        description: 'Mnemonic of the deployer accounts',
+        required: false,
+      }
+    ),
+    hdPath: flags.string(
+      {
+        name: 'hdPath',
+        description: `Associated with mnemonic - The HD parent of all the derived keys. Default value: "m/44'/60'/0'/0"`,
+        required: false,
       }
     ),
     debug: flags.boolean(

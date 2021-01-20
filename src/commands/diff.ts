@@ -67,7 +67,7 @@ export default class Diff extends Command {
     const prompter = new Prompter();
 
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);
-    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator, moduleStateRepo);
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo);
 
     await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo);
   }

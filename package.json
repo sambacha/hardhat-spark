@@ -1,12 +1,14 @@
 {
-  "name": "mortar-tenderly",
+  "name": "@tenderly/mortar",
   "description": "Solidity IaC deployment tool",
   "version": "0.0.0",
   "author": "Tenderly",
   "bin": {
-    "mortar": "./bin/run"
+    "mortar": "bin/run"
   },
-  "bugs": "https://github.com/Tenderly/mortar-tenderly/issues",
+  "bugs": {
+    "url": "https://github.com/Tenderly/mortar-tenderly/issues"
+  },
   "dependencies": {
     "@oclif/command": "^1",
     "@oclif/config": "^1",
@@ -60,12 +62,20 @@
       "@oclif/plugin-help"
     ]
   },
-  "repository": "Tenderly/mortar-tenderly",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tenderly/mortar-tenderly.git"
+  },
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
     "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif-dev readme && git add README.md"
   },
-  "types": "lib/index.d.ts"
+  "types": "lib/index.d.ts",
+  "directories": {
+    "example": "example",
+    "lib": "lib",
+    "test": "test"
+  }
 }

@@ -6,10 +6,10 @@ import {
   ContractBinding,
   module,
 } from '../../../src/interfaces/mortar';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { RemoteBucketStorage } from '../../../src/packages/modules/states/registry/remote_bucket_storage';
-import { ExampleModuleBuilder } from '../.mortar/ExampleModule/ExampleModule';
-import { SecondModuleBuilder } from '../.mortar/SecondModule/SecondModule';
+import { ModuleBuilder } from '../../../src/interfaces/mortar';
+import { filler } from '../../../src/interfaces/helper/macros';
 // import { FileSystemRegistry } from '../../../src/packages/modules/states/registry/file_system';
 
 const {
@@ -17,7 +17,7 @@ const {
   GOOGLE_SECRET_ACCESS_KEY,
 } = process.env;
 
-export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuilder) => {
+export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
   // const fileSystem = new FileSystemRegistry("./")
   // m.setRegistry(fileSystem)
   const remoteBucketStorage = new RemoteBucketStorage(
@@ -29,7 +29,11 @@ export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuil
   );
   m.setRegistry(remoteBucketStorage);
 
-  const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0');
+  await filler(m, 'on start distribute ethers to all accounts', wallets[0], wallets.slice(1));
+
+  const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0')
+    .setDeployer(wallets[30])
+    .force();
   Example.shouldRedeploy((diff: ContractBinding) => {
     return true;
   });
@@ -97,7 +101,7 @@ export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuil
   });
 });
 
-export const SecondModule = module('SecondExample', async (m: SecondModuleBuilder) => {
+export const SecondModule = module('SecondExample', async (m: ModuleBuilder) => {
   const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0');
   const SecondExample = m.contract('SecondExample', Example, ['some', 'random', 'string'], [['hello']], 123);
   m.contract('ThirdExample', SecondExample);

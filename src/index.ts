@@ -15,8 +15,12 @@ import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
-  // @TODO(filip): add support for other signing ways (e.g. mnemonic, seed phrase, hd wallet, etc)
-  configService.generateAndSaveConfig(flags.privateKey as string);
+  const privateKeys = (flags.privateKeys as string).split(',');
+
+  const mnemonic = (flags.mnemonic as string);
+  const hdPath = (flags.hdPath as string);
+
+  configService.generateAndSaveConfig(privateKeys, mnemonic, hdPath);
 
   cli.info('You have successfully configured mortar.');
 }
@@ -95,7 +99,7 @@ export async function diff(resolvedPath: string, states: string[], moduleResolve
   }
 }
 
-export async function genTypes(resolvedPath: string, moduleTypings: ModuleTypings, ) {
+export async function genTypes(resolvedPath: string, moduleTypings: ModuleTypings) {
   const modules = await require(resolvedPath);
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {

@@ -14,6 +14,7 @@ import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/exe
 import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
+import ConfigService from '../packages/config/service';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -170,7 +171,7 @@ export type ModuleOptions = {
   params: { [name: string]: any }
 };
 
-export type ModuleBuilderFn = (m: ModuleBuilder) => Promise<void>;
+export type ModuleBuilderFn = (m: ModuleBuilder, wallets: ethers.Wallet[]) => Promise<void>;
 
 export abstract class Binding {
   public name: string;
@@ -413,6 +414,9 @@ export class ContractBinding extends Binding {
 
   private contractInstance: ethers.Contract | undefined;
 
+  public wallet: ethers.Wallet | undefined;
+  public forceFlag: boolean;
+
   public signer: ethers.Signer | undefined;
   public prompter: Prompter | undefined;
   public txGenerator: EthTxGenerator | undefined;
@@ -462,6 +466,8 @@ export class ContractBinding extends Binding {
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
+
+    this.forceFlag = false;
   }
 
   instance(): ethers.Contract {
@@ -484,6 +490,18 @@ export class ContractBinding extends Binding {
     ) as unknown as ethers.Contract;
 
     return this.contractInstance;
+  }
+
+  setDeployer(wallet: ethers.Wallet): ContractBinding {
+    this.wallet = wallet;
+
+    return this;
+  }
+
+  force(): ContractBinding {
+    this.forceFlag = true;
+
+    return this;
   }
 
   asProxy(): ProxyContract {
@@ -1321,7 +1339,11 @@ export class Module {
 
 export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
   const moduleBuilder = new ModuleBuilder();
-  await fn(moduleBuilder);
+  const configService = new ConfigService(process.cwd());
+
+  const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
+  const accounts = configService.getAllWallets(rpcProvider);
+  await fn(moduleBuilder, accounts);
 
   const compiler = new HardhatCompiler();
   const moduleValidator = new ModuleValidator();

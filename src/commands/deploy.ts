@@ -85,6 +85,8 @@ export default class Deploy extends Command {
       provider = new ethers.providers.JsonRpcProvider(flags.rpcProvider);
     }
 
+    process.env.MORTAR_RPC_PROVIDER = String(flags.rpcProvider || 'http://localhost:8545');
+
     let prompter = new Prompter(false);
     if (flags.yes) {
       prompter = new Prompter(true);
@@ -95,7 +97,7 @@ export default class Deploy extends Command {
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider);
 
     const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex);
-    const moduleResolver = new ModuleResolver(provider, configService.getPrivateKey(), prompter, txGenerator, moduleState);
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState);
 
     const eventHandler = new EventHandler(moduleState);
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler);

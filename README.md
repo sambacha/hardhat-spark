@@ -14,11 +14,11 @@ Solidity IaC deployment tool
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g mortar-tenderly
+$ npm install -g @tenderly/mortar
 $ mortar COMMAND
 running command...
 $ mortar (-v|--version|version)
-mortar-tenderly/0.0.0 darwin-x64 node-v10.21.0
+@tenderly/mortar/0.0.0 darwin-x64 node-v10.21.0
 $ mortar --help [COMMAND]
 USAGE
   $ mortar COMMAND
@@ -29,6 +29,7 @@ USAGE
 <!-- commands -->
 * [`mortar deploy [PATH]`](#mortar-deploy-path)
 * [`mortar diff [PATH]`](#mortar-diff-path)
+* [`mortar genTypes [PATH]`](#mortar-gentypes-path)
 * [`mortar help [COMMAND]`](#mortar-help-command)
 * [`mortar init`](#mortar-init)
 
@@ -72,6 +73,21 @@ OPTIONS
 ```
 
 _See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/diff.ts)_
+
+## `mortar genTypes [PATH]`
+
+describe the command here
+
+```
+USAGE
+  $ mortar genTypes [PATH]
+
+OPTIONS
+  -h, --help  show CLI help
+  --debug     Flag used for debugging
+```
+
+_See code: [src/commands/genTypes.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/genTypes.ts)_
 
 ## `mortar help [COMMAND]`
 

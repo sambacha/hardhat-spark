@@ -7,6 +7,7 @@ import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { ModuleState } from '../../modules/states/module';
 import { SingleContractLinkReference } from '../../types/artifacts/libraries';
 import { CliError } from '../../types/errors';
+import { ethers } from 'ethers';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -25,7 +26,7 @@ export class EthTxGenerator {
     this.configService = configService;
     this.ethers = ethers;
 
-    this.wallet = new Wallet(this.configService.getPrivateKey(), this.ethers);
+    this.wallet = new Wallet(this.configService.getFirstPrivateKey(), this.ethers);
     this.gasCalculator = gasCalculator;
     this.networkId = networkId;
     this.nonceMap = {};
@@ -66,7 +67,7 @@ export class EthTxGenerator {
     return (this.nonceMap)[walletAddress]++;
   }
 
-  async generateSingedTx(value: number, data: string): Promise<string> {
+  async generateSingedTx(value: number, data: string, wallet?: ethers.Wallet | undefined): Promise<string> {
     const gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
 
     const tx: TransactionRequest = {
@@ -75,10 +76,16 @@ export class EthTxGenerator {
       gasPrice: await this.gasCalculator.getCurrentPrice(),
       gasLimit: gas,
       data: data,
-      nonce: await this.getTransactionCount(await this.wallet.getAddress()),
       chainId: this.networkId
     };
 
+    if (wallet) {
+      tx.from = wallet.address;
+      tx.nonce = await this.getTransactionCount(await wallet.getAddress());
+      return wallet.signTransaction(tx);
+    }
+
+    tx.nonce = await this.getTransactionCount(await this.wallet.getAddress());
     return this.wallet.signTransaction(tx);
   }
 

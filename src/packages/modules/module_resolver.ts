@@ -8,7 +8,7 @@ import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { Prompter } from '../prompter';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { UsageBindingNotFound, UsageEventNotFound, UserError } from '../types/errors';
+import { UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
@@ -196,6 +196,7 @@ export class ModuleResolver {
         }
 
         if (
+          resolvedModuleStateElement.forceFlag == true ||
           (
             stateFileElement.bytecode != resolvedModuleStateElement.bytecode &&
             !(!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&

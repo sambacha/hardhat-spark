@@ -68,6 +68,12 @@ export class PrivateKeyNotValid extends UserError {
   }
 }
 
+export class MnemonicNotValid extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class FailedToWriteToFile extends CliError {
   constructor(message: string) {
     super(message);

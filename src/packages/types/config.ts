@@ -1,3 +1,5 @@
 export type Config = {
-  privateKey: string;
+  privateKeys: string[];
+  mnemonic: string;
+  hdPath: string;
 };
