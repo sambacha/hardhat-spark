@@ -8,7 +8,7 @@ import { ethers } from 'ethers';
 import ConfigService from '../packages/config/service';
 import { Prompter } from '../packages/prompter';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { GasCalculator } from '../packages/ethereum/gas/calculator';
+import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { NetworkIdNotProvided, PathNotProvided, UserError } from '../packages/types/errors';
 
@@ -62,8 +62,8 @@ export default class Diff extends Command {
     const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
     const configService = new ConfigService(currentPath);
 
-    const gasCalculator = new GasCalculator(provider);
-    const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider);
+    const gasCalculator = new GasPriceCalculator(provider);
+    const txGenerator = await new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider);
     const prompter = new Prompter();
 
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);

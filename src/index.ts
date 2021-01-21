@@ -55,6 +55,9 @@ export async function deploy(
     }
 
     // initialize empty tx data
+    if (module.getGasPriceProvider()) {
+      txGenerator.changeGasPriceCalculator(module.getGasPriceProvider());
+    }
     const initializedTxModuleState = txGenerator.initTx(moduleState);
     await prompter.promptContinueDeployment();
 

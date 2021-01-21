@@ -7,7 +7,7 @@ import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import ConfigService from '../packages/config/service';
 import { Prompter } from '../packages/prompter';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
-import { GasCalculator } from '../packages/ethereum/gas/calculator';
+import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ethers } from 'ethers';
 import { cli } from 'cli-ux';
 import * as command from '../index';
@@ -93,8 +93,8 @@ export default class Deploy extends Command {
     }
     const configService = new ConfigService(currentPath);
 
-    const gasCalculator = new GasCalculator(provider);
-    const txGenerator = await new EthTxGenerator(configService, gasCalculator, flags.networkId, provider);
+    const gasCalculator = new GasPriceCalculator(provider);
+    const txGenerator = await new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider);
 
     const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex);
     const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState);

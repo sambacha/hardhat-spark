@@ -15,6 +15,8 @@ import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/type
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import ConfigService from '../packages/config/service';
+import { AutomaticGasProvider, FixedGasPriceProvider } from 'hardhat/internal/core/providers/gas-providers';
+import { IGasPriceCalculator } from '../packages/ethereum/gas';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -1012,6 +1014,7 @@ export class ModuleBuilder {
   private prototypes: { [name: string]: Prototype };
   private resolver: IModuleRegistryResolver | undefined;
   private registry: IModuleRegistryResolver | undefined;
+  private gasPriceProvider: IGasPriceCalculator | undefined;
 
   constructor(opts?: ModuleOptions) {
     this.bindings = {};
@@ -1198,6 +1201,14 @@ export class ModuleBuilder {
     this.registry = registry;
   }
 
+  setGasPriceProvider(provider: IGasPriceCalculator): void {
+    this.gasPriceProvider = provider;
+  }
+
+  getGasPriceProvider(): IGasPriceCalculator {
+    return this.gasPriceProvider;
+  }
+
   getRegistry(): IModuleRegistryResolver | undefined {
     return this.registry;
   }
@@ -1259,6 +1270,7 @@ export class Module {
   private readonly prototypes: { [name: string]: Prototype };
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
+  private gasPriceProvider: IGasPriceCalculator | undefined;
 
   constructor(
     moduleName: string,
@@ -1268,6 +1280,7 @@ export class Module {
     actions: { [name: string]: Action },
     registry: IModuleRegistryResolver | undefined,
     resolver: IModuleRegistryResolver | undefined,
+    gasPriceProvider: IGasPriceCalculator | undefined,
     moduleConfig: ModuleConfig | undefined,
     prototypes: { [name: string]: Prototype },
   ) {
@@ -1280,6 +1293,7 @@ export class Module {
     this.moduleEvents = moduleEvents;
     this.moduleConfig = moduleConfig;
     this.prototypes = prototypes;
+    this.gasPriceProvider = gasPriceProvider;
   }
 
   // call(name: string, ...args: any[]): void;
@@ -1335,6 +1349,10 @@ export class Module {
   getAllPrototypes(): { [name: string]: Prototype } {
     return this.prototypes;
   }
+
+  getGasPriceProvider(): IGasPriceCalculator {
+    return this.gasPriceProvider;
+  }
 }
 
 export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
@@ -1343,6 +1361,7 @@ export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConf
 
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const accounts = configService.getAllWallets(rpcProvider);
+  // @TODO wrap wallets with custom send function in order to store it to state.
   await fn(moduleBuilder, accounts);
 
   const compiler = new HardhatCompiler();
@@ -1375,6 +1394,7 @@ export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConf
     moduleBuilder.getAllActions(),
     moduleBuilder.getRegistry(),
     moduleBuilder.getResolver(),
+    moduleBuilder.getGasPriceProvider(),
     moduleConfig,
     moduleBuilder.getAllPrototypes()
   );

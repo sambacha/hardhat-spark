@@ -1,6 +1,6 @@
 import { ContractBinding, TransactionData } from '../../../interfaces/mortar';
 import ConfigService from '../../config/service';
-import { GasCalculator } from '../gas/calculator';
+import { GasPriceCalculator } from '../gas/calculator';
 import { checkIfExist } from '../../utils/util';
 import { Wallet, providers, BigNumber } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
@@ -8,6 +8,7 @@ import { ModuleState } from '../../modules/states/module';
 import { SingleContractLinkReference } from '../../types/artifacts/libraries';
 import { CliError } from '../../types/errors';
 import { ethers } from 'ethers';
+import { IGasCalculator, IGasPriceCalculator, IGasProvider } from '../gas';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -16,20 +17,26 @@ export type TxMetaData = {
 
 export class EthTxGenerator {
   private configService: ConfigService;
-  private gasCalculator: GasCalculator;
+  private gasPriceCalculator: IGasPriceCalculator;
+  private gasCalculator: IGasCalculator;
   private readonly ethers: providers.JsonRpcProvider;
   private readonly wallet: Wallet;
   private readonly networkId: number;
   private nonceMap: { [address: string]: number };
 
-  constructor(configService: ConfigService, gasCalculator: GasCalculator, networkId: number, ethers: providers.JsonRpcProvider) {
+  constructor(configService: ConfigService, gasPriceCalculator: IGasPriceCalculator, gasCalculator: IGasCalculator, networkId: number, ethers: providers.JsonRpcProvider) {
     this.configService = configService;
     this.ethers = ethers;
 
     this.wallet = new Wallet(this.configService.getFirstPrivateKey(), this.ethers);
+    this.gasPriceCalculator = gasPriceCalculator;
     this.gasCalculator = gasCalculator;
     this.networkId = networkId;
     this.nonceMap = {};
+  }
+
+  changeGasPriceCalculator(newGasPriceCalculator: IGasPriceCalculator) {
+    this.gasPriceCalculator = newGasPriceCalculator;
   }
 
   initTx(moduleState: ModuleState): ModuleState {
@@ -73,7 +80,7 @@ export class EthTxGenerator {
     const tx: TransactionRequest = {
       from: this.wallet.address,
       value: value,
-      gasPrice: await this.gasCalculator.getCurrentPrice(),
+      gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
       gasLimit: gas,
       data: data,
       chainId: this.networkId
@@ -114,7 +121,7 @@ export class EthTxGenerator {
 
   async fetchTxData(walletAddress: string): Promise<TxMetaData> {
     return {
-      gasPrice: await this.gasCalculator.getCurrentPrice(),
+      gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
       nonce: await this.getTransactionCount(walletAddress),
     };
   }

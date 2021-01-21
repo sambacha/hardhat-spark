@@ -27,6 +27,7 @@ import { CliError, ContractTypeMismatch, ContractTypeUnsupported, UserError } fr
 import { ModuleState } from '../../modules/states/module';
 import { IModuleRegistryResolver } from '../../modules/states/registry';
 import { ModuleResolver } from '../../modules/module_resolver';
+import { IGasPriceCalculator } from '../gas';
 
 const CONSTRUCTOR_TYPE = 'constructor';
 export const BLOCK_CONFIRMATION_NUMBER = 1;

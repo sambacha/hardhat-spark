@@ -2,8 +2,9 @@ import { checkIfExist } from '../../utils/util';
 import { providers } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { BigNumber } from '@ethersproject/bignumber';
+import { IGasCalculator, IGasPriceCalculator } from './index';
 
-export class GasCalculator {
+export class GasPriceCalculator implements IGasPriceCalculator, IGasCalculator {
   private readonly ethers: providers.JsonRpcProvider;
 
   constructor(ethers: providers.JsonRpcProvider) {

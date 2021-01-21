@@ -1,20 +1,18 @@
 import * as path from 'path';
+import { ContractBinding, module, ModuleBuilder, } from '../../../src/interfaces/mortar';
+import { BigNumber, ethers } from 'ethers';
+import { RemoteBucketStorage } from '../../../src/packages/modules/states/registry/remote_bucket_storage';
+import { filler } from '../../../src/interfaces/helper/macros';
+import { EthGasStationProvider, GasPriceType } from './custom_providers/eth_gas_station_provider';
 
 require('dotenv').config({path: path.resolve(__dirname + './../.env')});
 
-import {
-  ContractBinding,
-  module,
-} from '../../../src/interfaces/mortar';
-import { BigNumber, ethers } from 'ethers';
-import { RemoteBucketStorage } from '../../../src/packages/modules/states/registry/remote_bucket_storage';
-import { ModuleBuilder } from '../../../src/interfaces/mortar';
-import { filler } from '../../../src/interfaces/helper/macros';
 // import { FileSystemRegistry } from '../../../src/packages/modules/states/registry/file_system';
 
 const {
   GOOGLE_ACCESS_KEY,
   GOOGLE_SECRET_ACCESS_KEY,
+  ETH_GAS_STATION_API_KEY
 } = process.env;
 
 export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
@@ -28,6 +26,7 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wa
     GOOGLE_SECRET_ACCESS_KEY || '',
   );
   m.setRegistry(remoteBucketStorage);
+  m.setGasPriceProvider(new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.fastest));
 
   await filler(m, 'on start distribute ethers to all accounts', wallets[0], wallets.slice(1));
 
