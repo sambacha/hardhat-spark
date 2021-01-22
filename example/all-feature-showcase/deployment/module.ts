@@ -26,7 +26,7 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wa
     GOOGLE_SECRET_ACCESS_KEY || '',
   );
   m.setRegistry(remoteBucketStorage);
-  m.setGasPriceProvider(new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.fastest));
+  m.setGasPriceProvider(new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average));
 
   await filler(m, 'on start distribute ethers to all accounts', wallets[0], wallets.slice(1));
 
@@ -68,35 +68,35 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wa
   }, Example);
 
   SecondExample.afterCompile(m, 'firstAfterCompile', async () => {
-    console.log('This is after compile: ', SecondExample.bytecode);
+    // console.log('This is after compile');
   });
 
   ThirdExample.beforeCompile(m, 'firstBeforeCompile', async () => {
-    console.log('This is before compile: ', Example.name);
+    // console.log('This is before compile: ', Example.name);
   }, Example);
 
   ThirdExample.beforeDeployment(m, 'firstBeforeDeployment', async () => {
-    console.log('This is before deployment: ', Example.name);
+    // console.log('This is before deployment: ', Example.name);
   }, Example);
 
   ThirdExample.onChange(m, 'firstOnChange', async () => {
-    console.log('This is on change:', Example.name);
+    // console.log('This is on change:', Example.name);
   }, Example);
 
   m.onStart('OnStart', async () => {
-    console.log('onStart');
+    // console.log('onStart');
   });
 
   m.onCompletion('onCompletion', async () => {
-    console.log('onCompletion');
+    // console.log('onCompletion');
   });
 
   m.onFail('onFail', async () => {
-    console.log('onFail');
+    // console.log('onFail');
   });
 
   m.onSuccess('onSuccess', async () => {
-    console.log('onSuccess');
+    // console.log('onSuccess');
   });
 });
 

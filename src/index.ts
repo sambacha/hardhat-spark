@@ -48,7 +48,7 @@ export async function deploy(
     }
 
     const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-    cli.info('\nDeploy module - ', moduleName);
+    prompter.startModuleDeploy(moduleName);
     if (!checkIfExist(moduleState)) {
       cli.info('Nothing to deploy');
       process.exit(0);
@@ -71,6 +71,8 @@ export async function deploy(
     }
 
     await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onCompletion);
+
+    prompter.finishModuleDeploy();
   }
 }
 

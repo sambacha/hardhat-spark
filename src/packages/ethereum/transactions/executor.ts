@@ -21,13 +21,11 @@ import { BigNumber, providers } from 'ethers';
 import { defaultAbiCoder as abiCoder } from '@ethersproject/abi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { JsonFragment, JsonFragmentType } from '../../types/artifacts/abi';
-import { cli } from 'cli-ux';
 import { EventHandler } from '../../modules/events/handler';
 import { CliError, ContractTypeMismatch, ContractTypeUnsupported, UserError } from '../../types/errors';
 import { ModuleState } from '../../modules/states/module';
 import { IModuleRegistryResolver } from '../../modules/states/registry';
 import { ModuleResolver } from '../../modules/module_resolver';
-import { IGasPriceCalculator } from '../gas';
 
 const CONSTRUCTOR_TYPE = 'constructor';
 export const BLOCK_CONFIRMATION_NUMBER = 1;
@@ -60,7 +58,7 @@ export class TxExecutor {
 
         element = element as ContractBinding;
         if (checkIfExist(element.deployMetaData?.contractAddress)) {
-          cli.info(elementName, 'is already deployed');
+          await this.prompter.alreadyDeployed(elementName);
           await this.prompter.promptContinueDeployment();
           continue;
         }
@@ -81,16 +79,20 @@ export class TxExecutor {
             continue;
         }
 
+        this.prompter.bindingExecution(element.name);
         element = await this.executeSingleBinding(element as ContractBinding, moduleState);
         if (checkIfExist(registry) && checkIfExist(element?.deployMetaData?.contractAddress)) {
           await registry?.setAddress(this.networkId, moduleName, element.name, element?.deployMetaData?.contractAddress as string);
         }
 
         await this.moduleState.storeSingleBinding(element);
+        this.prompter.finishedBindingExecution(element.name);
         continue;
       }
 
+      this.prompter.eventExecution((element as StatefulEvent).event.name);
       await this.executeEvent(moduleName, element as StatefulEvent, moduleState);
+      this.prompter.finishedEventExecution((element as StatefulEvent).event.name);
     }
 
     return;
@@ -313,11 +315,9 @@ export class TxExecutor {
       const txResp = await this.ethers.sendTransaction(signedTx);
       this.prompter.sentTx();
 
-      this.prompter.waitTransactionConfirmation();
       let txReceipt = await txResp.wait(1);
       binding.txData.output = txReceipt;
       await this.moduleState.storeSingleBinding(binding);
-      this.prompter.transactionConfirmation(1);
 
       this.prompter.waitTransactionConfirmation();
       txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);

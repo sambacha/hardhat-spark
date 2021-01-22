@@ -15,7 +15,6 @@ import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/type
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import ConfigService from '../packages/config/service';
-import { AutomaticGasProvider, FixedGasPriceProvider } from 'hardhat/internal/core/providers/gas-providers';
 import { IGasPriceCalculator } from '../packages/ethereum/gas';
 
 export type AutoBinding = any | Binding | ContractBinding;
@@ -908,7 +907,7 @@ export class ContractInstance {
         } as ContractInput;
       }
 
-      cli.info('Execute contract function - ', fragment.name);
+      this.prompter.executeContractFunction(fragment.name);
       cli.debug(fragment.name, ...args);
       await this.prompter.promptExecuteTx();
 
@@ -925,15 +924,13 @@ export class ContractInstance {
       await this.prompter.sentTx();
 
       this.prompter.waitTransactionConfirmation();
-      await tx.wait(1);
-      this.prompter.transactionConfirmation(1);
-
-      this.prompter.waitTransactionConfirmation();
       const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
       await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt);
       this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER);
 
       this.contractBinding.contractTxProgress = ++contractTxIterator;
+
+      this.prompter.finishedExecutionOfContractFunction(fragment.name);
 
       return tx;
     };

@@ -1,11 +1,27 @@
 import cli from 'cli-ux';
 import { DeniedConfirmation } from './types/errors';
+import chalk from 'chalk';
 
 export class Prompter {
+  private whitespaces: string;
   private readonly skipConfirmation: boolean;
 
   constructor(skipConfirmation: boolean = false) {
     this.skipConfirmation = skipConfirmation;
+    this.whitespaces = '';
+  }
+
+  startModuleDeploy(moduleName: string): void {
+    cli.info(chalk.bold('\nDeploy module - ', chalk.green(moduleName)));
+    this.whitespaces += '  ';
+  }
+
+  finishModuleDeploy(): void {
+    this.finishedElementExecution();
+  }
+
+  async alreadyDeployed(elementName: string) {
+    cli.info(`${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`);
   }
 
   async promptContinueDeployment(): Promise<void> {
@@ -14,19 +30,6 @@ export class Prompter {
     }
 
     const con = await cli.prompt('Do you wish to continue with deployment of this module? (Y/n)', {
-      required: false
-    });
-    if (con == 'n') {
-      throw new DeniedConfirmation('Confirmation has been declined.');
-    }
-  }
-
-  async promptContinueToNextBinding(): Promise<void> {
-    if (this.skipConfirmation) {
-      return;
-    }
-
-    const con = await cli.prompt('Do you wish to continue to the next binding? (Y/n)', {
       required: false
     });
     if (con == 'n') {
@@ -48,7 +51,7 @@ export class Prompter {
   }
 
   promptSignedTransaction(tx: string): void {
-    cli.debug(`Signed transaction: ${tx}`);
+    cli.debug(this.whitespaces + `Signed transaction: ${tx}`);
   }
 
   errorPrompt(error: Error): void {
@@ -56,22 +59,56 @@ export class Prompter {
   }
 
   sendingTx(): void {
-    cli.action.start('Sending tx');
+    cli.action.start(this.whitespaces + 'Sending tx');
   }
 
   sentTx(): void {
     cli.action.stop('sent');
   }
 
+  bindingExecution(bindingName: string): void {
+    cli.info(`${this.whitespaces}${chalk.bold('Started')} deploying binding - ${chalk.bold(bindingName)}`);
+    this.whitespaces += '  ';
+  }
+
+  finishedBindingExecution(bindingName: string): void {
+    this.finishedElementExecution();
+    cli.info(`${this.whitespaces}${chalk.bold('Finished')} binding execution - ${chalk.bold(bindingName)}\n`);
+  }
+
+  finishedElementExecution(): void {
+    this.whitespaces = this.whitespaces.slice(0, -2);
+  }
+
+  eventExecution(eventName: string): void {
+    cli.info(this.whitespaces + `${chalk.bold('Started')} executing event - ${chalk.bold(eventName)}`);
+    this.whitespaces += '  ';
+  }
+
+  finishedEventExecution(eventName: string): void {
+    this.finishedElementExecution();
+    cli.info(`${this.whitespaces}${chalk.bold('Finished')} event execution - ${chalk.bold(eventName)}\n`);
+  }
+
+  executeContractFunction(functionName: string): void {
+    cli.info(this.whitespaces + `${chalk.bold('Started')} execution of contract function - `, chalk.bold(functionName));
+    this.whitespaces += '  ';
+  }
+
+  finishedExecutionOfContractFunction(functionName: string): void {
+    this.finishedElementExecution();
+    cli.info(`${this.whitespaces}${chalk.bold('Finished')} execution of contract function - ${chalk.bold(functionName)}\n`);
+  }
+
   transactionReceipt(): void {
-    cli.info('Waiting for block confirmation...');
+    cli.info(this.whitespaces + 'Waiting for block confirmation...');
   }
 
   waitTransactionConfirmation(): void {
-    cli.action.start('Block is mining');
+    cli.action.start(this.whitespaces + 'Block is mining');
   }
 
   transactionConfirmation(confirmationNumber: number): void {
-    cli.action.stop(`\n Current block confirmation: ${confirmationNumber}`);
+    cli.action.stop(`\n${this.whitespaces} Current block confirmation: ${confirmationNumber}`);
   }
 }
