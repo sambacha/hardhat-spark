@@ -32,12 +32,17 @@ export async function deploy(
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
   prompter: Prompter,
-  executor: TxExecutor
+  executor: TxExecutor,
+  configService: ConfigService
 ) {
   const modules = await require(migrationFilePath);
 
+  const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
+  const wallets = configService.getAllWallets(rpcProvider);
+
   for (const [moduleName, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
+    await module.init(wallets);
     moduleStateRepo.initStateRepo(moduleName);
 
     let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
@@ -109,6 +114,7 @@ export async function genTypes(resolvedPath: string, moduleTypings: ModuleTyping
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {
     const module = await modFunc as Module;
+    await module.init();
 
     moduleTypings.generate(moduleName, module);
   }

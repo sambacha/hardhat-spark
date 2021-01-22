@@ -172,7 +172,7 @@ export type ModuleOptions = {
   params: { [name: string]: any }
 };
 
-export type ModuleBuilderFn = (m: ModuleBuilder, wallets: ethers.Wallet[]) => Promise<void>;
+export type ModuleBuilderFn = (m: ModuleBuilder, wallets?: ethers.Wallet[]) => Promise<void>;
 
 export abstract class Binding {
   public name: string;
@@ -1003,7 +1003,7 @@ export class ContractBindingMetaData {
 export class ModuleBuilder {
   [key: string]: ContractBinding | Event | Action | any;
 
-  // private opts: ModuleOptions;
+  private params: { [name: string]: any };
   private readonly bindings: { [name: string]: ContractBinding };
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
@@ -1026,6 +1026,7 @@ export class ModuleBuilder {
       onCompletion: {},
       onStart: {}
     };
+    this.params = {};
 
     if (typeof opts !== 'undefined') {
       this.opts = opts as ModuleOptions;
@@ -1069,6 +1070,14 @@ export class ModuleBuilder {
     this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args);
     this[name] = this.bindings[name];
     return this.bindings[name];
+  }
+
+  param(name: string, value: any) {
+    this.params[name] = value;
+  }
+
+  getParam(name: string): any {
+    return this.params[name];
   }
 
   // bindDeployed(name: string, address: string, network?: string): DeployedBinding;
@@ -1130,15 +1139,19 @@ export class ModuleBuilder {
     return action;
   }
 
-  async bindModules(...modules: (Module | Promise<Module>)[]): Promise<void> {
+  async bindModules(wallets: ethers.Wallet[], ...modules: (Module | Promise<Module>)[]): Promise<void> {
     for (const module of modules) {
-      await this.bindModule(module);
+      await this.bindModule(module, wallets);
     }
   }
 
-  async bindModule(m: Module | Promise<Module>): Promise<void> {
+  async bindModule(m: Module | Promise<Module>, wallets?: ethers.Wallet[]): Promise<void> {
     if (m instanceof Promise) {
       m = await m;
+    }
+
+    if (!m.isInitialized()) {
+      await m.init(wallets, this);
     }
 
     const bindings = m.getAllBindings();
@@ -1257,40 +1270,29 @@ export class Prototype {
 }
 
 export class Module {
+  private initialized: boolean = false;
+  private fn: ModuleBuilderFn;
+
   readonly name: string;
   // private opts: ModuleOptions;
-  private readonly bindings: { [name: string]: ContractBinding };
-  private readonly events: Events;
-  private readonly moduleEvents: ModuleEvents;
-  private readonly actions: { [name: string]: Action };
-  private readonly moduleConfig: ModuleConfig | undefined;
-  private readonly prototypes: { [name: string]: Prototype };
+  private bindings: { [name: string]: ContractBinding };
+  private events: Events;
+  private moduleEvents: ModuleEvents;
+  private actions: { [name: string]: Action };
+  private moduleConfig: ModuleConfig | undefined;
+  private prototypes: { [name: string]: Prototype };
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;
 
   constructor(
     moduleName: string,
-    bindings: { [name: string]: ContractBinding },
-    events: Events,
-    moduleEvents: ModuleEvents,
-    actions: { [name: string]: Action },
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
-    gasPriceProvider: IGasPriceCalculator | undefined,
+    fn: ModuleBuilderFn,
     moduleConfig: ModuleConfig | undefined,
-    prototypes: { [name: string]: Prototype },
   ) {
     this.name = moduleName;
-    this.bindings = bindings;
-    this.actions = actions;
-    this.registry = registry;
-    this.resolver = resolver;
-    this.events = events;
-    this.moduleEvents = moduleEvents;
+    this.fn = fn;
     this.moduleConfig = moduleConfig;
-    this.prototypes = prototypes;
-    this.gasPriceProvider = gasPriceProvider;
   }
 
   // call(name: string, ...args: any[]): void;
@@ -1302,6 +1304,28 @@ export class Module {
   // afterDeploy(fn: ModuleEventFn, ...bindings: Binding[]): void;
   //
   // afterEach(fn: ModuleAfterEachFn, ...bindings: Binding[]): void;
+
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  async init(wallets?: ethers.Wallet[], m?: ModuleBuilder) {
+    let moduleBuilder = m ? m : new ModuleBuilder();
+    await this.fn(moduleBuilder, wallets);
+
+    moduleBuilder = await handleModule(moduleBuilder, this.name);
+
+    this.bindings = moduleBuilder.getAllBindings();
+    this.events = moduleBuilder.getAllEvents();
+    this.moduleEvents = moduleBuilder.getAllModuleEvents();
+    this.actions = moduleBuilder.getAllActions();
+    this.registry = moduleBuilder.getRegistry();
+    this.resolver = moduleBuilder.getResolver();
+    this.gasPriceProvider = moduleBuilder.getGasPriceProvider();
+    this.prototypes = moduleBuilder.getAllPrototypes();
+
+    this.initialized = true;
+  }
 
   getAllBindings(): { [name: string]: ContractBinding } {
     return this.bindings;
@@ -1353,14 +1377,10 @@ export class Module {
 }
 
 export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
-  const moduleBuilder = new ModuleBuilder();
-  const configService = new ConfigService(process.cwd());
+  return new Module(moduleName, fn, moduleConfig);
+}
 
-  const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
-  const accounts = configService.getAllWallets(rpcProvider);
-  // @TODO wrap wallets with custom send function in order to store it to state.
-  await fn(moduleBuilder, accounts);
-
+async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string): Promise<ModuleBuilder> {
   const compiler = new HardhatCompiler();
   const moduleValidator = new ModuleValidator();
 
@@ -1383,17 +1403,6 @@ export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConf
     moduleBuilderBindings[bindingName].libraries = libraries[binding.contractName];
   }
 
-  return new Module(
-    moduleName,
-    moduleBuilderBindings,
-    moduleBuilder.getAllEvents(),
-    moduleBuilder.getAllModuleEvents(),
-    moduleBuilder.getAllActions(),
-    moduleBuilder.getRegistry(),
-    moduleBuilder.getResolver(),
-    moduleBuilder.getGasPriceProvider(),
-    moduleConfig,
-    moduleBuilder.getAllPrototypes()
-  );
+  return moduleBuilder;
 }
 

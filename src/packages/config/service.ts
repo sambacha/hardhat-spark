@@ -4,6 +4,7 @@ import * as path from 'path';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { FailedToWriteToFile, MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
+import { checkIfExist } from '../utils/util';
 
 const CONFIG_FILENAME = 'mortar-config.json';
 const NUMBER_OF_HD_ACCOUNTS = 100;
@@ -82,14 +83,16 @@ export default class ConfigService {
       wallets.push(wallet);
     }
 
-    for (let i = 0; i < NUMBER_OF_HD_ACCOUNTS; i++) {
-      const components = hdPath.split('/');
-      components[components.length - 1] = String(i);
-      hdPath = components.join('/');
+    if (checkIfExist(hdPath) && checkIfExist(mnemonic)) {
+      for (let i = 0; i < NUMBER_OF_HD_ACCOUNTS; i++) {
+        const components = hdPath.split('/');
+        components[components.length - 1] = String(i);
+        hdPath = components.join('/');
 
-      const hdNode = ethers.utils.HDNode.fromMnemonic(mnemonic, hdPath);
+        const hdNode = ethers.utils.HDNode.fromMnemonic(mnemonic, hdPath);
 
-      wallets.push(new ethers.Wallet(hdNode.privateKey, provider));
+        wallets.push(new ethers.Wallet(hdNode.privateKey, provider));
+      }
     }
 
     return wallets;

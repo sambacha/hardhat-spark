@@ -3,16 +3,10 @@ import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
 import path from 'path';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
-import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
-import { SynthetixCore } from './core.module';
 
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 export const SynthetixInverseSynths = module('SynthetixInverseSynths', async (m: ModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
-  await m.bindModule(SynthetixCore);
-
   const ExchangeRates = m.ExchangeRates;
   const synths = require('../local/synths.json');
   for (const {name: currencyKey, inverted} of synths) {

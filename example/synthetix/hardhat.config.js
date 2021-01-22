@@ -5,7 +5,7 @@ module.exports = {
   solidity: "0.5.16",
   networks: {
     hardhat: {
-      blockGasLimit: 15000000,
+      blockGasLimit: 20000000,
       allowUnlimitedContractSize: true
     }
   }

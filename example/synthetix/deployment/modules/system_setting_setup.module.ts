@@ -10,22 +10,12 @@ import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';
 import { checkIfExist } from '../../../../src/packages/utils/util';
 import { ethers } from 'ethers';
-import { SynthetixCore } from './core.module';
-import { SynthetixRebuildCache } from './rebuild_cache_module.module';
-import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
-import { SynthetixSynths } from './synths.module';
 
 const {
   MORTAR_NETWORK_ID
 } = process.env;
 
 export const SystemSettingsModule = module('SystemSettingsModule', async (m: ModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
-  await m.bindModule(SynthetixCore);
-  await m.bindModule(SynthetixSynths);
-  await m.bindModule(SynthetixRebuildCache);
-
   const synths = require('../local/synths.json');
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   for (const {name: currencyKey} of synths) {

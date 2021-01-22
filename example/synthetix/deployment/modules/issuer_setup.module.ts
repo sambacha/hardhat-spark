@@ -5,20 +5,8 @@ import {
 } from '../../../../src/interfaces/mortar';
 import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { toBytes32 } from '../../util/util';
-import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
-import { SynthetixCore } from './core.module';
-import { SynthetixSynths } from './synths.module';
-import { SynthetixRebuildCache } from './rebuild_cache_module.module';
 
 export const SynthetixIssuerSetup = module('SynthetixIssuerSetup', async (m: ModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
-
-  await m.bindModule(SynthetixCore);
-
-  await m.bindModule(SynthetixSynths);
-  await m.bindModule(SynthetixRebuildCache);
-
   const Issuer = m.Issuer;
 
   const synths = require('../local/synths.json');

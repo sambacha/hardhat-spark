@@ -1,23 +1,11 @@
 import { ContractBinding, ContractEvent, module } from '../../../../src/interfaces/mortar';
 import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
-import { SynthetixCore, useOvm } from './core.module';
+import { useOvm } from './core.module';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';
-import { SynthetixAncillary } from './ancillary.module';
-import { SynthetixSynths } from './synths.module';
-import { BinaryOptionsModule } from './binary_options.module';
-import { DappUtilities } from './dapp_utilities.module';
-import { SynthetixInverseSynths } from './inverse_synthes.module';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
-  await m.bindModule(SynthetixCore);
-  await m.bindModule(SynthetixSynths);
-  await m.bindModule(BinaryOptionsModule);
-  await m.bindModule(DappUtilities);
-  await m.bindModule(SynthetixAncillary);
-  await m.bindModule(SynthetixInverseSynths);
-
   const ReadProxyAddressResolver = m.ReadProxyAddressResolver;
   const AddressResolver = m.AddressResolver;
   const allContractDeployed = m.group(...Object.values(m.getAllBindings())).afterDeploy(m, 'afterAllContractsDeployed', async (): Promise<void> => {

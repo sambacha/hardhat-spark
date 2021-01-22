@@ -1,8 +1,6 @@
 import { ContractBinding, module } from '../../../../src/interfaces/mortar';
-import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { SynthetixCore } from './core.module';
 import path from 'path';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 import { mutator } from '../../../../src/interfaces/helper/macros';
@@ -14,9 +12,6 @@ const {
 } = process.env;
 
 export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
-  await m.bindModule(SynthetixCore);
   const ExchangeRates = m.ExchangeRates;
 
   const synths = require('./../local/synths.json');

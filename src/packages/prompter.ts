@@ -97,7 +97,7 @@ export class Prompter {
 
   finishedExecutionOfContractFunction(functionName: string): void {
     this.finishedElementExecution();
-    cli.info(`${this.whitespaces}${chalk.bold('Finished')} execution of contract function - ${chalk.bold(functionName)}\n`);
+    cli.info(`${this.whitespaces}${chalk.bold('Finished')} execution of contract function - ${chalk.bold(functionName)}`);
   }
 
   transactionReceipt(): void {

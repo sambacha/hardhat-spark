@@ -8,7 +8,7 @@ import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { Prompter } from '../prompter';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { UsageEventNotFound, UserError } from '../types/errors';
+import { UsageBindingNotFound, UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
@@ -200,7 +200,7 @@ export class ModuleResolver {
           (
             stateFileElement.bytecode != resolvedModuleStateElement.bytecode &&
             !(!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
-            resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement))
+              resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement))
           )
           || !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
         ) {
@@ -441,10 +441,11 @@ State file: ${stateFileElement.event.eventType}`);
       }
 
       for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
-        if (!checkIfExist(moduleState[usageBindingName])) {
-          return;
-          // throw new UsageBindingNotFound(`Binding that you want to use is not present in your module, please check dependencies. ${usageBindingName}`);
+        if (checkIfExist(moduleState[usageBindingName])) {
+          continue;
         }
+
+        this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events, moduleEvents);
       }
 
       for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {

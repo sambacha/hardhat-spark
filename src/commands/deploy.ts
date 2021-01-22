@@ -104,7 +104,7 @@ export default class Deploy extends Command {
 
     const migrationFilePath = path.resolve(currentPath, filePath);
 
-    await command.deploy(migrationFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor);
+    await command.deploy(migrationFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService);
   }
 
   async catch(error: Error) {

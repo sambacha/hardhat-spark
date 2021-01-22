@@ -1,20 +1,8 @@
 import { ContractEvent, module, ModuleBuilder } from '../../../../src/interfaces/mortar';
 import * as web3utils from 'web3-utils';
 import { DEFAULTS } from '../../util/constants';
-import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
-import { SynthetixCore } from './core.module';
-import { SynthetixSynths } from './synths.module';
-import { SystemSettingsModule } from './system_setting_setup.module';
-import { SynthetixRebuildCache } from './rebuild_cache_module.module';
 
 export const SynthetixDebtCacheSetup = module('SynthetixDebtCacheSetup', async (m: ModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
-  await m.bindModule(SynthetixCore);
-  await m.bindModule(SynthetixSynths);
-  await m.bindModule(SystemSettingsModule);
-  await m.bindModule(SynthetixRebuildCache);
-
   const DebtCache = m.DebtCache;
 
   const afterDeploySystemSetting = m.afterDeploySystemSetting.event as ContractEvent;
