@@ -1141,11 +1141,11 @@ export class ModuleBuilder {
 
   async bindModules(wallets: ethers.Wallet[], ...modules: (Module | Promise<Module>)[]): Promise<void> {
     for (const module of modules) {
-      await this.bindModule(module, wallets);
+      await this.module(module, wallets);
     }
   }
 
-  async bindModule(m: Module | Promise<Module>, wallets?: ethers.Wallet[]): Promise<void> {
+  async module(m: Module | Promise<Module>, wallets?: ethers.Wallet[]): Promise<void> {
     if (m instanceof Promise) {
       m = await m;
     }

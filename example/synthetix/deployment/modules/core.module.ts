@@ -20,8 +20,8 @@ export const currentWeekOfInflation = 0;
 export const currentLastMintEvent = 0;
 
 export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
+  await m.module(SynthetixLibraries);
+  await m.module(SynthetixPrototypes);
 
   const AddressResolver = m.contract('AddressResolver', ETH_ADDRESS);
   const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', 'ReadProxy', ETH_ADDRESS);

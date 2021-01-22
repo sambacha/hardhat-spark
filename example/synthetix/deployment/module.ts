@@ -18,20 +18,20 @@ import { SynthetixDebtCacheSetup } from './modules/debt_cache_setup.module';
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
 export const SynthetixModule = module('SynthetixModule', async (m: SynthetixModuleBuilder) => {
-  await m.bindModule(SynthetixLibraries);
-  await m.bindModule(SynthetixPrototypes);
+  await m.module(SynthetixLibraries);
+  await m.module(SynthetixPrototypes);
 
-  await m.bindModule(SynthetixCore);
+  await m.module(SynthetixCore);
 
-  await m.bindModule(SynthetixSynths);
-  await m.bindModule(BinaryOptionsModule);
-  await m.bindModule(DappUtilities);
-  await m.bindModule(SynthetixAncillary);
-  await m.bindModule(SynthetixInverseSynths);
-  await m.bindModule(SynthetixRebuildCache);
-  await m.bindModule(SystemSettingsModule);
-  await m.bindModule(SynthetixIssuerSetup);
-  await m.bindModule(SynthetixDebtCacheSetup);
+  await m.module(SynthetixSynths);
+  await m.module(BinaryOptionsModule);
+  await m.module(DappUtilities);
+  await m.module(SynthetixAncillary);
+  await m.module(SynthetixInverseSynths);
+  await m.module(SynthetixRebuildCache);
+  await m.module(SystemSettingsModule);
+  await m.module(SynthetixIssuerSetup);
+  await m.module(SynthetixDebtCacheSetup);
 
   // @TODO validate once again if some synthetix functionality is missing
 }, moduleConfig);

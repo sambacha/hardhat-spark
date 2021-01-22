@@ -3,7 +3,7 @@ import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
 import { ExampleModule } from './migration';
 
 export const ThirdExampleModule = module('ThirdExampleModule', async (m: ModuleBuilder) => {
-  await m.bindModule(ExampleModule);
+  await m.module(ExampleModule);
 
   const secondExample = m.SecondExample;
   m.contract('FourthExample', secondExample);
