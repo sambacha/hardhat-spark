@@ -38,6 +38,14 @@ export class ModuleStateRepo {
     this.currentModuleName = moduleName;
   }
 
+  clear () {
+    if (!this.test) {
+      throw new CliError('Module state repo is not sutable for memory clear');
+    }
+
+    (this.stateRepo as MemoryModuleState).clear();
+  }
+
   async getStateIfExist(moduleName: string): Promise<ModuleStateFile> {
     return this.stateRepo.getModuleState(this.networkId, moduleName);
   }

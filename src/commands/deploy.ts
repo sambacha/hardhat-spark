@@ -109,9 +109,9 @@ export default class Deploy extends Command {
     const eventHandler = new EventHandler(moduleState);
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler);
 
-    const migrationFilePath = path.resolve(currentPath, filePath);
+    const deploymentFilePath = path.resolve(currentPath, filePath);
 
-    await command.deploy(migrationFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService);
+    await command.deploy(deploymentFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService);
   }
 
   async catch(error: Error) {

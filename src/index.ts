@@ -1,5 +1,3 @@
-// export {run} from '@oclif/command'
-
 import { cli } from 'cli-ux';
 import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
@@ -13,6 +11,7 @@ import { TxExecutor } from './packages/ethereum/transactions/executor';
 import { StateResolver } from './packages/modules/states/state_resolver';
 import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
+import { IConfigService } from './packages/config';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
@@ -33,7 +32,7 @@ export async function deploy(
   txGenerator: EthTxGenerator,
   prompter: Prompter,
   executor: TxExecutor,
-  configService: ConfigService
+  configService: IConfigService
 ) {
   const modules = await require(migrationFilePath);
 
@@ -80,7 +79,7 @@ export async function deploy(
   }
 }
 
-export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: ConfigService) {
+export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: IConfigService) {
   const modules = await require(resolvedPath);
 
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;

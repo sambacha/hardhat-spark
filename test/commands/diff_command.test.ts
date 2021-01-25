@@ -9,36 +9,45 @@ describe('mortar diff - integration', () => {
       cwd: './test/projects-scenarios/single-new-binding'
     });
 
-    assert.equal(output.toString(), '+ Example\n');
+    assert.equal(output.toString(), '\nModule: ExampleModule\n' +
+      '+ Contract Example\n');
     setImmediate(ctx);
   });
+
   it('should be able to show difference in modules - multiple new bindings', ctx => {
     const output = execSync(` ../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
       cwd: './test/projects-scenarios/multiple-new-bindings'
     });
 
-    assert.equal(output.toString(), `+ Example
-+ SecondExample
-  └── Example
+    assert.equal(output.toString(), `
+Module: ExampleModule
++ Contract Example
++ Contract SecondExample
+  └── Contract: Example
 `);
     setImmediate(ctx);
   });
+
   it('should be able to show difference in modules - single modified binding', ctx => {
     const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
       cwd: './test/projects-scenarios/single-modified-binding'
     });
 
-    assert.equal(output.toString(), '~ Example\n');
+    assert.equal(output.toString(), '\nModule: ExampleModule\n' +
+      '~ Example\n');
     setImmediate(ctx);
   });
+
   it('should be able to show difference in modules - multiple modified binding', ctx => {
     const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
       cwd: './test/projects-scenarios/multiple-modified-binding'
     });
 
-    assert.equal(output.toString(), `~ Example
+    assert.equal(output.toString(), `
+Module: ExampleModule
+~ Example
 ~ SecondExample
-  └── Example
+  └── Contract: Example
 `);
     setImmediate(ctx);
   });
@@ -48,15 +57,17 @@ describe('mortar diff - integration', () => {
       cwd: './test/projects-scenarios/no-difference-in-binding'
     });
 
-    assert.equal(output.toString(), 'Nothing changed from last revision.\n');
+    assert.equal(output.toString(), 'Nothing changed from last revision - ExampleModule\n');
     setImmediate(ctx);
   });
+
   it('should fail if their is less bindings in modules compared to deployed one', ctx => {
     const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
       cwd: './test/projects-scenarios/less-bindings'
     });
 
-    assert.equal(output.toString(), 'Currently deployed module is bigger than current module.\n');
+    assert.equal(output.toString(), '\n' +
+      'Module: ExampleModule\n');
     setImmediate(ctx);
   });
 });

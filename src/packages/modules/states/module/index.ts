@@ -13,3 +13,7 @@ export interface IModuleState {
   storeStates(networkId: number, moduleName: string, moduleState: ModuleState | ModuleStateFile | null): Promise<boolean>;
   checkIfSet(moduleName: string , networkId: number): boolean;
 }
+
+export interface IModuleStateCleanup {
+  clear();
+}

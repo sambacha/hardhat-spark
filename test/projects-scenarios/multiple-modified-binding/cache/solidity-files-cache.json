@@ -34,39 +34,6 @@
         "Example"
       ]
     },
-    "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/single-modified-binding/contracts/Example.sol": {
-      "lastModificationDate": 1606317919283,
-      "sourceName": "contracts/Example.sol",
-      "solcConfig": {
-        "version": "0.7.3",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.7.0"
-      ],
-      "artifacts": [
-        "Example"
-      ]
-    },
     "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/multiple-new-bindings/contracts/Example.sol": {
       "lastModificationDate": 1606318709151,
       "sourceName": "contracts/Example.sol",
@@ -135,8 +102,41 @@
         "SecondExample"
       ]
     },
+    "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/multiple-modified-binding/contracts/Example.sol": {
+      "lastModificationDate": 1611579820315,
+      "sourceName": "contracts/Example.sol",
+      "solcConfig": {
+        "version": "0.7.3",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.7.0"
+      ],
+      "artifacts": [
+        "Example"
+      ]
+    },
     "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/multiple-modified-binding/contracts/SecondExample.sol": {
-      "lastModificationDate": 1606320023044,
+      "lastModificationDate": 1611579833644,
       "sourceName": "contracts/SecondExample.sol",
       "solcConfig": {
         "version": "0.7.3",
@@ -168,39 +168,6 @@
       ],
       "artifacts": [
         "SecondExample"
-      ]
-    },
-    "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/multiple-modified-binding/contracts/Example.sol": {
-      "lastModificationDate": 1606320043028,
-      "sourceName": "contracts/Example.sol",
-      "solcConfig": {
-        "version": "0.7.3",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.7.0"
-      ],
-      "artifacts": [
-        "Example"
       ]
     }
   }

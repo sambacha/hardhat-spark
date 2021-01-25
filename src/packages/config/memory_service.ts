@@ -1,25 +1,17 @@
 import { Config } from '../types/config';
-import * as fs from 'fs';
-import * as path from 'path';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { FailedToWriteToFile, MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
+import { MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
 import { checkIfExist } from '../utils/util';
-import { CONFIG_FILENAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
+import { IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
 
-export default class ConfigService implements IConfigService {
-  private readonly configPath: string;
+export default class MemoryConfigService implements IConfigService {
   private config: Config;
 
-  constructor(dirPath: string) {
-    this.configPath = path.resolve(dirPath, CONFIG_FILENAME);
-    let content = '';
-    try {
-      content = fs.readFileSync(this.configPath, {
-        encoding: 'UTF-8'
-      });
-      this.config = JSON.parse(content) as Config;
-    } catch (err) {
+  constructor(config?: Config) {
+    if (checkIfExist(config)) {
+      this.config = config;
+    } else {
       this.config = {
         privateKeys: [],
         mnemonic: '',
@@ -28,13 +20,7 @@ export default class ConfigService implements IConfigService {
     }
   }
 
-  generateAndSaveConfig(privateKeys: string[], mnemonic: string, hdPath: string): boolean {
-    this.config = {
-      privateKeys: privateKeys,
-      mnemonic: mnemonic,
-      hdPath: hdPath,
-    };
-
+  generateAndSaveConfig(privateKeys: string[], mnemonic?: string, hdPath?: string): boolean {
     for (const privateKey of privateKeys) {
       try {
         new ethers.utils.SigningKey(privateKey);
@@ -50,14 +36,14 @@ export default class ConfigService implements IConfigService {
     } catch (error) {
       cli.debug(error);
 
-      throw new MnemonicNotValid('You have provided not valid mnemonic and/or hd path');
+      throw new MnemonicNotValid('You have provided string that is not private key.');
     }
 
-    try {
-      fs.writeFileSync(this.configPath, JSON.stringify(this.config, undefined, 4));
-    } catch (e) {
-      throw new FailedToWriteToFile('Failed to write to file.');
-    }
+    this.config = {
+      privateKeys: privateKeys,
+      mnemonic: mnemonic,
+      hdPath: hdPath,
+    };
 
     return true;
   }
@@ -65,13 +51,9 @@ export default class ConfigService implements IConfigService {
   getAllWallets(rpcPath: string): ethers.Wallet[] {
     const wallets = [];
 
-    const content = fs.readFileSync(this.configPath, {
-      encoding: 'UTF-8'
-    });
-    const config = (JSON.parse(content) as Config);
-    const privateKeys = config.privateKeys;
-    const mnemonic = config.mnemonic;
-    let hdPath = config.hdPath;
+    const privateKeys = this.config.privateKeys;
+    const mnemonic = this.config.mnemonic;
+    let hdPath = this.config.hdPath;
 
     const provider = new ethers.providers.JsonRpcProvider(rpcPath);
 
@@ -81,7 +63,12 @@ export default class ConfigService implements IConfigService {
       wallets.push(wallet);
     }
 
-    if (checkIfExist(hdPath) && checkIfExist(mnemonic)) {
+    if (
+      checkIfExist(hdPath) &&
+      checkIfExist(mnemonic) &&
+      hdPath != '' &&
+      mnemonic != ''
+    ) {
       for (let i = 0; i < NUMBER_OF_HD_ACCOUNTS; i++) {
         const components = hdPath.split('/');
         components[components.length - 1] = String(i);
@@ -97,11 +84,7 @@ export default class ConfigService implements IConfigService {
   }
 
   getFirstPrivateKey(): string {
-    const content = fs.readFileSync(this.configPath, {
-      encoding: 'UTF-8'
-    });
-
-    const privateKeys = (JSON.parse(content) as Config).privateKeys;
+    const privateKeys = this.config.privateKeys;
     try {
       new ethers.utils.SigningKey(privateKeys[0]);
     } catch (error) {

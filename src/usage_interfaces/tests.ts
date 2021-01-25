@@ -1,0 +1,92 @@
+import { ConfigFlags, IMortarUsage } from './index';
+import * as command from '../index';
+import { checkIfExist } from '../packages/utils/util';
+import { ethers } from 'ethers';
+import { Prompter } from '../packages/prompter';
+import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
+import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
+import { ModuleStateRepo } from '../packages/modules/states/state_repo';
+import { ModuleResolver } from '../packages/modules/module_resolver';
+import { EventHandler } from '../packages/modules/events/handler';
+import { TxExecutor } from '../packages/ethereum/transactions/executor';
+import { Config } from '../packages/types/config';
+import MemoryConfigService from '../packages/config/memory_service';
+import { IConfigService } from '../packages/config';
+import { IGasProvider } from '../packages/ethereum/gas';
+import { ModuleStateFile } from '../packages/modules/states/module';
+
+
+export class MortarTests implements IMortarUsage {
+  public configFlags: ConfigFlags;
+  public configFile: Config;
+
+  public states: string[];
+  public provider: ethers.providers.JsonRpcProvider;
+  public prompter: Prompter;
+  public configService: IConfigService;
+  public gasProvider: IGasProvider;
+  public txGenerator: EthTxGenerator;
+  public moduleStateRepo: ModuleStateRepo;
+  public moduleResolver: ModuleResolver;
+  public eventHandler: EventHandler;
+  public txExecutor: TxExecutor;
+
+  constructor(configFlags: ConfigFlags, configFile: Config) {
+    process.env.MORTAR_NETWORK_ID = String(configFlags.networkId);
+    this.states = configFlags.stateFileNames;
+
+    this.provider = new ethers.providers.JsonRpcProvider();
+    if (checkIfExist(configFlags.rpcProvider)) {
+      this.provider = new ethers.providers.JsonRpcProvider(configFlags.rpcProvider);
+    }
+
+    process.env.MORTAR_RPC_PROVIDER = String(configFlags.rpcProvider || 'http://localhost:8545');
+
+    this.prompter = new Prompter(true);
+    this.configService = new MemoryConfigService(configFile);
+
+    this.gasProvider = new GasPriceCalculator(this.provider);
+    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider);
+
+    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
+    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo);
+
+    this.eventHandler = new EventHandler(this.moduleStateRepo);
+    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler);
+  }
+
+  cleanup() {
+    this.moduleStateRepo.clear();
+  }
+
+  setStateFile(moduleName: string, stateFile: ModuleStateFile) {
+    this.moduleStateRepo.storeNewState(moduleName, stateFile);
+  }
+
+  async getStateFile(moduleName: string): Promise<ModuleStateFile> {
+    return this.moduleStateRepo.getStateIfExist(moduleName);
+  }
+
+  async deploy(deploymentFilePath: string): Promise<void> {
+    await command.deploy(
+      deploymentFilePath,
+      this.states,
+      this.moduleStateRepo,
+      this.moduleResolver,
+      this.txGenerator,
+      this.prompter,
+      this.txExecutor,
+      this.configService
+    );
+  }
+
+  async diff(deploymentFilePath: string): Promise<void> {
+    await command.diff(
+      deploymentFilePath,
+      this.states,
+      this.moduleResolver,
+      this.moduleStateRepo,
+      this.configService
+    );
+  }
+}

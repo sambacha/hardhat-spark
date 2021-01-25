@@ -1,7 +1,7 @@
-import { ContractBinding } from '../../src/interfaces/mortar';
 import fs from 'fs';
+import { ModuleStateFile } from '../../lib/packages/modules/states/module';
 
-export function getStateIfExist(dir: string): { [p: string]: ContractBinding } | null {
+export function getStateIfExist(dir: string): ModuleStateFile {
   if (!fs.existsSync(dir)) {
     return undefined;
   }
@@ -11,7 +11,7 @@ export function getStateIfExist(dir: string): { [p: string]: ContractBinding } |
   }));
 }
 
-export function storeNewState(dir: string, state: { [p: string]: ContractBinding } | null): void {
+export function storeNewState(dir: string, state: ModuleStateFile | null): void {
   if (state == undefined) {
     state = {};
   }

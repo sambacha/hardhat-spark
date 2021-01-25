@@ -35,7 +35,7 @@
       ]
     },
     "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/single-modified-binding/contracts/Example.sol": {
-      "lastModificationDate": 1606317919283,
+      "lastModificationDate": 1611579006144,
       "sourceName": "contracts/Example.sol",
       "solcConfig": {
         "version": "0.7.3",

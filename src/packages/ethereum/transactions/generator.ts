@@ -1,6 +1,4 @@
 import { ContractBinding, TransactionData } from '../../../interfaces/mortar';
-import ConfigService from '../../config/service';
-import { GasPriceCalculator } from '../gas/calculator';
 import { checkIfExist } from '../../utils/util';
 import { Wallet, providers, BigNumber } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
@@ -8,7 +6,8 @@ import { ModuleState } from '../../modules/states/module';
 import { SingleContractLinkReference } from '../../types/artifacts/libraries';
 import { CliError } from '../../types/errors';
 import { ethers } from 'ethers';
-import { IGasCalculator, IGasPriceCalculator, IGasProvider } from '../gas';
+import { IGasCalculator, IGasPriceCalculator } from '../gas';
+import { IConfigService } from '../../config';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -16,7 +15,7 @@ export type TxMetaData = {
 };
 
 export class EthTxGenerator {
-  private configService: ConfigService;
+  private configService: IConfigService;
   private gasPriceCalculator: IGasPriceCalculator;
   private gasCalculator: IGasCalculator;
   private readonly ethers: providers.JsonRpcProvider;
@@ -24,7 +23,7 @@ export class EthTxGenerator {
   private readonly networkId: number;
   private nonceMap: { [address: string]: number };
 
-  constructor(configService: ConfigService, gasPriceCalculator: IGasPriceCalculator, gasCalculator: IGasCalculator, networkId: number, ethers: providers.JsonRpcProvider) {
+  constructor(configService: IConfigService, gasPriceCalculator: IGasPriceCalculator, gasCalculator: IGasCalculator, networkId: number, ethers: providers.JsonRpcProvider) {
     this.configService = configService;
     this.ethers = ethers;
 

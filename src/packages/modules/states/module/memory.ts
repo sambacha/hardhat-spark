@@ -1,8 +1,8 @@
-import { IModuleState, ModuleState, ModuleStateFile } from './index';
+import { IModuleState, IModuleStateCleanup, ModuleState, ModuleStateFile } from './index';
 import { ModuleStateRepo } from '../state_repo';
 import { checkIfExist } from '../../../utils/util';
 
-export class MemoryModuleState implements IModuleState {
+export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
   private mutex: boolean;
   private state: {
     [networkId: string]: {
@@ -12,6 +12,10 @@ export class MemoryModuleState implements IModuleState {
 
   constructor(mutex: boolean) {
     this.mutex = mutex;
+    this.state = {};
+  }
+
+  clear() {
     this.state = {};
   }
 
