@@ -12,6 +12,7 @@ import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { checkIfExist } from '../../utils/util';
 import { FileSystemModuleState } from './module/file_system';
 import { IModuleState, ModuleState, ModuleStateFile } from './module';
+import { MemoryModuleState } from './module/memory';
 
 export class ModuleStateRepo {
   // @ts-ignore
@@ -21,14 +22,15 @@ export class ModuleStateRepo {
   private stateRepo: IModuleState;
   private currentModuleName: string;
   private currentEventName: string;
+  private test: boolean;
 
-  constructor(networkId: number, currentPath: string, mutex: boolean = false) {
+  constructor(networkId: number, currentPath: string, mutex: boolean = false, testEnv: boolean = false) {
     this.mutex = mutex;
-
     this.networkId = networkId;
-    this.stateRepo = new FileSystemModuleState(currentPath, mutex);
+    this.stateRepo = testEnv ? new MemoryModuleState(mutex) : new FileSystemModuleState(currentPath, mutex);
     this.currentModuleName = '';
     this.currentEventName = '';
+    this.test = testEnv;
   }
 
   initStateRepo(moduleName: string): void {

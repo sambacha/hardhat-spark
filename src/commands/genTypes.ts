@@ -1,6 +1,6 @@
 import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
-import { PathNotProvided } from '../packages/types/errors';
+import { PathNotProvided, UserError } from '../packages/types/errors';
 import path from 'path';
 import { ModuleTypings } from '../packages/modules/typings';
 import * as command from '../index';
@@ -36,5 +36,17 @@ export default class GenTypes extends Command {
     const typings = new ModuleTypings(currentPath);
 
     await command.genTypes(resolvedPath, typings);
+  }
+
+  async catch(error: Error) {
+    if (error instanceof UserError) {
+      cli.info(error.message);
+      cli.exit(0);
+    }
+
+    cli.error(error);
+    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    await cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
+    cli.exit(1);
   }
 }

@@ -57,7 +57,8 @@ export default class Init extends Command {
     }
 
     cli.error(error);
-    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ');
+    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    await cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
     cli.exit(1);
   }
 }

@@ -55,8 +55,7 @@ export async function deploy(
     const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
     prompter.startModuleDeploy(moduleName);
     if (!checkIfExist(moduleState)) {
-      cli.info('Nothing to deploy');
-      process.exit(0);
+      prompter.nothingToDeploy();
     }
 
     // initialize empty tx data
@@ -81,11 +80,15 @@ export async function deploy(
   }
 }
 
-export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo) {
+export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: ConfigService) {
   const modules = await require(resolvedPath);
+
+  const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
+  const wallets = configService.getAllWallets(rpcProvider);
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {
     const module = await modFunc as Module;
+    await module.init(wallets);
 
     let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
     for (const moduleStateName of states) {

@@ -11,6 +11,11 @@ export class Prompter {
     this.whitespaces = '';
   }
 
+  nothingToDeploy() {
+    cli.info('State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.');
+    cli.exit(0);
+  }
+
   startModuleDeploy(moduleName: string): void {
     cli.info(chalk.bold('\nDeploy module - ', chalk.green(moduleName)));
     this.whitespaces += '  ';

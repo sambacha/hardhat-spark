@@ -69,7 +69,7 @@ export default class Diff extends Command {
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);
     const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo);
 
-    await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo);
+    await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo, configService);
   }
 
   async catch(error: Error) {
@@ -79,7 +79,8 @@ export default class Diff extends Command {
     }
 
     cli.info(error.message);
-    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you. issue_page_link ');
+    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    await cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
     cli.exit(1);
   }
 }

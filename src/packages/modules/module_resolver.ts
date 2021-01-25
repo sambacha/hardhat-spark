@@ -8,7 +8,7 @@ import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { Prompter } from '../prompter';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { UsageBindingNotFound, UsageEventNotFound, UserError } from '../types/errors';
+import { UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
@@ -192,7 +192,8 @@ export class ModuleResolver {
       stateFileElement = stateFileElement as ContractBindingMetaData;
       if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
         if (!(resolvedModuleStateElement instanceof ContractBinding)) {
-          throw new UserError("Module and module state file didn't match element.");
+          throw new UserError(`Module and module state file didn't match state element name:
+Module file: ${resolvedModuleStateElement.event.name}`);
         }
 
         if (

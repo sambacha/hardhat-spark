@@ -14,7 +14,6 @@ import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/exe
 import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
-import ConfigService from '../packages/config/service';
 import { IGasPriceCalculator } from '../packages/ethereum/gas';
 
 export type AutoBinding = any | Binding | ContractBinding;
@@ -1003,7 +1002,7 @@ export class ContractBindingMetaData {
 export class ModuleBuilder {
   [key: string]: ContractBinding | Event | Action | any;
 
-  private params: { [name: string]: any };
+  private opts: ModuleOptions;
   private readonly bindings: { [name: string]: ContractBinding };
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
@@ -1026,9 +1025,10 @@ export class ModuleBuilder {
       onCompletion: {},
       onStart: {}
     };
-    this.params = {};
-
-    if (typeof opts !== 'undefined') {
+    this.opts = {
+      params: {}
+    };
+    if (checkIfExist(opts)) {
       this.opts = opts as ModuleOptions;
     }
   }
@@ -1073,11 +1073,15 @@ export class ModuleBuilder {
   }
 
   param(name: string, value: any) {
-    this.params[name] = value;
+    this.opts.params[name] = value;
   }
 
   getParam(name: string): any {
-    return this.params[name];
+    return this.opts.params[name];
+  }
+
+  setParam(opts: ModuleOptions) {
+    this.opts = opts;
   }
 
   // bindDeployed(name: string, address: string, network?: string): DeployedBinding;
@@ -1139,19 +1143,13 @@ export class ModuleBuilder {
     return action;
   }
 
-  async bindModules(wallets: ethers.Wallet[], ...modules: (Module | Promise<Module>)[]): Promise<void> {
-    for (const module of modules) {
-      await this.module(module, wallets);
-    }
-  }
-
-  async module(m: Module | Promise<Module>, wallets?: ethers.Wallet[]): Promise<void> {
+  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
     if (m instanceof Promise) {
       m = await m;
     }
 
     if (!m.isInitialized()) {
-      await m.init(wallets, this);
+      await m.init(wallets, this, opts);
     }
 
     const bindings = m.getAllBindings();
@@ -1274,7 +1272,7 @@ export class Module {
   private fn: ModuleBuilderFn;
 
   readonly name: string;
-  // private opts: ModuleOptions;
+  private opts: ModuleOptions;
   private bindings: { [name: string]: ContractBinding };
   private events: Events;
   private moduleEvents: ModuleEvents;
@@ -1293,6 +1291,10 @@ export class Module {
     this.name = moduleName;
     this.fn = fn;
     this.moduleConfig = moduleConfig;
+
+    this.opts = {
+      params: {}
+    };
   }
 
   // call(name: string, ...args: any[]): void;
@@ -1309,8 +1311,12 @@ export class Module {
     return this.initialized;
   }
 
-  async init(wallets?: ethers.Wallet[], m?: ModuleBuilder) {
-    let moduleBuilder = m ? m : new ModuleBuilder();
+  async init(wallets?: ethers.Wallet[], m?: ModuleBuilder, opts?: ModuleOptions) {
+    if (checkIfExist(opts)) {
+      this.opts = opts;
+    }
+    let moduleBuilder = m ? m : new ModuleBuilder(opts);
+    moduleBuilder.setParam(opts);
     await this.fn(moduleBuilder, wallets);
 
     moduleBuilder = await handleModule(moduleBuilder, this.name);

@@ -13,6 +13,7 @@ import { cli } from 'cli-ux';
 import * as command from '../index';
 import { EventHandler } from '../packages/modules/events/handler';
 import { UserError } from '../packages/types/errors';
+import chalk from 'chalk';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -49,6 +50,12 @@ export default class Deploy extends Command {
       {
         name: 'state',
         description: 'Provide name of module\'s that you would want to use as state. Most commonly used if you are deploying more than one module that are dependant on each other.',
+      }
+    ),
+    testEnv: flags.boolean(
+      {
+        name: 'testEnv',
+        description: 'This should be provided in case of test and/or CI/CD, it means that no state file will be store.'
       }
     ),
     help: flags.help({char: 'h'}),
@@ -96,7 +103,7 @@ export default class Deploy extends Command {
     const gasCalculator = new GasPriceCalculator(provider);
     const txGenerator = await new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider);
 
-    const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex);
+    const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex, flags.testEnv);
     const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState);
 
     const eventHandler = new EventHandler(moduleState);
@@ -109,11 +116,12 @@ export default class Deploy extends Command {
 
   async catch(error: Error) {
     if (error instanceof UserError) {
-      cli.info(error.message);
+      cli.info(chalk.red.bold('ERROR'), error.message);
       cli.exit(1);
     }
 
-    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you at issue_page_link');
+    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
     cli.error(error);
   }
 }
