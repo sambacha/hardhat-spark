@@ -1,20 +1,19 @@
 import { ContractBinding, TransactionData } from '../../../interfaces/mortar';
 import { checkIfExist } from '../../utils/util';
 import { Wallet, providers, BigNumber } from 'ethers';
-import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { ModuleState } from '../../modules/states/module';
 import { SingleContractLinkReference } from '../../types/artifacts/libraries';
 import { CliError } from '../../types/errors';
-import { ethers } from 'ethers';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { IConfigService } from '../../config';
+import { INonceManager, ITransactionSigner } from './index';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
   nonce?: number
 };
 
-export class EthTxGenerator {
+export class EthTxGenerator implements INonceManager, ITransactionSigner {
   private configService: IConfigService;
   private gasPriceCalculator: IGasPriceCalculator;
   private gasCalculator: IGasCalculator;
@@ -22,8 +21,18 @@ export class EthTxGenerator {
   private readonly wallet: Wallet;
   private readonly networkId: number;
   private nonceMap: { [address: string]: number };
+  private nonceManager: INonceManager;
+  private transactionSigner: ITransactionSigner;
 
-  constructor(configService: IConfigService, gasPriceCalculator: IGasPriceCalculator, gasCalculator: IGasCalculator, networkId: number, ethers: providers.JsonRpcProvider) {
+  constructor(
+    configService: IConfigService,
+    gasPriceCalculator: IGasPriceCalculator,
+    gasCalculator: IGasCalculator,
+    networkId: number,
+    ethers: providers.JsonRpcProvider,
+    nonceManager: INonceManager,
+    transactionSigner: ITransactionSigner
+  ) {
     this.configService = configService;
     this.ethers = ethers;
 
@@ -32,10 +41,20 @@ export class EthTxGenerator {
     this.gasCalculator = gasCalculator;
     this.networkId = networkId;
     this.nonceMap = {};
+    this.nonceManager = nonceManager;
+    this.transactionSigner = transactionSigner;
   }
 
   changeGasPriceCalculator(newGasPriceCalculator: IGasPriceCalculator) {
     this.gasPriceCalculator = newGasPriceCalculator;
+  }
+
+  changeNonceManager(newNonceManager: INonceManager) {
+    this.nonceManager = newNonceManager;
+  }
+
+  changeTransactionSinger(newTransactionSinger: ITransactionSigner) {
+    this.transactionSigner = newTransactionSinger;
   }
 
   initTx(moduleState: ModuleState): ModuleState {
@@ -61,38 +80,6 @@ export class EthTxGenerator {
     }
 
     return moduleState;
-  }
-
-  async getTransactionCount(walletAddress: string): Promise<number> {
-    if (!checkIfExist((this.nonceMap)[walletAddress])) {
-      (this.nonceMap)[walletAddress] = await this.ethers.getTransactionCount(walletAddress);
-      return (this.nonceMap)[walletAddress]++;
-    }
-
-    // @TODO: what nonce has increased in the mean time? (other tx, other deployment, etc.)
-    return (this.nonceMap)[walletAddress]++;
-  }
-
-  async generateSingedTx(value: number, data: string, wallet?: ethers.Wallet | undefined): Promise<string> {
-    const gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
-
-    const tx: TransactionRequest = {
-      from: this.wallet.address,
-      value: value,
-      gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
-      gasLimit: gas,
-      data: data,
-      chainId: this.networkId
-    };
-
-    if (wallet) {
-      tx.from = wallet.address;
-      tx.nonce = await this.getTransactionCount(await wallet.getAddress());
-      return wallet.signTransaction(tx);
-    }
-
-    tx.nonce = await this.getTransactionCount(await this.wallet.getAddress());
-    return this.wallet.signTransaction(tx);
   }
 
   addLibraryAddresses(bytecode: string, binding: ContractBinding, moduleState: ModuleState): string {
@@ -121,7 +108,15 @@ export class EthTxGenerator {
   async fetchTxData(walletAddress: string): Promise<TxMetaData> {
     return {
       gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
-      nonce: await this.getTransactionCount(walletAddress),
+      nonce: await this.nonceManager.getTransactionCount(walletAddress),
     };
+  }
+
+  generateSingedTx(value: number, data: string, wallet?: Wallet | undefined): Promise<string> {
+    return this.transactionSigner.generateSingedTx(value, data, wallet);
+  }
+
+  getTransactionCount(walletAddress: string): Promise<number> {
+    return this.nonceManager.getTransactionCount(walletAddress);
   }
 }

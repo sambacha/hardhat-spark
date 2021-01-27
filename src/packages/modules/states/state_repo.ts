@@ -54,8 +54,12 @@ export class ModuleStateRepo {
     await this.stateRepo.storeStates(this.networkId, moduleName, moduleState);
   }
 
-  async setSingleEventName(currentEventName: string): Promise<void> {
+  setSingleEventName(currentEventName: string): void {
     this.currentEventName = currentEventName;
+  }
+
+  getSingleEventName(): string {
+    return this.currentEventName;
   }
 
   async finishCurrentEvent(): Promise<void> {

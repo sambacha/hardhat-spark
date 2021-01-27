@@ -15,6 +15,8 @@ import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/type
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import { IGasPriceCalculator } from '../packages/ethereum/gas';
+import { INonceManager, ITransactionSigner } from '../packages/ethereum/transactions';
+import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -106,9 +108,9 @@ export interface DeployEvent extends BaseEvent {
   fn: RedeployFn;
 }
 
-export type ModuleEvent = { name: string, eventType: string, fn: ModuleEventFn };
+export type ModuleEvent = { name: string, eventType: EventType, fn: ModuleEventFn };
 
-export type MetaDataEvent = { name: string, eventType: string, deps?: string[], eventDeps?: string[], usage?: string[], eventUsage?: string[] };
+export type MetaDataEvent = { name: string, eventType: EventType, deps?: string[], eventDeps?: string[], usage?: string[], eventUsage?: string[] };
 
 export type ContractEvent =
   BeforeDeployEvent |
@@ -421,6 +423,7 @@ export class ContractBinding extends Binding {
   public prompter: Prompter | undefined;
   public txGenerator: EthTxGenerator | undefined;
   public moduleStateRepo: ModuleStateRepo | undefined;
+  public eventTxExecutor: EventTxExecutor | undefined;
 
   constructor(
     // metadata
@@ -432,6 +435,7 @@ export class ContractBinding extends Binding {
     prompter?: Prompter,
     txGenerator?: EthTxGenerator,
     moduleStateRepo?: ModuleStateRepo,
+    eventTxExecutor?: EventTxExecutor,
   ) {
     super(name);
     this.args = args;
@@ -466,6 +470,7 @@ export class ContractBinding extends Binding {
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
+    this.eventTxExecutor = eventTxExecutor;
 
     this.forceFlag = false;
   }
@@ -486,7 +491,8 @@ export class ContractBinding extends Binding {
       this.signer as ethers.Signer,
       this.prompter as Prompter,
       this.txGenerator as EthTxGenerator,
-      this.moduleStateRepo as ModuleStateRepo
+      this.moduleStateRepo as ModuleStateRepo,
+      this.eventTxExecutor as EventTxExecutor
     ) as unknown as ethers.Contract;
 
     return this.contractInstance;
@@ -702,6 +708,7 @@ export class FactoryContractBinding extends ContractBinding {
       contractBinding.prompter,
       contractBinding.txGenerator,
       contractBinding.moduleStateRepo,
+      contractBinding.eventTxExecutor
     );
   }
 
@@ -737,6 +744,7 @@ export class ProxyContract extends ContractBinding {
       contractBinding.prompter,
       contractBinding.txGenerator,
       contractBinding.moduleStateRepo,
+      contractBinding.eventTxExecutor,
     );
   }
 
@@ -775,7 +783,7 @@ export type ContractInput = {
 };
 
 export type TransactionData = {
-  input: TxData | undefined
+  input: TxData | TransactionResponse | undefined
   output: TransactionReceipt | undefined
 };
 
@@ -799,6 +807,7 @@ export class ContractInstance {
   private readonly contractBinding: ContractBinding;
   private readonly prompter: Prompter;
   private readonly moduleStateRepo: ModuleStateRepo;
+  private readonly eventTxExecutor: EventTxExecutor;
 
   [key: string]: any;
 
@@ -810,10 +819,12 @@ export class ContractInstance {
     prompter: Prompter,
     txGenerator: EthTxGenerator,
     moduleStateRepo: ModuleStateRepo,
+    eventTxExecutor: EventTxExecutor,
   ) {
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.contractBinding = contractBinding;
+    this.eventTxExecutor = eventTxExecutor;
 
     if (!checkIfExist(this.contractBinding?.contractTxProgress)) {
       this.contractBinding.contractTxProgress = 0;
@@ -857,82 +868,87 @@ export class ContractInstance {
   }
 
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
-    return async (...args: Array<any>): Promise<TransactionResponse> => {
-      // allowing user to override ethers with his override params
+    return async function (...args: Array<any>): Promise<TransactionResponse> {
+      const func = async (...args: Array<any>): Promise<TransactionResponse> => {
+        // @TODO add option validation also
+        if (args.length > fragment.inputs.length + 1) {
+          throw new UserError(`Trying to call contract function with more arguments then in interface - ${fragment.name}`);
+        }
 
-      // @TODO add option validation also
-      if (args.length > fragment.inputs.length + 1) {
-        throw new UserError(`Trying to call contract function with more arguments then in interface - ${fragment.name}`);
-      }
+        if (args.length < fragment.inputs.length) {
+          throw new UserError(`Trying to call contract function with less arguments then in interface - ${fragment.name}`);
+        }
 
-      if (args.length < fragment.inputs.length) {
-        throw new UserError(`Trying to call contract function with less arguments then in interface - ${fragment.name}`);
-      }
+        let overrides: CallOverrides = {};
+        if (args.length === fragment.inputs.length + 1) {
+          overrides = args.pop() as CallOverrides;
+        }
 
-      let overrides: CallOverrides = {};
-      if (args.length === fragment.inputs.length + 1) {
-        overrides = args.pop() as CallOverrides;
-      }
+        args = ContractInstance.formatArgs(args);
 
-      args = ContractInstance.formatArgs(args);
+        let contractTxIterator = this.contractBinding?.contractTxProgress || 0;
 
-      let contractTxIterator = this.contractBinding?.contractTxProgress || 0;
+        const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.contractBinding.name);
 
-      const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.contractBinding.name);
+        if (currentEventTransactionData.contractOutput.length > contractTxIterator) {
+          this.contractBinding.contractTxProgress = ++contractTxIterator;
+          return currentEventTransactionData.contractOutput[contractTxIterator - 1];
+        }
 
-      if (currentEventTransactionData.contractOutput.length > contractTxIterator) {
+        const currentInputs = currentEventTransactionData.contractInput[contractTxIterator];
+        const contractOutput = currentEventTransactionData.contractOutput[contractTxIterator];
+
+        if (checkIfExist(currentInputs) &&
+          checkIfSameInputs(currentInputs, fragment.name, args) && checkIfExist(contractOutput)) {
+          cli.info('Contract function already executed: ', fragment.name, ...args, '... skipping');
+
+          this.contractBinding.contractTxProgress = ++contractTxIterator;
+          return contractOutput;
+        }
+
+        if (
+          (checkIfExist(currentInputs) && !checkIfSameInputs(currentInputs, fragment.name, args)) ||
+          !checkIfExist(currentInputs)
+        ) {
+          currentEventTransactionData.contractInput[contractTxIterator] = {
+            functionName: fragment.name,
+            inputs: args,
+          } as ContractInput;
+        }
+
+        this.prompter.executeContractFunction(fragment.name);
+        cli.debug(fragment.name, ...args);
+        await this.prompter.promptExecuteTx();
+
+        const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress());
+        overrides = {
+          gasPrice: overrides.gasPrice ? overrides.gasPrice : txData.gasPrice,
+          value: overrides.value ? overrides.value : undefined,
+          gasLimit: overrides.gasLimit ? overrides.gasLimit : undefined,
+          nonce: txData.nonce,
+        };
+
+        await this.prompter.sendingTx();
+        // @TODO think how to gracefully block here... (yield or whatever)
+        const tx = await contractFunction(...args, overrides);
+        await this.prompter.sentTx();
+
+        this.prompter.waitTransactionConfirmation();
+        const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
+        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt);
+        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER);
+
         this.contractBinding.contractTxProgress = ++contractTxIterator;
-        return currentEventTransactionData.contractOutput[contractTxIterator - 1];
-      }
 
-      const currentInputs = currentEventTransactionData.contractInput[contractTxIterator];
-      const contractOutput = currentEventTransactionData.contractOutput[contractTxIterator];
-
-      if (checkIfExist(currentInputs) &&
-        checkIfSameInputs(currentInputs, fragment.name, args) && checkIfExist(contractOutput)) {
-        cli.info('Contract function already executed: ', fragment.name, ...args, '... skipping');
-
-        this.contractBinding.contractTxProgress = ++contractTxIterator;
-        return contractOutput;
-      }
-
-      if (
-        (checkIfExist(currentInputs) && !checkIfSameInputs(currentInputs, fragment.name, args)) ||
-        !checkIfExist(currentInputs)
-      ) {
-        currentEventTransactionData.contractInput[contractTxIterator] = {
-          functionName: fragment.name,
-          inputs: args,
-        } as ContractInput;
-      }
-
-      this.prompter.executeContractFunction(fragment.name);
-      cli.debug(fragment.name, ...args);
-      await this.prompter.promptExecuteTx();
-
-      const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress());
-      overrides = {
-        gasPrice: overrides.gasPrice ? overrides.gasPrice : txData.gasPrice,
-        value: overrides.value ? overrides.value : undefined,
-        gasLimit: overrides.gasLimit ? overrides.gasLimit : undefined,
-        nonce: txData.nonce,
+        this.prompter.finishedExecutionOfContractFunction(fragment.name);
+        return tx;
       };
 
-      await this.prompter.sendingTx();
-      const tx = await contractFunction(...args, overrides);
-      await this.prompter.sentTx();
+      const currentEventAbstraction = this.moduleStateRepo.getSingleEventName();
+      this.eventTxExecutor.add(currentEventAbstraction, func);
 
-      this.prompter.waitTransactionConfirmation();
-      const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
-      await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt);
-      this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER);
-
-      this.contractBinding.contractTxProgress = ++contractTxIterator;
-
-      this.prompter.finishedExecutionOfContractFunction(fragment.name);
-
-      return tx;
-    };
+      return this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
+    }.bind(this);
   }
 
   private buildConstantWrappers(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
@@ -1008,9 +1024,12 @@ export class ModuleBuilder {
   private readonly moduleEvents: ModuleEvents;
   private readonly actions: { [name: string]: Action };
   private prototypes: { [name: string]: Prototype };
+
   private resolver: IModuleRegistryResolver | undefined;
   private registry: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;
+  private nonceManager: INonceManager | undefined;
+  private transactionSigner: ITransactionSigner | undefined;
 
   constructor(opts?: ModuleOptions) {
     this.bindings = {};
@@ -1209,12 +1228,28 @@ export class ModuleBuilder {
     this.registry = registry;
   }
 
-  setGasPriceProvider(provider: IGasPriceCalculator): void {
+  setCustomGasPriceProvider(provider: IGasPriceCalculator): void {
     this.gasPriceProvider = provider;
   }
 
-  getGasPriceProvider(): IGasPriceCalculator {
+  getCustomGasPriceProvider(): IGasPriceCalculator {
     return this.gasPriceProvider;
+  }
+
+  setCustomNonceManager(nonceManager: INonceManager): void {
+    this.nonceManager = nonceManager;
+  }
+
+  getCustomNonceManager(): INonceManager {
+    return this.nonceManager;
+  }
+
+  setCustomTransactionSigner(txSigner: ITransactionSigner): void {
+    this.transactionSigner = txSigner;
+  }
+
+  getCustomTransactionSigner(): ITransactionSigner {
+    return this.transactionSigner;
   }
 
   getRegistry(): IModuleRegistryResolver | undefined {
@@ -1229,7 +1264,7 @@ export class ModuleBuilder {
   onStart(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onStart[eventName] = {
       name: eventName,
-      eventType: 'OnStart',
+      eventType: EventType.OnStart,
       fn: fn
     };
   }
@@ -1237,7 +1272,7 @@ export class ModuleBuilder {
   onCompletion(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onCompletion[eventName] = {
       name: eventName,
-      eventType: 'OnCompletion',
+      eventType: EventType.OnCompletion,
       fn: fn
     };
   }
@@ -1245,7 +1280,7 @@ export class ModuleBuilder {
   onSuccess(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onSuccess[eventName] = {
       name: eventName,
-      eventType: 'OnSuccess',
+      eventType: EventType.OnSuccess,
       fn: fn
     };
   }
@@ -1253,7 +1288,7 @@ export class ModuleBuilder {
   onFail(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onFail[eventName] = {
       name: eventName,
-      eventType: 'OnFail',
+      eventType: EventType.OnFail,
       fn: fn
     };
   }
@@ -1282,6 +1317,8 @@ export class Module {
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;
+  private nonceManager: INonceManager | undefined;
+  private transactionSinger: ITransactionSigner | undefined;
 
   constructor(
     moduleName: string,
@@ -1327,7 +1364,9 @@ export class Module {
     this.actions = moduleBuilder.getAllActions();
     this.registry = moduleBuilder.getRegistry();
     this.resolver = moduleBuilder.getResolver();
-    this.gasPriceProvider = moduleBuilder.getGasPriceProvider();
+    this.gasPriceProvider = moduleBuilder.getCustomGasPriceProvider();
+    this.nonceManager = moduleBuilder.getCustomNonceManager();
+    this.transactionSinger = moduleBuilder.getCustomTransactionSigner();
     this.prototypes = moduleBuilder.getAllPrototypes();
 
     this.initialized = true;
@@ -1377,8 +1416,16 @@ export class Module {
     return this.prototypes;
   }
 
-  getGasPriceProvider(): IGasPriceCalculator {
+  getCustomGasPriceProvider(): IGasPriceCalculator {
     return this.gasPriceProvider;
+  }
+
+  getCustomNonceManager(): INonceManager {
+    return this.nonceManager;
+  }
+
+  getCustomTransactionSinger(): ITransactionSigner {
+    return this.transactionSinger;
   }
 }
 

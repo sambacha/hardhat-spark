@@ -63,6 +63,7 @@ export default class ConfigService implements IConfigService {
   }
 
   getAllWallets(rpcPath: string): ethers.Wallet[] {
+    // @TODO wrap wallets to store all transaction triggered from them to state file
     const wallets = [];
 
     const content = fs.readFileSync(this.configPath, {

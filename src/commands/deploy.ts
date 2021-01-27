@@ -8,12 +8,14 @@ import ConfigService from '../packages/config/service';
 import { Prompter } from '../packages/prompter';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
-import { ethers } from 'ethers';
+import { ethers, Wallet } from 'ethers';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { EventHandler } from '../packages/modules/events/handler';
 import { UserError } from '../packages/types/errors';
 import chalk from 'chalk';
+import { TransactionManager } from '../packages/ethereum/transactions/manager';
+import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -38,6 +40,13 @@ export default class Deploy extends Command {
       {
         name: 'debug',
         description: 'Used for debugging purposes.'
+      }
+    ),
+    parallelize: flags.boolean(
+      {
+        name: 'parallelize',
+        description: 'If this flag is provided mortar will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
+        required: false,
       }
     ),
     yes: flags.boolean(
@@ -101,13 +110,15 @@ export default class Deploy extends Command {
     const configService = new ConfigService(currentPath);
 
     const gasCalculator = new GasPriceCalculator(provider);
-    const txGenerator = await new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider);
+    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
 
     const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex, flags.testEnv);
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState);
+    const eventTxExecutor = new EventTxExecutor();
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState, eventTxExecutor);
 
     const eventHandler = new EventHandler(moduleState);
-    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler);
+    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler, flags.parallelize);
 
     const deploymentFilePath = path.resolve(currentPath, filePath);
 

@@ -6,7 +6,11 @@
     "outDir": "lib",
     "rootDir": "src",
     "target": "es2017",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "lib": [
+      "es2017.full",
+      "es2018.asyncgenerator"
+    ]
   },
   "exclude": [
     "node_modules",

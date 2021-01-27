@@ -12,18 +12,21 @@ import { UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
+import { EventTxExecutor } from '../ethereum/transactions/event_executor';
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
   private readonly prompter: Prompter;
   private readonly txGenerator: EthTxGenerator;
   private readonly moduleStateRepo: ModuleStateRepo;
+  private readonly eventTxExecutor: EventTxExecutor;
 
-  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: Prompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo) {
+  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: Prompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo, eventTxExecutor: EventTxExecutor) {
     this.signer = new ethers.Wallet(privateKey, provider);
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
+    this.eventTxExecutor = eventTxExecutor;
   }
 
   checkIfDiff(oldModuleState: ModuleStateFile, newModuleStates: ModuleState): boolean {
@@ -209,6 +212,7 @@ Module file: ${resolvedModuleStateElement.event.name}`);
           resolvedModuleStateElement.prompter = this.prompter;
           resolvedModuleStateElement.txGenerator = this.txGenerator;
           resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
+          resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
 
           resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
@@ -231,6 +235,8 @@ Module file: ${resolvedModuleStateElement.event.name}`);
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
+        resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
+
 
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
@@ -274,6 +280,7 @@ State file: ${stateFileElement.event.eventType}`);
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
+        resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
 
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
       }

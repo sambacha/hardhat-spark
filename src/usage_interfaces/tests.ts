@@ -1,7 +1,7 @@
 import { ConfigFlags, IMortarUsage } from './index';
 import * as command from '../index';
 import { checkIfExist } from '../packages/utils/util';
-import { ethers } from 'ethers';
+import { ethers, Wallet } from 'ethers';
 import { Prompter } from '../packages/prompter';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
@@ -14,6 +14,8 @@ import MemoryConfigService from '../packages/config/memory_service';
 import { IConfigService } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
 import { ModuleStateFile } from '../packages/modules/states/module';
+import { TransactionManager } from '../packages/ethereum/transactions/manager';
+import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 
 
 export class MortarTests implements IMortarUsage {
@@ -30,6 +32,8 @@ export class MortarTests implements IMortarUsage {
   public moduleResolver: ModuleResolver;
   public eventHandler: EventHandler;
   public txExecutor: TxExecutor;
+  public transactionManager: TransactionManager;
+  public eventTxExecutor: EventTxExecutor;
 
   constructor(configFlags: ConfigFlags, configFile: Config) {
     process.env.MORTAR_NETWORK_ID = String(configFlags.networkId);
@@ -46,10 +50,13 @@ export class MortarTests implements IMortarUsage {
     this.configService = new MemoryConfigService(configFile);
 
     this.gasProvider = new GasPriceCalculator(this.provider);
-    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider);
+
+    this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), configFlags.networkId, this.gasProvider, this.gasProvider);
+    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider, this.transactionManager, this.transactionManager);
 
     this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
-    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo);
+    this.eventTxExecutor = new EventTxExecutor();
+    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor);
 
     this.eventHandler = new EventHandler(this.moduleStateRepo);
     this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler);

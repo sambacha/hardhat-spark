@@ -58,9 +58,18 @@ export async function deploy(
     }
 
     // initialize empty tx data
-    if (module.getGasPriceProvider()) {
-      txGenerator.changeGasPriceCalculator(module.getGasPriceProvider());
+    if (module.getCustomGasPriceProvider()) {
+      txGenerator.changeGasPriceCalculator(module.getCustomGasPriceProvider());
     }
+
+    if (module.getCustomNonceManager()) {
+      txGenerator.changeNonceManager(module.getCustomNonceManager());
+    }
+
+    if (module.getCustomTransactionSinger()) {
+      txGenerator.changeTransactionSinger(module.getCustomTransactionSinger());
+    }
+
     const initializedTxModuleState = txGenerator.initTx(moduleState);
     await prompter.promptContinueDeployment();
 

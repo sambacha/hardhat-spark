@@ -1,9 +1,11 @@
 import * as path from 'path';
 import { ContractBinding, module, ModuleBuilder, } from '../../../src/interfaces/mortar';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, ethers, providers } from 'ethers';
 import { RemoteBucketStorage } from '../../../src/packages/modules/states/registry/remote_bucket_storage';
 import { filler } from '../../../src/interfaces/helper/macros';
 import { EthGasStationProvider, GasPriceType } from './custom_providers/eth_gas_station_provider';
+import { TransactionManager } from './custom_providers/transaction_manager';
+import { GasPriceCalculator } from '../../../src/packages/ethereum/gas/calculator';
 
 require('dotenv').config({path: path.resolve(__dirname + './../.env')});
 
@@ -26,7 +28,14 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wa
     GOOGLE_SECRET_ACCESS_KEY || '',
   );
   m.setRegistry(remoteBucketStorage);
-  m.setGasPriceProvider(new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average));
+  const gasPriceProvider = new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average);
+  m.setCustomGasPriceProvider(gasPriceProvider);
+
+  const provider = new providers.JsonRpcProvider('http://localhost:8545');
+  const gasCalculator = new GasPriceCalculator(provider);
+  const txManager = new TransactionManager(provider, wallets[0], Number(process.env.MORTAR_NETWORK_ID), gasCalculator, gasPriceProvider);
+  m.setCustomNonceManager(txManager);
+  m.setCustomTransactionSigner(txManager); // @TODO think how to extract all above to some kind of config script/init
 
   await filler(m, 'on start distribute ethers to all accounts', wallets[0], wallets.slice(1));
 
