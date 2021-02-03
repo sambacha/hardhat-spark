@@ -1,8 +1,8 @@
 import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
 
 export const SynthetixLibraries = module('SynthetixLibraries', async (m: ModuleBuilder) => {
-  m.contract('SafeDecimalMath');
-  m.contract('Math');
+  m.library('SafeDecimalMath');
+  m.library('Math');
 });
 
 export const SynthetixPrototypes = module('SynthetixPrototypes', async (m: ModuleBuilder) => {

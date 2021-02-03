@@ -28,14 +28,22 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     this.gasPriceCalculator = gasPriceCalculator;
   }
 
-  async getTransactionCount(walletAddress: string): Promise<number> {
+  async getAndIncrementTransactionCount(walletAddress: string): Promise<number> {
     if (!checkIfExist((this.nonceMap)[walletAddress])) {
       (this.nonceMap)[walletAddress] = await this.provider.getTransactionCount(walletAddress);
       return (this.nonceMap)[walletAddress]++;
     }
 
-    // @TODO: what nonce has increased in the mean time? (other tx, other deployment, etc.)
+    // @TODO: what if nonce has increased in the mean time? (other tx, other deployment, etc.)
     return (this.nonceMap)[walletAddress]++;
+  }
+
+  async getCurrentTransactionCount(walletAddress: string): Promise<number> {
+    if ((this.nonceMap)[walletAddress]) {
+      (this.nonceMap)[walletAddress] = await this.provider.getTransactionCount(walletAddress);
+    }
+
+    return (this.nonceMap)[walletAddress];
   }
 
   async generateSingedTx(value: number, data: string, wallet?: ethers.Wallet | undefined): Promise<string> {
@@ -52,11 +60,11 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
 
     if (wallet) {
       tx.from = wallet.address;
-      tx.nonce = await this.getTransactionCount(await wallet.getAddress());
+      tx.nonce = await this.getAndIncrementTransactionCount(await wallet.getAddress());
       return wallet.signTransaction(tx);
     }
 
-    tx.nonce = await this.getTransactionCount(await this.wallet.getAddress());
+    tx.nonce = await this.getAndIncrementTransactionCount(await this.wallet.getAddress());
     return this.wallet.signTransaction(tx);
   }
 }

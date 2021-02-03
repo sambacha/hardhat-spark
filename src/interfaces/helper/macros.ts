@@ -8,22 +8,22 @@ export const mutator = async (
   setter: ContractBinding,
   setterFunc: string,
   getterFunc: string,
-  writeArgs: any[],
-  readArgs: any[],
+  setterArgs: any[],
+  getterArgs: any[],
   expectedValue: any,
   ...deps: ContractBinding[]
 ): Promise<ContractEvent> => {
   const usages: (ContractBinding | ContractEvent)[] = [];
-  for (const arg of writeArgs) {
+  for (const arg of setterArgs) {
     if (arg instanceof ContractBinding || arg instanceof ContractBinding) {
       usages.push(arg);
     }
   }
 
   return m.group(setter, ...deps).afterDeploy(m, name, async (): Promise<void> => {
-    await setter.instance()[`${setterFunc}`](...writeArgs);
+    await setter.instance()[`${setterFunc}`](...setterArgs);
 
-    await expectFuncRead(expectedValue, setter.instance()[`${getterFunc}`], ...readArgs);
+    await expectFuncRead(expectedValue, setter.instance()[`${getterFunc}`], ...getterArgs);
   }, ...usages);
 };
 

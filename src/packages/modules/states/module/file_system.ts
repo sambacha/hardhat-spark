@@ -4,11 +4,10 @@ import fs from 'fs';
 import { ModuleStateRepo } from '../state_repo';
 
 export class FileSystemModuleState implements IModuleState {
-  private mutex: boolean;
+  private _lock: any;
   private readonly statePath: string;
 
-  constructor(currentProjectPath: string, mutex: boolean) {
-    this.mutex = mutex;
+  constructor(currentProjectPath: string) {
     const dir = path.resolve(currentProjectPath, STATE_DIR_NAME);
 
     if (!fs.existsSync(dir)) {
@@ -40,9 +39,16 @@ export class FileSystemModuleState implements IModuleState {
     }
 
     const stateDir = path.resolve(moduleDir, `${networkId}_${STATE_NAME}`);
-    this.acquireLock();
-    fs.writeFileSync(stateDir, JSON.stringify(metaData, undefined, 4));
-    this.unlock();
+    const jsonMetaData = JSON.stringify(metaData, undefined, 4);
+    const release = await this.acquireQueued();
+    try {
+      fs.writeFileSync(stateDir, jsonMetaData);
+    } catch (e) {
+      release();
+
+      throw e;
+    }
+    release();
 
     return true;
   }
@@ -53,15 +59,24 @@ export class FileSystemModuleState implements IModuleState {
     return fs.existsSync(dir);
   }
 
-  private acquireLock() {
-    if (this.mutex) {
-      throw new Error('Lock is already acquired');
-    }
-
-    this.mutex = true;
+  private _acquire() {
+    let release;
+    const lock = this._lock = new Promise(resolve => {
+      release = resolve;
+    });
+    return () => {
+      if (this._lock == lock) this._lock = undefined;
+      release();
+    };
   }
 
-  private unlock() {
-    this.mutex = false;
+  private isLocked() {
+    return this._lock != undefined;
+  }
+
+  private acquireQueued() {
+    const q = Promise.resolve(this._lock).then(() => release);
+    const release = this._acquire();
+    return q;
   }
 }

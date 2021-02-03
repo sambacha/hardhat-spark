@@ -16,7 +16,7 @@ import {
   StatefulEvent,
   TransactionData,
 } from '../../../interfaces/mortar';
-import { Prompter } from '../../prompter';
+import { IPrompter } from '../../utils/promter';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { checkIfExist } from '../../utils/util';
 import { EthTxGenerator } from './generator';
@@ -30,6 +30,8 @@ import { ModuleState } from '../../modules/states/module';
 import { IModuleRegistryResolver } from '../../modules/states/registry';
 import { ModuleResolver } from '../../modules/module_resolver';
 import { Batcher } from '../../modules/events/batcher';
+import { Namespace } from 'cls-hooked';
+import { EventTxExecutor } from './event_executor';
 
 const CONSTRUCTOR_TYPE = 'constructor';
 export const BLOCK_CONFIRMATION_NUMBER = 1;
@@ -38,13 +40,15 @@ export class TxExecutor {
   private readonly networkId: number;
   private readonly parallelize: boolean;
 
-  private prompter: Prompter;
+  private prompter: IPrompter;
   private moduleState: ModuleStateRepo;
   private txGenerator: EthTxGenerator;
   private ethers: providers.JsonRpcProvider;
   private eventHandler: EventHandler;
+  private eventSession: Namespace;
+  private eventTxExecutor: EventTxExecutor;
 
-  constructor(prompter: Prompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, parallelize: boolean = false) {
+  constructor(prompter: IPrompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
     this.prompter = prompter;
     this.moduleState = moduleState;
     this.txGenerator = txGenerator;
@@ -53,6 +57,8 @@ export class TxExecutor {
     this.eventHandler = eventHandler;
     this.networkId = networkId;
     this.parallelize = parallelize;
+    this.eventSession = eventSession;
+    this.eventTxExecutor = eventTxExecutor;
   }
 
   async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined): Promise<void> {
@@ -74,7 +80,7 @@ export class TxExecutor {
 
         element = element as ContractBinding;
         if (checkIfExist(element.deployMetaData?.contractAddress)) {
-          await this.prompter.alreadyDeployed(elementName);
+          this.prompter.alreadyDeployed(elementName);
           await this.prompter.promptContinueDeployment();
           continue;
         }
@@ -121,7 +127,23 @@ export class TxExecutor {
     const batches = [];
 
     const elementsBatches: { [elementName: string]: number } = {};
+
+    let hasLibraries = false;
+    for (let [, element] of Object.entries(moduleState)) {
+      if (checkIfExist((element as ContractBinding)?.bytecode)) {
+        element = element as ContractBinding;
+        if (element.library) {
+          await this.handleElement(0, batches, element, moduleState, elementsBatches);
+          hasLibraries = true;
+        }
+      }
+    }
     for (const [, element] of Object.entries(moduleState)) {
+      if (hasLibraries) {
+        await this.handleElement(1, batches, element, moduleState, elementsBatches);
+        continue;
+      }
+
       await this.handleElement(0, batches, element, moduleState, elementsBatches);
     }
 
@@ -129,43 +151,51 @@ export class TxExecutor {
   }
 
   private async executeBatches(moduleName: string, batches: any[], moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined) {
+    console.log('START');
     for (const batch of batches) {
       const promiseTxReceipt = [];
       for (let batchElement of batch) {
-        if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
-          const contractAddress = await resolver?.resolveContract(this.networkId, moduleName, batchElement.name);
-
-          batchElement = batchElement as ContractBinding;
-          if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
-            await this.prompter.alreadyDeployed(batchElement.name);
-            continue;
-          }
-
-          if (checkIfExist(contractAddress)) {
-            batchElement.deployMetaData.contractAddress = contractAddress as string;
-            await this.moduleState.storeSingleBinding(batchElement as ContractBinding);
-            continue;
-          }
-
-          if (moduleConfig && checkIfExist(moduleConfig[batchElement.name]) && !moduleConfig[batchElement.name].deploy) {
-            continue;
-          }
-
-          if (
-            batchElement.deployMetaData.shouldRedeploy &&
-            !batchElement.deployMetaData.shouldRedeploy(batchElement)) {
-            continue;
-          }
-
-          batchElement = await this.executeSingleBinding(batchElement as ContractBinding, moduleState, true);
-          promiseTxReceipt.push(batchElement.txData.input.wait(BLOCK_CONFIRMATION_NUMBER));
+        if (!checkIfExist((batchElement as ContractBinding)?.bytecode)) {
+          continue;
         }
+
+        const contractAddress = await resolver?.resolveContract(this.networkId, moduleName, batchElement.name);
+
+        batchElement = batchElement as ContractBinding;
+        if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
+          await this.prompter.alreadyDeployed(batchElement.name);
+          continue;
+        }
+
+        if (checkIfExist(contractAddress)) {
+          batchElement.deployMetaData.contractAddress = contractAddress as string;
+          await this.moduleState.storeSingleBinding(batchElement as ContractBinding);
+          continue;
+        }
+
+        if (moduleConfig && checkIfExist(moduleConfig[batchElement.name]) && !moduleConfig[batchElement.name].deploy) {
+          continue;
+        }
+
+        if (
+          batchElement.deployMetaData.shouldRedeploy &&
+          !batchElement.deployMetaData.shouldRedeploy(batchElement)) {
+          continue;
+        }
+
+        batchElement = await this.executeSingleBinding(batchElement as ContractBinding, moduleState, true);
+        promiseTxReceipt.push(batchElement.txData.input.wait(BLOCK_CONFIRMATION_NUMBER));
       }
 
       const txReceipt = {};
-      (await Promise.all(promiseTxReceipt)).forEach((v: TransactionReceipt) => {
-        txReceipt[v.transactionHash] = v;
+      (await Promise.all(promiseTxReceipt)).forEach((v: TransactionReceipt | any) => {
+        if (v && v.transactionHash) {
+          txReceipt[v.transactionHash] = v;
+        }
       });
+
+      await this.executeEvents(moduleName, moduleState, batch, batch.length - promiseTxReceipt.length);
+
       for (const batchElement of batch) {
         if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
           const txHash = batchElement.txData.input.hash;
@@ -187,15 +217,33 @@ export class TxExecutor {
           }
 
           await this.moduleState.storeSingleBinding(batchElement);
-          continue;
         }
-
-        // @TODO this should be executed parallel...
-        this.prompter.eventExecution((batchElement as StatefulEvent).event.name);
-        await this.executeEvent(moduleName, batchElement as StatefulEvent, moduleState);
-        this.prompter.finishedEventExecution((batchElement as StatefulEvent).event.name);
       }
     }
+    console.log('END');
+  }
+
+  private async executeEvents(moduleName: string, moduleState: ModuleState, batch: any, numberOfEvents: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.eventSession.run(async () => {
+          const eventPromise = [];
+          for (let i = 0; i < batch.length; i++) {
+            const batchElement = batch[i];
+            if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
+              continue;
+            }
+
+            eventPromise.push(this.executeEvent(moduleName, batchElement as StatefulEvent, moduleState));
+          }
+
+          await Promise.all(eventPromise);
+          resolve();
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
 
   private async handleElement(currentBatch: number, batches: any[], element: ContractBinding | StatefulEvent, moduleState: ModuleState, elementsBatches: any) {
@@ -281,62 +329,74 @@ export class TxExecutor {
   }
 
   private async executeEvent(moduleName: string, event: StatefulEvent, moduleState: ModuleState): Promise<void> {
-    switch (event.event.eventType) {
-      case EventType.BeforeDeployEvent: {
-        await this.eventHandler.executeBeforeDeployEventHook(moduleName, event.event as BeforeDeployEvent, moduleState);
-        break;
-      }
-      case EventType.AfterDeployEvent: {
-        await this.eventHandler.executeAfterDeployEventHook(moduleName, event.event as AfterDeployEvent, moduleState);
-        break;
-      }
-      case EventType.AfterDeploymentEvent: {
-        await this.eventHandler.executeAfterDeploymentEventHook(moduleName, event.event as AfterDeploymentEvent, moduleState);
-        break;
-      }
-      case EventType.BeforeDeploymentEvent: {
-        await this.eventHandler.executeBeforeDeploymentEventHook(moduleName, event.event as BeforeDeploymentEvent, moduleState);
-        break;
-      }
-      case EventType.BeforeCompileEvent: {
-        await this.eventHandler.executeBeforeCompileEventHook(moduleName, event.event as BeforeCompileEvent, moduleState);
-        break;
-      }
-      case EventType.AfterCompileEvent: {
-        await this.eventHandler.executeAfterCompileEventHook(moduleName, event.event as AfterCompileEvent, moduleState);
-        break;
-      }
-      case EventType.OnChangeEvent: {
-        await this.eventHandler.executeOnChangeEventHook(moduleName, event.event as OnChangeEvent, moduleState);
-        break;
-      }
-      case EventType.OnStart: {
-        await this.eventHandler.executeOnStartModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
-        break;
-      }
-      case EventType.OnCompletion: {
-        await this.eventHandler.executeOnCompletionModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
-        break;
-      }
-      case EventType.OnSuccess: {
-        await this.eventHandler.executeOnSuccessModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
-        break;
-      }
-      case EventType.OnFail: {
-        await this.eventHandler.executeOnFailModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
-        break;
-      }
-      default: {
-        throw new CliError(`Failed to match event type with user event hooks - ${event.event.eventType}`);
-      }
-    }
+    return new Promise(((resolve, reject) => {
+      this.eventSession.run(async () => {
+        try {
+          this.eventSession.set('eventName', event.event.name);
 
-    if (checkIfExist((event.event as ContractEvent)?.deps)) {
-      const deps = (event.event as ContractEvent).deps;
-      for (const depName of deps) {
-        await this.moduleState.storeSingleBinding(moduleState[depName] as ContractBinding);
-      }
-    }
+          switch (event.event.eventType) {
+            case EventType.BeforeDeployEvent: {
+              await this.eventHandler.executeBeforeDeployEventHook(moduleName, event.event as BeforeDeployEvent, moduleState);
+              break;
+            }
+            case EventType.AfterDeployEvent: {
+              await this.eventHandler.executeAfterDeployEventHook(moduleName, event.event as AfterDeployEvent, moduleState);
+              break;
+            }
+            case EventType.AfterDeploymentEvent: {
+              await this.eventHandler.executeAfterDeploymentEventHook(moduleName, event.event as AfterDeploymentEvent, moduleState);
+              break;
+            }
+            case EventType.BeforeDeploymentEvent: {
+              await this.eventHandler.executeBeforeDeploymentEventHook(moduleName, event.event as BeforeDeploymentEvent, moduleState);
+              break;
+            }
+            case EventType.BeforeCompileEvent: {
+              await this.eventHandler.executeBeforeCompileEventHook(moduleName, event.event as BeforeCompileEvent, moduleState);
+              break;
+            }
+            case EventType.AfterCompileEvent: {
+              await this.eventHandler.executeAfterCompileEventHook(moduleName, event.event as AfterCompileEvent, moduleState);
+              break;
+            }
+            case EventType.OnChangeEvent: {
+              await this.eventHandler.executeOnChangeEventHook(moduleName, event.event as OnChangeEvent, moduleState);
+              break;
+            }
+            case EventType.OnStart: {
+              await this.eventHandler.executeOnStartModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
+              break;
+            }
+            case EventType.OnCompletion: {
+              await this.eventHandler.executeOnCompletionModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
+              break;
+            }
+            case EventType.OnSuccess: {
+              await this.eventHandler.executeOnSuccessModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
+              break;
+            }
+            case EventType.OnFail: {
+              await this.eventHandler.executeOnFailModuleEventHook(moduleName, event.event as ModuleEvent, moduleState);
+              break;
+            }
+            default: {
+              reject(new CliError(`Failed to match event type with user event hooks - ${event.event.eventType}`));
+            }
+          }
+
+          if (checkIfExist((event.event as ContractEvent)?.deps)) {
+            const deps = (event.event as ContractEvent).deps;
+            for (const depName of deps) {
+              await this.moduleState.storeSingleBinding(moduleState[depName] as ContractBinding);
+            }
+          }
+
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }));
   }
 
   private async executeSingleBinding(binding: ContractBinding, moduleState: ModuleState, parallelized: boolean = false): Promise<ContractBinding> {
@@ -359,7 +419,7 @@ export class TxExecutor {
     if (binding.deployMetaData.deployFn) {
       this.moduleState.setSingleEventName(`Deploy${binding.name}`);
       const contractAddress = await binding.deployMetaData.deployFn();
-      await this.moduleState.finishCurrentEvent();
+      await this.moduleState.finishCurrentEvent(moduleState, `Deploy${binding.name}`);
 
       binding.deployMetaData.contractAddress = contractAddress;
       if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
@@ -469,45 +529,53 @@ export class TxExecutor {
 
     binding.txData = binding.txData as TransactionData;
     if (!parallelized) {
-      binding.txData.output = await this.sendTransactionAndWait(binding, signedTx);
+      binding.txData.output = await this.sendTransactionAndWait(binding.name, binding, signedTx);
     } else {
-      binding.txData.input = await this.sendTransaction(binding, signedTx);
+      binding.txData.input = await this.sendTransaction(binding.name, binding, signedTx);
     }
 
     return binding;
   }
 
-  private async sendTransaction(binding: ContractBinding, signedTx: string): Promise<TransactionResponse> {
-    return new Promise(async (resolve) => {
-      binding.txData = binding.txData as TransactionData;
+  private async sendTransaction(elementName: string, binding: ContractBinding, signedTx: string): Promise<TransactionResponse> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        binding.txData = binding.txData as TransactionData;
 
-      this.prompter.sendingTx();
-      const txResp = await this.ethers.sendTransaction(signedTx);
-      this.prompter.sentTx();
+        this.prompter.sendingTx(elementName);
+        const txResp = await this.ethers.sendTransaction(signedTx);
+        this.prompter.sentTx(elementName);
 
-      resolve(txResp);
+        resolve(txResp);
+      } catch (e) {
+        reject(e);
+      }
     });
   }
 
-  private async sendTransactionAndWait(binding: ContractBinding, signedTx: string): Promise<TransactionReceipt> {
-    return new Promise(async (resolve) => {
-      binding.txData = binding.txData as TransactionData;
+  private async sendTransactionAndWait(elementName: string, binding: ContractBinding, signedTx: string): Promise<TransactionReceipt> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        binding.txData = binding.txData as TransactionData;
 
-      this.prompter.sendingTx();
-      const txResp = await this.ethers.sendTransaction(signedTx);
-      this.prompter.sentTx();
+        this.prompter.sendingTx(elementName);
+        const txResp = await this.ethers.sendTransaction(signedTx);
+        this.prompter.sentTx(elementName);
 
-      let txReceipt = await txResp.wait(1);
-      binding.txData.output = txReceipt;
-      await this.moduleState.storeSingleBinding(binding);
+        let txReceipt = await txResp.wait(1);
+        binding.txData.output = txReceipt;
+        await this.moduleState.storeSingleBinding(binding);
 
-      this.prompter.waitTransactionConfirmation();
-      txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
-      binding.txData.output = txReceipt;
-      await this.moduleState.storeSingleBinding(binding);
-      this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER);
+        this.prompter.waitTransactionConfirmation();
+        txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
+        binding.txData.output = txReceipt;
+        await this.moduleState.storeSingleBinding(binding);
+        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, elementName);
 
-      resolve(txReceipt);
+        resolve(txReceipt);
+      } catch (e) {
+        reject(e);
+      }
     });
   }
 }

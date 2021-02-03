@@ -6,27 +6,30 @@ import {
 import { checkIfExist } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { Prompter } from '../prompter';
+import { IPrompter } from '../utils/promter';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
 import { UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
 import { EventTxExecutor } from '../ethereum/transactions/event_executor';
+import { Namespace } from 'cls-hooked';
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
-  private readonly prompter: Prompter;
+  private readonly prompter: IPrompter;
   private readonly txGenerator: EthTxGenerator;
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
+  private readonly eventSession: Namespace;
 
-  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: Prompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo, eventTxExecutor: EventTxExecutor) {
+  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: IPrompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo, eventTxExecutor: EventTxExecutor, eventSession: Namespace) {
     this.signer = new ethers.Wallet(privateKey, provider);
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
+    this.eventSession = eventSession;
   }
 
   checkIfDiff(oldModuleState: ModuleStateFile, newModuleStates: ModuleState): boolean {
@@ -213,6 +216,7 @@ Module file: ${resolvedModuleStateElement.event.name}`);
           resolvedModuleStateElement.txGenerator = this.txGenerator;
           resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
           resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
+          resolvedModuleStateElement.eventSession = this.eventSession;
 
           resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
@@ -236,7 +240,7 @@ Module file: ${resolvedModuleStateElement.event.name}`);
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
         resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
-
+        resolvedModuleStateElement.eventSession = this.eventSession;
 
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
@@ -281,6 +285,7 @@ State file: ${stateFileElement.event.eventType}`);
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
         resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
+        resolvedModuleStateElement.eventSession = this.eventSession;
 
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
       }

@@ -6,12 +6,12 @@ import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';
 import { EthTxGenerator } from './packages/ethereum/transactions/generator';
-import { Prompter } from './packages/prompter';
 import { TxExecutor } from './packages/ethereum/transactions/executor';
 import { StateResolver } from './packages/modules/states/state_resolver';
 import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
 import { IConfigService } from './packages/config';
+import { IPrompter } from './packages/utils/promter';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
@@ -30,7 +30,7 @@ export async function deploy(
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
-  prompter: Prompter,
+  prompter: IPrompter,
   executor: TxExecutor,
   configService: IConfigService
 ) {
@@ -41,6 +41,10 @@ export async function deploy(
 
   for (const [moduleName, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
+    if (module.isInitialized()) {
+      continue;
+    }
+
     await module.init(wallets);
     moduleStateRepo.initStateRepo(moduleName);
 
@@ -52,7 +56,7 @@ export async function deploy(
     }
 
     const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-    prompter.startModuleDeploy(moduleName);
+    await prompter.startModuleDeploy(moduleName, moduleState);
     if (!checkIfExist(moduleState)) {
       prompter.nothingToDeploy();
     }

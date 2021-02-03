@@ -6,13 +6,14 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { checkIfExist } from '../packages/utils/util';
 import { ethers, Wallet } from 'ethers';
 import ConfigService from '../packages/config/service';
-import { Prompter } from '../packages/prompter';
+import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { NetworkIdNotProvided, PathNotProvided, UserError } from '../packages/types/errors';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import * as cls from 'cls-hooked';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current migrations.';
@@ -66,11 +67,13 @@ export default class Diff extends Command {
 
     const gasCalculator = new GasPriceCalculator(provider);
     const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);    const prompter = new Prompter();
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
+    const prompter = new StreamlinedPrompter();
 
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);
-    const eventTxExecutor = new EventTxExecutor();
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor);
+    const eventSession = cls.createNamespace('event');
+    const eventTxExecutor = new EventTxExecutor(eventSession);
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession);
 
     await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo, configService);
   }

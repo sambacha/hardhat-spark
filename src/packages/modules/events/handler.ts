@@ -16,19 +16,21 @@ import { checkIfExist } from '../../utils/util';
 import { ModuleStateRepo } from '../states/state_repo';
 import { ModuleState } from '../states/module';
 import { CliError } from '../../types/errors';
-import cli from 'cli-ux';
+import { IPrompter } from '../../utils/promter';
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo;
+  private readonly prompter: IPrompter;
 
-  constructor(moduleState: ModuleStateRepo) {
+  constructor(moduleState: ModuleStateRepo, prompter: IPrompter) {
     this.moduleState = moduleState;
+    this.prompter = prompter;
   }
 
   async executeBeforeCompileEventHook(moduleName: string, event: BeforeCompileEvent, moduleState: ModuleState): Promise<void> {
     const eventElement = moduleState[event.name] as StatefulEvent;
     if (eventElement.executed) {
-      cli.info(`Event is already executed - ${event.name}`);
+      this.prompter.alreadyDeployed(event.name);
       return;
     }
 
@@ -54,9 +56,8 @@ export class EventHandler {
     }
 
     await this.moduleState.setSingleEventName(eventName);
-    // @TODO enable user to change module state variable
     await fn();
-    await this.moduleState.finishCurrentEvent();
+    await this.moduleState.finishCurrentEvent(moduleState, eventName);
   }
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
@@ -111,13 +112,13 @@ export class EventHandler {
   ) {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      cli.info(`Event is already executed - ${eventName}`);
+      this.prompter.alreadyDeployed(eventName);
       return;
     }
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentModuleEvent(eventType);
+    await this.moduleState.finishCurrentModuleEvent(moduleStates, eventType, eventName);
   }
 
   private async handleDeployedBindingsEvents(
@@ -128,7 +129,7 @@ export class EventHandler {
   ) {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      cli.info(`Event is already executed - ${eventName}`);
+      this.prompter.alreadyDeployed(eventName);
       return;
     }
 
@@ -151,7 +152,7 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentEvent();
+    await this.moduleState.finishCurrentEvent(moduleStates, eventName);
   }
 
   private async handleCompiledBindingsEvents(
@@ -162,7 +163,7 @@ export class EventHandler {
   ) {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      cli.info(`Event is already executed - ${eventName}`);
+      this.prompter.alreadyDeployed(eventName);
       return;
     }
 
@@ -185,6 +186,6 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentEvent();
+    await this.moduleState.finishCurrentEvent(moduleStates, eventName);
   }
 }

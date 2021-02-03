@@ -1,8 +1,10 @@
 import cli from 'cli-ux';
-import { DeniedConfirmation } from './types/errors';
+import { DeniedConfirmation } from '../../types/errors';
 import chalk from 'chalk';
+import { IPrompter } from './index';
+import { ModuleState } from '../../modules/states/module';
 
-export class Prompter {
+export class StreamlinedPrompter implements IPrompter {
   private whitespaces: string;
   private readonly skipConfirmation: boolean;
 
@@ -11,12 +13,12 @@ export class Prompter {
     this.whitespaces = '';
   }
 
-  nothingToDeploy() {
+  nothingToDeploy(): void {
     cli.info('State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.');
     cli.exit(0);
   }
 
-  startModuleDeploy(moduleName: string): void {
+  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
     cli.info(chalk.bold('\nDeploy module - ', chalk.green(moduleName)));
     this.whitespaces += '  ';
   }
@@ -25,7 +27,7 @@ export class Prompter {
     this.finishedElementExecution();
   }
 
-  async alreadyDeployed(elementName: string) {
+  alreadyDeployed(elementName: string): void {
     cli.info(`${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`);
   }
 
@@ -59,8 +61,7 @@ export class Prompter {
     cli.debug(this.whitespaces + `Signed transaction: ${tx}`);
   }
 
-  errorPrompt(error: Error): void {
-    cli.error(error);
+  errorPrompt(): void {
   }
 
   sendingTx(): void {
@@ -81,7 +82,7 @@ export class Prompter {
     cli.info(`${this.whitespaces}${chalk.bold('Finished')} binding execution - ${chalk.bold(bindingName)}\n`);
   }
 
-  finishedElementExecution(): void {
+  private finishedElementExecution(): void {
     this.whitespaces = this.whitespaces.slice(0, -2);
   }
 

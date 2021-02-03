@@ -3,15 +3,13 @@ import { ModuleStateRepo } from '../state_repo';
 import { checkIfExist } from '../../../utils/util';
 
 export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
-  private mutex: boolean;
   private state: {
     [networkId: string]: {
       [moduleName: string]: ModuleStateFile
     }
   };
 
-  constructor(mutex: boolean) {
-    this.mutex = mutex;
+  constructor() {
     this.state = {};
   }
 

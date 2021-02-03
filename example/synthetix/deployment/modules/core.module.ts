@@ -1,5 +1,4 @@
 import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
-import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
@@ -26,11 +25,15 @@ export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) =>
   const AddressResolver = m.contract('AddressResolver', ETH_ADDRESS);
   const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', 'ReadProxy', ETH_ADDRESS);
 
-  ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (): Promise<void> => {
-    await ReadProxyAddressResolver.instance().setTarget(AddressResolver);
-
-    await expectFuncRead(AddressResolver, ReadProxyAddressResolver.instance().target);
-  }, AddressResolver);
+  await mutator(m,
+    'setTargetInResolverFromReadProxy',
+    ReadProxyAddressResolver,
+    'setTarget',
+    'target',
+    [AddressResolver],
+    [],
+    AddressResolver,
+  );
 
   m.contract('FlexibleStorage', ReadProxyAddressResolver);
   m.contract('SystemSettings', ETH_ADDRESS, ReadProxyAddressResolver);

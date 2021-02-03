@@ -9,7 +9,7 @@ import { CallOverrides, ethers } from 'ethers';
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { Prompter } from '../packages/prompter';
+import { IPrompter } from '../packages/utils/promter';
 import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/executor';
 import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
@@ -17,6 +17,7 @@ import { LinkReferences, SingleContractLinkReference } from '../packages/types/a
 import { IGasPriceCalculator } from '../packages/ethereum/gas';
 import { INonceManager, ITransactionSigner } from '../packages/ethereum/transactions';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import { Namespace } from 'cls-hooked';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -409,6 +410,7 @@ export class ContractBinding extends Binding {
 
   public bytecode: string | undefined;
   public abi: JsonFragment[] | undefined;
+  public library: boolean = false;
   public libraries: SingleContractLinkReference | undefined;
 
   public txData: TransactionData | undefined;
@@ -420,10 +422,11 @@ export class ContractBinding extends Binding {
   public forceFlag: boolean;
 
   public signer: ethers.Signer | undefined;
-  public prompter: Prompter | undefined;
+  public prompter: IPrompter | undefined;
   public txGenerator: EthTxGenerator | undefined;
   public moduleStateRepo: ModuleStateRepo | undefined;
   public eventTxExecutor: EventTxExecutor | undefined;
+  public eventSession: Namespace | undefined;
 
   constructor(
     // metadata
@@ -432,10 +435,11 @@ export class ContractBinding extends Binding {
     // event hooks
     events?: EventsDepRef,
     signer?: ethers.Signer,
-    prompter?: Prompter,
+    prompter?: IPrompter,
     txGenerator?: EthTxGenerator,
     moduleStateRepo?: ModuleStateRepo,
     eventTxExecutor?: EventTxExecutor,
+    eventSession?: Namespace
   ) {
     super(name);
     this.args = args;
@@ -471,6 +475,7 @@ export class ContractBinding extends Binding {
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
+    this.eventSession = eventSession;
 
     this.forceFlag = false;
   }
@@ -489,10 +494,11 @@ export class ContractBinding extends Binding {
       this.deployMetaData?.contractAddress as string,
       this.abi as JsonFragment[],
       this.signer as ethers.Signer,
-      this.prompter as Prompter,
+      this.prompter as IPrompter,
       this.txGenerator as EthTxGenerator,
       this.moduleStateRepo as ModuleStateRepo,
-      this.eventTxExecutor as EventTxExecutor
+      this.eventTxExecutor as EventTxExecutor,
+      this.eventSession as Namespace,
     ) as unknown as ethers.Contract;
 
     return this.contractInstance;
@@ -508,6 +514,10 @@ export class ContractBinding extends Binding {
     this.forceFlag = true;
 
     return this;
+  }
+
+  setLibrary() {
+    this.library = true;
   }
 
   asProxy(): ProxyContract {
@@ -715,7 +725,7 @@ export class FactoryContractBinding extends ContractBinding {
   create(m: ModuleBuilder, childName: string, createFuncName: string, ...args: any): ContractBinding {
     const child = m.contract(childName);
     child.deployFn(async () => {
-      const tx = await this.instance()[createFuncName](123);
+      await this.instance()[createFuncName](123);
 
       const children = await this.instance().getChildren();
 
@@ -805,9 +815,12 @@ export class RegistryContractBinding extends ContractBinding {
 
 export class ContractInstance {
   private readonly contractBinding: ContractBinding;
-  private readonly prompter: Prompter;
+  private readonly prompter: IPrompter;
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
+  private readonly eventSession: Namespace;
+  private readonly signer: ethers.Signer;
+  private readonly txGenerator: EthTxGenerator;
 
   [key: string]: any;
 
@@ -816,15 +829,18 @@ export class ContractInstance {
     contractAddress: string,
     abi: JsonFragment[],
     signer: ethers.Signer,
-    prompter: Prompter,
+    prompter: IPrompter,
     txGenerator: EthTxGenerator,
     moduleStateRepo: ModuleStateRepo,
     eventTxExecutor: EventTxExecutor,
+    eventSession: Namespace,
   ) {
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.contractBinding = contractBinding;
     this.eventTxExecutor = eventTxExecutor;
+    this.eventSession = eventSession;
+    this.signer = signer;
 
     if (!checkIfExist(this.contractBinding?.contractTxProgress)) {
       this.contractBinding.contractTxProgress = 0;
@@ -868,9 +884,9 @@ export class ContractInstance {
   }
 
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
-    return async function (...args: Array<any>): Promise<TransactionResponse> {
-      const func = async (...args: Array<any>): Promise<TransactionResponse> => {
-        // @TODO add option validation also
+    return async (...args: Array<any>): Promise<TransactionResponse> => {
+      const func = async function (...args: Array<any>): Promise<TransactionResponse> {
+        const sessionEventName = this.eventSession.get('eventName');
         if (args.length > fragment.inputs.length + 1) {
           throw new UserError(`Trying to call contract function with more arguments then in interface - ${fragment.name}`);
         }
@@ -888,7 +904,7 @@ export class ContractInstance {
 
         let contractTxIterator = this.contractBinding?.contractTxProgress || 0;
 
-        const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.contractBinding.name);
+        const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.contractBinding.name, sessionEventName);
 
         if (currentEventTransactionData.contractOutput.length > contractTxIterator) {
           this.contractBinding.contractTxProgress = ++contractTxIterator;
@@ -917,7 +933,6 @@ export class ContractInstance {
         }
 
         this.prompter.executeContractFunction(fragment.name);
-        cli.debug(fragment.name, ...args);
         await this.prompter.promptExecuteTx();
 
         const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress());
@@ -928,27 +943,33 @@ export class ContractInstance {
           nonce: txData.nonce,
         };
 
-        await this.prompter.sendingTx();
-        // @TODO think how to gracefully block here... (yield or whatever)
-        const tx = await contractFunction(...args, overrides);
-        await this.prompter.sentTx();
+        await this.prompter.sendingTx(sessionEventName, fragment.name);
+        let tx;
+        try {
+          tx = await contractFunction(...args, overrides);
+        } catch (e) {
+          throw e;
+        }
+        await this.prompter.sentTx(sessionEventName, fragment.name);
 
         this.prompter.waitTransactionConfirmation();
         const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
-        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt);
-        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER);
+        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
+        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, sessionEventName, fragment.name);
 
         this.contractBinding.contractTxProgress = ++contractTxIterator;
 
         this.prompter.finishedExecutionOfContractFunction(fragment.name);
         return tx;
-      };
+      }.bind(this);
 
-      const currentEventAbstraction = this.moduleStateRepo.getSingleEventName();
-      this.eventTxExecutor.add(currentEventAbstraction, func);
+      const currentEventAbstraction = this.eventSession.get('eventName');
+      const txSender = await this.signer.getAddress();
+      const currentNonce = await this.txGenerator.getCurrentTransactionCount(txSender);
+      this.eventTxExecutor.add(currentEventAbstraction, txSender, currentNonce, func);
 
-      return this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
-    }.bind(this);
+      return await this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
+    };
   }
 
   private buildConstantWrappers(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
@@ -1065,6 +1086,13 @@ export class ModuleBuilder {
     this.bindings[name] = new ContractBinding(name, name, args);
     this[name] = this.bindings[name];
     return this.bindings[name];
+  }
+
+  library(name: string, ...args: Arguments): ContractBinding {
+    const binding = this.contract(name, ...args);
+    binding.setLibrary();
+
+    return binding;
   }
 
   group(...dependencies: (ContractBinding | ContractEvent)[]): GroupedDependencies {

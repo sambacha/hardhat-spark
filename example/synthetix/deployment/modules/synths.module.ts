@@ -2,8 +2,8 @@ import { ContractBinding, module } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import path from 'path';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 import { mutator } from '../../../../src/interfaces/helper/macros';
+import { ModuleBuilder } from '../../../../src/interfaces/mortar';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
@@ -11,7 +11,7 @@ const {
   MORTAR_NETWORK_ID
 } = process.env;
 
-export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
+export const SynthetixSynths = module('SynthetixSynths', async (m: ModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
   const synths = require('./../local/synths.json');

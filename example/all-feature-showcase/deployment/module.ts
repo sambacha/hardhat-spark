@@ -18,8 +18,8 @@ const {
 } = process.env;
 
 export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
-  // const fileSystem = new FileSystemRegistry("./")
-  // m.setRegistry(fileSystem)
+  // const fileSystem = new FileSystemRegistry("./");
+  // m.setRegistry(fileSystem);
   const remoteBucketStorage = new RemoteBucketStorage(
     'https://storage.googleapis.com',
     'europe-west3',
@@ -53,7 +53,7 @@ export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wa
     return 'hello';
   });
 
-  const firstAfterDeployment = m.group(Example, SecondExample).afterDeployment(m, 'firstAfterDeployment', async (): Promise<void> => {
+  const firstAfterDeployment = m.group(Example, SecondExample).afterDeployment(m, 'firstAfterDeployment', async function (): Promise<void> {
     const example = Example.instance();
 
     await example.setExample(100);

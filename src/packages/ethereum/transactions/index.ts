@@ -1,7 +1,8 @@
 import { ethers } from 'ethers';
 
 export interface INonceManager {
-  getTransactionCount(walletAddress: string): Promise<number>;
+  getAndIncrementTransactionCount(walletAddress: string): Promise<number>;
+  getCurrentTransactionCount(walletAddress: string): Promise<number>;
 }
 
 export interface ITransactionSigner {
