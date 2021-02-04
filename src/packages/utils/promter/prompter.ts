@@ -106,6 +106,16 @@ export class StreamlinedPrompter implements IPrompter {
     cli.info(`${this.whitespaces}${chalk.bold('Finished')} execution of contract function - ${chalk.bold(functionName)}`);
   }
 
+  executeWalletTransfer(from: string, to: string): void {
+    cli.info(this.whitespaces + `${chalk.bold('Started')} execution of wallet transfer -  ${chalk.bold(from)} --> ${chalk.bold(to)}`);
+    this.whitespaces += '  ';
+  }
+
+  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+    this.finishedElementExecution();
+    cli.info(this.whitespaces + `${chalk.bold('Finished')} execution of wallet transfer - ${chalk.bold(from)} --> ${chalk.bold(to)}`);
+  }
+
   transactionReceipt(): void {
     cli.info(this.whitespaces + 'Waiting for block confirmation...');
   }

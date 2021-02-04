@@ -1,0 +1,52 @@
+import { Namespace } from 'cls-hooked';
+import { ethers } from 'ethers';
+import { MortarWallet } from '../../../interfaces/mortar';
+import { ModuleStateRepo } from '../../modules/states/state_repo';
+import { INonceManager } from '../transactions';
+import { IGasCalculator, IGasPriceCalculator } from '../gas';
+import { Prompter } from '../../../../lib/packages/prompter';
+import { IPrompter } from '../../utils/promter';
+
+export class WalletWrapper {
+  private readonly eventSession: Namespace;
+  private readonly moduleStateRepo: ModuleStateRepo;
+  private readonly nonceManager: INonceManager;
+  private readonly gasPriceCalculator: IGasPriceCalculator;
+  private readonly gasCalculator: IGasCalculator;
+  private readonly prompter: IPrompter;
+
+  constructor(
+    eventSession: Namespace,
+    nonceManager: INonceManager,
+    gasPriceCalculator: IGasPriceCalculator,
+    gasCalculator: IGasCalculator,
+    moduleStateRepo: ModuleStateRepo,
+    prompter: IPrompter
+  ) {
+    this.eventSession = eventSession;
+    this.nonceManager = nonceManager;
+    this.gasPriceCalculator = gasPriceCalculator;
+    this.gasCalculator = gasCalculator;
+    this.moduleStateRepo = moduleStateRepo;
+    this.prompter = prompter;
+  }
+
+  wrapWallets(wallets: ethers.Wallet[]): MortarWallet[] {
+    const mortarWallets = [];
+    for (const wallet of wallets) {
+      mortarWallets.push(
+        new MortarWallet(
+          wallet,
+          this.eventSession,
+          this.nonceManager,
+          this.gasPriceCalculator,
+          this.gasCalculator,
+          this.moduleStateRepo,
+          this.prompter,
+        )
+      );
+    }
+
+    return mortarWallets;
+  }
+}

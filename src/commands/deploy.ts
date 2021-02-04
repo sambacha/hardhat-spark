@@ -20,6 +20,7 @@ import * as cls from 'cls-hooked';
 import { IPrompter, Prompters } from '../packages/utils/promter';
 import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
+import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -126,7 +127,7 @@ export default class Deploy extends Command {
         break;
       case Prompters.simple:
       default: {
-        prompter = new SimpleOverviewPrompter();
+        prompter = new StreamlinedPrompter(flags.yes);
       }
     }
     this.prompter = prompter;
@@ -146,9 +147,11 @@ export default class Deploy extends Command {
     const eventHandler = new EventHandler(moduleState, prompter);
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
 
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter);
+
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
-    await command.deploy(deploymentFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService);
+    await command.deploy(deploymentFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
   }
 
   async catch(error: Error) {

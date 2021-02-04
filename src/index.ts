@@ -12,6 +12,8 @@ import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
 import { IConfigService } from './packages/config';
 import { IPrompter } from './packages/utils/promter';
+import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
+import { ethers } from 'ethers';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
@@ -32,12 +34,14 @@ export async function deploy(
   txGenerator: EthTxGenerator,
   prompter: IPrompter,
   executor: TxExecutor,
-  configService: IConfigService
+  configService: IConfigService,
+  walletWrapper: WalletWrapper,
 ) {
   const modules = await require(migrationFilePath);
 
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
+  const mortarWallets = walletWrapper.wrapWallets(wallets);
 
   for (const [moduleName, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
@@ -45,7 +49,7 @@ export async function deploy(
       continue;
     }
 
-    await module.init(wallets);
+    await module.init(mortarWallets as ethers.Wallet[]);
     moduleStateRepo.initStateRepo(moduleName);
 
     let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);

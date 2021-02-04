@@ -1,14 +1,15 @@
 import {
   ContractBinding,
-  ContractBindingMetaData, ContractEvent,
+  ContractBindingMetaData,
+  ContractEvent,
   ContractInput,
   EventTransactionData,
+  EventType,
+  MetaDataEvent, ModuleEvent,
   StatefulEvent,
-  MetaDataEvent,
-  ModuleEvent, EventType,
 } from '../../../interfaces/mortar';
 import { CliError } from '../../types/errors';
-import { TransactionResponse } from '@ethersproject/abstract-provider';
+import { TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { checkIfExist } from '../../utils/util';
 import { FileSystemModuleState } from './module/file_system';
 import { IModuleState, ModuleState, ModuleStateFile } from './module';
@@ -63,14 +64,18 @@ export class ModuleStateRepo {
     return this.currentEventName;
   }
 
-  async finishCurrentEvent(moduleStates: ModuleState, eventName?: string): Promise<void> {
+  async finishCurrentEvent(moduleName: string, moduleStates: ModuleState, eventName?: string): Promise<void> {
     const currEventName = eventName ? eventName : this.currentEventName;
-
-    const currentEvent = (moduleStates[currEventName] as StatefulEvent);
+    console.log(
+      currEventName,
+      eventName
+    );
+    const currentState = (await this.getStateIfExist(moduleName));
+    const currentEvent = (currentState[currEventName] as StatefulEvent);
     if (
       !checkIfExist(currentEvent)
     ) {
-      throw new CliError("Cant finish event that doesn't exist in state");
+      throw new CliError(`Cant finish event that doesn't exist in state - ${currEventName}`);
     }
 
     currentEvent.executed = true;
@@ -80,12 +85,15 @@ export class ModuleStateRepo {
     this.currentEventName = '';
   }
 
-  async finishCurrentModuleEvent(moduleState: ModuleState, eventType: string, eventName?: string): Promise<void> {
+  async finishCurrentModuleEvent(moduleName: string, moduleState: ModuleState, eventType: EventType, eventName?: string): Promise<void> {
     const currEventName = eventName ? eventName : this.currentEventName;
+    const currentState = (await this.getStateIfExist(moduleName));
+    let currentEvent = (currentState[currEventName] as StatefulEvent);
 
-    let currentEvent = (moduleState[currEventName] as StatefulEvent);
     if (
-      !checkIfExist(currentEvent)
+      eventType == EventType.OnFail ||
+      eventType == EventType.OnSuccess ||
+      eventType == EventType.OnCompletion
     ) {
       currentEvent = new StatefulEvent(
         {
@@ -95,6 +103,12 @@ export class ModuleStateRepo {
         true,
         {}
       );
+    }
+
+    if (
+      !checkIfExist(currentEvent)
+    ) {
+      throw new CliError(`Cant finish event that doesn't exist in state - ${currEventName}`);
     }
 
     currentEvent.executed = true;
@@ -130,7 +144,7 @@ export class ModuleStateRepo {
     return eventState.txData[bindingName];
   }
 
-  async storeEventTransactionData(bindingName: string, contractInput: ContractInput, contractOutput: TransactionResponse, eventName?: string): Promise<void> {
+  async storeEventTransactionData(bindingName: string, contractInput: ContractInput | TransactionRequest, contractOutput?: TransactionResponse, eventName?: string): Promise<void> {
     if (this.currentModuleName == '') {
       throw new CliError('Current module name is not set');
     }
@@ -168,7 +182,9 @@ export class ModuleStateRepo {
     }
 
     currentEvent.txData[bindingName].contractInput.push(contractInput);
-    currentEvent.txData[bindingName].contractOutput.push(contractOutput);
+    if (contractOutput) {
+      currentEvent.txData[bindingName].contractOutput.push(contractOutput);
+    }
 
     currentState[currEventName] = currentEvent;
     await this.storeNewState(this.currentModuleName, currentState);

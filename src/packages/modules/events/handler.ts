@@ -7,7 +7,7 @@ import {
   BeforeDeploymentEvent,
   ContractBinding,
   EventFnCompiled,
-  EventFnDeployed,
+  EventFnDeployed, EventType,
   ModuleEvent, ModuleEventFn,
   OnChangeEvent,
   StatefulEvent
@@ -57,56 +57,57 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentEvent(moduleState, eventName);
+    await this.moduleState.finishCurrentEvent(moduleName, moduleState, eventName);
   }
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleCompiledBindingsEvents(event.name, event.fn, event.deps, moduleState);
+    await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeBeforeDeploymentEventHook(moduleName: string, event: BeforeDeploymentEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleCompiledBindingsEvents(event.name, event.fn, event.deps, moduleState);
+    await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeAfterDeploymentEventHook(moduleName: string, event: AfterDeploymentEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState);
+    await this.handleDeployedBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeBeforeDeployEventHook(moduleName: string, event: BeforeDeployEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleCompiledBindingsEvents(event.name, event.fn, event.deps, moduleState);
+    await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeAfterDeployEventHook(moduleName: string, event: AfterDeployEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState);
+    await this.handleDeployedBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeOnChangeEventHook(moduleName: string, event: OnChangeEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleDeployedBindingsEvents(event.name, event.fn, event.deps, moduleState);
+    await this.handleDeployedBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeOnStartModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
+    await this.handleModuleEventHooks(moduleName, event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnCompletionModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
+    await this.handleModuleEventHooks(moduleName, event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnErrorModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
+    await this.handleModuleEventHooks(moduleName, event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnSuccessModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
+    await this.handleModuleEventHooks(moduleName, event.name, event.eventType, event.fn, moduleState);
   }
 
   async executeOnFailModuleEventHook(moduleName: string, event: ModuleEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleModuleEventHooks(event.name, event.eventType, event.fn, moduleState);
+    await this.handleModuleEventHooks(moduleName, event.name, event.eventType, event.fn, moduleState);
   }
 
   private async handleModuleEventHooks(
+    moduleName: string,
     eventName: string,
-    eventType: string,
+    eventType: EventType,
     fn: ModuleEventFn,
     moduleStates: ModuleState,
   ) {
@@ -118,10 +119,11 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentModuleEvent(moduleStates, eventType, eventName);
+    await this.moduleState.finishCurrentModuleEvent(moduleName, moduleStates, eventType, eventName);
   }
 
   private async handleDeployedBindingsEvents(
+    moduleName: string,
     eventName: string,
     fn: EventFnDeployed,
     deps: string[],
@@ -152,10 +154,11 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentEvent(moduleStates, eventName);
+    await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
   }
 
   private async handleCompiledBindingsEvents(
+    moduleName: string,
     eventName: string,
     fn: EventFnCompiled,
     deps: string[],
@@ -186,6 +189,6 @@ export class EventHandler {
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
-    await this.moduleState.finishCurrentEvent(moduleStates, eventName);
+    await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
   }
 }

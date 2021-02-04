@@ -20,22 +20,22 @@ const {
 export const ExampleModule = module('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
   // const fileSystem = new FileSystemRegistry("./");
   // m.setRegistry(fileSystem);
-  const remoteBucketStorage = new RemoteBucketStorage(
-    'https://storage.googleapis.com',
-    'europe-west3',
-    'mortar_state_bucket',
-    GOOGLE_ACCESS_KEY || '',
-    GOOGLE_SECRET_ACCESS_KEY || '',
-  );
-  m.setRegistry(remoteBucketStorage);
-  const gasPriceProvider = new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average);
-  m.setCustomGasPriceProvider(gasPriceProvider);
-
-  const provider = new providers.JsonRpcProvider('http://localhost:8545');
-  const gasCalculator = new GasPriceCalculator(provider);
-  const txManager = new TransactionManager(provider, wallets[0], Number(process.env.MORTAR_NETWORK_ID), gasCalculator, gasPriceProvider);
-  m.setCustomNonceManager(txManager);
-  m.setCustomTransactionSigner(txManager); // @TODO think how to extract all above to some kind of config script/init
+  // const remoteBucketStorage = new RemoteBucketStorage(
+  //   'https://storage.googleapis.com',
+  //   'europe-west3',
+  //   'mortar_state_bucket',
+  //   GOOGLE_ACCESS_KEY || '',
+  //   GOOGLE_SECRET_ACCESS_KEY || '',
+  // );
+  // m.setRegistry(remoteBucketStorage);
+  // const gasPriceProvider = new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average);
+  // m.setCustomGasPriceProvider(gasPriceProvider);
+  //
+  // const provider = new providers.JsonRpcProvider('http://localhost:8545');
+  // const gasCalculator = new GasPriceCalculator(provider);
+  // const txManager = new TransactionManager(provider, wallets[0], Number(process.env.MORTAR_NETWORK_ID), gasCalculator, gasPriceProvider);
+  // m.setCustomNonceManager(txManager);
+  // m.setCustomTransactionSigner(txManager); // @TODO think how to extract all above to some kind of config script/init
 
   await filler(m, 'on start distribute ethers to all accounts', wallets[0], wallets.slice(1));
 

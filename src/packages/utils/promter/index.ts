@@ -27,4 +27,6 @@ export interface IPrompter {
   transactionReceipt(): void;
   waitTransactionConfirmation(): void;
   transactionConfirmation(confirmationNumber: number, elementName: string, functionName?: string): void;
+  finishedExecutionOfWalletTransfer(from: string, to: string): void;
+  executeWalletTransfer(address: string, to: string): void;
 }

@@ -2,7 +2,7 @@ import { checkIfExist } from '../../utils/util';
 import { providers } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { BigNumber } from '@ethersproject/bignumber';
-import { IGasProvider } from './index';
+import { BytesLike, IGasProvider } from './index';
 
 export class GasPriceCalculator implements IGasProvider {
   private readonly ethers: providers.JsonRpcProvider;
@@ -15,14 +15,14 @@ export class GasPriceCalculator implements IGasProvider {
     return await this.ethers.getGasPrice();
   }
 
-  async estimateGas(fromAddr: string, toAddr: string | undefined, data: string): Promise<BigNumber> {
+  async estimateGas(fromAddr: string, toAddr: string | undefined, data: BytesLike): Promise<BigNumber> {
     const txConfig: TransactionRequest = {
       from: fromAddr,
       data: data,
     };
 
     if (checkIfExist(toAddr)) {
-      txConfig.to = toAddr as string;
+      txConfig.to = toAddr;
     }
 
     return this.ethers.estimateGas(txConfig);

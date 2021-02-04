@@ -3,7 +3,7 @@ import { HardhatCompiler } from '../packages/ethereum/compiler/hardhat';
 import { checkIfExist, checkIfSameInputs, checkIfSuitableForInstantiating } from '../packages/utils/util';
 import { ModuleValidator } from '../packages/modules/module_validator';
 import { JsonFragment, JsonFragmentType } from '../packages/types/artifacts/abi';
-import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
+import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { cli } from 'cli-ux';
 import { CallOverrides, ethers } from 'ethers';
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
@@ -14,10 +14,11 @@ import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/exe
 import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
-import { IGasPriceCalculator } from '../packages/ethereum/gas';
+import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
 import { INonceManager, ITransactionSigner } from '../packages/ethereum/transactions';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import { Namespace } from 'cls-hooked';
+import { Deferrable } from '@ethersproject/properties';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -798,7 +799,7 @@ export type TransactionData = {
 };
 
 export type EventTransactionData = {
-  contractInput: ContractInput[]
+  contractInput: (ContractInput | TransactionRequest)[]
   contractOutput: TransactionResponse[]
 };
 
@@ -943,6 +944,8 @@ export class ContractInstance {
           nonce: txData.nonce,
         };
 
+        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], undefined, sessionEventName);
+
         await this.prompter.sendingTx(sessionEventName, fragment.name);
         let tx;
         try {
@@ -1005,6 +1008,83 @@ export class ContractInstance {
     }
 
     return args;
+  }
+}
+
+export class MortarWallet extends ethers.Wallet {
+  private sessionNamespace: Namespace;
+  private moduleStateRepo: ModuleStateRepo;
+  private nonceManager: INonceManager;
+  private gasPriceCalculator: IGasPriceCalculator;
+  private gasCalculator: IGasCalculator;
+  private prompter: IPrompter;
+
+  constructor(
+    wallet: ethers.Wallet,
+    sessionNamespace: Namespace,
+    nonceManager: INonceManager,
+    gasPriceCalculator: IGasPriceCalculator,
+    gasCalculator: IGasCalculator,
+    moduleStateRepo: ModuleStateRepo,
+    prompter: IPrompter,
+  ) {
+    super(wallet.privateKey, wallet.provider);
+    this.sessionNamespace = sessionNamespace;
+    this.nonceManager = nonceManager;
+    this.gasPriceCalculator = gasPriceCalculator;
+    this.gasCalculator = gasCalculator;
+    this.moduleStateRepo = moduleStateRepo;
+    this.prompter = prompter;
+  }
+
+  async sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
+    const toAddr = await transaction.to;
+    await this.prompter.executeWalletTransfer(this.address, toAddr);
+    const currentEventName = this.sessionNamespace.get('eventName');
+    if (!checkIfExist(currentEventName)) {
+      throw new UserError('Wallet function is running outside event!');
+    }
+
+    await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
+
+    const mortarTransaction = await this.populateTransactionWithMortarMetadata(transaction);
+    await this.moduleStateRepo.storeEventTransactionData(await this.getAddress(), mortarTransaction, undefined, currentEventName);
+
+    const txResp = await super.sendTransaction(mortarTransaction);
+    await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
+    await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
+
+    this.prompter.waitTransactionConfirmation();
+    const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
+    await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
+    this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
+
+    await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
+
+    return txResp;
+  }
+
+  private async populateTransactionWithMortarMetadata(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
+    if (!checkIfExist(transaction.nonce)) {
+      transaction.nonce = this.nonceManager.getAndIncrementTransactionCount(this.address);
+    }
+
+    if (!checkIfExist(transaction.gasPrice)) {
+      transaction.gasPrice = this.gasPriceCalculator.getCurrentPrice();
+    }
+
+    if (!checkIfExist(transaction.gasPrice)) {
+      const toAddr = await transaction.to;
+      const data = await transaction.data;
+
+      transaction.gasLimit = await this.gasCalculator.estimateGas(
+        this.address,
+        toAddr || undefined,
+        data
+      );
+    }
+
+    return await super.populateTransaction(transaction);
   }
 }
 
