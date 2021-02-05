@@ -4,6 +4,7 @@ import { toBytes32 } from '../../util/util';
 import path from 'path';
 import { mutator } from '../../../../src/interfaces/helper/macros';
 import { ModuleBuilder } from '../../../../src/interfaces/mortar';
+
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
@@ -58,68 +59,62 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: ModuleBuilder
       ...(additionalConstructorArgsMap[(sourceContractName + currencyKey)] || [])
     );
 
-    await mutator(m,
-      `afterDeploySynth${currencyKey}`,
+    mutator(m,
       TokenStateForSynth,
       'setAssociatedContract',
-      'associatedContract',
       [Synth],
-      [],
-      Synth,
+      {
+        name: `afterDeploySynth${currencyKey}`,
+      }
     );
 
-    await mutator(m,
-      `afterDeploySynthProxyForSynth${currencyKey}`,
+    mutator(m,
       ProxyForSynth,
       'setTarget',
-      'target',
       [Synth],
-      [],
-      Synth,
+      {
+        name: `afterDeploySynthProxyForSynth${currencyKey}`,
+      }
     );
 
     if (proxyERC20ForSynth) {
-      await mutator(m,
-        `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`,
+      mutator(m,
         Synth,
         'setProxy',
-        'proxy',
         [proxyERC20ForSynth],
-        [],
-        proxyERC20ForSynth,
+        {
+          name: `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`
+        }
       );
 
-      await mutator(m,
-        `afterDeployProxyERC20ForSynth${currencyKey}`,
+      mutator(m,
         ProxyForSynth,
         'setTarget',
-        'target',
         [Synth],
-        [],
-        Synth,
+        {
+          name: `afterDeployProxyERC20ForSynth${currencyKey}`,
+        }
       );
     } else {
-      await mutator(m,
-        `afterDeployProxyERC20ForSynth${currencyKey}`,
+      mutator(m,
         Synth,
         'setProxy',
-        'proxy',
         [ProxyForSynth],
-        [],
-        ProxyForSynth,
+        {
+          name: `afterDeployProxyERC20ForSynth${currencyKey}`,
+        }
       );
     }
 
     const {feed} = feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
-      await mutator(m,
-        `afterDeployExchangeRatesFeed${currencyKey}`,
+      mutator(m,
         ExchangeRates,
         'setProxy',
-        'proxy',
         [currencyKeyInBytes, feed],
-        [currencyKeyInBytes],
-        feed,
+        {
+          name: `afterDeployExchangeRatesFeed${currencyKey}`,
+        }
       );
     }
   }

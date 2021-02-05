@@ -944,32 +944,27 @@ export class ContractInstance {
           nonce: txData.nonce,
         };
 
-        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], undefined, sessionEventName);
-
         await this.prompter.sendingTx(sessionEventName, fragment.name);
-        let tx;
-        try {
-          tx = await contractFunction(...args, overrides);
-        } catch (e) {
-          throw e;
-        }
+        const tx = await contractFunction(...args, overrides);
         await this.prompter.sentTx(sessionEventName, fragment.name);
 
         this.prompter.waitTransactionConfirmation();
-        const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
-        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
-        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, sessionEventName, fragment.name);
+        if (!this.eventSession.get('parallelize')) {
+          const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
+          await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
+          this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, sessionEventName, fragment.name);
+        }
 
         this.contractBinding.contractTxProgress = ++contractTxIterator;
 
         this.prompter.finishedExecutionOfContractFunction(fragment.name);
+
         return tx;
       }.bind(this);
 
       const currentEventAbstraction = this.eventSession.get('eventName');
       const txSender = await this.signer.getAddress();
-      const currentNonce = await this.txGenerator.getCurrentTransactionCount(txSender);
-      this.eventTxExecutor.add(currentEventAbstraction, txSender, currentNonce, func);
+      this.eventTxExecutor.add(currentEventAbstraction, txSender, func);
 
       return await this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
     };
@@ -1018,6 +1013,7 @@ export class MortarWallet extends ethers.Wallet {
   private gasPriceCalculator: IGasPriceCalculator;
   private gasCalculator: IGasCalculator;
   private prompter: IPrompter;
+  private eventTxExecutor: EventTxExecutor;
 
   constructor(
     wallet: ethers.Wallet,
@@ -1027,41 +1023,54 @@ export class MortarWallet extends ethers.Wallet {
     gasCalculator: IGasCalculator,
     moduleStateRepo: ModuleStateRepo,
     prompter: IPrompter,
+    eventTxExecutor: EventTxExecutor
   ) {
     super(wallet.privateKey, wallet.provider);
+
     this.sessionNamespace = sessionNamespace;
     this.nonceManager = nonceManager;
     this.gasPriceCalculator = gasPriceCalculator;
     this.gasCalculator = gasCalculator;
     this.moduleStateRepo = moduleStateRepo;
     this.prompter = prompter;
+    this.eventTxExecutor = eventTxExecutor;
   }
 
   async sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
-    const toAddr = await transaction.to;
-    await this.prompter.executeWalletTransfer(this.address, toAddr);
+    const ethersSendTx = super.sendTransaction;
+
+    const func = async (): Promise<TransactionResponse> => {
+      const toAddr = await transaction.to;
+      await this.prompter.executeWalletTransfer(this.address, toAddr);
+      const currentEventName = this.sessionNamespace.get('eventName');
+      if (!checkIfExist(currentEventName)) {
+        throw new UserError('Wallet function is running outside event!');
+      }
+
+      await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
+
+      const mortarTransaction = await this.populateTransactionWithMortarMetadata(transaction);
+
+      const txResp = await super.sendTransaction(mortarTransaction);
+      await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
+
+      if (!this.sessionNamespace.get('parallelize')) {
+        this.prompter.waitTransactionConfirmation();
+        const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
+        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
+      }
+
+      await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
+
+      await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
+
+      return txResp;
+    };
+
     const currentEventName = this.sessionNamespace.get('eventName');
-    if (!checkIfExist(currentEventName)) {
-      throw new UserError('Wallet function is running outside event!');
-    }
+    this.eventTxExecutor.add(currentEventName, this.address, func);
 
-    await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
-
-    const mortarTransaction = await this.populateTransactionWithMortarMetadata(transaction);
-    await this.moduleStateRepo.storeEventTransactionData(await this.getAddress(), mortarTransaction, undefined, currentEventName);
-
-    const txResp = await super.sendTransaction(mortarTransaction);
-    await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
-    await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
-
-    this.prompter.waitTransactionConfirmation();
-    const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
-    await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
-    this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
-
-    await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
-
-    return txResp;
+    return this.eventTxExecutor.executeSingle(currentEventName);
   }
 
   private async populateTransactionWithMortarMetadata(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {

@@ -1,14 +1,14 @@
 import { module } from '../../../../src/interfaces/mortar';
 import * as web3utils from 'web3-utils';
 import path from 'path';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { ModuleBuilder } from '../../../../src/interfaces/mortar';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 const {
   ETH_ADDRESS,
 } = process.env;
 
-export const BinaryOptionsModule = module('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {
+export const BinaryOptionsModule = module('BinaryOptionsModule', async (m: ModuleBuilder) => {
   const day = 24 * 60 * 60;
   const maxOraclePriceAge = 120 * 60; // Price updates are accepted from up to two hours before maturity to allow for delayed chainlink heartbeats.
   const expiryDuration = 26 * 7 * day; // Six months to exercise options before the market is destructible.

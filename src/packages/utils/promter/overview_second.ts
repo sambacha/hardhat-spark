@@ -161,4 +161,10 @@ export class OverviewPrompter2 implements IPrompter {
 
   executeContractFunction(): void {
   }
+
+  executeWalletTransfer(address: string, to: string): void {
+  }
+
+  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  }
 }

@@ -14,7 +14,7 @@ enum StateElementStatus {
 
 enum DescActionList {
   'SKIPPED' = 'skipped',
-  'SUCCESFULL' = 'SUCCESFULL',
+  'SUCCESSFUL' = 'SUCCESSFUL',
   'CREATE' = 'create',
 }
 
@@ -23,10 +23,16 @@ export class SimpleOverviewPrompter implements IPrompter {
     [moduleName: string]: SingleBar
   };
 
-  private currentModuleName: string = '';
+  private currentModuleName: string;
 
   constructor() {
     this.moduleBars = {};
+  }
+
+  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  }
+
+  executeWalletTransfer(address: string, to: string): void {
   }
 
   startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
@@ -65,6 +71,10 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   errorPrompt(): void {
+    if (!this.moduleBars[this.currentModuleName]) {
+      return;
+    }
+
     this.moduleBars[this.currentModuleName].stop();
   }
 
@@ -102,7 +112,7 @@ export class SimpleOverviewPrompter implements IPrompter {
       module: this.currentModuleName,
       element: elementName,
       status: StateElementStatus.SUCCESSFUL,
-      action: 'N/Ae'
+      action: 'N/A'
     });
   }
 

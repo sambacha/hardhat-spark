@@ -65,7 +65,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     const params: AWS.S3.Types.PutObjectRequest = {
       Bucket: this.bucketName,
       Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,
-      Body: JSON.stringify(this.registryFile, null, 4)
+      Body: JSON.stringify(this.registryFile, undefined, 4)
     };
 
     await this.s3.upload(params).promise();

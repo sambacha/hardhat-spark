@@ -2,7 +2,6 @@ import { ConfigFlags, IMortarUsage } from './index';
 import * as command from '../index';
 import { checkIfExist } from '../packages/utils/util';
 import { ethers, Wallet } from 'ethers';
-import { Prompter } from '../packages/prompter';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
@@ -16,6 +15,12 @@ import { IGasProvider } from '../packages/ethereum/gas';
 import { ModuleStateFile } from '../packages/modules/states/module';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
+import * as cls from 'cls-hooked';
+import { Namespace } from 'cls-hooked';
+import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { EmptyPrompter } from '../packages/utils/promter/empty_prompter';
+import { IPrompter } from '../packages/utils/promter';
 
 
 export class MortarTests implements IMortarUsage {
@@ -24,7 +29,7 @@ export class MortarTests implements IMortarUsage {
 
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
-  public prompter: Prompter;
+  public prompter: IPrompter;
   public configService: IConfigService;
   public gasProvider: IGasProvider;
   public txGenerator: EthTxGenerator;
@@ -34,6 +39,8 @@ export class MortarTests implements IMortarUsage {
   public txExecutor: TxExecutor;
   public transactionManager: TransactionManager;
   public eventTxExecutor: EventTxExecutor;
+  public eventSession: Namespace;
+  public walletWrapper: WalletWrapper;
 
   constructor(configFlags: ConfigFlags, configFile: Config) {
     process.env.MORTAR_NETWORK_ID = String(configFlags.networkId);
@@ -46,7 +53,7 @@ export class MortarTests implements IMortarUsage {
 
     process.env.MORTAR_RPC_PROVIDER = String(configFlags.rpcProvider || 'http://localhost:8545');
 
-    this.prompter = new Prompter(true);
+    this.prompter = new EmptyPrompter();
     this.configService = new MemoryConfigService(configFile);
 
     this.gasProvider = new GasPriceCalculator(this.provider);
@@ -54,12 +61,16 @@ export class MortarTests implements IMortarUsage {
     this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), configFlags.networkId, this.gasProvider, this.gasProvider);
     this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider, this.transactionManager, this.transactionManager);
 
-    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
-    this.eventTxExecutor = new EventTxExecutor();
-    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor);
+    this.eventSession = cls.createNamespace('event');
 
-    this.eventHandler = new EventHandler(this.moduleStateRepo);
-    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler);
+    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
+    this.eventTxExecutor = new EventTxExecutor(this.eventSession);
+    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession);
+
+    this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
+    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
+
+    this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
   }
 
   cleanup() {
@@ -77,13 +88,15 @@ export class MortarTests implements IMortarUsage {
   async deploy(deploymentFilePath: string): Promise<void> {
     await command.deploy(
       deploymentFilePath,
+      {},
       this.states,
       this.moduleStateRepo,
       this.moduleResolver,
       this.txGenerator,
       this.prompter,
       this.txExecutor,
-      this.configService
+      this.configService,
+      this.walletWrapper,
     );
   }
 

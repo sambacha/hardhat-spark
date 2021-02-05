@@ -66,6 +66,7 @@ export class TxExecutor {
 
     if (this.parallelize) {
       await this.executeParallel(moduleName, moduleState, registry, resolver, moduleConfig);
+
       return;
     }
 
@@ -102,7 +103,7 @@ export class TxExecutor {
         }
 
         this.prompter.bindingExecution(element.name);
-        element = await this.executeSingleBinding(element as ContractBinding, moduleState);
+        element = await this.executeSingleBinding(moduleName, element as ContractBinding, moduleState);
         element.deployMetaData.contractAddress = element.txData.output.contractAddress;
         if (!checkIfExist(element.deployMetaData?.lastEventName)) {
           element.deployMetaData.logicallyDeployed = true;
@@ -138,6 +139,7 @@ export class TxExecutor {
         }
       }
     }
+
     for (const [, element] of Object.entries(moduleState)) {
       if (hasLibraries) {
         await this.handleElement(1, batches, element, moduleState, elementsBatches);
@@ -151,7 +153,6 @@ export class TxExecutor {
   }
 
   private async executeBatches(moduleName: string, batches: any[], moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined) {
-    console.log('START');
     for (const batch of batches) {
       const promiseTxReceipt = [];
       for (let batchElement of batch) {
@@ -183,7 +184,8 @@ export class TxExecutor {
           continue;
         }
 
-        batchElement = await this.executeSingleBinding(batchElement as ContractBinding, moduleState, true);
+        this.prompter.bindingExecution(batchElement.name);
+        batchElement = await this.executeSingleBinding(moduleName, batchElement, moduleState, true);
         promiseTxReceipt.push(batchElement.txData.input.wait(BLOCK_CONFIRMATION_NUMBER));
       }
 
@@ -217,16 +219,18 @@ export class TxExecutor {
           }
 
           await this.moduleState.storeSingleBinding(batchElement);
+          this.prompter.finishedBindingExecution(batchElement.name);
         }
       }
     }
-    console.log('END');
   }
 
   private async executeEvents(moduleName: string, moduleState: ModuleState, batch: any, numberOfEvents: number): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         this.eventSession.run(async () => {
+          this.eventSession.set('parallelize', true);
+
           const eventPromise = [];
           for (let i = 0; i < batch.length; i++) {
             const batchElement = batch[i];
@@ -234,10 +238,19 @@ export class TxExecutor {
               continue;
             }
 
+            this.prompter.eventExecution((batchElement as StatefulEvent).event.name);
             eventPromise.push(this.executeEvent(moduleName, batchElement as StatefulEvent, moduleState));
           }
 
           await Promise.all(eventPromise);
+          for (let i = 0; i < batch.length; i++) {
+            const batchElement = batch[i];
+            if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
+              continue;
+            }
+
+            this.prompter.finishedEventExecution((batchElement as StatefulEvent).event.name);
+          }
           resolve();
         });
       } catch (e) {
@@ -399,7 +412,7 @@ export class TxExecutor {
     }));
   }
 
-  private async executeSingleBinding(binding: ContractBinding, moduleState: ModuleState, parallelized: boolean = false): Promise<ContractBinding> {
+  private async executeSingleBinding(moduleName: string, binding: ContractBinding, moduleState: ModuleState, parallelized: boolean = false): Promise<ContractBinding> {
     let constructorFragmentInputs = [] as JsonFragmentType[];
 
     if (!checkIfExist(binding?.abi)) {
@@ -419,7 +432,7 @@ export class TxExecutor {
     if (binding.deployMetaData.deployFn) {
       this.moduleState.setSingleEventName(`Deploy${binding.name}`);
       const contractAddress = await binding.deployMetaData.deployFn();
-      await this.moduleState.finishCurrentEvent(moduleState, `Deploy${binding.name}`);
+      await this.moduleState.finishCurrentEvent(moduleName, moduleState, `Deploy${binding.name}`);
 
       binding.deployMetaData.contractAddress = contractAddress;
       if (!checkIfExist(binding.deployMetaData?.lastEventName)) {

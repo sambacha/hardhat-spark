@@ -10,7 +10,7 @@ export enum Prompters {
 export interface IPrompter {
   nothingToDeploy(): void;
   startModuleDeploy(moduleName: string,  moduleStates: ModuleState): void;
-  finishModuleDeploy(): void;
+  finishModuleDeploy(moduleName): void;
   alreadyDeployed(elementName: string): void;
   promptContinueDeployment(): Promise<void>;
   promptExecuteTx(): Promise<void>;

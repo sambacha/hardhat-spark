@@ -3,6 +3,7 @@ import { checkIfExist } from '../../utils/util';
 import { CliError } from '../../types/errors';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Namespace } from 'cls-hooked';
+import { KeyMutex } from '../../utils/mutex/key_mutex';
 
 export class EventTxExecutor {
   private eventSession: Namespace;
@@ -16,13 +17,17 @@ export class EventTxExecutor {
   };
   private currentNumber: number;
 
+  private mutex: KeyMutex;
+
   constructor(eventSession: Namespace) {
     this.rootEvents = {};
     this.eventSession = eventSession;
     this.currentNumber = 0;
+
+    this.mutex = new KeyMutex();
   }
 
-  add(eventName: string, walletAddress: string, nonce: number, fn: ((...args: Array<any>) => Promise<TransactionResponse>)) {
+  add(eventName: string, walletAddress: string, fn: ((...args: Array<any>) => Promise<TransactionResponse>)) {
     if (checkIfExist(this.rootEvents[eventName])) {
       throw new CliError(`Execution is still blocked, something went wrong - ${eventName}`);
     }
@@ -48,7 +53,7 @@ export class EventTxExecutor {
     });
   }
 
-  async executeAll() {
+  async executeAll(): Promise<void> {
     const executionOrdering: { [address: string]: any } = {};
 
     for (const [eventName, rootEvent] of Object.entries(this.rootEvents)) {
@@ -62,22 +67,29 @@ export class EventTxExecutor {
       });
     }
 
-    if (Object.keys(this.rootEvents).length != this.currentNumber) {
-      return;
-    }
+    // think how to execute this in batched way, currently is single execution
 
+    const allSenders = [];
     for (const [sender, array] of Object.entries(executionOrdering)) {
-      for (const singleElement of array) {
-        const args = singleElement.event.args;
-        const func = singleElement.event.func;
-        const tx = await func(...args);
-
-        await singleElement.event.resolveFunc(tx);
-
-        delete this.rootEvents[singleElement.eventName];
-      }
+      allSenders.push(this.executeSenderContractFunctions(sender, array));
     }
+    await Promise.all(allSenders);
 
     this.currentNumber = 0;
+  }
+
+  private async executeSenderContractFunctions(sender: string, array: Array<any>): Promise<void> {
+    for (const singleElement of array) {
+      const args = singleElement.event.args;
+      const func = singleElement.event.func;
+
+      const resolve = await this.mutex.acquireQueued(sender);
+      const tx = await func(...args);
+      resolve();
+
+      await singleElement.event.resolveFunc(tx);
+
+      delete this.rootEvents[singleElement.eventName];
+    }
   }
 }

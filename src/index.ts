@@ -14,6 +14,7 @@ import { IConfigService } from './packages/config';
 import { IPrompter } from './packages/utils/promter';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
+import { MortarConfig } from './packages/types/config';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
@@ -28,6 +29,7 @@ export function init(flags: OutputFlags<any>, configService: ConfigService) {
 
 export async function deploy(
   migrationFilePath: string,
+  config: MortarConfig,
   states: string[],
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
@@ -38,7 +40,6 @@ export async function deploy(
   walletWrapper: WalletWrapper,
 ) {
   const modules = await require(migrationFilePath);
-
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
   const mortarWallets = walletWrapper.wrapWallets(wallets);
@@ -67,22 +68,22 @@ export async function deploy(
 
     // initialize empty tx data
     if (module.getCustomGasPriceProvider()) {
-      txGenerator.changeGasPriceCalculator(module.getCustomGasPriceProvider());
+      txGenerator.changeGasPriceCalculator(config.gasPriceProvider);
     }
 
     if (module.getCustomNonceManager()) {
-      txGenerator.changeNonceManager(module.getCustomNonceManager());
+      txGenerator.changeNonceManager(config.nonceManager);
     }
 
     if (module.getCustomTransactionSinger()) {
-      txGenerator.changeTransactionSinger(module.getCustomTransactionSinger());
+      txGenerator.changeTransactionSinger(config.transactionSinger);
     }
 
     const initializedTxModuleState = txGenerator.initTx(moduleState);
     await prompter.promptContinueDeployment();
 
     try {
-      await executor.execute(moduleName, initializedTxModuleState, module.getRegistry(), module.getResolver(), module.getModuleConfig());
+      await executor.execute(moduleName, initializedTxModuleState, config.registry, config.resolver, module.getModuleConfig());
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onSuccess);
     } catch (error) {
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
@@ -92,7 +93,7 @@ export async function deploy(
 
     await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onCompletion);
 
-    prompter.finishModuleDeploy();
+    prompter.finishModuleDeploy(moduleName);
   }
 }
 

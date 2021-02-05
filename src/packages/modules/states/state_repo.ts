@@ -66,10 +66,6 @@ export class ModuleStateRepo {
 
   async finishCurrentEvent(moduleName: string, moduleStates: ModuleState, eventName?: string): Promise<void> {
     const currEventName = eventName ? eventName : this.currentEventName;
-    console.log(
-      currEventName,
-      eventName
-    );
     const currentState = (await this.getStateIfExist(moduleName));
     const currentEvent = (currentState[currEventName] as StatefulEvent);
     if (

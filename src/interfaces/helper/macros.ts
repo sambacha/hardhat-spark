@@ -2,37 +2,53 @@ import { ContractBinding, ContractEvent, ModuleBuilder } from '../mortar';
 import { expectFuncRead } from './expectancy';
 import { ethers } from 'ethers';
 
-export const mutator = async (
+export const mutator = (
   m: ModuleBuilder,
-  name: string,
   setter: ContractBinding,
   setterFunc: string,
-  getterFunc: string,
   setterArgs: any[],
-  getterArgs: any[],
-  expectedValue: any,
-  ...deps: ContractBinding[]
-): Promise<ContractEvent> => {
+  opts?: {
+    name?: string,
+    getterFunc?: string,
+    getterArgs?: any[],
+    expectedValue?: any,
+    deps?: ContractBinding[]
+  }
+): ContractEvent => {
+  const name = opts?.name ? opts.name : `mutator${setterFunc}${setter.name}`;
+  const getFunc = setterFunc.substring(3);
+  const getterFunc = opts?.getterFunc ? opts.getterFunc : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
+
+  let deps = [];
+  if (opts?.deps) {
+    deps = opts.deps;
+  }
+
   const usages: (ContractBinding | ContractEvent)[] = [];
-  for (const arg of setterArgs) {
+  for (const arg of (setterArgs)) {
     if (arg instanceof ContractBinding || arg instanceof ContractBinding) {
       usages.push(arg);
     }
   }
 
-  return m.group(setter, ...deps).afterDeploy(m, name, async (): Promise<void> => {
-    await setter.instance()[`${setterFunc}`](...setterArgs);
+  const value = setterArgs.pop();
+  const keys = setterArgs;
+  const getterArgs = opts?.getterArgs ? opts.getterArgs : keys;
+  const expectedValue = opts?.expectedValue ? opts.expectedValue : value;
 
-    await expectFuncRead(expectedValue, setter.instance()[`${getterFunc}`], ...getterArgs);
+  return m.group(setter, ...deps).afterDeploy(m, name, async (): Promise<void> => {
+    await setter.instance()[`${setterFunc}`](...keys, value);
+
+    await expectFuncRead(expectedValue, setter.instance()[getterFunc], ...getterArgs);
   }, ...usages);
 };
 
-export const filler = async (
+export const filler = (
   m: ModuleBuilder,
   name: string,
   rootWallet: ethers.Wallet,
   wallets: ethers.Wallet[]
-): Promise<void> => {
+): void => {
   m.onStart('on start distribute ethers to all accounts', async () => {
     for (let i = 0; i < wallets.length; i++) {
       await rootWallet.sendTransaction({

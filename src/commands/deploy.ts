@@ -21,6 +21,9 @@ import { IPrompter, Prompters } from '../packages/utils/promter';
 import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
+import { CONFIG_SCRIPT_NAME } from '../packages/config';
+import { MortarConfig } from '../packages/types/config';
+import { JsonPrompter } from '../packages/utils/promter/json_prompter';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -65,13 +68,19 @@ export default class Deploy extends Command {
       {
         name: 'prompting',
         description: 'Prompting type: streamlined, overview or json. default: overview',
-        options: [Prompters.overview, Prompters.json, Prompters.streamlined, Prompters.simple],
+        options: [Prompters.json, Prompters.streamlined, Prompters.simple],
       }
     ),
     state: flags.string(
       {
         name: 'state',
         description: 'Provide name of module\'s that you would want to use as state. Most commonly used if you are deploying more than one module that are dependant on each other.',
+      }
+    ),
+    configPath: flags.string(
+      {
+        name: 'configPath',
+        description: 'Path to the mortar-config.js script, default is same as current path.',
       }
     ),
     testEnv: flags.boolean(
@@ -122,12 +131,14 @@ export default class Deploy extends Command {
         prompter = new StreamlinedPrompter(flags.yes);
         break;
       case Prompters.json:
+        prompter = new JsonPrompter();
+        break;
       case Prompters.overview:
         prompter = new OverviewPrompter();
         break;
       case Prompters.simple:
       default: {
-        prompter = new StreamlinedPrompter(flags.yes);
+        prompter = new SimpleOverviewPrompter();
       }
     }
     this.prompter = prompter;
@@ -147,11 +158,24 @@ export default class Deploy extends Command {
     const eventHandler = new EventHandler(moduleState, prompter);
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
 
-    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter);
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
 
     const deploymentFilePath = path.resolve(currentPath, filePath);
+    let configFilePath = path.resolve(currentPath, CONFIG_SCRIPT_NAME);
+    if (flags.configPath) {
+      configFilePath =  path.resolve(currentPath, flags.configPath);
+    }
 
-    await command.deploy(deploymentFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
+    const configModules = await require(configFilePath);
+    let config: MortarConfig;
+    for (const [mortarConfig] of Object.entries(configModules)) {
+      config = mortarConfig as MortarConfig;
+    }
+    if (Object.entries(configModules).length > 1) {
+      throw new UserError('Sorry, but you can only have one config object!');
+    }
+
+    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
   }
 
   async catch(error: Error) {

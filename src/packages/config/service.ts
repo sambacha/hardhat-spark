@@ -6,10 +6,6 @@ import { ethers } from 'ethers';
 import { FailedToWriteToFile, MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
 import { checkIfExist } from '../utils/util';
 import { CONFIG_FILENAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
-import { Deferrable } from '@ethersproject/properties';
-import { TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
-import { MortarWallet } from '../../interfaces/mortar';
-import { WalletTxExecutor } from '../ethereum/wallet/wrapper';
 
 export default class ConfigService implements IConfigService {
   private readonly configPath: string;

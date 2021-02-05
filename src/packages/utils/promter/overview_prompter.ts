@@ -4,6 +4,7 @@ import { MultiBar, SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
 import { CliError } from '../../types/errors';
+import { checkIfExist } from '../util';
 
 enum StateElementStatus {
   'NOT_EXECUTED' = 'not executed',
@@ -36,7 +37,7 @@ export class OverviewPrompter implements IPrompter {
     cli.info(chalk.bold('\n\nDeploy module - ', chalk.green(moduleName)));
 
     let maxLength = 0;
-    for (const [elementName, ] of Object.entries(moduleState)) {
+    for (const [elementName,] of Object.entries(moduleState)) {
       if (elementName.length >= maxLength) {
         maxLength = elementName.length;
       }
@@ -63,7 +64,7 @@ export class OverviewPrompter implements IPrompter {
       }
     });
 
-    for (const [elementName, ] of Object.entries(moduleState)) {
+    for (const [elementName,] of Object.entries(moduleState)) {
       this.currentElementsBar[moduleName][elementName] = this.multiBar[moduleName].create(0, 0, {
         name: elementName,
         status: StateElementStatus.NOT_EXECUTED,
@@ -89,7 +90,11 @@ export class OverviewPrompter implements IPrompter {
   }
 
   errorPrompt(): void {
-    for (const [elementName, ] of Object.entries(this.currentElementsBar[this.currentModuleName])) {
+    if (!checkIfExist(this.currentElementsBar[this.currentModuleName])) {
+      return;
+    }
+
+    for (const [elementName,] of Object.entries(this.currentElementsBar[this.currentModuleName])) {
       this.currentElementsBar[this.currentModuleName][elementName].update({
         status: StateElementStatus.FAILED,
         name: elementName,
@@ -175,5 +180,11 @@ export class OverviewPrompter implements IPrompter {
   }
 
   executeContractFunction(): void {
+  }
+
+  executeWalletTransfer(address: string, to: string): void {
+  }
+
+  finishedExecutionOfWalletTransfer(from: string, to: string): void {
   }
 }

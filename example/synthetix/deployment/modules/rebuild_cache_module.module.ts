@@ -25,7 +25,7 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
     await expectFuncRead(undefined, AddressResolver.instance().areAddressesImported, contractBytes, contractAddresses);
   });
 
-  const setTargetInResolverFromReadProxy = m.setTargetInResolverFromReadProxy.event as ContractEvent;
+  const setTargetInResolverFromReadProxy = m.mutatorsetTargetReadProxyAddressResolver.event as ContractEvent;
   m.group(
     ...Object.values(m.getAllBindings()),
     setTargetInResolverFromReadProxy,
