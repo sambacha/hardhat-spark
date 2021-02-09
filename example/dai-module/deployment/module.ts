@@ -5,7 +5,7 @@ import { DaiModule } from './dai_module';
 import { DaiExampleModuleBuilder } from '../.mortar/DaiExampleModule/DaiExampleModule';
 
 export const DaiExampleModule = module('DaiExampleModule', async (m: DaiExampleModuleBuilder) => {
-  await m.bindModule(DaiModule);
+  await m.module(DaiModule);
 
   const Dai = m.Dai;
   const Example = m.contract('Example', Dai);

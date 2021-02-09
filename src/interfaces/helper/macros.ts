@@ -19,9 +19,9 @@ export const mutator = (
   const getFunc = setterFunc.substring(3);
   const getterFunc = opts?.getterFunc ? opts.getterFunc : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
 
-  let deps = [];
+  const deps = [];
   if (opts?.deps) {
-    deps = opts.deps;
+    deps.push(...opts.deps);
   }
 
   const usages: (ContractBinding | ContractEvent)[] = [];
@@ -45,7 +45,6 @@ export const mutator = (
 
 export const filler = (
   m: ModuleBuilder,
-  name: string,
   rootWallet: ethers.Wallet,
   wallets: ethers.Wallet[]
 ): void => {

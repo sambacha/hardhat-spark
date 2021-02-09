@@ -1,15 +1,19 @@
 import {
   ContractBinding,
   module,
-  ModuleBuilder
 } from '../../../../src/interfaces/mortar';
 import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { toBytes32 } from '../../util/util';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-export const SynthetixIssuerSetup = module('SynthetixIssuerSetup', async (m: ModuleBuilder) => {
+export const SynthetixIssuerSetup = module('SynthetixIssuerSetup', async (m: SynthetixModuleBuilder) => {
   const Issuer = m.Issuer;
 
-  const synths = require('../local/synths.json');
+  const synths = m.synths as {
+    name: string,
+    asset: string,
+    subclass: string
+  }[];
   const filteredSynths: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   for (const {name: currencyKey} of synths) {

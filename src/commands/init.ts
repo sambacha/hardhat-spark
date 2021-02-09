@@ -23,6 +23,12 @@ export default class Init extends Command {
         required: false,
       }
     ),
+    configScriptPath: flags.string(
+      {
+        name: 'configScriptPath',
+        description: 'Path to the mortar.config.js script, default is same as current path.',
+      }
+    ),
     hdPath: flags.string(
       {
         name: 'hdPath',

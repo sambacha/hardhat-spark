@@ -14,4 +14,5 @@ export type MortarConfig = {
   gasPriceProvider?: IGasPriceCalculator,
   nonceManager?: INonceManager,
   transactionSinger?: ITransactionSigner
+  params?: {[name: string]: any},
 };

@@ -1,18 +1,10 @@
-import { IPrompter } from './index';
+import { IPrompter, StateElementStatus } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { MultiBar, SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
 import { CliError } from '../../types/errors';
 import { checkIfExist } from '../util';
-
-enum StateElementStatus {
-  'NOT_EXECUTED' = 'not executed',
-  'STARTED' = 'started',
-  'SUCCESSFUL' = 'successful',
-  'DEPLOYED' = 'already executed/deployed',
-  'FAILED' = 'failed',
-}
 
 export class OverviewPrompter implements IPrompter {
   private multiBar: {
@@ -37,7 +29,7 @@ export class OverviewPrompter implements IPrompter {
     cli.info(chalk.bold('\n\nDeploy module - ', chalk.green(moduleName)));
 
     let maxLength = 0;
-    for (const [elementName,] of Object.entries(moduleState)) {
+    for (const [elementName, ] of Object.entries(moduleState)) {
       if (elementName.length >= maxLength) {
         maxLength = elementName.length;
       }
@@ -64,7 +56,7 @@ export class OverviewPrompter implements IPrompter {
       }
     });
 
-    for (const [elementName,] of Object.entries(moduleState)) {
+    for (const [elementName, ] of Object.entries(moduleState)) {
       this.currentElementsBar[moduleName][elementName] = this.multiBar[moduleName].create(0, 0, {
         name: elementName,
         status: StateElementStatus.NOT_EXECUTED,
@@ -94,7 +86,7 @@ export class OverviewPrompter implements IPrompter {
       return;
     }
 
-    for (const [elementName,] of Object.entries(this.currentElementsBar[this.currentModuleName])) {
+    for (const [elementName, ] of Object.entries(this.currentElementsBar[this.currentModuleName])) {
       this.currentElementsBar[this.currentModuleName][elementName].update({
         status: StateElementStatus.FAILED,
         name: elementName,

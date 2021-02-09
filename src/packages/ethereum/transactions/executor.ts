@@ -120,7 +120,6 @@ export class TxExecutor {
 
       this.prompter.eventExecution((element as StatefulEvent).event.name);
       await this.executeEvent(moduleName, element as StatefulEvent, moduleState);
-      this.prompter.finishedEventExecution((element as StatefulEvent).event.name);
     }
   }
 
@@ -429,12 +428,13 @@ export class TxExecutor {
       }
     }
 
-    if (binding.deployMetaData.deployFn) {
+    if (binding.deployMetaData.deploymentSpec.deployFn) {
       this.moduleState.setSingleEventName(`Deploy${binding.name}`);
-      const contractAddress = await binding.deployMetaData.deployFn();
+      const resp = await binding.deployMetaData.deploymentSpec.deployFn();
       await this.moduleState.finishCurrentEvent(moduleName, moduleState, `Deploy${binding.name}`);
 
-      binding.deployMetaData.contractAddress = contractAddress;
+      binding.deployMetaData.contractAddress = resp.contractAddress;
+      binding.txData.output = resp.transaction;
       if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
         binding.deployMetaData.logicallyDeployed = true;
       }

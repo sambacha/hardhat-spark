@@ -7,10 +7,6 @@
     "rootDir": "src",
     "target": "es2017",
     "esModuleInterop": true,
-    "lib": [
-      "es2017.full",
-      "es2018.asyncgenerator"
-    ]
   },
   "exclude": [
     "node_modules",

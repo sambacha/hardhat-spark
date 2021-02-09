@@ -21,8 +21,6 @@ import { IPrompter, Prompters } from '../packages/utils/promter';
 import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
-import { CONFIG_SCRIPT_NAME } from '../packages/config';
-import { MortarConfig } from '../packages/types/config';
 import { JsonPrompter } from '../packages/utils/promter/json_prompter';
 
 export default class Deploy extends Command {
@@ -77,10 +75,10 @@ export default class Deploy extends Command {
         description: 'Provide name of module\'s that you would want to use as state. Most commonly used if you are deploying more than one module that are dependant on each other.',
       }
     ),
-    configPath: flags.string(
+    configScriptPath: flags.string(
       {
-        name: 'configPath',
-        description: 'Path to the mortar-config.js script, default is same as current path.',
+        name: 'configScriptPath',
+        description: 'Path to the mortar.config.js script, default is same as current path.',
       }
     ),
     testEnv: flags.boolean(
@@ -160,20 +158,8 @@ export default class Deploy extends Command {
 
     const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
 
+    const config = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
     const deploymentFilePath = path.resolve(currentPath, filePath);
-    let configFilePath = path.resolve(currentPath, CONFIG_SCRIPT_NAME);
-    if (flags.configPath) {
-      configFilePath =  path.resolve(currentPath, flags.configPath);
-    }
-
-    const configModules = await require(configFilePath);
-    let config: MortarConfig;
-    for (const [mortarConfig] of Object.entries(configModules)) {
-      config = mortarConfig as MortarConfig;
-    }
-    if (Object.entries(configModules).length > 1) {
-      throw new UserError('Sorry, but you can only have one config object!');
-    }
 
     await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
   }

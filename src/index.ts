@@ -1,7 +1,7 @@
 import { cli } from 'cli-ux';
 import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
-import { Module } from './interfaces/mortar';
+import { Module, ModuleOptions } from './interfaces/mortar';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';
@@ -23,6 +23,7 @@ export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const hdPath = (flags.hdPath as string);
 
   configService.generateAndSaveConfig(privateKeys, mnemonic, hdPath);
+  configService.saveEmptyMortarConfig(process.cwd(), flags.configScriptPath);
 
   cli.info('You have successfully configured mortar.');
 }
@@ -50,7 +51,9 @@ export async function deploy(
       continue;
     }
 
-    await module.init(mortarWallets as ethers.Wallet[]);
+    await module.init(mortarWallets as ethers.Wallet[], undefined, {
+      params: config?.params,
+    });
     moduleStateRepo.initStateRepo(moduleName);
 
     let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
@@ -129,12 +132,12 @@ export async function diff(resolvedPath: string, states: string[], moduleResolve
   }
 }
 
-export async function genTypes(resolvedPath: string, moduleTypings: ModuleTypings) {
+export async function genTypes(resolvedPath: string, config: MortarConfig, moduleTypings: ModuleTypings) {
   const modules = await require(resolvedPath);
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {
     const module = await modFunc as Module;
-    await module.init();
+    await module.init(undefined, undefined, config as ModuleOptions);
 
     moduleTypings.generate(moduleName, module);
   }

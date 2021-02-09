@@ -1,11 +1,17 @@
-import { Config } from '../types/config';
+import { Config, MortarConfig } from '../types/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { FailedToWriteToFile, MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
+import {
+  FailedToWriteToFile,
+  MnemonicNotValid,
+  MortarConfigAlreadyExist,
+  PrivateKeyNotValid,
+  UserError
+} from '../types/errors';
 import { checkIfExist } from '../utils/util';
-import { CONFIG_FILENAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
+import { CONFIG_FILENAME, CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
 
 export default class ConfigService implements IConfigService {
   private readonly configPath: string;
@@ -28,7 +34,39 @@ export default class ConfigService implements IConfigService {
     }
   }
 
-  generateAndSaveConfig(privateKeys: string[], mnemonic: string, hdPath: string): boolean {
+  async getMortarConfig(currentPath: string, configScriptPath: string): Promise<MortarConfig> {
+    let configFilePath;
+    if (configScriptPath) {
+      configFilePath = path.resolve(currentPath, configScriptPath);
+    } else {
+      configFilePath = path.resolve(currentPath, CONFIG_SCRIPT_NAME);
+    }
+
+    let config: MortarConfig;
+    if (configFilePath) {
+      let configModules;
+      try {
+        configModules = await require(configFilePath);
+        if (Object.entries(configModules).length > 1) {
+          throw new UserError('Sorry, but you can only have one config object!');
+        }
+
+        for (const [, mortarConfig] of Object.entries(configModules)) {
+          config = mortarConfig as MortarConfig;
+        }
+      } catch (err) {
+        if (err instanceof UserError) {
+          throw err;
+        }
+
+        config = {};
+      }
+    }
+
+    return config;
+  }
+
+  generateAndSaveConfig(privateKeys: string[], mnemonic?: string, hdPath?: string): boolean {
     this.config = {
       privateKeys: privateKeys,
       mnemonic: mnemonic,
@@ -48,9 +86,9 @@ export default class ConfigService implements IConfigService {
     try {
       ethers.Wallet.fromMnemonic(mnemonic, hdPath);
     } catch (error) {
-      cli.debug(error);
-
-      throw new MnemonicNotValid('You have provided not valid mnemonic and/or hd path');
+      if (mnemonic && hdPath) {
+        throw new MnemonicNotValid('You have provided not valid mnemonic and/or hd path');
+      }
     }
 
     try {
@@ -62,8 +100,30 @@ export default class ConfigService implements IConfigService {
     return true;
   }
 
+  saveEmptyMortarConfig(currentPath: string, configScriptPath: string): boolean {
+    const relativeMortarConfigPath = configScriptPath ? configScriptPath : CONFIG_SCRIPT_NAME;
+
+    const mortarConfigPath = path.resolve(currentPath, relativeMortarConfigPath);
+    if (fs.existsSync(mortarConfigPath)) {
+      throw new MortarConfigAlreadyExist('You are trying to init empty mortar config but it already exist!');
+    }
+
+    // @TODO change to mortar package ref
+    const mortarConfig = `import { MortarConfig } from '../../src/packages/types/config';
+
+export const config: MortarConfig = {};
+`;
+
+    try {
+      fs.writeFileSync(mortarConfigPath, mortarConfig);
+    } catch (e) {
+      throw new FailedToWriteToFile('Failed to write to file.');
+    }
+
+    return false;
+  }
+
   getAllWallets(rpcPath: string): ethers.Wallet[] {
-    // @TODO wrap wallets to store all transaction triggered from them to state file
     const wallets = [];
 
     const content = fs.readFileSync(this.configPath, {

@@ -69,7 +69,6 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
           output: undefined,
         };
 
-        // @TODO: enable multiple address to send tx. HD wallet, address array
         rawTx.input = {
           from: this.wallet.address,
           input: stateElement.bytecode as string

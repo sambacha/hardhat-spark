@@ -1,37 +1,33 @@
 import { ContractBinding, module } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import path from 'path';
 import { mutator } from '../../../../src/interfaces/helper/macros';
-import { ModuleBuilder } from '../../../../src/interfaces/mortar';
-
-require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 const {
-  ETH_ADDRESS,
   MORTAR_NETWORK_ID
 } = process.env;
 
-export const SynthetixSynths = module('SynthetixSynths', async (m: ModuleBuilder) => {
+export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
-  const synths = require('./../local/synths.json');
-  const feeds = require('./../local/feeds.json');
+  const synths = m.synths;
+  const feeds = m.feeds;
 
   for (const {name: currencyKey, subclass, asset} of synths) {
-    const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', ETH_ADDRESS, ethers.constants.AddressZero);
+    const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 
     const synthProxyIsLegacy = currencyKey === 'sUSD' && MORTAR_NETWORK_ID === '1';
 
     const ProxyForSynth = m.bindPrototype(
       `Proxy${currencyKey}`,
       synthProxyIsLegacy ? 'Proxy' : 'ProxyERC20',
-      ETH_ADDRESS
+      m.ETH_ADDRESS
     );
 
     let proxyERC20ForSynth: ContractBinding | undefined;
     if (currencyKey === 'sUSD') {
-      proxyERC20ForSynth = m.bindPrototype(`ProxyERC20${currencyKey}`, 'ProxyERC20', ETH_ADDRESS);
+      proxyERC20ForSynth = m.bindPrototype(`ProxyERC20${currencyKey}`, 'ProxyERC20', m.ETH_ADDRESS);
     }
 
     const currencyKeyInBytes = toBytes32(currencyKey);
@@ -52,7 +48,7 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: ModuleBuilder
       TokenStateForSynth,
       `Synth ${currencyKey}`,
       currencyKey,
-      ETH_ADDRESS,
+      m.ETH_ADDRESS,
       currencyKeyInBytes,
       originalTotalSupply,
       m.ReadProxyAddressResolver,

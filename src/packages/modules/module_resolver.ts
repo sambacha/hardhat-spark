@@ -33,9 +33,6 @@ export class ModuleResolver {
   }
 
   checkIfDiff(oldModuleState: ModuleStateFile, newModuleStates: ModuleState): boolean {
-    // @TODO(filip): be more specific about type of conflict. What fields needs to mismatch in order to consider this different
-    // if args match also
-
     let oldBindingsLength = 0;
     let newBindingsLength = 0;
     if (checkIfExist(oldModuleState)) {
@@ -337,6 +334,15 @@ State file: ${stateFileElement.event.eventType}`);
       this.resolveContractsAndEvents(moduleState, bindings, libBinding, events, moduleEvents);
     }
 
+    for (const deployDeps of binding.deployMetaData.deploymentSpec.deps) {
+      const deployDepsBinding = bindings[deployDeps.name];
+      if (!checkIfExist(deployDepsBinding)) {
+        continue;
+      }
+
+      this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events, moduleEvents);
+    }
+
     this.handleModuleEvents(moduleState, moduleEvents.onStart);
     this.resolveBeforeDeployEvents(moduleState, binding, bindings, events, moduleEvents);
 
@@ -494,7 +500,6 @@ State file: ${stateFileElement.event.eventType}`);
     moduleEvents: { [name: string]: ModuleEvent },
   ) {
     for (const [eventName, moduleEvent] of Object.entries(moduleEvents)) {
-      // @TODO module events are always executed
       if (checkIfExist(moduleState[eventName]) && (moduleState[eventName] as StatefulEvent).executed) {
         continue;
       }
@@ -515,7 +520,7 @@ function printArgs(args: any[], indent: string): void {
 
   if (args.length != 0) {
     for (const arg of args) {
-      // @TODO: make this prettier
+      // @TODO: use cli-ux tree instead
       if (checkIfExist(arg.name)) {
         cli.info(indent + '└── Contract: ' + arg.name);
         return printArgs(arg.args, indent + '  ');

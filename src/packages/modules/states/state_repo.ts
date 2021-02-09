@@ -2,7 +2,7 @@ import {
   ContractBinding,
   ContractBindingMetaData,
   ContractEvent,
-  ContractInput,
+  ContractInput, Deployed,
   EventTransactionData,
   EventType,
   MetaDataEvent, ModuleEvent,
@@ -35,7 +35,6 @@ export class ModuleStateRepo {
   }
 
   initStateRepo(moduleName: string): void {
-    // @TODO add possibility to pass custom state repo
     this.currentModuleName = moduleName;
   }
 
@@ -208,12 +207,27 @@ export class ModuleStateRepo {
           argBinding.abi,
           argBinding.libraries,
           argBinding.txData,
-          argBinding.deployMetaData,
+          this.convertDeployMetaData(argBinding.deployMetaData),
         );
       }
     }
 
-    return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.libraries, binding.txData, binding.deployMetaData);
+    return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.libraries, binding.txData, this.convertDeployMetaData(binding.deployMetaData));
+  }
+
+  static convertDeployMetaData(deployMetaData: Deployed): Deployed {
+    const deployed = deployMetaData;
+
+    deployed.deploymentSpec = {
+      deployFn: deployMetaData.deploymentSpec?.deployFn,
+      deps: deployed.deploymentSpec?.deps?.map(
+        (v: ContractBinding) => {
+          return ModuleStateRepo.convertBindingToMetaData(v) as ContractBinding;
+        }
+      )
+    };
+
+    return deployed;
   }
 
   static convertStatesToMetaData(moduleState: ModuleState | { [p: string]: ContractBindingMetaData | StatefulEvent }): { [p: string]: ContractBindingMetaData | StatefulEvent } {

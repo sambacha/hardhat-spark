@@ -14,6 +14,12 @@ export class CliError extends Error {
   }
 }
 
+export class MortarConfigAlreadyExist extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class AbiMismatch extends UserError {
     constructor(message: string) {
     super(message);

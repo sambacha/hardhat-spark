@@ -7,6 +7,14 @@ export enum Prompters {
   'streamlined' = 'streamlined'
 }
 
+export enum StateElementStatus {
+  'NOT_EXECUTED' = 'not executed',
+  'STARTED' = 'started',
+  'SUCCESSFUL' = 'successful',
+  'DEPLOYED' = 'already executed/deployed',
+  'FAILED' = 'failed',
+}
+
 export interface IPrompter {
   nothingToDeploy(): void;
   startModuleDeploy(moduleName: string,  moduleStates: ModuleState): void;

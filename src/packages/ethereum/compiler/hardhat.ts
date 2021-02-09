@@ -9,6 +9,7 @@ import { checkIfExist } from '../../utils/util';
 
 export class HardhatCompiler extends Compiler {
   compile(): void {
+    // @TODO think how to avoid child_process
     execSync('npx hardhat compile');
   }
 

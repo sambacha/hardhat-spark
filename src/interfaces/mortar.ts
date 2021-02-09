@@ -11,7 +11,7 @@ import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { IPrompter } from '../packages/utils/promter';
 import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/executor';
-import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
+import { BindingsConflict, CliError, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
@@ -50,7 +50,12 @@ export type EventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
 
 export type ShouldRedeployFn = (diff: ContractBinding) => boolean;
-export type DeployFn = () => Promise<string>;
+
+export type DeployReturn = {
+  transaction: TransactionReceipt,
+  contractAddress: string,
+};
+export type DeployFn = () => Promise<DeployReturn>;
 
 export enum EventType {
   'OnChangeEvent' = 'OnChangeEvent',
@@ -72,7 +77,7 @@ export type BaseEvent = {
   eventType: EventType,
 
   deps: string[],
-  eventDeps: string[], // @TODO add tuple with event type
+  eventDeps: string[],
 
   usage: string[],
   eventUsage: string[],
@@ -149,13 +154,21 @@ export type Deployed = {
   logicallyDeployed: boolean | undefined,
   contractAddress: string | undefined,
   shouldRedeploy: ShouldRedeployFn | undefined,
-  deployFn: DeployFn | undefined,
+  deploymentSpec: {
+    deployFn: DeployFn | undefined,
+    deps: (ContractBinding | ContractEvent)[]
+  } | undefined,
 };
 
 export type ModuleConfig = {
   [contractName: string]: {
     deploy: boolean
   }
+};
+
+export type FactoryCustomOpts = {
+  getterFunc?: string,
+  getterArgs?: any[]
 };
 
 export class StatefulEvent {
@@ -450,7 +463,10 @@ export class ContractBinding extends Binding {
       contractAddress: undefined,
       lastEventName: undefined,
       shouldRedeploy: undefined,
-      deployFn: undefined,
+      deploymentSpec: {
+        deployFn: undefined,
+        deps: []
+      },
     };
     this.eventsDeps = events || {
       beforeCompile: [],
@@ -521,16 +537,36 @@ export class ContractBinding extends Binding {
     this.library = true;
   }
 
-  asProxy(): ProxyContract {
-    return new ProxyContract(this);
+  proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void {
+    m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
+      await proxy.instance()[setLogicName](logic);
+    });
   }
 
-  asFactory(): FactoryContractBinding {
-    return new FactoryContractBinding(this);
+  factoryCreate(m: ModuleBuilder, childName: string, createFuncName: string, args: any[], opts?: FactoryCustomOpts): ContractBinding {
+    const getFunctionName = opts.getterFunc ? opts.getterFunc : 'get' + createFuncName.substr(5);
+    const getFunctionArgs = opts.getterArgs ? opts.getterArgs : [];
+
+    const child = m.contract(childName);
+    child.deployFn(async () => {
+      const tx = await this.instance()[createFuncName](123);
+
+      const children = await this.instance()[getFunctionName](getFunctionArgs);
+
+      return {
+        transaction: tx,
+        contractAddress: children[0]
+      };
+    }, this);
+
+    return child;
   }
 
   deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding {
-    this.deployMetaData.deployFn = deployFn;
+    this.deployMetaData.deploymentSpec = {
+      deployFn,
+      deps
+    };
 
     return this;
   }
@@ -698,71 +734,6 @@ export class ContractBinding extends Binding {
       usage: usageBindings,
       eventUsage: eventUsages,
     };
-  }
-}
-
-export class FactoryContractBinding extends ContractBinding {
-  constructor(
-    contractBinding: ContractBinding
-  ) {
-    super(
-      contractBinding.name,
-      contractBinding.contractName,
-      contractBinding.args,
-      contractBinding.bytecode,
-      contractBinding.abi,
-      contractBinding.libraries,
-      contractBinding.deployMetaData,
-      contractBinding.txData,
-      contractBinding.eventsDeps,
-      contractBinding.signer,
-      contractBinding.prompter,
-      contractBinding.txGenerator,
-      contractBinding.moduleStateRepo,
-      contractBinding.eventTxExecutor
-    );
-  }
-
-  create(m: ModuleBuilder, childName: string, createFuncName: string, ...args: any): ContractBinding {
-    const child = m.contract(childName);
-    child.deployFn(async () => {
-      await this.instance()[createFuncName](123);
-
-      const children = await this.instance().getChildren();
-
-      return children[0];
-    }, this);
-
-    return child;
-  }
-}
-
-export class ProxyContract extends ContractBinding {
-  constructor(
-    contractBinding: ContractBinding
-  ) {
-    super(
-      contractBinding.name,
-      contractBinding.contractName,
-      contractBinding.args,
-      contractBinding.bytecode,
-      contractBinding.abi,
-      contractBinding.libraries,
-      contractBinding.deployMetaData,
-      contractBinding.txData,
-      contractBinding.eventsDeps,
-      contractBinding.signer,
-      contractBinding.prompter,
-      contractBinding.txGenerator,
-      contractBinding.moduleStateRepo,
-      contractBinding.eventTxExecutor,
-    );
-  }
-
-  setNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void {
-    m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
-      await proxy.instance()[setLogicName](logic);
-    });
   }
 }
 
@@ -1037,8 +1008,6 @@ export class MortarWallet extends ethers.Wallet {
   }
 
   async sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
-    const ethersSendTx = super.sendTransaction;
-
     const func = async (): Promise<TransactionResponse> => {
       const toAddr = await transaction.to;
       await this.prompter.executeWalletTransfer(this.address, toAddr);
@@ -1120,7 +1089,10 @@ export class ContractBindingMetaData {
       contractAddress: undefined,
       lastEventName: undefined,
       shouldRedeploy: undefined,
-      deployFn: undefined,
+      deploymentSpec: {
+        deployFn: undefined,
+        deps: [],
+      },
     };
   }
 }
@@ -1213,11 +1185,19 @@ export class ModuleBuilder {
   }
 
   getParam(name: string): any {
+    if (!checkIfExist(this.opts)) {
+      throw new CliError('This module doesnt have params, check if you are deploying right module!');
+    }
+
     return this.opts.params[name];
   }
 
   setParam(opts: ModuleOptions) {
     this.opts = opts;
+
+    for (const [paramName, param] of Object.entries(opts.params)) {
+      this[paramName] = param;
+    }
   }
 
   // bindDeployed(name: string, address: string, network?: string): DeployedBinding;
@@ -1280,12 +1260,14 @@ export class ModuleBuilder {
   }
 
   async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
+    const options = opts ? Object.assign(opts, this.opts) : this.opts;
+
     if (m instanceof Promise) {
       m = await m;
     }
 
     if (!m.isInitialized()) {
-      await m.init(wallets, this, opts);
+      await m.init(wallets, this, options);
     }
 
     const bindings = m.getAllBindings();
@@ -1308,7 +1290,7 @@ export class ModuleBuilder {
       if (
         checkIfExist(this.bindings[bindingName]) &&
         this.bindings[bindingName] &&
-        this.bindings[bindingName].bytecode != binding.bytecode // @TODO add args also
+        this.bindings[bindingName].bytecode != binding.bytecode
       ) {
         throw new UserError('Conflict when merging two modules, check if their is same binding name.');
       }
@@ -1375,6 +1357,10 @@ export class ModuleBuilder {
 
   getAllPrototypes(): { [name: string]: Prototype } {
     return this.prototypes;
+  }
+
+  getAllOpts(): ModuleOptions {
+    return this.opts;
   }
 
   // module eventsDeps below
@@ -1485,6 +1471,7 @@ export class Module {
     this.nonceManager = moduleBuilder.getCustomNonceManager();
     this.transactionSinger = moduleBuilder.getCustomTransactionSigner();
     this.prototypes = moduleBuilder.getAllPrototypes();
+    this.opts = moduleBuilder.getAllOpts();
 
     this.initialized = true;
   }
@@ -1495,6 +1482,10 @@ export class Module {
 
   getAllEvents(): Events {
     return this.events;
+  }
+
+  getOpts(): ModuleOptions {
+    return this.opts;
   }
 
   getAllModuleEvents(): ModuleEvents {

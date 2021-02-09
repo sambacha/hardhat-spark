@@ -58,6 +58,7 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentEvent(moduleName, moduleState, eventName);
+    this.prompter.finishedEventExecution(eventName);
   }
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
@@ -120,6 +121,7 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentModuleEvent(moduleName, moduleStates, eventType, eventName);
+    this.prompter.finishedEventExecution(eventName);
   }
 
   private async handleDeployedBindingsEvents(
@@ -155,6 +157,7 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
+    this.prompter.finishedEventExecution(eventName);
   }
 
   private async handleCompiledBindingsEvents(
@@ -190,5 +193,6 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
+    this.prompter.finishedEventExecution(eventName);
   }
 }
