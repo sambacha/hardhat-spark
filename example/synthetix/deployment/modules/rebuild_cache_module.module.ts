@@ -3,6 +3,7 @@ import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { useOvm } from './core.module';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';
+// @ts-ignore
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
@@ -25,7 +26,7 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
     await expectFuncRead(undefined, AddressResolver.instance().areAddressesImported, contractBytes, contractAddresses);
   });
 
-  const setTargetInResolverFromReadProxy = m.setTargetInResolverFromReadProxy.event as ContractEvent;
+  const setTargetInResolverFromReadProxy = m.mutatorsetTargetReadProxyAddressResolver.event as ContractEvent;
   m.group(
     ...Object.values(m.getAllBindings()),
     setTargetInResolverFromReadProxy,

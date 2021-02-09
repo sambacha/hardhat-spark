@@ -29,6 +29,7 @@ export class ModuleTypings {
     const bindings = module.getAllBindings();
     const actions = module.getAllActions();
     const events = module.getAllEvents();
+    const params = module.getOpts().params;
 
     const fileName = `${moduleName}.d.ts`;
     const stateDir = path.resolve(moduleDir, fileName);
@@ -54,6 +55,11 @@ export declare class ${moduleName}Builder extends ModuleBuilder {`;
     for (const binding of Object.values(actions)) {
       file += `
   ${binding.name}: Action;`;
+    }
+
+    for (const [paramName, paramValue] of Object.entries(params)) {
+      file += `
+  ${paramName}: ${typeof paramValue};`;
     }
 
     file += `

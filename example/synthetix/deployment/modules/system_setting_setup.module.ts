@@ -2,7 +2,6 @@ import {
   ContractBinding,
   ContractEvent,
   module,
-  ModuleBuilder
 } from '../../../../src/interfaces/mortar';
 import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { toBytes32 } from '../../util/util';
@@ -10,13 +9,14 @@ import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';
 import { checkIfExist } from '../../../../src/packages/utils/util';
 import { ethers } from 'ethers';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 const {
   MORTAR_NETWORK_ID
 } = process.env;
 
-export const SystemSettingsModule = module('SystemSettingsModule', async (m: ModuleBuilder) => {
-  const synths = require('../local/synths.json');
+export const SystemSettingsModule = module('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
+  const synths = m.synths;
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   for (const {name: currencyKey} of synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);

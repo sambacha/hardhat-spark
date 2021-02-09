@@ -4,6 +4,7 @@ import { PathNotProvided, UserError } from '../packages/types/errors';
 import path from 'path';
 import { ModuleTypings } from '../packages/modules/typings';
 import * as command from '../index';
+import ConfigService from '../packages/config/service';
 
 export default class GenTypes extends Command {
   static description = 'describe the command here';
@@ -15,7 +16,13 @@ export default class GenTypes extends Command {
         name: 'debug',
         description: 'Flag used for debugging'
       }
-    )
+    ),
+    configScriptPath: flags.string(
+      {
+        name: 'configScriptPath',
+        description: 'Path to the mortar.config.js script, default is same as current path.',
+      }
+    ),
   };
 
   static args = [{name: 'path'}];
@@ -35,7 +42,10 @@ export default class GenTypes extends Command {
     const resolvedPath = path.resolve(currentPath, filePath);
     const typings = new ModuleTypings(currentPath);
 
-    await command.genTypes(resolvedPath, typings);
+    const configService = new ConfigService(currentPath);
+    const mortarConfig = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
+
+    await command.genTypes(resolvedPath, mortarConfig, typings);
   }
 
   async catch(error: Error) {

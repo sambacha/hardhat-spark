@@ -2,19 +2,21 @@ import { IModuleState, ModuleState, ModuleStateFile, STATE_DIR_NAME, STATE_NAME 
 import path from 'path';
 import fs from 'fs';
 import { ModuleStateRepo } from '../state_repo';
+import { Mutex } from '../../../utils/mutex/simple_mutex';
 
 export class FileSystemModuleState implements IModuleState {
-  private mutex: boolean;
+  private mutex: Mutex;
   private readonly statePath: string;
 
-  constructor(currentProjectPath: string, mutex: boolean) {
-    this.mutex = mutex;
+  constructor(currentProjectPath: string) {
     const dir = path.resolve(currentProjectPath, STATE_DIR_NAME);
 
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
     this.statePath = dir;
+
+    this.mutex = new Mutex();
   }
 
   async getModuleState(networkId: number, moduleName: string): Promise<ModuleStateFile> {
@@ -40,9 +42,16 @@ export class FileSystemModuleState implements IModuleState {
     }
 
     const stateDir = path.resolve(moduleDir, `${networkId}_${STATE_NAME}`);
-    this.acquireLock();
-    fs.writeFileSync(stateDir, JSON.stringify(metaData, undefined, 4));
-    this.unlock();
+    const jsonMetaData = JSON.stringify(metaData, undefined, 4);
+    const release = await this.mutex.acquireQueued();
+    try {
+      fs.writeFileSync(stateDir, jsonMetaData);
+    } catch (e) {
+      release();
+
+      throw e;
+    }
+    release();
 
     return true;
   }
@@ -51,17 +60,5 @@ export class FileSystemModuleState implements IModuleState {
     const dir = path.resolve(this.statePath, moduleName, `${networkId}_${STATE_NAME}`);
 
     return fs.existsSync(dir);
-  }
-
-  private acquireLock() {
-    if (this.mutex) {
-      throw new Error('Lock is already acquired');
-    }
-
-    this.mutex = true;
-  }
-
-  private unlock() {
-    this.mutex = false;
   }
 }

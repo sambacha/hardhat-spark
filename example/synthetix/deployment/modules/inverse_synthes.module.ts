@@ -1,15 +1,15 @@
-import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { module } from '../../../../src/interfaces/mortar';
 
 import path from 'path';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
-export const SynthetixInverseSynths = module('SynthetixInverseSynths', async (m: ModuleBuilder) => {
+export const SynthetixInverseSynths = module('SynthetixInverseSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
-  const synths = require('../local/synths.json');
-  for (const {name: currencyKey, inverted} of synths) {
+  for (const {name: currencyKey, inverted} of m.synths) {
     if (inverted) {
       const {entryPoint, upperLimit, lowerLimit} = inverted;
 

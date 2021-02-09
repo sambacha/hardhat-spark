@@ -5,7 +5,7 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { checkIfExist, checkMutex } from '../packages/utils/util';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import ConfigService from '../packages/config/service';
-import { Prompter } from '../packages/prompter';
+import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ethers, Wallet } from 'ethers';
@@ -16,10 +16,17 @@ import { UserError } from '../packages/types/errors';
 import chalk from 'chalk';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import * as cls from 'cls-hooked';
+import { IPrompter, Prompters } from '../packages/utils/promter';
+import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
+import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
+import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
+import { JsonPrompter } from '../packages/utils/promter/json_prompter';
 
 export default class Deploy extends Command {
   private mutex = false;
   static description = 'Deploy new migrations, difference between current and already deployed.';
+  private prompter: IPrompter | undefined;
 
   static flags = {
     networkId: flags.integer(
@@ -55,10 +62,23 @@ export default class Deploy extends Command {
         description: 'Used to skip confirmation questions.'
       }
     ),
+    prompting: flags.enum(
+      {
+        name: 'prompting',
+        description: 'Prompting type: streamlined, overview or json. default: overview',
+        options: [Prompters.json, Prompters.streamlined, Prompters.simple],
+      }
+    ),
     state: flags.string(
       {
         name: 'state',
         description: 'Provide name of module\'s that you would want to use as state. Most commonly used if you are deploying more than one module that are dependant on each other.',
+      }
+    ),
+    configScriptPath: flags.string(
+      {
+        name: 'configScriptPath',
+        description: 'Path to the mortar.config.js script, default is same as current path.',
       }
     ),
     testEnv: flags.boolean(
@@ -103,10 +123,23 @@ export default class Deploy extends Command {
 
     process.env.MORTAR_RPC_PROVIDER = String(flags.rpcProvider || 'http://localhost:8545');
 
-    let prompter = new Prompter(false);
-    if (flags.yes) {
-      prompter = new Prompter(true);
+    let prompter;
+    switch (flags.prompting) {
+      case Prompters.streamlined:
+        prompter = new StreamlinedPrompter(flags.yes);
+        break;
+      case Prompters.json:
+        prompter = new JsonPrompter();
+        break;
+      case Prompters.overview:
+        prompter = new OverviewPrompter();
+        break;
+      case Prompters.simple:
+      default: {
+        prompter = new SimpleOverviewPrompter();
+      }
     }
+    this.prompter = prompter;
     const configService = new ConfigService(currentPath);
 
     const gasCalculator = new GasPriceCalculator(provider);
@@ -114,18 +147,28 @@ export default class Deploy extends Command {
     const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
 
     const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex, flags.testEnv);
-    const eventTxExecutor = new EventTxExecutor();
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState, eventTxExecutor);
 
-    const eventHandler = new EventHandler(moduleState);
-    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler, flags.parallelize);
+    const eventSession = cls.createNamespace('event');
+    const eventTxExecutor = new EventTxExecutor(eventSession);
 
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState, eventTxExecutor, eventSession);
+
+    const eventHandler = new EventHandler(moduleState, prompter);
+    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
+
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
+
+    const config = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
-    await command.deploy(deploymentFilePath, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService);
+    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
   }
 
   async catch(error: Error) {
+    if (this.prompter) {
+      this.prompter.errorPrompt();
+    }
+
     if (error instanceof UserError) {
       cli.info(chalk.red.bold('ERROR'), error.message);
       cli.exit(1);

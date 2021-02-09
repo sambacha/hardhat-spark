@@ -3,20 +3,22 @@ import { HardhatCompiler } from '../packages/ethereum/compiler/hardhat';
 import { checkIfExist, checkIfSameInputs, checkIfSuitableForInstantiating } from '../packages/utils/util';
 import { ModuleValidator } from '../packages/modules/module_validator';
 import { JsonFragment, JsonFragmentType } from '../packages/types/artifacts/abi';
-import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
+import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { cli } from 'cli-ux';
 import { CallOverrides, ethers } from 'ethers';
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { Prompter } from '../packages/prompter';
+import { IPrompter } from '../packages/utils/promter';
 import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/executor';
-import { BindingsConflict, PrototypeNotFound, UserError } from '../packages/types/errors';
+import { BindingsConflict, CliError, PrototypeNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
-import { IGasPriceCalculator } from '../packages/ethereum/gas';
+import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
 import { INonceManager, ITransactionSigner } from '../packages/ethereum/transactions';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import { Namespace } from 'cls-hooked';
+import { Deferrable } from '@ethersproject/properties';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -48,7 +50,12 @@ export type EventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
 
 export type ShouldRedeployFn = (diff: ContractBinding) => boolean;
-export type DeployFn = () => Promise<string>;
+
+export type DeployReturn = {
+  transaction: TransactionReceipt,
+  contractAddress: string,
+};
+export type DeployFn = () => Promise<DeployReturn>;
 
 export enum EventType {
   'OnChangeEvent' = 'OnChangeEvent',
@@ -70,7 +77,7 @@ export type BaseEvent = {
   eventType: EventType,
 
   deps: string[],
-  eventDeps: string[], // @TODO add tuple with event type
+  eventDeps: string[],
 
   usage: string[],
   eventUsage: string[],
@@ -147,13 +154,21 @@ export type Deployed = {
   logicallyDeployed: boolean | undefined,
   contractAddress: string | undefined,
   shouldRedeploy: ShouldRedeployFn | undefined,
-  deployFn: DeployFn | undefined,
+  deploymentSpec: {
+    deployFn: DeployFn | undefined,
+    deps: (ContractBinding | ContractEvent)[]
+  } | undefined,
 };
 
 export type ModuleConfig = {
   [contractName: string]: {
     deploy: boolean
   }
+};
+
+export type FactoryCustomOpts = {
+  getterFunc?: string,
+  getterArgs?: any[]
 };
 
 export class StatefulEvent {
@@ -409,6 +424,7 @@ export class ContractBinding extends Binding {
 
   public bytecode: string | undefined;
   public abi: JsonFragment[] | undefined;
+  public library: boolean = false;
   public libraries: SingleContractLinkReference | undefined;
 
   public txData: TransactionData | undefined;
@@ -420,10 +436,11 @@ export class ContractBinding extends Binding {
   public forceFlag: boolean;
 
   public signer: ethers.Signer | undefined;
-  public prompter: Prompter | undefined;
+  public prompter: IPrompter | undefined;
   public txGenerator: EthTxGenerator | undefined;
   public moduleStateRepo: ModuleStateRepo | undefined;
   public eventTxExecutor: EventTxExecutor | undefined;
+  public eventSession: Namespace | undefined;
 
   constructor(
     // metadata
@@ -432,10 +449,11 @@ export class ContractBinding extends Binding {
     // event hooks
     events?: EventsDepRef,
     signer?: ethers.Signer,
-    prompter?: Prompter,
+    prompter?: IPrompter,
     txGenerator?: EthTxGenerator,
     moduleStateRepo?: ModuleStateRepo,
     eventTxExecutor?: EventTxExecutor,
+    eventSession?: Namespace
   ) {
     super(name);
     this.args = args;
@@ -445,7 +463,10 @@ export class ContractBinding extends Binding {
       contractAddress: undefined,
       lastEventName: undefined,
       shouldRedeploy: undefined,
-      deployFn: undefined,
+      deploymentSpec: {
+        deployFn: undefined,
+        deps: []
+      },
     };
     this.eventsDeps = events || {
       beforeCompile: [],
@@ -471,6 +492,7 @@ export class ContractBinding extends Binding {
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
+    this.eventSession = eventSession;
 
     this.forceFlag = false;
   }
@@ -489,10 +511,11 @@ export class ContractBinding extends Binding {
       this.deployMetaData?.contractAddress as string,
       this.abi as JsonFragment[],
       this.signer as ethers.Signer,
-      this.prompter as Prompter,
+      this.prompter as IPrompter,
       this.txGenerator as EthTxGenerator,
       this.moduleStateRepo as ModuleStateRepo,
-      this.eventTxExecutor as EventTxExecutor
+      this.eventTxExecutor as EventTxExecutor,
+      this.eventSession as Namespace,
     ) as unknown as ethers.Contract;
 
     return this.contractInstance;
@@ -510,16 +533,40 @@ export class ContractBinding extends Binding {
     return this;
   }
 
-  asProxy(): ProxyContract {
-    return new ProxyContract(this);
+  setLibrary() {
+    this.library = true;
   }
 
-  asFactory(): FactoryContractBinding {
-    return new FactoryContractBinding(this);
+  proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void {
+    m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
+      await proxy.instance()[setLogicName](logic);
+    });
+  }
+
+  factoryCreate(m: ModuleBuilder, childName: string, createFuncName: string, args: any[], opts?: FactoryCustomOpts): ContractBinding {
+    const getFunctionName = opts.getterFunc ? opts.getterFunc : 'get' + createFuncName.substr(5);
+    const getFunctionArgs = opts.getterArgs ? opts.getterArgs : [];
+
+    const child = m.contract(childName);
+    child.deployFn(async () => {
+      const tx = await this.instance()[createFuncName](123);
+
+      const children = await this.instance()[getFunctionName](getFunctionArgs);
+
+      return {
+        transaction: tx,
+        contractAddress: children[0]
+      };
+    }, this);
+
+    return child;
   }
 
   deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding {
-    this.deployMetaData.deployFn = deployFn;
+    this.deployMetaData.deploymentSpec = {
+      deployFn,
+      deps
+    };
 
     return this;
   }
@@ -690,71 +737,6 @@ export class ContractBinding extends Binding {
   }
 }
 
-export class FactoryContractBinding extends ContractBinding {
-  constructor(
-    contractBinding: ContractBinding
-  ) {
-    super(
-      contractBinding.name,
-      contractBinding.contractName,
-      contractBinding.args,
-      contractBinding.bytecode,
-      contractBinding.abi,
-      contractBinding.libraries,
-      contractBinding.deployMetaData,
-      contractBinding.txData,
-      contractBinding.eventsDeps,
-      contractBinding.signer,
-      contractBinding.prompter,
-      contractBinding.txGenerator,
-      contractBinding.moduleStateRepo,
-      contractBinding.eventTxExecutor
-    );
-  }
-
-  create(m: ModuleBuilder, childName: string, createFuncName: string, ...args: any): ContractBinding {
-    const child = m.contract(childName);
-    child.deployFn(async () => {
-      const tx = await this.instance()[createFuncName](123);
-
-      const children = await this.instance().getChildren();
-
-      return children[0];
-    }, this);
-
-    return child;
-  }
-}
-
-export class ProxyContract extends ContractBinding {
-  constructor(
-    contractBinding: ContractBinding
-  ) {
-    super(
-      contractBinding.name,
-      contractBinding.contractName,
-      contractBinding.args,
-      contractBinding.bytecode,
-      contractBinding.abi,
-      contractBinding.libraries,
-      contractBinding.deployMetaData,
-      contractBinding.txData,
-      contractBinding.eventsDeps,
-      contractBinding.signer,
-      contractBinding.prompter,
-      contractBinding.txGenerator,
-      contractBinding.moduleStateRepo,
-      contractBinding.eventTxExecutor,
-    );
-  }
-
-  setNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void {
-    m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
-      await proxy.instance()[setLogicName](logic);
-    });
-  }
-}
-
 export class Action {
   public name: string;
   public action: ActionFn;
@@ -788,7 +770,7 @@ export type TransactionData = {
 };
 
 export type EventTransactionData = {
-  contractInput: ContractInput[]
+  contractInput: (ContractInput | TransactionRequest)[]
   contractOutput: TransactionResponse[]
 };
 
@@ -805,9 +787,12 @@ export class RegistryContractBinding extends ContractBinding {
 
 export class ContractInstance {
   private readonly contractBinding: ContractBinding;
-  private readonly prompter: Prompter;
+  private readonly prompter: IPrompter;
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
+  private readonly eventSession: Namespace;
+  private readonly signer: ethers.Signer;
+  private readonly txGenerator: EthTxGenerator;
 
   [key: string]: any;
 
@@ -816,15 +801,18 @@ export class ContractInstance {
     contractAddress: string,
     abi: JsonFragment[],
     signer: ethers.Signer,
-    prompter: Prompter,
+    prompter: IPrompter,
     txGenerator: EthTxGenerator,
     moduleStateRepo: ModuleStateRepo,
     eventTxExecutor: EventTxExecutor,
+    eventSession: Namespace,
   ) {
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.contractBinding = contractBinding;
     this.eventTxExecutor = eventTxExecutor;
+    this.eventSession = eventSession;
+    this.signer = signer;
 
     if (!checkIfExist(this.contractBinding?.contractTxProgress)) {
       this.contractBinding.contractTxProgress = 0;
@@ -868,9 +856,9 @@ export class ContractInstance {
   }
 
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
-    return async function (...args: Array<any>): Promise<TransactionResponse> {
-      const func = async (...args: Array<any>): Promise<TransactionResponse> => {
-        // @TODO add option validation also
+    return async (...args: Array<any>): Promise<TransactionResponse> => {
+      const func = async function (...args: Array<any>): Promise<TransactionResponse> {
+        const sessionEventName = this.eventSession.get('eventName');
         if (args.length > fragment.inputs.length + 1) {
           throw new UserError(`Trying to call contract function with more arguments then in interface - ${fragment.name}`);
         }
@@ -888,7 +876,7 @@ export class ContractInstance {
 
         let contractTxIterator = this.contractBinding?.contractTxProgress || 0;
 
-        const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.contractBinding.name);
+        const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(this.contractBinding.name, sessionEventName);
 
         if (currentEventTransactionData.contractOutput.length > contractTxIterator) {
           this.contractBinding.contractTxProgress = ++contractTxIterator;
@@ -917,7 +905,6 @@ export class ContractInstance {
         }
 
         this.prompter.executeContractFunction(fragment.name);
-        cli.debug(fragment.name, ...args);
         await this.prompter.promptExecuteTx();
 
         const txData = await this.txGenerator.fetchTxData(await this.signer.getAddress());
@@ -928,27 +915,30 @@ export class ContractInstance {
           nonce: txData.nonce,
         };
 
-        await this.prompter.sendingTx();
-        // @TODO think how to gracefully block here... (yield or whatever)
+        await this.prompter.sendingTx(sessionEventName, fragment.name);
         const tx = await contractFunction(...args, overrides);
-        await this.prompter.sentTx();
+        await this.prompter.sentTx(sessionEventName, fragment.name);
 
         this.prompter.waitTransactionConfirmation();
-        const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
-        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt);
-        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER);
+        if (!this.eventSession.get('parallelize')) {
+          const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
+          await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
+          this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, sessionEventName, fragment.name);
+        }
 
         this.contractBinding.contractTxProgress = ++contractTxIterator;
 
         this.prompter.finishedExecutionOfContractFunction(fragment.name);
+
         return tx;
-      };
+      }.bind(this);
 
-      const currentEventAbstraction = this.moduleStateRepo.getSingleEventName();
-      this.eventTxExecutor.add(currentEventAbstraction, func);
+      const currentEventAbstraction = this.eventSession.get('eventName');
+      const txSender = await this.signer.getAddress();
+      this.eventTxExecutor.add(currentEventAbstraction, txSender, func);
 
-      return this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
-    }.bind(this);
+      return await this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
+    };
   }
 
   private buildConstantWrappers(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
@@ -987,6 +977,95 @@ export class ContractInstance {
   }
 }
 
+export class MortarWallet extends ethers.Wallet {
+  private sessionNamespace: Namespace;
+  private moduleStateRepo: ModuleStateRepo;
+  private nonceManager: INonceManager;
+  private gasPriceCalculator: IGasPriceCalculator;
+  private gasCalculator: IGasCalculator;
+  private prompter: IPrompter;
+  private eventTxExecutor: EventTxExecutor;
+
+  constructor(
+    wallet: ethers.Wallet,
+    sessionNamespace: Namespace,
+    nonceManager: INonceManager,
+    gasPriceCalculator: IGasPriceCalculator,
+    gasCalculator: IGasCalculator,
+    moduleStateRepo: ModuleStateRepo,
+    prompter: IPrompter,
+    eventTxExecutor: EventTxExecutor
+  ) {
+    super(wallet.privateKey, wallet.provider);
+
+    this.sessionNamespace = sessionNamespace;
+    this.nonceManager = nonceManager;
+    this.gasPriceCalculator = gasPriceCalculator;
+    this.gasCalculator = gasCalculator;
+    this.moduleStateRepo = moduleStateRepo;
+    this.prompter = prompter;
+    this.eventTxExecutor = eventTxExecutor;
+  }
+
+  async sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
+    const func = async (): Promise<TransactionResponse> => {
+      const toAddr = await transaction.to;
+      await this.prompter.executeWalletTransfer(this.address, toAddr);
+      const currentEventName = this.sessionNamespace.get('eventName');
+      if (!checkIfExist(currentEventName)) {
+        throw new UserError('Wallet function is running outside event!');
+      }
+
+      await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
+
+      const mortarTransaction = await this.populateTransactionWithMortarMetadata(transaction);
+
+      const txResp = await super.sendTransaction(mortarTransaction);
+      await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
+
+      if (!this.sessionNamespace.get('parallelize')) {
+        this.prompter.waitTransactionConfirmation();
+        const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
+        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
+      }
+
+      await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
+
+      await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
+
+      return txResp;
+    };
+
+    const currentEventName = this.sessionNamespace.get('eventName');
+    this.eventTxExecutor.add(currentEventName, this.address, func);
+
+    return this.eventTxExecutor.executeSingle(currentEventName);
+  }
+
+  private async populateTransactionWithMortarMetadata(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
+    if (!checkIfExist(transaction.nonce)) {
+      transaction.nonce = this.nonceManager.getAndIncrementTransactionCount(this.address);
+    }
+
+    if (!checkIfExist(transaction.gasPrice)) {
+      transaction.gasPrice = this.gasPriceCalculator.getCurrentPrice();
+    }
+
+    if (!checkIfExist(transaction.gasPrice)) {
+      const toAddr = await transaction.to;
+      const data = await transaction.data;
+
+      transaction.gasLimit = await this.gasCalculator.estimateGas(
+        this.address,
+        toAddr || undefined,
+        data
+      );
+    }
+
+    return await super.populateTransaction(transaction);
+  }
+}
+
 export class ContractBindingMetaData {
   public name: string;
   public contractName: string;
@@ -1010,7 +1089,10 @@ export class ContractBindingMetaData {
       contractAddress: undefined,
       lastEventName: undefined,
       shouldRedeploy: undefined,
-      deployFn: undefined,
+      deploymentSpec: {
+        deployFn: undefined,
+        deps: [],
+      },
     };
   }
 }
@@ -1067,6 +1149,13 @@ export class ModuleBuilder {
     return this.bindings[name];
   }
 
+  library(name: string, ...args: Arguments): ContractBinding {
+    const binding = this.contract(name, ...args);
+    binding.setLibrary();
+
+    return binding;
+  }
+
   group(...dependencies: (ContractBinding | ContractEvent)[]): GroupedDependencies {
     return new GroupedDependencies(dependencies);
   }
@@ -1096,11 +1185,19 @@ export class ModuleBuilder {
   }
 
   getParam(name: string): any {
+    if (!checkIfExist(this.opts)) {
+      throw new CliError('This module doesnt have params, check if you are deploying right module!');
+    }
+
     return this.opts.params[name];
   }
 
   setParam(opts: ModuleOptions) {
     this.opts = opts;
+
+    for (const [paramName, param] of Object.entries(opts.params)) {
+      this[paramName] = param;
+    }
   }
 
   // bindDeployed(name: string, address: string, network?: string): DeployedBinding;
@@ -1163,12 +1260,14 @@ export class ModuleBuilder {
   }
 
   async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
+    const options = opts ? Object.assign(opts, this.opts) : this.opts;
+
     if (m instanceof Promise) {
       m = await m;
     }
 
     if (!m.isInitialized()) {
-      await m.init(wallets, this, opts);
+      await m.init(wallets, this, options);
     }
 
     const bindings = m.getAllBindings();
@@ -1191,7 +1290,7 @@ export class ModuleBuilder {
       if (
         checkIfExist(this.bindings[bindingName]) &&
         this.bindings[bindingName] &&
-        this.bindings[bindingName].bytecode != binding.bytecode // @TODO add args also
+        this.bindings[bindingName].bytecode != binding.bytecode
       ) {
         throw new UserError('Conflict when merging two modules, check if their is same binding name.');
       }
@@ -1258,6 +1357,10 @@ export class ModuleBuilder {
 
   getAllPrototypes(): { [name: string]: Prototype } {
     return this.prototypes;
+  }
+
+  getAllOpts(): ModuleOptions {
+    return this.opts;
   }
 
   // module eventsDeps below
@@ -1368,6 +1471,7 @@ export class Module {
     this.nonceManager = moduleBuilder.getCustomNonceManager();
     this.transactionSinger = moduleBuilder.getCustomTransactionSigner();
     this.prototypes = moduleBuilder.getAllPrototypes();
+    this.opts = moduleBuilder.getAllOpts();
 
     this.initialized = true;
   }
@@ -1378,6 +1482,10 @@ export class Module {
 
   getAllEvents(): Events {
     return this.events;
+  }
+
+  getOpts(): ModuleOptions {
+    return this.opts;
   }
 
   getAllModuleEvents(): ModuleEvents {

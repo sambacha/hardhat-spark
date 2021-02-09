@@ -69,7 +69,6 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
           output: undefined,
         };
 
-        // @TODO: enable multiple address to send tx. HD wallet, address array
         rawTx.input = {
           from: this.wallet.address,
           input: stateElement.bytecode as string
@@ -108,7 +107,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   async fetchTxData(walletAddress: string): Promise<TxMetaData> {
     return {
       gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
-      nonce: await this.nonceManager.getTransactionCount(walletAddress),
+      nonce: await this.nonceManager.getAndIncrementTransactionCount(walletAddress),
     };
   }
 
@@ -116,7 +115,11 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     return this.transactionSigner.generateSingedTx(value, data, wallet);
   }
 
-  getTransactionCount(walletAddress: string): Promise<number> {
-    return this.nonceManager.getTransactionCount(walletAddress);
+  getAndIncrementTransactionCount(walletAddress: string): Promise<number> {
+    return this.nonceManager.getAndIncrementTransactionCount(walletAddress);
+  }
+
+  async getCurrentTransactionCount(walletAddress: string): Promise<number> {
+    return this.nonceManager.getCurrentTransactionCount(walletAddress);
   }
 }

@@ -11,13 +11,13 @@ import { SynthetixAncillary } from './modules/ancillary.module';
 import { SynthetixInverseSynths } from './modules/inverse_synthes.module';
 import { SynthetixRebuildCache } from './modules/rebuild_cache_module.module';
 import { SystemSettingsModule } from './modules/system_setting_setup.module';
-import { SynthetixModuleBuilder } from '../.mortar/SynthetixModule/SynthetixModule';
 import { SynthetixIssuerSetup } from './modules/issuer_setup.module';
 import { SynthetixDebtCacheSetup } from './modules/debt_cache_setup.module';
+import { ModuleBuilder } from '../../../src/interfaces/mortar';
 
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
-export const SynthetixModule = module('SynthetixModule', async (m: SynthetixModuleBuilder) => {
+export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder) => {
   await m.module(SynthetixLibraries);
   await m.module(SynthetixPrototypes);
 

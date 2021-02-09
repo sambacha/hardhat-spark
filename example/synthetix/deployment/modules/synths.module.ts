@@ -1,36 +1,33 @@
 import { ContractBinding, module } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import path from 'path';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 import { mutator } from '../../../../src/interfaces/helper/macros';
-require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 const {
-  ETH_ADDRESS,
   MORTAR_NETWORK_ID
 } = process.env;
 
 export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
-  const synths = require('./../local/synths.json');
-  const feeds = require('./../local/feeds.json');
+  const synths = m.synths;
+  const feeds = m.feeds;
 
   for (const {name: currencyKey, subclass, asset} of synths) {
-    const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', ETH_ADDRESS, ethers.constants.AddressZero);
+    const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 
     const synthProxyIsLegacy = currencyKey === 'sUSD' && MORTAR_NETWORK_ID === '1';
 
     const ProxyForSynth = m.bindPrototype(
       `Proxy${currencyKey}`,
       synthProxyIsLegacy ? 'Proxy' : 'ProxyERC20',
-      ETH_ADDRESS
+      m.ETH_ADDRESS
     );
 
     let proxyERC20ForSynth: ContractBinding | undefined;
     if (currencyKey === 'sUSD') {
-      proxyERC20ForSynth = m.bindPrototype(`ProxyERC20${currencyKey}`, 'ProxyERC20', ETH_ADDRESS);
+      proxyERC20ForSynth = m.bindPrototype(`ProxyERC20${currencyKey}`, 'ProxyERC20', m.ETH_ADDRESS);
     }
 
     const currencyKeyInBytes = toBytes32(currencyKey);
@@ -51,75 +48,69 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModu
       TokenStateForSynth,
       `Synth ${currencyKey}`,
       currencyKey,
-      ETH_ADDRESS,
+      m.ETH_ADDRESS,
       currencyKeyInBytes,
       originalTotalSupply,
       m.ReadProxyAddressResolver,
       ...(additionalConstructorArgsMap[(sourceContractName + currencyKey)] || [])
     );
 
-    await mutator(m,
-      `afterDeploySynth${currencyKey}`,
+    mutator(m,
       TokenStateForSynth,
       'setAssociatedContract',
-      'associatedContract',
       [Synth],
-      [],
-      Synth,
+      {
+        name: `afterDeploySynth${currencyKey}`,
+      }
     );
 
-    await mutator(m,
-      `afterDeploySynthProxyForSynth${currencyKey}`,
+    mutator(m,
       ProxyForSynth,
       'setTarget',
-      'target',
       [Synth],
-      [],
-      Synth,
+      {
+        name: `afterDeploySynthProxyForSynth${currencyKey}`,
+      }
     );
 
     if (proxyERC20ForSynth) {
-      await mutator(m,
-        `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`,
+      mutator(m,
         Synth,
         'setProxy',
-        'proxy',
         [proxyERC20ForSynth],
-        [],
-        proxyERC20ForSynth,
+        {
+          name: `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`
+        }
       );
 
-      await mutator(m,
-        `afterDeployProxyERC20ForSynth${currencyKey}`,
+      mutator(m,
         ProxyForSynth,
         'setTarget',
-        'target',
         [Synth],
-        [],
-        Synth,
+        {
+          name: `afterDeployProxyERC20ForSynth${currencyKey}`,
+        }
       );
     } else {
-      await mutator(m,
-        `afterDeployProxyERC20ForSynth${currencyKey}`,
+      mutator(m,
         Synth,
         'setProxy',
-        'proxy',
         [ProxyForSynth],
-        [],
-        ProxyForSynth,
+        {
+          name: `afterDeployProxyERC20ForSynth${currencyKey}`,
+        }
       );
     }
 
     const {feed} = feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
-      await mutator(m,
-        `afterDeployExchangeRatesFeed${currencyKey}`,
+      mutator(m,
         ExchangeRates,
         'setProxy',
-        'proxy',
         [currencyKeyInBytes, feed],
-        [currencyKeyInBytes],
-        feed,
+        {
+          name: `afterDeployExchangeRatesFeed${currencyKey}`,
+        }
       );
     }
   }

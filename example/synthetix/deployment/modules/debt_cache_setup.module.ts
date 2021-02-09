@@ -23,10 +23,8 @@ export const SynthetixDebtCacheSetup = module('SynthetixDebtCacheSetup', async (
   };
 
   const checkSnapshot = async () => {
-    const [cacheInfo, currentDebt] = await Promise.all([
-      DebtCache.instance().cacheInfo(),
-      DebtCache.instance().currentDebt(),
-    ]);
+    const cacheInfo = await DebtCache.instance().cacheInfo();
+    const currentDebt = await DebtCache.instance().currentDebt();
 
     // Check if the snapshot is stale and can be fixed.
     if (cacheInfo.isStale && !currentDebt.anyRateIsInvalid) {

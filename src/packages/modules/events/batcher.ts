@@ -40,24 +40,40 @@ export class Batcher {
     let deepestDepNumber = 0;
 
     for (const usage of event.usage) {
+      if (!checkIfExist(elementsBatches[usage])) {
+        // throw new CliError(`Usage is not yet deployed - ${usage}`);
+      }
+
       if (elementsBatches[usage] > deepestDepNumber) {
         deepestDepNumber = elementsBatches[usage];
       }
     }
 
     for (const dep of event.deps) {
+      if (!checkIfExist(elementsBatches[dep])) {
+        // throw new CliError(`Dependency is not yet deployed \nEvent: ${event.name} \nDependency: ${dep}`);
+      }
+
       if (elementsBatches[dep] > deepestDepNumber) {
         deepestDepNumber = elementsBatches[dep];
       }
     }
 
     for (const eventDep of event.eventDeps) {
+      if (!checkIfExist(elementsBatches[eventDep])) {
+        // throw new CliError(`Event Dependency is not yet deployed - ${eventDep}`);
+      }
+
       if (elementsBatches[eventDep] > deepestDepNumber) {
         deepestDepNumber = elementsBatches[eventDep];
       }
     }
 
     for (const eventUsage of event.eventUsage) {
+      if (!checkIfExist(elementsBatches[eventUsage])) {
+        // throw new CliError(`Event usage is not yet deployed - ${eventUsage}`);
+      }
+
       if (elementsBatches[eventUsage] > deepestDepNumber) {
         deepestDepNumber = elementsBatches[eventUsage];
       }
@@ -69,5 +85,6 @@ export class Batcher {
     }
 
     batches[deepestDepNumber].push(element);
+    elementsBatches[event.name] = deepestDepNumber;
   }
 }

@@ -21,7 +21,7 @@ export class ModuleValidator {
 
       const abiInputs = ABI.inputs || [];
       const abiInputsLength = ABI.inputs?.length || 0;
-      if (binding.args.length != abiInputsLength && !binding.deployMetaData.deployFn) {
+      if (binding.args.length != abiInputsLength && !binding.deployMetaData.deploymentSpec.deployFn) {
         throw new AbiMismatch(`Binding did not match number of arguments for contract - ${name}
   Expected ${String(ABI.inputs?.length || 0)} and got ${String(binding.args.length)} number of arguments.`);
       }

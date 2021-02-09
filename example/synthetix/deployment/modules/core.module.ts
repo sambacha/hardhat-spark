@@ -1,320 +1,230 @@
-import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
-import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
+import { module } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import * as web3utils from 'web3-utils';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
-import path from 'path';
 import { mutator } from '../../../../src/interfaces/helper/macros';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
-const {
-  ETH_ADDRESS
-} = process.env;
-
-export const oracleExRatesContractAddress = ETH_ADDRESS;
-export const useOvm = false;
-export const currentSynthetixSupply = ethers.BigNumber.from('100000');
-export const currentWeekOfInflation = 0;
-export const currentLastMintEvent = 0;
-
-export const SynthetixCore = module('SynthetixCore', async (m: ModuleBuilder) => {
+export const SynthetixCore = module('SynthetixCore', async (m: SynthetixModuleBuilder) => {
   await m.module(SynthetixLibraries);
   await m.module(SynthetixPrototypes);
 
-  const AddressResolver = m.contract('AddressResolver', ETH_ADDRESS);
-  const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', 'ReadProxy', ETH_ADDRESS);
+  const AddressResolver = m.contract('AddressResolver', m.ETH_ADDRESS);
+  const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', 'ReadProxy', m.ETH_ADDRESS);
 
-  ReadProxyAddressResolver.afterDeploy(m, 'setTargetInResolverFromReadProxy', async (): Promise<void> => {
-    await ReadProxyAddressResolver.instance().setTarget(AddressResolver);
-
-    await expectFuncRead(AddressResolver, ReadProxyAddressResolver.instance().target);
-  }, AddressResolver);
+  mutator(m,
+    ReadProxyAddressResolver,
+    'setTarget',
+    [AddressResolver],
+  );
 
   m.contract('FlexibleStorage', ReadProxyAddressResolver);
-  m.contract('SystemSettings', ETH_ADDRESS, ReadProxyAddressResolver);
-  const SystemStatus = m.contract('SystemStatus', ETH_ADDRESS);
-  m.contract('ExchangeRates', ETH_ADDRESS, oracleExRatesContractAddress, ReadProxyAddressResolver, [], []);
+  m.contract('SystemSettings', m.ETH_ADDRESS, ReadProxyAddressResolver);
+  const SystemStatus = m.contract('SystemStatus', m.ETH_ADDRESS);
+  m.contract('ExchangeRates', m.ETH_ADDRESS, m.oracleExRatesContractAddress, ReadProxyAddressResolver, [], []);
 
-  const RewardEscrow = m.contract('RewardEscrow', ETH_ADDRESS, ethers.constants.AddressZero, ethers.constants.AddressZero);
-  const SynthetixEscrow = m.contract('SynthetixEscrow', ETH_ADDRESS, ethers.constants.AddressZero);
-  const SynthetixState = m.contract('SynthetixState', ETH_ADDRESS, ETH_ADDRESS);
+  const RewardEscrow = m.contract('RewardEscrow', m.ETH_ADDRESS, ethers.constants.AddressZero, ethers.constants.AddressZero);
+  const SynthetixEscrow = m.contract('SynthetixEscrow', m.ETH_ADDRESS, ethers.constants.AddressZero);
+  const SynthetixState = m.contract('SynthetixState', m.ETH_ADDRESS, m.ETH_ADDRESS);
 
-  const ProxyFeePool = m.bindPrototype('ProxyFeePool', 'Proxy', ETH_ADDRESS);
+  const ProxyFeePool = m.bindPrototype('ProxyFeePool', 'Proxy', m.ETH_ADDRESS);
 
-  const DelegateApprovalsEternalStorage = m.bindPrototype('DelegateApprovalsEternalStorage', 'EternalStorage', ETH_ADDRESS, ethers.constants.AddressZero);
-  const DelegateApprovals = m.contract('DelegateApprovals', ETH_ADDRESS, DelegateApprovalsEternalStorage);
+  const DelegateApprovalsEternalStorage = m.bindPrototype('DelegateApprovalsEternalStorage', 'EternalStorage', m.ETH_ADDRESS, ethers.constants.AddressZero);
+  const DelegateApprovals = m.contract('DelegateApprovals', m.ETH_ADDRESS, DelegateApprovalsEternalStorage);
 
-  await mutator(m,
-    'afterDeployDelegateApprovalsEternalStorage',
+  mutator(m,
     DelegateApprovalsEternalStorage,
     'setAssociatedContract',
-    'associatedContract',
     [DelegateApprovals],
-    [],
-    DelegateApprovals,
   );
 
-  const Liquidations = m.contract('Liquidations', ETH_ADDRESS, ReadProxyAddressResolver);
-  const EternalStorageLiquidations = m.bindPrototype('EternalStorageLiquidations', 'EternalStorage', ETH_ADDRESS, Liquidations);
+  const Liquidations = m.contract('Liquidations', m.ETH_ADDRESS, ReadProxyAddressResolver);
+  const EternalStorageLiquidations = m.bindPrototype('EternalStorageLiquidations', 'EternalStorage', m.ETH_ADDRESS, Liquidations);
 
-  await mutator(m,
-    'afterDeployEternalStorageLiquidations',
+  mutator(m,
     EternalStorageLiquidations,
     'setAssociatedContract',
-    'associatedContract',
     [Liquidations],
-    [],
-    Liquidations
   );
 
-  const FeePoolEternalStorage = m.contract('FeePoolEternalStorage', ETH_ADDRESS, ethers.constants.AddressZero);
+  const FeePoolEternalStorage = m.contract('FeePoolEternalStorage', m.ETH_ADDRESS, ethers.constants.AddressZero);
   const FeePool = m.contract('FeePool', ProxyFeePool, AddressResolver, ReadProxyAddressResolver);
 
-  await mutator(m,
-    'afterDeployFeePoolEternalStorage',
+  mutator(m,
     FeePoolEternalStorage,
     'setAssociatedContract',
-    'associatedContract',
     [FeePool],
-    [],
-    FeePool,
   );
 
-  await mutator(m,
-    'afterDeployFeePool',
+  mutator(m,
     ProxyFeePool,
     'setTarget',
-    'target',
     [FeePool],
-    [],
-    FeePool,
   );
 
-  const FeePoolState = m.contract('FeePoolState', ETH_ADDRESS, FeePool);
+  const FeePoolState = m.contract('FeePoolState', m.ETH_ADDRESS, FeePool);
 
-  await mutator(m,
-    'afterDeployFeePoolState',
+  mutator(m,
     FeePoolState,
     'setFeePool',
-    'feePool',
     [FeePool],
-    [],
-    FeePool,
   );
 
   const RewardsDistribution = m.contract(
     'RewardsDistribution',
-    ETH_ADDRESS,
+    m.ETH_ADDRESS,
     ethers.constants.AddressZero,
     ethers.constants.AddressZero,
     RewardEscrow,
     ProxyFeePool
   );
 
-  const ProxyERC20Synthetix = m.bindPrototype('ProxyERC20Synthetix', 'ProxyERC20', ETH_ADDRESS);
-  const TokenStateSynthetix = m.bindPrototype('TokenStateSynthetix', 'TokenState', ETH_ADDRESS, ETH_ADDRESS);
+  const ProxyERC20Synthetix = m.bindPrototype('ProxyERC20Synthetix', 'ProxyERC20', m.ETH_ADDRESS);
+  const TokenStateSynthetix = m.bindPrototype('TokenStateSynthetix', 'TokenState', m.ETH_ADDRESS, m.ETH_ADDRESS);
 
   const synthetix = m.bindPrototype(
     'Synthetix',
-    useOvm ? 'MintableSynthetix' : 'Synthetix',
+    m.useOvm ? 'MintableSynthetix' : 'Synthetix',
     ProxyERC20Synthetix,
     TokenStateSynthetix,
-    ETH_ADDRESS,
-    currentSynthetixSupply,
+    m.ETH_ADDRESS,
+    m.currentSynthetixSupply,
     ReadProxyAddressResolver
   );
 
-  await mutator(m,
-    'afterDeploySynthetixProxyERC20Synthetix',
+  mutator(m,
     ProxyERC20Synthetix,
     'setTarget',
-    'target',
     [synthetix],
-    [],
-    synthetix,
   );
 
-  await mutator(m,
-    'afterDeployProxyERC20SynthetixSynthetix',
+  mutator(m,
     synthetix,
     'setProxy',
-    'proxy',
     [ProxyERC20Synthetix],
-    [],
-    ProxyERC20Synthetix,
   );
 
-  const ProxySynthetix = m.bindPrototype('ProxySynthetix', 'Proxy', ETH_ADDRESS);
+  const ProxySynthetix = m.bindPrototype('ProxySynthetix', 'Proxy', m.ETH_ADDRESS);
 
-  await mutator(m,
-    'afterDeployProxySynthetix',
+  mutator(m,
     ProxySynthetix,
     'setTarget',
-    'target',
     [synthetix],
-    [],
-    synthetix,
   );
 
   m.bindPrototype(
     'DebtCache',
-    useOvm ? 'RealtimeDebtCache' : 'DebtCache',
-    ETH_ADDRESS,
+    m.useOvm ? 'RealtimeDebtCache' : 'DebtCache',
+    m.ETH_ADDRESS,
     ReadProxyAddressResolver
   );
 
   const exchanger = m.bindPrototype(
     'Exchanger',
-    useOvm ? 'Exchanger' : 'ExchangerWithVirtualSynth',
-    ETH_ADDRESS,
+    m.useOvm ? 'Exchanger' : 'ExchangerWithVirtualSynth',
+    m.ETH_ADDRESS,
     ReadProxyAddressResolver
   );
-  const exchangeState = m.contract('ExchangeState', ETH_ADDRESS, exchanger);
+  const exchangeState = m.contract('ExchangeState', m.ETH_ADDRESS, exchanger);
 
-  await mutator(m,
-    'afterDeployExchangeState',
+  mutator(m,
     exchangeState,
     'setAssociatedContract',
-    'associatedContract',
     [exchanger],
-    [],
-    exchanger,
   );
 
-  await mutator(m,
-    'afterDeployExchanger',
+  mutator(m,
     SystemStatus,
     'updateAccessControl',
-    'accessControl',
     [toBytes32('Synth'), exchanger, true, false],
-    [toBytes32('Synth'), exchanger],
-    [true, false],
+    {
+      getterFunc: 'accessControl',
+      getterArgs: [toBytes32('Synth'), exchanger],
+      expectedValue: [true, false],
+    }
   );
 
-  await mutator(m,
-    'afterDeployTokenStateSynthetix',
+  mutator(m,
     TokenStateSynthetix,
     'setBalanceOf',
-    'balanceOf',
-    [ETH_ADDRESS, currentSynthetixSupply],
-    [ETH_ADDRESS],
-    currentSynthetixSupply,
+    [m.ETH_ADDRESS, m.currentSynthetixSupply],
   );
 
-  await mutator(m,
-    'afterDeployTokenStateSynthetixAndSynthetix',
+  mutator(m,
     TokenStateSynthetix,
     'setAssociatedContract',
-    'associatedContract',
     [synthetix],
-    [],
-    synthetix,
   );
 
   const issuer = m.bindPrototype('Issuer',
-    useOvm ? 'Issuer' : 'IssuerWithoutLiquidations',
-    ETH_ADDRESS,
+    m.useOvm ? 'Issuer' : 'IssuerWithoutLiquidations',
+    m.ETH_ADDRESS,
     ReadProxyAddressResolver
   );
 
-  m.contract('TradingRewards', ETH_ADDRESS, ETH_ADDRESS, ReadProxyAddressResolver);
+  m.contract('TradingRewards', m.ETH_ADDRESS, m.ETH_ADDRESS, ReadProxyAddressResolver);
 
 
-  await mutator(m,
-    'afterDeployIssueSynthetixState',
+  mutator(m,
     SynthetixState,
     'setAssociatedContract',
-    'associatedContract',
     [issuer],
-    [],
-    issuer,
   );
 
   m.contract('EscrowChecker', SynthetixEscrow);
 
-  await mutator(m,
-    'afterDeployRewardEscrowSynthetics',
+  mutator(m,
     RewardEscrow,
     'setSynthetix',
-    'synthetix',
     [synthetix],
-    [],
-    synthetix,
   );
 
-  await mutator(m,
-    'afterDeployRewardEscrowFeePool',
+  mutator(m,
     RewardEscrow,
     'setFeePool',
-    'feePool',
     [FeePool],
-    [],
-    FeePool,
   );
 
-  if (useOvm) {
-    const inflationStartDate = (Math.round(new Date().getTime() / 1000) - 3600 * 24 * 7).toString(); // 1 week ago
-    const fixedPeriodicSupply = web3utils.toWei('50000');
-    const mintPeriod = (3600 * 24 * 7).toString(); // 1 week
-    const mintBuffer = '600'; // 10 minutes
-    const minterReward = web3utils.toWei('100');
-    const supplyEnd = '5'; // allow 4 mints in total
+  if (m.useOvm) {
 
     m.bindPrototype('SupplySchedule', 'FixedSupplySchedule',
-      ETH_ADDRESS,
+      m.ETH_ADDRESS,
       ReadProxyAddressResolver,
-      inflationStartDate,
+      m.inflationStartDate,
       '0',
       '0',
-      mintPeriod,
-      mintBuffer,
-      fixedPeriodicSupply,
-      supplyEnd,
-      minterReward,
+      m.mintPeriod,
+      m.mintBuffer,
+      m.fixedPeriodicSupply,
+      m.supplyEnd,
+      m.minterReward,
     );
   } else {
-    const supplySchedule = m.contract('SupplySchedule', ETH_ADDRESS, currentLastMintEvent, currentWeekOfInflation);
+    const supplySchedule = m.contract('SupplySchedule', m.ETH_ADDRESS, m.currentLastMintEvent, m.currentWeekOfInflation);
 
-    await mutator(m,
-      'afterDeploySupplySchedule',
+    mutator(m,
       supplySchedule,
       'setSynthetixProxy',
-      'synthetixProxy',
       [synthetix],
-      [],
-      synthetix,
     );
   }
 
-  await mutator(m,
-    'afterDeployRewardDistribution',
+  mutator(m,
     RewardsDistribution,
     'setAuthority',
-    'authority',
     [synthetix],
-    [],
-    synthetix,
   );
 
-  await mutator(m,
-    'afterDeployRewardDistributionProxySynthetix',
+  mutator(m,
     RewardsDistribution,
     'setSynthetixProxy',
-    'synthetixProxy',
     [ProxyERC20Synthetix],
-    [],
-    ProxyERC20Synthetix,
   );
 
-  await mutator(m,
-    'afterDeploySynthetixEscrow',
+  mutator(m,
     SynthetixEscrow,
     'setSynthetix',
-    'synthetix',
     [synthetix],
-    [],
-    synthetix,
   );
 });
