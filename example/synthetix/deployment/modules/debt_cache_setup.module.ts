@@ -1,14 +1,15 @@
 import { ContractEvent, module, ModuleBuilder } from '../../../../src/interfaces/mortar';
 import * as web3utils from 'web3-utils';
 import { DEFAULTS } from '../../util/constants';
+import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-export const SynthetixDebtCacheSetup = module('SynthetixDebtCacheSetup', async (m: ModuleBuilder) => {
+export const SynthetixDebtCacheSetup = module('SynthetixDebtCacheSetup', async (m: SynthetixModuleBuilder) => {
   const DebtCache = m.DebtCache;
 
-  const afterDeploySystemSetting = m.afterDeploySystemSetting.event as ContractEvent;
-  m.group(...Object.values(m.getAllBindings()), afterDeploySystemSetting).afterDeploy(m, 'afterDeployDebtCacheAndAllBindingsAndEvents', async (): Promise<void> => {
-    await checkSnapshot();
-  });
+  m.group(...Object.values(m.getAllBindings()), m.afterDeploySystemSetting.event as ContractEvent)
+    .afterDeploy(m, 'afterDeployDebtCacheAndAllBindingsAndEvents', async (): Promise<void> => {
+      await checkSnapshot();
+    });
 
   const refreshSnapshotIfPossible = async (wasInvalid: boolean, isInvalid: boolean, force = false) => {
     const validityChanged = wasInvalid !== isInvalid;

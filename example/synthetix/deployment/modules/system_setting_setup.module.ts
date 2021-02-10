@@ -16,9 +16,8 @@ const {
 } = process.env;
 
 export const SystemSettingsModule = module('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
-  const synths = m.synths;
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
-  for (const {name: currencyKey} of synths) {
+  for (const {name: currencyKey} of m.synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);
     const Synth = m.getBinding(`Synth${currencyKey}`);
 

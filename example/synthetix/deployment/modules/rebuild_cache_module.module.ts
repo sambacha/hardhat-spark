@@ -1,6 +1,5 @@
 import { ContractBinding, ContractEvent, module } from '../../../../src/interfaces/mortar';
 import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
-import { useOvm } from './core.module';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';
 // @ts-ignore
@@ -50,7 +49,7 @@ export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: S
       return contractAddress;
     });
 
-    if (useOvm) {
+    if (m.useOvm) {
       const chunks = splitArrayIntoChunks(addressesToCache, 4);
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];

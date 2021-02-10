@@ -7,7 +7,7 @@ import * as command from '../index';
 import ConfigService from '../packages/config/service';
 
 export default class GenTypes extends Command {
-  static description = 'describe the command here';
+  static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';
 
   static flags = {
     help: flags.help({char: 'h'}),

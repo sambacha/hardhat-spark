@@ -1193,6 +1193,10 @@ export class ModuleBuilder {
   }
 
   setParam(opts: ModuleOptions) {
+    if (!checkIfExist(opts.params)) {
+      return;
+    }
+
     this.opts = opts;
 
     for (const [paramName, param] of Object.entries(opts.params)) {
@@ -1417,6 +1421,7 @@ export class Module {
   private actions: { [name: string]: Action };
   private moduleConfig: ModuleConfig | undefined;
   private prototypes: { [name: string]: Prototype };
+
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;

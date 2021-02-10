@@ -96,6 +96,10 @@ export default class MemoryConfigService implements IConfigService {
   }
 
   getMortarConfig(currentPath: string, configScriptPath: string): Promise<MortarConfig> {
-    return Promise.resolve(undefined);
+    return Promise.resolve({});
+  }
+
+  saveEmptyMortarConfig(currentPath: string, configScriptPath: string): boolean {
+    return true;
   }
 }

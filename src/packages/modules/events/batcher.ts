@@ -6,6 +6,7 @@ import {
   OnChangeEvent, StatefulEvent
 } from '../../../interfaces/mortar';
 import { checkIfExist } from '../../utils/util';
+import { CliError } from '../../types/errors';
 
 export class Batcher {
   static async handleAfterDeployEvent(event: AfterDeployEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
@@ -41,7 +42,7 @@ export class Batcher {
 
     for (const usage of event.usage) {
       if (!checkIfExist(elementsBatches[usage])) {
-        // throw new CliError(`Usage is not yet deployed - ${usage}`);
+        throw new CliError(`Usage is not yet deployed - ${usage}`); // @TODO add dynamic resolving here.
       }
 
       if (elementsBatches[usage] > deepestDepNumber) {
@@ -51,7 +52,7 @@ export class Batcher {
 
     for (const dep of event.deps) {
       if (!checkIfExist(elementsBatches[dep])) {
-        // throw new CliError(`Dependency is not yet deployed \nEvent: ${event.name} \nDependency: ${dep}`);
+        throw new CliError(`Dependency is not yet deployed \nEvent: ${event.name} \nDependency: ${dep}`);
       }
 
       if (elementsBatches[dep] > deepestDepNumber) {
@@ -61,7 +62,7 @@ export class Batcher {
 
     for (const eventDep of event.eventDeps) {
       if (!checkIfExist(elementsBatches[eventDep])) {
-        // throw new CliError(`Event Dependency is not yet deployed - ${eventDep}`);
+        throw new CliError(`Event Dependency is not yet deployed - ${eventDep}`);
       }
 
       if (elementsBatches[eventDep] > deepestDepNumber) {
@@ -71,7 +72,7 @@ export class Batcher {
 
     for (const eventUsage of event.eventUsage) {
       if (!checkIfExist(elementsBatches[eventUsage])) {
-        // throw new CliError(`Event usage is not yet deployed - ${eventUsage}`);
+        throw new CliError(`Event usage is not yet deployed - ${eventUsage}`);
       }
 
       if (elementsBatches[eventUsage] > deepestDepNumber) {

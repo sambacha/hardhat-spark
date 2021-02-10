@@ -3,7 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./A.sol";
 
-contract B {
+contract C {
   uint256 example;
 
   constructor(A a) {

@@ -11,10 +11,7 @@ const {
 export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
-  const synths = m.synths;
-  const feeds = m.feeds;
-
-  for (const {name: currencyKey, subclass, asset} of synths) {
+  for (const {name: currencyKey, subclass, asset} of m.synths) {
     const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 
     const synthProxyIsLegacy = currencyKey === 'sUSD' && MORTAR_NETWORK_ID === '1';
@@ -102,7 +99,7 @@ export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModu
       );
     }
 
-    const {feed} = feeds[asset] || {};
+    const {feed} = m.feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
       mutator(m,
         ExchangeRates,

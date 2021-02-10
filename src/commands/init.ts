@@ -5,7 +5,7 @@ import * as command from '../index';
 import { UserError } from '../packages/types/errors';
 
 export default class Init extends Command {
-  static description = 'Initialize mortar configuration file';
+  static description = 'Initialize mortar configuration file and configuration script.';
 
   static flags = {
     help: flags.help({char: 'h'}),
