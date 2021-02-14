@@ -14,8 +14,7 @@ export const ProxyModule = module('ProxyModule', async (m: ModuleBuilder) => {
 
 export const ProxyModuleInterface = module('ProxyModuleInterface', async (m: ModuleBuilder) => {
   const registry = m.contract('Registry');
-  const proxyRegistry = registry;
   const logic = m.contract('LogicOne');
 
-  proxyRegistry.proxySetNewLogic(m, registry, logic, 'setLogicContract');
+  registry.proxySetNewLogic(m, registry, logic, 'setLogicContract');
 });

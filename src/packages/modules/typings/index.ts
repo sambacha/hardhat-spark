@@ -1,4 +1,3 @@
-
 import path from 'path';
 import { STATE_DIR_NAME } from '../states/module';
 import fs from 'fs';
@@ -57,9 +56,11 @@ export declare class ${moduleName}Builder extends ModuleBuilder {`;
   ${binding.name}: Action;`;
     }
 
-    for (const [paramName, paramValue] of Object.entries(params)) {
-      file += `
+    if (params) {
+      for (const [paramName, paramValue] of Object.entries(params)) {
+        file += `
   ${paramName}: ${typeof paramValue};`; // @TODO change this to complex object typings
+      }
     }
 
     file += `

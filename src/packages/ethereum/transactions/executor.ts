@@ -242,14 +242,6 @@ export class TxExecutor {
           }
 
           await Promise.all(eventPromise);
-          for (let i = 0; i < batch.length; i++) {
-            const batchElement = batch[i];
-            if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
-              continue;
-            }
-
-            this.prompter.finishedEventExecution((batchElement as StatefulEvent).event.name);
-          }
           resolve();
         });
       } catch (e) {
@@ -429,6 +421,7 @@ export class TxExecutor {
     }
 
     if (binding.deployMetaData.deploymentSpec.deployFn) {
+      // @TODO this doesn't work for parallelized
       this.moduleState.setSingleEventName(`Deploy${binding.name}`);
       const resp = await binding.deployMetaData.deploymentSpec.deployFn();
       await this.moduleState.finishCurrentEvent(moduleName, moduleState, `Deploy${binding.name}`);

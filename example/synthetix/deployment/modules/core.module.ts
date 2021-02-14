@@ -187,7 +187,6 @@ export const SynthetixCore = module('SynthetixCore', async (m: SynthetixModuleBu
   );
 
   if (m.useOvm) {
-
     m.bindPrototype('SupplySchedule', 'FixedSupplySchedule',
       m.ETH_ADDRESS,
       ReadProxyAddressResolver,

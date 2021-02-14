@@ -1,5 +1,9 @@
 # Logging
 
+Defaul is: `simple`
+
+Flag options: `--prompting=[simple,streamlined,json]`
+
 ## Simple
 
 ![simple](../images/simple_prompting.png)

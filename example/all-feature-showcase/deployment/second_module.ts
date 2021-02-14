@@ -1,9 +1,9 @@
 import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
-// @ts-ignore
-import { ExampleModule } from './migration';
+import { ExampleModule } from './module';
+import { ethers } from 'ethers';
 
-export const ThirdExampleModule = module('ThirdExampleModule', async (m: ModuleBuilder) => {
-  await m.module(ExampleModule);
+export const ThirdExampleModule = module('ThirdExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
+  await m.module(ExampleModule, undefined, wallets);
 
   m.contract('FourthExample', m.SecondExample);
 });

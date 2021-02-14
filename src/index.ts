@@ -100,15 +100,21 @@ export async function deploy(
   }
 }
 
-export async function diff(resolvedPath: string, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: IConfigService) {
+export async function diff(resolvedPath: string, config: MortarConfig, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: IConfigService) {
   const modules = await require(resolvedPath);
 
-  const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
-  const wallets = configService.getAllWallets(rpcProvider);
+  const wallets = configService.getAllWallets();
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {
     const module = await modFunc as Module;
-    await module.init(wallets);
+    if (module.isInitialized()) {
+      continue;
+    }
+
+    await module.init(wallets, undefined, {
+      params: config?.params,
+    });
+    moduleStateRepo.initStateRepo(moduleName);
 
     let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
     for (const moduleStateName of states) {
@@ -132,12 +138,18 @@ export async function diff(resolvedPath: string, states: string[], moduleResolve
   }
 }
 
-export async function genTypes(resolvedPath: string, config: MortarConfig, moduleTypings: ModuleTypings) {
+export async function genTypes(
+  resolvedPath: string,
+  mortarConfig: MortarConfig,
+  moduleTypings: ModuleTypings,
+  config: ConfigService,
+) {
   const modules = await require(resolvedPath);
+  const wallets = config.getAllWallets();
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {
     const module = await modFunc as Module;
-    await module.init(undefined, undefined, config as ModuleOptions);
+    await module.init(wallets, undefined, mortarConfig as ModuleOptions);
 
     moduleTypings.generate(moduleName, module);
   }

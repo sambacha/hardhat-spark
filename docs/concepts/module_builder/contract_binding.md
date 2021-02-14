@@ -2,7 +2,7 @@
 
 ```typescript
 export const DaiModule = module('DaiModule', async (m: DaiModuleBuilder) => {
-  m.contract('Dai', 1);
+  const Dai = m.contract('Dai', 1);
 });
 ```
 

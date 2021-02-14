@@ -103,6 +103,7 @@ export class MortarTests implements IMortarUsage {
   async diff(deploymentFilePath: string): Promise<void> {
     await command.diff(
       deploymentFilePath,
+      {},
       this.states,
       this.moduleResolver,
       this.moduleStateRepo,

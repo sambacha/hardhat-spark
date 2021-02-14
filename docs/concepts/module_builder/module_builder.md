@@ -15,6 +15,7 @@ export const RootModule = module('RootModule', async (m: ModuleBuilder) => {
   const C = m.contract('C', A);
 
   m.group(B, C).afterDeploy(m, 'afterDeployBandC', async () => {
+    await A.instance().setExample(1);
   });
 });
 ```

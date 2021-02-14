@@ -123,7 +123,7 @@ export const config: MortarConfig = {};
     return false;
   }
 
-  getAllWallets(rpcPath: string): ethers.Wallet[] {
+  getAllWallets(rpcPath?: string): ethers.Wallet[] {
     const wallets = [];
 
     const content = fs.readFileSync(this.configPath, {

@@ -12,7 +12,7 @@ export const mutator = (
     getterFunc?: string,
     getterArgs?: any[],
     expectedValue?: any,
-    deps?: ContractBinding[]
+    deps?: (ContractBinding | Event)[]
   }
 ): ContractEvent => {
   const name = opts?.name ? opts.name : `mutator${setterFunc}${setter.name}`;

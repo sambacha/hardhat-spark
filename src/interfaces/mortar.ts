@@ -225,10 +225,10 @@ export class GroupedDependencies {
     return new GroupedDependencies(bindings);
   }
 
-  exclude(...bindingNames: string[]): GroupedDependencies {
+  exclude(...elementName: string[]): GroupedDependencies {
     const newBindings = this.dependencies.filter((target) => {
-      const fullExpr = new RegExp(bindingNames
-        .map((bindingName: string) => bindingName)
+      const fullExpr = new RegExp(elementName
+        .map((elementName: string) => elementName)
         .join('|')
       );
 
@@ -1204,28 +1204,6 @@ export class ModuleBuilder {
     }
   }
 
-  // bindDeployed(name: string, address: string, network?: string): DeployedBinding;
-
-  // name = instance contract name.
-  // factory = factory which is called.
-  // method = factory method name.
-  // args = any args common to all instances.
-  // bindFactory(name: string, factory: ContractBinding, method: string, ...args: Arguments): FactoryPrototypeBinding;
-  //
-  // bindAlias(alias: string, binding: Binding, force?: boolean): AliasedBinding
-  //
-  // bindCopy(name: string, proto: ContractBinding, ...override: Arguments): ContractBinding;
-  //
-  // bindValue(name: string, val: any): ValueBinding
-  //
-  // bindParam(name: string, defaultValue?: any): ModuleParamBinding;
-  //
-  // bindLazy(name: string, fn: LazyFn): LazyBinding;
-  //
-  // bindContractConst(contract: ContractBinding, constName: string, constValue: Binding): ContractConstBinding;
-  //
-  // autoBind(opts: AutoBindOptions): Binding[];
-  //
   addEvent(eventName: string, event: Event): void {
     if (checkIfExist(this.contractEvents[eventName])) {
       throw new UserError(`Event with same name is already initialized in module - ${eventName}`);
@@ -1264,7 +1242,7 @@ export class ModuleBuilder {
   }
 
   async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
-    const options = opts ? Object.assign(opts, this.opts) : this.opts;
+    const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
       m = await m;

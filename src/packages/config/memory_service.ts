@@ -48,7 +48,7 @@ export default class MemoryConfigService implements IConfigService {
     return true;
   }
 
-  getAllWallets(rpcPath: string): ethers.Wallet[] {
+  getAllWallets(rpcPath?: string): ethers.Wallet[] {
     const wallets = [];
 
     const privateKeys = this.config.privateKeys;

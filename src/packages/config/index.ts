@@ -7,7 +7,7 @@ export const NUMBER_OF_HD_ACCOUNTS = 100;
 
 export interface IConfigService {
   getFirstPrivateKey(): string;
-  getAllWallets(rpcPath: string): ethers.Wallet[];
+  getAllWallets(rpcPath?: string): ethers.Wallet[];
   generateAndSaveConfig(privateKeys: string[], mnemonic: string, hdPath: string): boolean;
   getMortarConfig(currentPath: string, configScriptPath: string): Promise<MortarConfig>;
   saveEmptyMortarConfig(currentPath: string, configScriptPath: string): boolean;

@@ -14,9 +14,12 @@ import { NetworkIdNotProvided, PathNotProvided, UserError } from '../packages/ty
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
+import chalk from 'chalk';
+import { IPrompter } from '../packages/utils/promter';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current migrations.';
+  private prompter: IPrompter | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -38,7 +41,13 @@ export default class Diff extends Command {
         name: 'state',
         description: 'Provide name of module\'s that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other.',
       }
-    )
+    ),
+    configScriptPath: flags.string(
+      {
+        name: 'configScriptPath',
+        description: 'Path to the mortar.config.js script, default is same as current path.',
+      }
+    ),
   };
 
   static args = [{name: 'path'}];
@@ -62,31 +71,38 @@ export default class Diff extends Command {
 
     const resolvedPath = path.resolve(currentPath, filePath);
 
-    const provider = new ethers.providers.JsonRpcProvider(); // @TODO: change this to fetch from config
+    const provider = new ethers.providers.JsonRpcProvider();
     const configService = new ConfigService(currentPath);
 
     const gasCalculator = new GasPriceCalculator(provider);
     const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
     const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
+
     const prompter = new StreamlinedPrompter();
+    this.prompter = prompter;
 
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
     const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession);
 
-    await command.diff(resolvedPath, states, moduleResolver, moduleStateRepo, configService);
+    const config = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
+
+    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService);
   }
 
   async catch(error: Error) {
-    if (error instanceof UserError) {
-      cli.info(error.message);
-      cli.exit(0);
+    if (this.prompter) {
+      this.prompter.errorPrompt();
     }
 
-    cli.info(error.message);
-    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    await cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
-    cli.exit(1);
+    if (error instanceof UserError) {
+      cli.info(chalk.red.bold('ERROR'), error.message);
+      cli.exit(1);
+    }
+
+    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
+    cli.error(error);
   }
 }

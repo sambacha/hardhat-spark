@@ -106,7 +106,7 @@ export class ModuleResolver {
         newModuleElement = newModuleElement as ContractBinding;
 
         if (oldModuleElement.bytecode != newModuleElement.bytecode) {
-          cli.info('~', newModuleElement.name);
+          cli.info('~', 'Contract: ', newModuleElement.name);
           printArgs(newModuleElement.args, '  ');
         }
 
@@ -224,9 +224,6 @@ Module file: ${resolvedModuleStateElement.event.name}`);
           continue;
         }
 
-        resolvedModuleStateElement.name = stateFileElement.name;
-        resolvedModuleStateElement.contractName = stateFileElement.contractName;
-        resolvedModuleStateElement.args = stateFileElement.args;
         resolvedModuleStateElement.bytecode = stateFileElement.bytecode;
         resolvedModuleStateElement.abi = stateFileElement.abi;
         resolvedModuleStateElement.libraries = stateFileElement.libraries;
@@ -450,7 +447,7 @@ State file: ${stateFileElement.event.eventType}`);
 
         for (const depBindingName of contractEvent.deps) {
           if (checkIfExist(moduleState[depBindingName])) {
-            continue;
+            return;
           }
 
           this.resolveContractsAndEvents(moduleState, bindings, bindings[depBindingName], events, moduleEvents);
@@ -461,7 +458,7 @@ State file: ${stateFileElement.event.eventType}`);
 
       for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
         if (checkIfExist(moduleState[usageBindingName])) {
-          continue;
+          return;
         }
 
         this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events, moduleEvents);

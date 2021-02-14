@@ -1,9 +1,12 @@
 import {
-  AfterDeployEvent, BaseEvent,
+  AfterDeployEvent,
+  BaseEvent,
   BeforeCompileEvent,
   BeforeDeployEvent,
+  EventType,
   ModuleEvent,
-  OnChangeEvent, StatefulEvent
+  OnChangeEvent,
+  StatefulEvent
 } from '../../../interfaces/mortar';
 import { checkIfExist } from '../../utils/util';
 import { CliError } from '../../types/errors';
@@ -38,11 +41,91 @@ export class Batcher {
   }
 
   private static baseEventHandling(event: BaseEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+    switch (event.eventType) {
+      case EventType.BeforeCompileEvent:
+      case EventType.AfterCompileEvent:
+      case EventType.BeforeDeployEvent:
+      case EventType.BeforeDeploymentEvent:
+        this.handleBeforeDeployEvents(event, element, batches, elementsBatches);
+        break;
+      case EventType.AfterDeploymentEvent:
+      case EventType.OnChangeEvent:
+      case EventType.AfterDeployEvent:
+        this.handleAfterDeployEvents(event, element, batches, elementsBatches);
+        break;
+      default:
+        throw new CliError('Event type not found');
+    }
+  }
+
+  private static handleBeforeDeployEvents(event, element, batches, elementsBatches) {
+    let shallowestDepNumber = batches.length;
+    let deepestUsageNumber = 0;
+
+    for (const usage of event.usage) {
+      if (!checkIfExist(elementsBatches[usage])) {
+        continue;
+      }
+
+      if (elementsBatches[usage] > deepestUsageNumber) {
+        deepestUsageNumber = elementsBatches[usage];
+      }
+    }
+
+    for (const dep of event.deps) {
+      if (!checkIfExist(elementsBatches[dep])) {
+        continue;
+      }
+
+      if (elementsBatches[dep] < shallowestDepNumber) {
+        shallowestDepNumber < elementsBatches[dep];
+      }
+    }
+
+    for (const eventDep of event.eventDeps) {
+      if (!checkIfExist(elementsBatches[eventDep])) {
+        continue;
+      }
+
+      if (elementsBatches[eventDep] < shallowestDepNumber) {
+        shallowestDepNumber = elementsBatches[eventDep];
+      }
+    }
+
+    for (const eventUsage of event.eventUsage) {
+      if (!checkIfExist(elementsBatches[eventUsage])) {
+        continue;
+      }
+
+      if (elementsBatches[eventUsage] > deepestUsageNumber) {
+        deepestUsageNumber = elementsBatches[eventUsage];
+      }
+    }
+
+    if (deepestUsageNumber > shallowestDepNumber) {
+      throw new CliError(`batcher failed to resolve element usage and dependencies - ${element.name}`);
+    }
+
+    if (shallowestDepNumber > 0) {
+      shallowestDepNumber--;
+    }
+    deepestUsageNumber++;
+
+    const batchNumber = deepestUsageNumber < shallowestDepNumber ? deepestUsageNumber : shallowestDepNumber;
+    if (!checkIfExist(batches[batchNumber])) {
+      batches[batchNumber] = [];
+    }
+
+    batches[batchNumber].push(element);
+    elementsBatches[event.name] = batchNumber;
+  }
+
+  private static handleAfterDeployEvents(event: BaseEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
     let deepestDepNumber = 0;
 
     for (const usage of event.usage) {
       if (!checkIfExist(elementsBatches[usage])) {
-        throw new CliError(`Usage is not yet deployed - ${usage}`); // @TODO add dynamic resolving here.
+        throw new CliError(`Usage is not yet deployed - ${usage}`);
       }
 
       if (elementsBatches[usage] > deepestDepNumber) {
