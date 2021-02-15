@@ -1,10 +1,10 @@
 import {
   DeployReturn,
-  module,
+  buildModule,
   ModuleBuilder,
 } from '../../../src/interfaces/mortar';
 
-export const FactoryModule = module('FactoryModule', async (m: ModuleBuilder) => {
+export const FactoryModule = buildModule('FactoryModule', async (m: ModuleBuilder) => {
   const factory = m.contract('Factory');
   const child = m.contract('Child');
   child.deployFn(async (): Promise<DeployReturn> => {
@@ -19,7 +19,7 @@ export const FactoryModule = module('FactoryModule', async (m: ModuleBuilder) =>
   }, factory);
 });
 
-export const FactoryModuleInterface = module('FactoryModule', async (m: ModuleBuilder) => {
+export const FactoryModuleInterface = buildModule('FactoryModule', async (m: ModuleBuilder) => {
   const factory = m.contract('Factory');
   factory.factoryCreate(m, 'Child', 'createChild', [123], {
     getterFunc: 'getChildren',

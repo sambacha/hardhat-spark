@@ -66,12 +66,12 @@ export const config: MortarConfig = {}
 Next thing is to setup your own deployment module. Lets create file under `./deployment/first.module.ts`.
 
 ```typescript
-export const FirstModule = module('FirstModule', async (m: ModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 });
 ```
 
-So here, we initialized our `FirstModule`. So we are using `module()` from mortar interface, and we named
+So here, we initialized our `FirstModule`. So we are using `buildModule()` from mortar interface, and we named
 it `FirstModule` alongside the function that has `m: ModuleBuilder`. `ModuleBuilder` is how you can specify what you
 want to deploy/execute.
 
@@ -110,7 +110,7 @@ transaction gets confirmed you will get `TransactionReceipt` object as return.
 You should end up with something like this:
 
 ```typescript
-export const FirstModule = module('FirstModule', async (m: ModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 
   A.afterDeploy(m, 'afterDeployA', async () => {
@@ -189,7 +189,7 @@ const B = m.contract('B', A);
 Your `FirstModule` should look something like this.
 
 ```typescript
-export const FirstModule = module('FirstModule', async (m: ModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
   const B = m.contract('B', A);
 
@@ -277,7 +277,7 @@ So you can now have type hint in your module if you change from `m: ModuleBuilde
 Your module function should look like this:
 
 ```typescript
-export const FirstModule = module('FirstModule', async (m: FirstModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
 ...
 })
 ```

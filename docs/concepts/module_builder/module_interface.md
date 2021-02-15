@@ -189,7 +189,7 @@ class Module {
 
   getAllActions(): { [name: string]: Action }
 
-  module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void>;
+  buildModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void>;
 
   getBinding(name: string): ContractBinding;
 

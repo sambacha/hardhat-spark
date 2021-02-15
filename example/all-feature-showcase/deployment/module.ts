@@ -1,10 +1,10 @@
-import { ContractBinding, module } from '../../../src/interfaces/mortar';
+import { ContractBinding, buildModule } from '../../../src/interfaces/mortar';
 import { BigNumber, ethers } from 'ethers';
 import { filler } from '../../../src/interfaces/helper/macros';
 import { ExampleModuleBuilder } from '../.mortar/ExampleModule/ExampleModule';
 import { SecondModuleBuilder } from '../.mortar/SecondModule/SecondModule';
 
-export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuilder, wallets: ethers.Wallet[]) => {
+export const ExampleModule = buildModule('ExampleModule', async (m: ExampleModuleBuilder, wallets: ethers.Wallet[]) => {
   filler(m, wallets[0], wallets.slice(1));
 
   const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0')
@@ -69,7 +69,7 @@ export const ExampleModule = module('ExampleModule', async (m: ExampleModuleBuil
   });
 });
 
-export const SecondModule = module('SecondExample', async (m: SecondModuleBuilder) => {
+export const SecondModule = buildModule('SecondExample', async (m: SecondModuleBuilder) => {
   const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0');
   const SecondExample = m.contract('SecondExample', Example, ['some', 'random', 'string'], [['hello']], 123);
   m.contract('ThirdExample', SecondExample);

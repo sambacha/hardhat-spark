@@ -1,6 +1,6 @@
-import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../src/interfaces/mortar';
 
-export const FirstModule = module('FirstModule', async (m: ModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
   const B = m.contract('B', A);
 

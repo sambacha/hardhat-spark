@@ -1,12 +1,12 @@
 import {
   ContractBinding,
-  module,
+  buildModule,
 } from '../../../../src/interfaces/mortar';
 import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { toBytes32 } from '../../util/util';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-export const SynthetixIssuerSetup = module('SynthetixIssuerSetup', async (m: SynthetixModuleBuilder) => {
+export const SynthetixIssuerSetup = buildModule('SynthetixIssuerSetup', async (m: SynthetixModuleBuilder) => {
   const Issuer = m.Issuer;
 
   const synths = m.synths as {

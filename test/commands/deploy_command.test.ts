@@ -1,10 +1,9 @@
 // @ts-ignore
 import { getStateIfExist, storeNewState } from '../utils/files';
-import { execSync } from 'child_process';
 import { assert } from 'chai';
 import { MortarTests } from '../../src/usage_interfaces/tests';
 import * as path from 'path';
-import { ContractBindingMetaData } from '../../lib/interfaces/mortar';
+import { ContractBindingMetaData } from '../../src/interfaces/mortar';
 
 const networkId = 31337; // hardhat localhost chainId
 const testPrivateKey = '0xde9be858da4a475276426320d5e9262ecfc3ba460bfac56360bfa6c4c28b4ee0';

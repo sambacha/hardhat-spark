@@ -1,4 +1,4 @@
-import { ContractBinding, module } from '../../../../src/interfaces/mortar';
+import { ContractBinding, buildModule } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { mutator } from '../../../../src/interfaces/helper/macros';
@@ -8,7 +8,7 @@ const {
   MORTAR_NETWORK_ID
 } = process.env;
 
-export const SynthetixSynths = module('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
+export const SynthetixSynths = buildModule('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
   for (const {name: currencyKey, subclass, asset} of m.synths) {

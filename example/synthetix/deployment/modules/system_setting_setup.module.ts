@@ -1,7 +1,7 @@
 import {
   ContractBinding,
   ContractEvent,
-  module,
+  buildModule,
 } from '../../../../src/interfaces/mortar';
 import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { toBytes32 } from '../../util/util';
@@ -15,7 +15,7 @@ const {
   MORTAR_NETWORK_ID
 } = process.env;
 
-export const SystemSettingsModule = module('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
+export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   for (const {name: currencyKey} of m.synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);

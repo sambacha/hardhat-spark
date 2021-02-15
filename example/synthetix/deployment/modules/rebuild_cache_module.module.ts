@@ -1,11 +1,11 @@
-import { ContractBinding, ContractEvent, module } from '../../../../src/interfaces/mortar';
+import { ContractBinding, ContractEvent, buildModule } from '../../../../src/interfaces/mortar';
 import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';
 // @ts-ignore
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-export const SynthetixRebuildCache = module('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
+export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
   const ReadProxyAddressResolver = m.ReadProxyAddressResolver;
   const AddressResolver = m.AddressResolver;
   const allContractDeployed = m.group(...Object.values(m.getAllBindings())).afterDeploy(m, 'afterAllContractsDeployed', async (): Promise<void> => {

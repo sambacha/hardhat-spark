@@ -1,5 +1,5 @@
 import {
-  module,
+  buildModule,
   ModuleConfig
 } from '../../../src/interfaces/mortar';
 import { SynthetixLibraries, SynthetixPrototypes } from './modules/helper.module';
@@ -17,7 +17,7 @@ import { ModuleBuilder } from '../../../src/interfaces/mortar';
 
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
-export const SynthetixModule = module('SynthetixModule', async (m: ModuleBuilder) => {
+export const SynthetixModule = buildModule('SynthetixModule', async (m: ModuleBuilder) => {
   await m.module(SynthetixLibraries);
   await m.module(SynthetixPrototypes);
 

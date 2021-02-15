@@ -1241,7 +1241,7 @@ export class ModuleBuilder {
     return action;
   }
 
-  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
+  async buildModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
@@ -1520,7 +1520,7 @@ export class Module {
   }
 }
 
-export async function module(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
+export async function buildModule(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
   return new Module(moduleName, fn, moduleConfig);
 }
 

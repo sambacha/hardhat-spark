@@ -4,7 +4,7 @@ If you want to call some contract function or read any contract property you wil
 first in order to get `ethers.Contract` like object to interact with.
 
 ```typescript
-export const FirstModule = module('FirstModule', async (m: ModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 
   A.afterDeploy(m, 'afterDeployA', async () => {

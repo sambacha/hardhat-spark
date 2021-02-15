@@ -1,11 +1,11 @@
-import { module, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../../src/interfaces/mortar';
 
-export const SynthetixLibraries = module('SynthetixLibraries', async (m: ModuleBuilder) => {
+export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: ModuleBuilder) => {
   m.library('SafeDecimalMath');
   m.library('Math');
 });
 
-export const SynthetixPrototypes = module('SynthetixPrototypes', async (m: ModuleBuilder) => {
+export const SynthetixPrototypes = buildModule('SynthetixPrototypes', async (m: ModuleBuilder) => {
   m.prototype('ReadProxy');
   m.prototype('Proxy');
   m.prototype('EternalStorage');

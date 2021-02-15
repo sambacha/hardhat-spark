@@ -1,4 +1,4 @@
-import { module } from '../../../../src/interfaces/mortar';
+import { buildModule } from '../../../../src/interfaces/mortar';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
@@ -6,7 +6,7 @@ import { mutator } from '../../../../src/interfaces/helper/macros';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 
-export const SynthetixCore = module('SynthetixCore', async (m: SynthetixModuleBuilder) => {
+export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixModuleBuilder) => {
   await m.module(SynthetixLibraries);
   await m.module(SynthetixPrototypes);
 

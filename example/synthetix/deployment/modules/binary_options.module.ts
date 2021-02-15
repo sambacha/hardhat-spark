@@ -1,7 +1,7 @@
-import { module } from '../../../../src/interfaces/mortar';
+import { buildModule } from '../../../../src/interfaces/mortar';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
-export const BinaryOptionsModule = module('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {
+export const BinaryOptionsModule = buildModule('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {
   m.contract(
     'BinaryOptionMarketManager',
     m.ETH_ADDRESS,

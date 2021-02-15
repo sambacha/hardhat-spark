@@ -6,10 +6,10 @@ Module builder is class interface for collection definition of [solidity contrac
 
 ![ModuleExample](../../images/module_example.png)
 
-### Deployment script to achieve this with `module()`
+### Deployment script to achieve this with `buildModule()`
 
 ```typescript
-export const RootModule = module('RootModule', async (m: ModuleBuilder) => {
+export const RootModule = buildModule('RootModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
   const B = m.contract('B', A);
   const C = m.contract('C', A);

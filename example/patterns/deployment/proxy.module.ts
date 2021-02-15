@@ -1,6 +1,6 @@
-import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../src/interfaces/mortar';
 
-export const ProxyModule = module('ProxyModule', async (m: ModuleBuilder) => {
+export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) => {
   m.contract('Registry');
   m.contract('LogicOne');
   m.Registry.shouldRedeploy(() => {
@@ -12,7 +12,7 @@ export const ProxyModule = module('ProxyModule', async (m: ModuleBuilder) => {
   });
 });
 
-export const ProxyModuleInterface = module('ProxyModuleInterface', async (m: ModuleBuilder) => {
+export const ProxyModuleInterface = buildModule('ProxyModuleInterface', async (m: ModuleBuilder) => {
   const registry = m.contract('Registry');
   const logic = m.contract('LogicOne');
 

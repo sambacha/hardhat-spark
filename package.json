@@ -1,7 +1,7 @@
 {
   "name": "@tenderly/mortar",
   "description": "Solidity IaC deployment tool",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Tenderly",
   "bin": {
     "mortar": "bin/run"
@@ -84,6 +84,7 @@
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest",
+    "pack": "oclif-dev pack",
     "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif-dev readme && git add README.md"
   },

@@ -34,7 +34,7 @@ Module: ExampleModule
     });
 
     assert.equal(output.toString(), '\nModule: ExampleModule\n' +
-      '~ Example\n');
+      '~ Contract:  Example\n');
     setImmediate(ctx);
   });
 
@@ -45,8 +45,8 @@ Module: ExampleModule
 
     assert.equal(output.toString(), `
 Module: ExampleModule
-~ Example
-~ SecondExample
+~ Contract:  Example
+~ Contract:  SecondExample
   └── Contract: Example
 `);
     setImmediate(ctx);
