@@ -1,7 +1,7 @@
 {
   "name": "@tenderly/mortar",
   "description": "Solidity IaC deployment tool",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": "Tenderly",
   "bin": {
     "mortar": "bin/run"
