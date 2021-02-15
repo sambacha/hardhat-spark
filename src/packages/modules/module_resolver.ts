@@ -447,7 +447,7 @@ State file: ${stateFileElement.event.eventType}`);
 
         for (const depBindingName of contractEvent.deps) {
           if (checkIfExist(moduleState[depBindingName])) {
-            return;
+            continue; // @TODO parallelization
           }
 
           this.resolveContractsAndEvents(moduleState, bindings, bindings[depBindingName], events, moduleEvents);
@@ -458,7 +458,7 @@ State file: ${stateFileElement.event.eventType}`);
 
       for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
         if (checkIfExist(moduleState[usageBindingName])) {
-          return;
+          continue; // @TODO parallelization
         }
 
         this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events, moduleEvents);
