@@ -12,6 +12,7 @@ import {
 } from '../types/errors';
 import { checkIfExist } from '../utils/util';
 import { CONFIG_FILENAME, CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
+import { loadScript } from '../utils/typescript-checker';
 
 export default class ConfigService implements IConfigService {
   private readonly configPath: string;
@@ -34,7 +35,7 @@ export default class ConfigService implements IConfigService {
     }
   }
 
-  async getMortarConfig(currentPath: string, configScriptPath: string): Promise<MortarConfig> {
+  async getMortarConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<MortarConfig> {
     let configFilePath;
     if (configScriptPath) {
       configFilePath = path.resolve(currentPath, configScriptPath);
@@ -44,9 +45,9 @@ export default class ConfigService implements IConfigService {
 
     let config: MortarConfig;
     if (configFilePath) {
-      let configModules;
       try {
-        configModules = await require(configFilePath);
+        const configModules = await loadScript(configScriptPath);
+
         if (Object.entries(configModules).length > 1) {
           throw new UserError('Sorry, but you can only have one config object!');
         }
@@ -55,7 +56,7 @@ export default class ConfigService implements IConfigService {
           config = mortarConfig as MortarConfig;
         }
       } catch (err) {
-        if (err instanceof UserError) {
+        if (err._isUserError) {
           throw err;
         }
 
@@ -108,8 +109,7 @@ export default class ConfigService implements IConfigService {
       throw new MortarConfigAlreadyExist('You are trying to init empty mortar config but it already exist!');
     }
 
-    // @TODO change to mortar package ref
-    const mortarConfig = `import { MortarConfig } from '../../src/packages/types/config';
+    const mortarConfig = `import { MortarConfig } from '@tenderly/mortar/lib/interfaces/mortar';
 
 export const config: MortarConfig = {};
 `;

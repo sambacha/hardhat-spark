@@ -26,7 +26,7 @@ export const mutator = (
 
   const usages: (ContractBinding | ContractEvent)[] = [];
   for (const arg of (setterArgs)) {
-    if (arg instanceof ContractBinding || arg instanceof ContractBinding) {
+    if (arg._isContractBinding || arg._isContractBinding) {
       usages.push(arg);
     }
   }

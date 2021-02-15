@@ -15,6 +15,8 @@ import { IPrompter } from './packages/utils/promter';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
 import { MortarConfig } from './packages/types/config';
+import { loadScript } from './packages/utils/typescript-checker';
+import { load } from '@oclif/config';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
@@ -40,7 +42,8 @@ export async function deploy(
   configService: IConfigService,
   walletWrapper: WalletWrapper,
 ) {
-  const modules = await require(migrationFilePath);
+  const modules = await loadScript(migrationFilePath);
+
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
   const mortarWallets = walletWrapper.wrapWallets(wallets);
@@ -87,21 +90,19 @@ export async function deploy(
 
     try {
       await executor.execute(moduleName, initializedTxModuleState, config.registry, config.resolver, module.getModuleConfig());
-      await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onSuccess);
     } catch (error) {
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
 
       throw error;
     }
 
-    await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onCompletion);
 
     prompter.finishModuleDeploy(moduleName);
   }
 }
 
 export async function diff(resolvedPath: string, config: MortarConfig, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: IConfigService) {
-  const modules = await require(resolvedPath);
+  const modules = await loadScript(resolvedPath);
 
   const wallets = configService.getAllWallets();
 
@@ -144,7 +145,7 @@ export async function genTypes(
   moduleTypings: ModuleTypings,
   config: ConfigService,
 ) {
-  const modules = await require(resolvedPath);
+  const modules = await loadScript(resolvedPath);
   const wallets = config.getAllWallets();
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {

@@ -222,7 +222,7 @@ export class ModuleStateRepo {
       deployFn: deployMetaData.deploymentSpec?.deployFn,
       deps: deployed.deploymentSpec?.deps?.map(
         (v: ContractBinding) => {
-          return ModuleStateRepo.convertBindingToMetaData(v) as ContractBinding;
+          return ModuleStateRepo.convertBindingToMetaData(v);
         }
       )
     };
@@ -235,8 +235,8 @@ export class ModuleStateRepo {
 
     for (let [stateElementName, stateElement] of Object.entries(moduleState)) {
       if (
-        stateElement instanceof ContractBinding ||
-        stateElement instanceof ContractBindingMetaData ||
+        (stateElement as ContractBinding)._isContractBinding ||
+        (stateElement as ContractBindingMetaData)._isContractBindingMetaData ||
         checkIfExist((stateElement as unknown as ContractBinding)?.bytecode)
       ) {
         stateElement = stateElement as ContractBinding;

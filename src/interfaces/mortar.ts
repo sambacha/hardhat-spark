@@ -156,7 +156,7 @@ export type Deployed = {
   shouldRedeploy: ShouldRedeployFn | undefined,
   deploymentSpec: {
     deployFn: DeployFn | undefined,
-    deps: (ContractBinding | ContractEvent)[]
+    deps: (ContractBinding | ContractBindingMetaData | ContractEvent)[]
   } | undefined,
 };
 
@@ -172,6 +172,8 @@ export type FactoryCustomOpts = {
 };
 
 export class StatefulEvent {
+  public _isStatefulEvent: boolean = true;
+
   public event: Event;
   public executed: boolean;
   public txData: { [bindingName: string]: EventTransactionData };
@@ -248,8 +250,9 @@ export class GroupedDependencies {
   }
 
   shouldRedeploy(fn: ShouldRedeployFn): void {
-    for (const dependency of this.dependencies) {
-      if (dependency instanceof ContractBinding) {
+    for (let dependency of this.dependencies) {
+      dependency = dependency as ContractBinding;
+      if (dependency._isContractBinding) {
         if (dependency.deployMetaData.shouldRedeploy) {
           throw new UserError('Should redeploy function is already set.');
         }
@@ -267,8 +270,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.beforeDeployment.includes(eventName)) {
           continue;
         }
@@ -290,8 +294,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.afterDeployment.includes(eventName)) {
           continue;
         }
@@ -313,8 +318,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.beforeDeploy.includes(eventName)) {
           continue;
         }
@@ -335,8 +341,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.afterDeploy.includes(eventName)) {
           continue;
         }
@@ -357,8 +364,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.beforeCompile.includes(eventName)) {
           continue;
         }
@@ -379,8 +387,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.afterCompile.includes(eventName)) {
           continue;
         }
@@ -401,8 +410,9 @@ export class GroupedDependencies {
       fn,
     };
 
-    for (const dep of this.dependencies) {
-      if (dep instanceof ContractBinding) {
+    for (let dep of this.dependencies) {
+      dep = dep as ContractBinding;
+      if (dep._isContractBinding) {
         if (dep.eventsDeps.onChange.includes(eventName)) {
           continue;
         }
@@ -416,7 +426,9 @@ export class GroupedDependencies {
   }
 }
 
-export class ContractBinding extends Binding {
+export class ContractBinding extends Binding {ContractBinding
+  public _isContractBinding: boolean = true;
+
   public contractName: string;
   public args: Arguments;
   public eventsDeps: EventsDepRef;
@@ -708,7 +720,7 @@ export class ContractBinding extends Binding {
     const eventUsages: string[] = [];
 
     for (const usage of usages) {
-      if (usage instanceof ContractBinding) {
+      if ((usage as ContractBinding)._isContractBinding) {
         usageBindings.push(usage.name);
       } else {
         eventUsages.push((usage as ContractEvent).name);
@@ -719,7 +731,7 @@ export class ContractBinding extends Binding {
     const depEvents: string[] = [];
     for (let i = 0; i < dependencies.length; i++) {
       const dep = dependencies[i];
-      if (dep instanceof ContractBinding) {
+      if ((dep as ContractBinding)._isContractBinding) {
         depBindings.push(dep.name);
       } else {
         depEvents.push((dep as ContractEvent).name);
@@ -1067,6 +1079,8 @@ export class MortarWallet extends ethers.Wallet {
 }
 
 export class ContractBindingMetaData {
+  public _isContractBindingMetaData: boolean = true;
+
   public name: string;
   public contractName: string;
   public args: Arguments;
@@ -1419,16 +1433,6 @@ export class Module {
       params: {}
     };
   }
-
-  // call(name: string, ...args: any[]): void;
-  //
-  // getBinding(name: string): Binding;
-  //
-  // beforeDeploy(fn: ModuleEventFn, ...bindings: Binding[]): void;
-  //
-  // afterDeploy(fn: ModuleEventFn, ...bindings: Binding[]): void;
-  //
-  // afterEach(fn: ModuleAfterEachFn, ...bindings: Binding[]): void;
 
   isInitialized(): boolean {
     return this.initialized;

@@ -1,7 +1,7 @@
 {
   "name": "@tenderly/mortar",
   "description": "Solidity IaC deployment tool",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "author": "Tenderly",
   "bin": {
     "mortar": "bin/run"
@@ -53,7 +53,8 @@
     "nyc": "^14",
     "ts-node": "^8",
     "tslint": "^6.1.3",
-    "typescript": "^3.3"
+    "typescript": "^3.3",
+    "local-package-publisher": "^1.0.4"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -65,9 +66,6 @@
     "/oclif.manifest.json"
   ],
   "homepage": "https://github.com/Tenderly/mortar-tenderly",
-  "keywords": [
-    "oclif"
-  ],
   "license": "MIT",
   "main": "lib/index.js",
   "oclif": {

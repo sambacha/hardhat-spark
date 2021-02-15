@@ -141,7 +141,7 @@ describe('mortar deploy', () => {
   });
 
   describe('module dependency resolve', () => {
-    // @TODO implement couple case
+    // @TODO implement couple more cases
   });
 });
 

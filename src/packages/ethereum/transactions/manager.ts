@@ -34,7 +34,6 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       return (this.nonceMap)[walletAddress]++;
     }
 
-    // @TODO: what if nonce has increased in the mean time? (other tx, other deployment, etc.)
     return (this.nonceMap)[walletAddress]++;
   }
 

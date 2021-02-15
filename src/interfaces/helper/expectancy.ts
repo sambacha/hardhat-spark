@@ -14,7 +14,7 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
     throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
   }
 
-  if (expectedValue instanceof ContractBinding
+  if (expectedValue._isContractBinding
     && value == expectedValue.deployMetaData.contractAddress) {
     return true;
   }
@@ -72,7 +72,7 @@ export async function gracefulExpectFuncRead(expectedValue: ContractBinding | an
     return checkIfExist(value);
   }
 
-  if (expectedValue instanceof ContractBinding
+  if (expectedValue._isContractBinding
     && value == expectedValue.deployMetaData.contractAddress) {
     return true;
   }

@@ -59,7 +59,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
 
   initTx(moduleState: ModuleState): ModuleState {
     for (const [stateElementName, stateElement] of Object.entries(moduleState)) {
-      if (stateElement instanceof ContractBinding) {
+      if ((stateElement as ContractBinding)._isContractBinding) {
         if (checkIfExist(moduleState[stateElementName]?.txData)) {
           continue;
         }
@@ -71,7 +71,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
 
         rawTx.input = {
           from: this.wallet.address,
-          input: stateElement.bytecode as string
+          input: (stateElement as ContractBinding).bytecode as string
         };
 
         moduleState[stateElementName].txData = rawTx;

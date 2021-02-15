@@ -169,7 +169,7 @@ export default class Deploy extends Command {
       this.prompter.errorPrompt();
     }
 
-    if (error instanceof UserError) {
+    if ((error as UserError)._isUserError) {
       cli.info(chalk.red.bold('ERROR'), error.message);
       cli.exit(1);
     }

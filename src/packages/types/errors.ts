@@ -1,4 +1,5 @@
 export class UserError extends Error {
+  public _isUserError: boolean = true;
   public message: string;
   constructor(message: string) {
     super();
@@ -7,6 +8,7 @@ export class UserError extends Error {
 }
 
 export class CliError extends Error {
+  public _isCliError: boolean = true;
   public message: string;
   constructor(message: string) {
     super();

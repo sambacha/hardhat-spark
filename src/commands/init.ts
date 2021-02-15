@@ -3,9 +3,13 @@ import ConfigService from '../packages/config/service';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { UserError } from '../packages/types/errors';
+import chalk from 'chalk';
+import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { IPrompter } from '../packages/utils/promter';
 
 export default class Init extends Command {
   static description = 'Initialize mortar configuration file and configuration script.';
+  private prompter: IPrompter | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -51,20 +55,25 @@ export default class Init extends Command {
       cli.config.outputLevel = 'debug';
     }
 
+    this.prompter = new StreamlinedPrompter();
+
     const configService = new ConfigService(process.cwd());
 
     command.init(flags, configService);
   }
 
   async catch(error: Error) {
-    if (error instanceof UserError) {
-      cli.info(error.message);
-      cli.exit(0);
+    if (this.prompter) {
+      this.prompter.errorPrompt();
     }
 
+    if ((error as UserError)._isUserError) {
+      cli.info(chalk.red.bold('ERROR'), error.message);
+      cli.exit(1);
+    }
+
+    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
     cli.error(error);
-    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    await cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
-    cli.exit(1);
   }
 }

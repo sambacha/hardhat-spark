@@ -56,14 +56,14 @@ This command will generate `mortar-config.json` and `mortar.config.ts` files.
 `mortar.config.ts` should look something like this.
 
 ```typescript
-import { MortarConfig } from '@tenderly/mortar';
+import { MortarConfig } from '@tenderly/mortar/lib/interfaces/mortar';
 
 export const config: MortarConfig = {}
 ```
 
 ### Deployment module
 
-Next thing is to setup your own deployment module. Lets create file under `./deployment/first.module.ts`.
+Next thing is to set up your own deployment module. Let's create file under `./deployment/first.module.ts`.
 
 ```typescript
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
@@ -125,10 +125,8 @@ Let's see what will be deployed if we stop here.
 
 Run next command:
 
-```typescript
-mortar
-diff--
-networkId = 31337
+```
+mortar diff ./deployment/first.module.ts --networkId=31337
 ```
 
 This should be output in the console.
@@ -152,7 +150,7 @@ npx hardhat node
 Run `mortar deploy` command.
 
 ```
-mortar deploy ./deployment/first.module.ts --network_id=31337 --yes
+mortar deploy ./deployment/first.module.ts --networkId=31337
 ```
 
 After command is successfully run, you should see in your logs something like this
@@ -206,7 +204,7 @@ Now lets see what is the difference between the already deployed module and new 
 Run next command:
 
 ```
-mortar diff --networkId=31337
+mortar diff ./deployment/first.module.ts --networkId=31337
 ```
 
 Console output should be something like this.
@@ -227,7 +225,7 @@ Let's change some part of the code in `ContractBinding(A)`, I'll just add more `
 Now run command:
 
 ```
-mortar diff --networkId=31337
+mortar diff ./deployment/first.module.ts --networkId=31337
 ```
 
 You should see this in your console logs:
@@ -244,7 +242,7 @@ Module: FirstModule
 We now want to execute our changes in `FirstModule` so let's run next command:
 
 ```
-mortar deploy ./deployment/first.module.ts --network_id=31337 --yes
+mortar deploy ./deployment/first.module.ts --network_id=31337
 ```
 
 This should be execution logs:
@@ -274,7 +272,7 @@ export declare class FirstModuleBuilder extends ModuleBuilder {
 
 So you can now have type hint in your module if you change from `m: ModuleBuilder` to `m: FirstModuleBuilder`.
 
-Your module function should look like this:
+Your module function should look like this in order to have typehints:
 
 ```typescript
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {

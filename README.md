@@ -1,6 +1,6 @@
 # Mortar
 
-Mortar is solidity tool for building, deploying, versioning and changing of Ethereum smart contract infrastructure.
+Mortar is a solidity tool for building, deploying, versioning and changing of Ethereum smart contract infrastructure.
 
 # Glossary
 
@@ -10,10 +10,6 @@ Mortar is solidity tool for building, deploying, versioning and changing of Ethe
 
 ```
 npm i @tenderly/mortar -g
-```
-
-```
-yarn add @tenderly/mortar
 ```
 
 # Documentation

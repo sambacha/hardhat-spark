@@ -178,6 +178,8 @@ export class ModuleResolver {
 
       resolvedModuleElements = ModuleResolver.resolveContractsAndEvents(resolvedModuleElements, currentBindings, binding, currentEvents, moduleEvents);
     }
+    ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onSuccess);
+    ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onCompletion);
 
     let moduleStateLength = 0;
     if (checkIfExist(resolvedModuleElements)) {
@@ -189,16 +191,17 @@ export class ModuleResolver {
     const moduleElementNames = Object.keys(resolvedModuleElements);
     while (i < moduleStateLength) {
       const moduleElementName = moduleElementNames[i];
-      const resolvedModuleStateElement = resolvedModuleElements[moduleElementName];
+      let resolvedModuleStateElement = resolvedModuleElements[moduleElementName];
 
       let stateFileElement = moduleStateFile[moduleElementName];
       stateFileElement = stateFileElement as ContractBindingMetaData;
       if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
-        if (!(resolvedModuleStateElement instanceof ContractBinding)) {
+        if (!((resolvedModuleStateElement as ContractBinding)._isContractBinding)) {
           throw new UserError(`Module and module state file didn't match state element name:
-Module file: ${resolvedModuleStateElement.event.name}`);
+Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
         }
 
+        resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
         if (
           resolvedModuleStateElement.forceFlag == true ||
           (
@@ -250,7 +253,8 @@ Module file: ${resolvedModuleStateElement.event.name}`);
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {
-        if (!(resolvedModuleStateElement instanceof StatefulEvent)) {
+        resolvedModuleStateElement = resolvedModuleStateElement as StatefulEvent;
+        if (!(resolvedModuleStateElement._isStatefulEvent)) {
           throw new UserError("Module and module state file didn't match element.");
         }
 
@@ -273,7 +277,9 @@ State file: ${stateFileElement.event.eventType}`);
         continue;
       }
 
-      if (resolvedModuleStateElement instanceof ContractBinding) {
+      if ((resolvedModuleStateElement as ContractBinding)._isContractBinding) {
+        resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
+
         resolvedModuleStateElement.signer = this.signer;
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
@@ -284,7 +290,7 @@ State file: ${stateFileElement.event.eventType}`);
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
       }
 
-      if (resolvedModuleStateElement instanceof StatefulEvent) {
+      if ((resolvedModuleStateElement as StatefulEvent)._isStatefulEvent) {
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
       }
 

@@ -38,7 +38,7 @@ export class ModuleTypings {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '../../../../src/interfaces/mortar';
+} from '@tenderly/mortar/lib/interfaces/mortar';
 
 export declare class ${moduleName}Builder extends ModuleBuilder {`;
     for (const binding of Object.values(bindings)) {

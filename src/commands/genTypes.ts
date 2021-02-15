@@ -5,9 +5,13 @@ import path from 'path';
 import { ModuleTypings } from '../packages/modules/typings';
 import * as command from '../index';
 import ConfigService from '../packages/config/service';
+import chalk from 'chalk';
+import { IPrompter } from '../packages/utils/promter';
+import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 
 export default class GenTypes extends Command {
   static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';
+  private prompter: IPrompter | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -39,6 +43,8 @@ export default class GenTypes extends Command {
       throw new PathNotProvided('Path argument missing from command. \nPlease use --help to better understand usage of this command');
     }
 
+    this.prompter = new StreamlinedPrompter();
+
     const resolvedPath = path.resolve(currentPath, filePath);
     const typings = new ModuleTypings(currentPath);
 
@@ -49,14 +55,17 @@ export default class GenTypes extends Command {
   }
 
   async catch(error: Error) {
-    if (error instanceof UserError) {
-      cli.info(error.message);
-      cli.exit(0);
+    if (this.prompter) {
+      this.prompter.errorPrompt();
     }
 
+    if ((error as UserError)._isUserError) {
+      cli.info(chalk.red.bold('ERROR'), error.message);
+      cli.exit(1);
+    }
+
+    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
+    cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
     cli.error(error);
-    cli.info('If above error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    await cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
-    cli.exit(1);
   }
 }
