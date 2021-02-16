@@ -4,6 +4,28 @@ This will help you to understand a basic workflow and process of setting up simp
 
 You will need to have hardhat and mortar installed in some project.
 
+```
+yarn add hardhat --dev
+yarn add @tenderly/mortar --dev
+```
+
+Init hardhat and run hardhat node as a test environment.
+
+```
+npx hardhat
+```
+
+```
+npx hardhat node
+```
+
+Also make sure you have `ts-node` and `typescript` installed.
+
+```
+npm i ts-node -g
+npm i typescript -g
+```
+
 ## Workflow
 
 Let's say that we have this simple contract inside our project.
@@ -35,8 +57,9 @@ contract A {
 Firstly we will need to run next command in root of your project
 
 ```
-mortar init --privateKeys=<private_key>,<second_private_key>
+mortar init --privateKeys=<private_key>
 ```
+You can put hardhat generated `<private_key>` for testing.
 
 This command will generate `mortar-config.json` and `mortar.config.ts` files.
 
@@ -90,7 +113,7 @@ Let's add `afterDeploy` event (you can check [here](../concepts/module_builder/e
 newly initialized `ContractBinding`.
 
 ```typescript
-A.afterDeploy('afterDeployA', async () => {
+A.afterDeploy(m, 'afterDeployA', async () => {
 })
 ```
 
@@ -99,7 +122,7 @@ A.afterDeploy('afterDeployA', async () => {
 Let's try now to execute some contract function.
 
 ```typescript
-A.afterDeploy('afterDeployA', async () => {
+A.afterDeploy(m, 'afterDeployA', async () => {
   const txReceipt = await A.instance().setExample();
 })
 ```
@@ -220,7 +243,7 @@ new, so we have `+` prefix.
 
 ### Change current binding
 
-Let's change some part of the code in `ContractBinding(A)`, I'll just add more `oooo` to `hello` string.
+Let's change some part of the solidity code of `A.sol`, I'll just add more `oooo` to `hello` string in order to change bytecode.
 
 Now run command:
 
@@ -255,7 +278,7 @@ As a final step, lets generate typehints for your module for future development.
 Run next command:
 
 ```
-mortar genTypes ./deployment/root.module.ts
+mortar genTypes ./deployment/first.module.ts
 ```
 
 You can now see that additional file is generated under `./.mortar/FirstModule` - `FirstModule.d.ts`

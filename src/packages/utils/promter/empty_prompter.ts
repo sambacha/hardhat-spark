@@ -67,4 +67,7 @@ export class EmptyPrompter implements IPrompter {
   waitTransactionConfirmation(): void {
   }
 
+  generatedTypes(): void {
+  }
+
 }

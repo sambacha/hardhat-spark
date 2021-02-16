@@ -28,11 +28,14 @@ current/next `nonce`.
 
 ## Parallelized
 
-Parallelized deployment is separated in two main parts. First one is element batching, and second one is parallel execution.
+Parallelized deployment is separated in two main parts. First one is element batching, and second one is parallel
+execution.
 
 ### Batching
 
-Batching is poorly based on depth of the node in the dependency graph that is shown in the picture above. So this will mean that first batch would have `ContractBinding(A)`, second batch would have `ContractBinding(B)` and `ContractBinding(C)`, and third batch would have `StatefullEvent(afterDeployBandC)`.
+Batching is poorly based on depth of the node in the dependency graph that is shown in the picture above. So this will
+mean that first batch would have `ContractBinding(A)`, second batch would have `ContractBinding(B)`
+and `ContractBinding(C)`, and third batch would have `StatefullEvent(afterDeployBandC)`.
 
 ```typescript
 [
@@ -51,4 +54,6 @@ Batching is poorly based on depth of the node in the dependency graph that is sh
 
 ### Parallel execution
 
-After batching is completed mortar will run every single batch in parallel, this will mean that it'll not wait for block confirmation on transaction execution but rather after all transaction are sent to the pending pool. This way we have lower deployment time by a rather significant amount.
+After batching is completed mortar will run every single batch in parallel, this will mean that it'll not wait for block
+confirmation on transaction execution but rather after all transaction are sent to the pending pool. This way we have
+lower deployment time by a rather significant amount.

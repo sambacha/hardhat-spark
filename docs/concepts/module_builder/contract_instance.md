@@ -1,6 +1,6 @@
 # Contract instance
 
-If you want to call some contract function or read any contract property you will need to call `.instace()` function
+If you want to call some contract function or read any contract property you will need to call `.instance()` function
 first in order to get `ethers.Contract` like object to interact with.
 
 ```typescript

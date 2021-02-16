@@ -1,6 +1,6 @@
 # Logging
 
-Defaul is: `simple`
+Default is: `simple`
 
 Flag options: `--prompting=[simple,streamlined,json]`
 

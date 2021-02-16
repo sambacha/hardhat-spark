@@ -438,14 +438,12 @@ State file: ${stateFileElement.event.eventType}`);
     moduleEvents: ModuleEvents,
   ): void {
     const handleEvent = (eventName: string) => {
-      if ((events[eventName].event as ContractEvent).deps.length == 0) {
-        return;
-      }
-
       for (const depName of (events[eventName].event as ContractEvent).deps) {
-        if (!checkIfExist(moduleState[depName])) {
-          return;
+        if (checkIfExist(moduleState[depName])) {
+          continue;
         }
+
+        this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events, moduleEvents);
       }
 
       for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
@@ -453,7 +451,7 @@ State file: ${stateFileElement.event.eventType}`);
 
         for (const depBindingName of contractEvent.deps) {
           if (checkIfExist(moduleState[depBindingName])) {
-            continue; // @TODO parallelization
+            continue;
           }
 
           this.resolveContractsAndEvents(moduleState, bindings, bindings[depBindingName], events, moduleEvents);
@@ -464,7 +462,7 @@ State file: ${stateFileElement.event.eventType}`);
 
       for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
         if (checkIfExist(moduleState[usageBindingName])) {
-          continue; // @TODO parallelization
+          continue;
         }
 
         this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events, moduleEvents);

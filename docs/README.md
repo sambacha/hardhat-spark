@@ -22,7 +22,7 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | Module Dependencies resolving | Module dependencies resolving overview.         | [module_deps_resolver](./concepts/module_deps_resovler/module_deps_resolver.md)                      |
 | Module Registry and resolver  | Deployment registry and deployment resolver.    | [module_registry_resolver](./concepts/module_registry_resolver/module_registry_resolver.md)          |
 | Module State File             | Detailed data of deployment process.            | [module_state_file](./concepts/module_state_file/module_state_file.md)                               |
-| Config                        | Mortar configuration options.                  | [config](./concepts/config.md)                                                                       |
+| Config                        | Mortar configuration options.                   | [config](./concepts/config.md)                                                                       |
 
 # Usage
 
@@ -32,11 +32,11 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 
 # Tutorials
 
-| Tutorials | Glossary                          | Link                          |
-| --------- | --------------------------------- | ----------------------------- |
-| Basic     | Basic showcase of functionality.  | [basic](./tutorial/basic.md)  |
-| Factory   | TODO       | TODO       |
-| Proxy     | TODO       | TODO       |
+| Tutorials | Glossary                            | Link                          |
+| --------- | ----------------------------------- | ----------------------------- |
+| Basic     | Basic showcase of functionality.    | [basic](./tutorial/basic.md)  |
+| Factory   | Factory pattern support utilization.| TODO       |
+| Proxy     | Proxy pattern support utilization.  | TODO       |
 
 # Developer UX
 

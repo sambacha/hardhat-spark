@@ -7,11 +7,17 @@ export const DaiModule = buildModule('DaiModule', async (m: DaiModuleBuilder) =>
 ```
 
 ```typescript
-instance(): ethers.Contract;
+instance()
+:
+ethers.Contract;
 ```
 
 ```typescript
-setDeployer(wallet: ethers.Wallet): ContractBinding;
+setDeployer(wallet
+:
+ethers.Wallet
+):
+ContractBinding;
 ```
 
 ```typescript
@@ -20,7 +26,7 @@ setLibrary();
 
 ### Contract Events
 
-Specify module events. See [event lifecycle](./events.md) for more detailes.
+Specify module events. See [event lifecycle](./events.md) for more details.
 
 ```  
 beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent
@@ -41,30 +47,64 @@ onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...usages: (Contra
 ### Patterns
 
 ```typescript
-proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void;
+proxySetNewLogic(m
+:
+ModuleBuilder, proxy
+:
+ContractBinding, logic
+:
+ContractBinding, setLogicName
+:
+string,
+...
+args: any
+):
+void;
 ```
 
 ```typescript
-factoryCreate(m: ModuleBuilder, childName: string, createFuncName: string, args: any[], opts?: FactoryCustomOpts): ContractBinding;
+factoryCreate(m
+:
+ModuleBuilder, childName
+:
+string, createFuncName
+:
+string, args
+:
+any[], opts ? : FactoryCustomOpts
+):
+ContractBinding;
 ```
 
 ### Redeploy
 
 ```typescript
-force(): ContractBinding;
+force()
+:
+ContractBinding;
 ```
 
 ```typescript
-shouldRedeploy(fn: ShouldRedeployFn): void
+shouldRedeploy(fn
+:
+ShouldRedeployFn
+):
+void
 ```
 
 ```typescript
-deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding;
+deployFn(deployFn
+:
+DeployFn,
+...
+deps: ContractBinding[]
+):
+ContractBinding;
 ```
 
 ## Prototypes
 
-With prototypes, you can define multiple contract bindings with same contract code. 
+With prototypes, you can define multiple contract bindings with same contract code.
 
 ```typescript
 export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) => {

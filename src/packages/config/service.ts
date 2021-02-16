@@ -46,7 +46,7 @@ export default class ConfigService implements IConfigService {
     let config: MortarConfig;
     if (configFilePath) {
       try {
-        const configModules = await loadScript(configScriptPath);
+        const configModules = await loadScript(configFilePath);
 
         if (Object.entries(configModules).length > 1) {
           throw new UserError('Sorry, but you can only have one config object!');

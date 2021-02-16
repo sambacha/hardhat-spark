@@ -1,7 +1,7 @@
 import { cli } from 'cli-ux';
 import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
-import { Module, ModuleOptions } from './interfaces/mortar';
+import { Module, ModuleOptions, StatefulEvent } from './interfaces/mortar';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';
@@ -16,7 +16,6 @@ import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
 import { MortarConfig } from './packages/types/config';
 import { loadScript } from './packages/utils/typescript-checker';
-import { load } from '@oclif/config';
 
 export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
@@ -155,3 +154,18 @@ export async function genTypes(
     moduleTypings.generate(moduleName, module);
   }
 }
+
+export * from './interfaces/mortar';
+export * from './interfaces/helper/expectancy';
+export * from './interfaces/helper/macros';
+export * from './usage_interfaces/tests';
+export * from './usage_interfaces/index';
+export * from './packages/config';
+export * from './packages/types';
+export * from './packages/ethereum/compiler';
+export * from './packages/ethereum/gas';
+export * from './packages/ethereum/transactions';
+export * from './packages/ethereum/wallet/wrapper';
+export * from './packages/modules/states/module';
+export * from './packages/modules/states/registry';
+export * from './packages/modules/typings';

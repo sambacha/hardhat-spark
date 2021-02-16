@@ -13,6 +13,10 @@ export class StreamlinedPrompter implements IPrompter {
     this.whitespaces = '';
   }
 
+  generatedTypes(): void {
+    cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
+  }
+
   nothingToDeploy(): void {
     cli.info('State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.');
     cli.exit(0);

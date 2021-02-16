@@ -52,6 +52,7 @@ export default class GenTypes extends Command {
     const mortarConfig = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
 
     await command.genTypes(resolvedPath, mortarConfig, typings, configService);
+    this.prompter.generatedTypes();
   }
 
   async catch(error: Error) {

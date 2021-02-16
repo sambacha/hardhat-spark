@@ -174,4 +174,8 @@ export class SimpleOverviewPrompter implements IPrompter {
 
   executeContractFunction(): void {
   }
+
+  generatedTypes(): void {
+    cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
+  }
 }

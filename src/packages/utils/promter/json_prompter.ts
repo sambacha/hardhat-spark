@@ -178,4 +178,10 @@ export class JsonPrompter implements IPrompter {
 
   waitTransactionConfirmation(): void {
   }
+
+  generatedTypes(): void {
+    cli.info(JSON.stringify({
+      name: 'Successfully generated module types'
+    }));
+  }
 }

@@ -36,6 +36,10 @@ export function isTypescriptSupported() {
 }
 
 export function loadTsNode(test?: boolean) {
+  if (true) {
+    return;
+  }
+
   try {
     require.resolve('typescript');
   } catch (error) {
@@ -64,9 +68,9 @@ function isTypescriptFile(path: string): boolean {
   return path.endsWith('.ts');
 }
 
-export async function loadScript(configScriptPath: string): Promise<any> {
+export async function loadScript(configScriptPath: string, test: boolean = false): Promise<any> {
   if (willRunWithTypescript(configScriptPath)) {
-    loadTsNode();
+    loadTsNode(test);
   }
 
   let module;

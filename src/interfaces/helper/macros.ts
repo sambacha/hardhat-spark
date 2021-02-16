@@ -1,6 +1,7 @@
 import { ContractBinding, ContractEvent, ModuleBuilder } from '../mortar';
 import { expectFuncRead } from './expectancy';
 import { ethers } from 'ethers';
+import { checkIfExist } from '../../packages/utils/util';
 
 export const mutator = (
   m: ModuleBuilder,
@@ -12,7 +13,7 @@ export const mutator = (
     getterFunc?: string,
     getterArgs?: any[],
     expectedValue?: any,
-    deps?: (ContractBinding | Event)[]
+    deps?: (ContractBinding | ContractEvent)[]
   }
 ): ContractEvent => {
   const name = opts?.name ? opts.name : `mutator${setterFunc}${setter.name}`;
@@ -26,7 +27,7 @@ export const mutator = (
 
   const usages: (ContractBinding | ContractEvent)[] = [];
   for (const arg of (setterArgs)) {
-    if (arg._isContractBinding || arg._isContractBinding) {
+    if (arg?._isContractBinding || checkIfExist(arg?.eventType)) {
       usages.push(arg);
     }
   }

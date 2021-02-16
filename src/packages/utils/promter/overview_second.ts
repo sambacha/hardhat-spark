@@ -167,4 +167,8 @@ export class OverviewPrompter2 implements IPrompter {
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
   }
+
+  generatedTypes(): void {
+    cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
+  }
 }

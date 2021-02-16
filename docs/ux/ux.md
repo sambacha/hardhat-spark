@@ -46,7 +46,7 @@ gracefulExpect(firstValue: any, secondValue: any): boolean
 
 ## Macros
 
-Mutator is easies way to execute `set` function and immediately after call `get` function to check if desired value is set. If it doesn't it will throw `UserError`.
+Mutator is the easies way to execute `set` function and immediately after call `get` function to check if desired value is set. If it doesn't it will throw `UserError`.
 
 ```typescript
 const mutator = (
@@ -55,7 +55,7 @@ const mutator = (
   setterFunc: string, // name of setter function
   setterArgs: any[], // setter args
   opts?: {
-    name?: string, // mortar will dynamicly generate name, you can overwrite it here
+    name?: string, // mortar will dynamically generate name, you can overwrite it here
     getterFunc?: string, // mortar will replace "set" with "get", you can overwrite name of getter function here
     getterArgs?: any[], // mortar will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
     expectedValue?: any, // mortar will expect last element of setterArgs to be equal to getterFunc return value

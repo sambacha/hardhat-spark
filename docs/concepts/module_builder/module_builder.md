@@ -1,6 +1,8 @@
 # Module Builder
 
-Module builder is class interface for collection definition of [solidity contract bindings](./contract_binding.md) and [event hooks](./events.md). It is used in order to define contract constructor arguments and run events in order to set up desired smart contract infrastructure.
+Module builder is class interface for collection definition of [solidity contract bindings](./contract_binding.md)
+and [event hooks](./events.md). It is used in order to define contract constructor arguments and run events in order to
+set up desired smart contract infrastructure.
 
 ### Simple Module builder example image
 

@@ -370,7 +370,7 @@ onFail(eventName: string, fn: ModuleEventFn): void
 
 Actions are used to surface some dynamic event data (e.g. contract function response) to other event's.
 
-See [action usage](./actionts.md)
+See [action usage](actions.md)
 
 ```typescript
   registerAction(name: string, fn: ActionFn): Action;
