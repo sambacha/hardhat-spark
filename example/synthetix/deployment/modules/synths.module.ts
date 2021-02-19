@@ -1,7 +1,7 @@
-import { ContractBinding, buildModule } from '../../../../src/interfaces/mortar';
+import { ContractBinding, buildModule } from '../../../../src';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { mutator } from '../../../../src/interfaces/helper/macros';
+import { mutator } from '../../../../src';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 const {

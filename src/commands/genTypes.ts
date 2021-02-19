@@ -29,7 +29,7 @@ export default class GenTypes extends Command {
     ),
   };
 
-  static args = [{name: 'path'}];
+  static args = [{name: 'module_file_path'}];
 
   async run() {
     const {args, flags} = this.parse(GenTypes);

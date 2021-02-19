@@ -8,7 +8,7 @@ contract A {
   }
 
   function hello() public pure returns (string memory) {
-    return "hellooooo";
+    return "hello";
   }
 
   function setExample(uint256 _example) public returns (bool) {

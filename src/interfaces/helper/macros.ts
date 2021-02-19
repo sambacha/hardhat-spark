@@ -1,5 +1,5 @@
 import { ContractBinding, ContractEvent, ModuleBuilder } from '../mortar';
-import { expectFuncRead } from './expectancy';
+import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
 import { checkIfExist } from '../../packages/utils/util';
 
@@ -13,8 +13,9 @@ export const mutator = (
     getterFunc?: string,
     getterArgs?: any[],
     expectedValue?: any,
-    deps?: (ContractBinding | ContractEvent)[]
-  }
+    deps?: (ContractBinding | ContractEvent)[],
+    slot?: string,
+  },
 ): ContractEvent => {
   const name = opts?.name ? opts.name : `mutator${setterFunc}${setter.name}`;
   const getFunc = setterFunc.substring(3);
@@ -39,6 +40,11 @@ export const mutator = (
 
   return m.group(setter, ...deps).afterDeploy(m, name, async (): Promise<void> => {
     await setter.instance()[`${setterFunc}`](...keys, value);
+
+    if (opts?.slot) {
+      await expectSlotRead(expectedValue, setter.instance(), opts.slot);
+      return;
+    }
 
     await expectFuncRead(expectedValue, setter.instance()[getterFunc], ...getterArgs);
   }, ...usages);

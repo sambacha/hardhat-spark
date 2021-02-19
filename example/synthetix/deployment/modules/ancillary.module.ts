@@ -1,4 +1,4 @@
-import { buildModule } from '../../../../src/interfaces/mortar';
+import { buildModule } from '../../../../src';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 export const SynthetixAncillary = buildModule('SynthetixAncillary', async (m: SynthetixModuleBuilder) => {

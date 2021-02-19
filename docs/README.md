@@ -32,9 +32,10 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 
 # Tutorials
 
-| Tutorials | Glossary                            | Link                          |
-| --------- | ----------------------------------- | ----------------------------- |
-| Basic     | Basic showcase of functionality.    | [basic](./tutorial/basic.md)  |
+| Tutorials     | Glossary                            | Link                                        |
+| ------------- | ----------------------------------- | ------------------------------------------- |
+| Basic         | Basic showcase of functionality.    | [basic](./tutorial/basic.md)                |
+| Intermediate  | More complex functionality showcase | [intermediate](./tutorial/intermediate.md)  |
 | Factory   | Factory pattern support utilization.| TODO       |
 | Proxy     | Proxy pattern support utilization.  | TODO       |
 
@@ -47,7 +48,6 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 
 # Testing
 
-| Developer Ux  | Glossary    | Link        |
-| ------------- | ----------- | ----------- |
-| Integration   | TODO       | TODO       |
-| Unit          | TODO       | TODO       |
+| Testing       | Glossary                                   | Link                                     |
+| ------------- | ------------------------------------------ | ---------------------------------------- |
+| Integration   | Integration test example and explanation.  | [test](./testing/integration/example.md) |

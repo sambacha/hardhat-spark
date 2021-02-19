@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../src';
 import { ExampleModule } from './module';
 import { ethers } from 'ethers';
 

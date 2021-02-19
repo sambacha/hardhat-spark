@@ -1,9 +1,11 @@
-# Tutorial
+# Basic Tutorial
 
 This will help you to understand a basic workflow and process of setting up simple deployment and what you can expect.
 
-You will need to have hardhat and mortar installed in some project.
 
+## Project setup 
+
+You will need to have hardhat and mortar installed in some project.
 ```
 yarn add hardhat --dev
 yarn add @tenderly/mortar --dev
@@ -22,8 +24,8 @@ npx hardhat node
 Also make sure you have `ts-node` and `typescript` installed.
 
 ```
-npm i ts-node -g
-npm i typescript -g
+npm i ts-node
+npm i typescript
 ```
 
 ## Workflow
@@ -68,18 +70,15 @@ This command will generate `mortar-config.json` and `mortar.config.ts` files.
 ```json
 {
   "privateKeys": [
-    "<private_key>",
-    "<second_private_key>"
-  ],
-  "mnemonic": "",
-  "hdPath": ""
+    "<private_key>"
+  ]
 }
 ```
 
 `mortar.config.ts` should look something like this.
 
 ```typescript
-import { MortarConfig } from '@tenderly/mortar/lib/interfaces/mortar';
+import { MortarConfig } from '@tenderly/mortar';
 
 export const config: MortarConfig = {}
 ```
@@ -89,6 +88,8 @@ export const config: MortarConfig = {}
 Next thing is to set up your own deployment module. Let's create file under `./deployment/first.module.ts`.
 
 ```typescript
+import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 });
@@ -133,6 +134,8 @@ transaction gets confirmed you will get `TransactionReceipt` object as return.
 You should end up with something like this:
 
 ```typescript
+import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 
@@ -210,6 +213,8 @@ const B = m.contract('B', A);
 Your `FirstModule` should look something like this.
 
 ```typescript
+import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
   const B = m.contract('B', A);
@@ -238,7 +243,7 @@ Module: FirstModule
   └── Contract: A
 ```
 
-We don't see `ContractBinding(A)` and `afterDeployA` event because they are alredy deployed but `ContractBinding(B)` is
+We don't see `ContractBinding(A)` and `afterDeployA` event because they are already deployed but `ContractBinding(B)` is
 new, so we have `+` prefix.
 
 ### Change current binding
@@ -256,6 +261,7 @@ You should see this in your console logs:
 ```
 Module: FirstModule
 ~ Contract:  A
+~ Event afterDeployBandC
 + Contract B
   └── Contract: A
 ```
@@ -298,8 +304,16 @@ So you can now have type hint in your module if you change from `m: ModuleBuilde
 Your module function should look like this in order to have typehints:
 
 ```typescript
+import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+import { FirstModuleBuilder } from '../.mortar/FirstModule/FirstModule';
+
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
-...
-})
+  const A = m.contract('A');
+  const B = m.contract('B', A);
+
+  A.afterDeploy(m, 'afterDeployBandC', async () => {
+    await A.instance().setExample(11);
+  });
+});
 ```
 

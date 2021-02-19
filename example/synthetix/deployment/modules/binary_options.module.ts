@@ -1,4 +1,4 @@
-import { buildModule } from '../../../../src/interfaces/mortar';
+import { buildModule } from '../../../../src';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 
 export const BinaryOptionsModule = buildModule('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {

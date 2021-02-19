@@ -1,8 +1,8 @@
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { providers } from 'ethers';
-import { IGasCalculator, IGasPriceCalculator } from '../../../../src/packages/ethereum/gas';
+import { IGasCalculator, IGasPriceCalculator } from '../../../../src';
 import { ethers } from 'ethers';
-import { INonceManager, ITransactionSigner } from '../../../../src/packages/ethereum/transactions';
+import { INonceManager, ITransactionSigner } from '../../../../src';
 import { checkIfExist } from '../../../../lib/packages/utils/util';
 
 export class TransactionManager implements ITransactionSigner, INonceManager {

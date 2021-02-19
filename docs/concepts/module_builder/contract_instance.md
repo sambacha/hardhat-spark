@@ -14,3 +14,7 @@ export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) =
   });
 });
 ```
+
+## Custom signers
+
+@TODO

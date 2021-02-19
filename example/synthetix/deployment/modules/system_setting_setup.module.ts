@@ -2,8 +2,8 @@ import {
   ContractBinding,
   ContractEvent,
   buildModule,
-} from '../../../../src/interfaces/mortar';
-import { expectFuncRead } from '../../../../src/interfaces/helper/expectancy';
+} from '../../../../src';
+import { expectFuncRead } from '../../../../src';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';

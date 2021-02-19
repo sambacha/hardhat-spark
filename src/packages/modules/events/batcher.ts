@@ -145,7 +145,7 @@ export class Batcher {
 
     for (const eventDep of event.eventDeps) {
       if (!checkIfExist(elementsBatches[eventDep])) {
-        throw new CliError(`Event Dependency is not yet deployed - ${eventDep}`);
+        throw new CliError(`Event Dependency is not yet deployed - ${event.name} - ${eventDep}`);
       }
 
       if (elementsBatches[eventDep] > deepestDepNumber) {

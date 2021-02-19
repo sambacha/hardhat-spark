@@ -90,7 +90,7 @@ export default class Deploy extends Command {
     help: flags.help({char: 'h'}),
   };
 
-  static args = [{name: 'path'}];
+  static args = [{name: 'module_file_path'}];
 
   async run() {
     process.on('SIGINT', () => {
@@ -105,7 +105,7 @@ export default class Deploy extends Command {
     }
 
     const currentPath = process.cwd();
-    const filePath = args.path as string;
+    const filePath = args.module_file_path as string;
     if (filePath == '') {
       cli.info('Their is no mortar config, please run init first.\n   Use --help for more information.');
     }

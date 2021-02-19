@@ -1,7 +1,7 @@
 import {
   Events,
   StatefulEvent,
-  ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData,
+  ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData, EventsDepRef,
 } from '../../interfaces/mortar';
 import { checkIfExist } from '../utils/util';
 import { cli } from 'cli-ux';
@@ -64,6 +64,10 @@ export class ModuleResolver {
           return true;
         }
 
+        if (!checkIfExist(newModuleElement.deployMetaData.contractAddress)) {
+          return true;
+        }
+
         i++;
         continue;
       }
@@ -71,7 +75,10 @@ export class ModuleResolver {
       oldModuleElement = (oldModuleElement as StatefulEvent);
       newModuleElement = (newModuleElement as StatefulEvent);
 
-      if (oldModuleElement.event.name != newModuleElement.event.name) {
+      if (
+        oldModuleElement.event.name != newModuleElement.event.name &&
+        !newModuleElement.executed
+      ) {
         return true;
       }
 
@@ -169,7 +176,7 @@ export class ModuleResolver {
     moduleEvents: ModuleEvents,
     moduleStateFile: ModuleStateFile,
   ): ModuleState {
-    let resolvedModuleElements: { [p: string]: ContractBinding | StatefulEvent } = {};
+    let resolvedModuleElements: ModuleState = {};
 
     for (const [bindingName, binding] of Object.entries(currentBindings)) {
       if (checkIfExist(resolvedModuleElements[bindingName])) {
@@ -222,6 +229,9 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
 
           // this is necessary in order to surface contract metadata to consumer;
           currentBindings[moduleElementName] = resolvedModuleStateElement;
+
+          // @TODO add "invalidation" for every event and binding that is using this contractBinding.
+          ModuleResolver.invalidateStateElementDependant(moduleStateFile, resolvedModuleElements, resolvedModuleStateElement);
 
           i++;
           continue;
@@ -300,13 +310,70 @@ State file: ${stateFileElement.event.eventType}`);
     return resolvedModuleState;
   }
 
+  private static invalidateStateElementDependant(moduleStateFile: ModuleStateFile, resolvedModule: ModuleState, currentBinding: ContractBinding) {
+    for (const arg of currentBinding.args) {
+      if (
+        (arg._isContractBinding || arg._isContractBindingMetaData) &&
+        checkIfExist(arg.deployMetaData.contractAddress)
+      ) {
+        (moduleStateFile[arg.name] as ContractBindingMetaData).deployMetaData.contractAddress = undefined;
+
+        this.invalidateStateElementDependant(moduleStateFile, resolvedModule, resolvedModule[arg.name] as ContractBinding);
+      }
+    }
+
+    this.invalidateBindingEventsDependant(currentBinding.eventsDeps, moduleStateFile, resolvedModule);
+  }
+
+  private static invalidateBindingEventsDependant(bindingEventDeps: EventsDepRef, moduleStateFile: ModuleStateFile, resolvedModule: ModuleState) {
+    const invalidateSingleEvent = (statefulEvent: StatefulEvent) => {
+      if (!statefulEvent.executed) {
+        return;
+      }
+
+      statefulEvent.executed = false;
+    };
+
+    for (const eventName of bindingEventDeps.onChange) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.beforeCompile) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.afterCompile) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.beforeDeploy) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.beforeDeployment) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.beforeDeploy) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.afterDeploy) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+
+    for (const eventName of bindingEventDeps.afterDeployment) {
+      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
+    }
+  }
+
   private static resolveContractsAndEvents(
-    moduleState: { [p: string]: ContractBinding | StatefulEvent },
+    moduleState: ModuleState,
     bindings: { [p: string]: ContractBinding },
     binding: ContractBinding,
     events: Events,
     moduleEvents: ModuleEvents,
-  ): { [p: string]: ContractBinding | StatefulEvent } {
+  ): ModuleState {
     if (checkIfExist(moduleState[binding.name])) {
       return moduleState;
     }
@@ -359,7 +426,7 @@ State file: ${stateFileElement.event.eventType}`);
   }
 
   private static resolveBeforeDeployEvents(
-    moduleState: { [p: string]: ContractBinding | StatefulEvent },
+    moduleState: ModuleState,
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
     events: Events,
@@ -431,7 +498,7 @@ State file: ${stateFileElement.event.eventType}`);
   }
 
   private static resolveAfterDeployEvents(
-    moduleState: { [p: string]: ContractBinding | StatefulEvent },
+    moduleState: ModuleState,
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
     events: Events,

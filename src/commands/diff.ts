@@ -50,7 +50,7 @@ export default class Diff extends Command {
     ),
   };
 
-  static args = [{name: 'path'}];
+  static args = [{name: 'module_file_path'}];
 
   async run() {
     const {args, flags} = this.parse(Diff);
@@ -59,7 +59,7 @@ export default class Diff extends Command {
     }
 
     const currentPath = process.cwd();
-    const filePath = args.path as string;
+    const filePath = args.module_file_path as string;
     if (filePath == '') {
       throw new PathNotProvided('Path argument missing from command. \nPlease use --help to better understand usage of this command');
     }

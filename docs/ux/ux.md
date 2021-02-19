@@ -17,6 +17,22 @@ await expectFuncRead(
 
 <hr>
 
+In case if there is no contract function from which you can read the data there is an option to read directly from provided storage `slot`.
+
+```typescript
+async function expectSlotRead(expectedValue: ContractBinding | any | undefined, contract: ethers.Contract, slot: string | any): Promise<boolean>
+```
+
+```typescript
+await expectSlotRead(
+  ContractBinding(A), 
+  B.instance(),
+  '<slot_hash>'
+);
+```
+
+<hr>
+
 Same as `expectFuncRead` just it will not throw `UserError`, it will just return `false`.
 
 ```typescript
@@ -60,6 +76,7 @@ const mutator = (
     getterArgs?: any[], // mortar will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
     expectedValue?: any, // mortar will expect last element of setterArgs to be equal to getterFunc return value
     deps?: (ContractBinding | Event)[] // define dependencies for setter/getter execution
+    slot?: string, // option if their is no function for read and you need to use `getStorateAt`
   }
 ): ContractEvent
 ```

@@ -1,7 +1,7 @@
 import {
   buildModule,
   ModuleConfig
-} from '../../../src/interfaces/mortar';
+} from '../../../src';
 import { SynthetixLibraries, SynthetixPrototypes } from './modules/helper.module';
 import { SynthetixCore } from './modules/core.module';
 import { BinaryOptionsModule } from './modules/binary_options.module';
@@ -13,7 +13,7 @@ import { SynthetixRebuildCache } from './modules/rebuild_cache_module.module';
 import { SystemSettingsModule } from './modules/system_setting_setup.module';
 import { SynthetixIssuerSetup } from './modules/issuer_setup.module';
 import { SynthetixDebtCacheSetup } from './modules/debt_cache_setup.module';
-import { ModuleBuilder } from '../../../src/interfaces/mortar';
+import { ModuleBuilder } from '../../../src';
 
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 

@@ -1,8 +1,6 @@
-import { IGasPriceCalculator, IGasProvider } from '../../../../src/packages/ethereum/gas';
+import { IGasPriceCalculator } from '../../../../src';
 import { BigNumber } from '@ethersproject/bignumber';
 import axios from 'axios';
-import { TransactionRequest } from '@ethersproject/abstract-provider';
-import { checkIfExist } from '../../../../src/packages/utils/util';
 
 export enum GasPriceType {
   'fast' = 'fast',

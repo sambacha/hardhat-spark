@@ -14,7 +14,7 @@ npm i @tenderly/mortar -g
 
 # Documentation
 
-Currently only documentation is available here: [Docs](./docs/README.md)
+Currently, only documentation is available here: [Docs](./docs/README.md)
 
 # Team
 

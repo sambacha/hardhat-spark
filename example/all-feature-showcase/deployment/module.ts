@@ -1,6 +1,6 @@
-import { ContractBinding, buildModule, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { ContractBinding, buildModule, ModuleBuilder } from '../../../src';
 import { BigNumber, ethers } from 'ethers';
-import { filler } from '../../../src/interfaces/helper/macros';
+import { filler } from '../../../src';
 
 export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
   filler(m, wallets[0], wallets.slice(1));
