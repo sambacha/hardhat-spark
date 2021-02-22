@@ -1,8 +1,8 @@
 import {
   ContractBinding,
   buildModule,
-} from '../../../../src/interfaces/mortar';
-import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src/interfaces/helper/expectancy';
+} from '../../../../src';
+import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src';
 import { toBytes32 } from '../../util/util';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 

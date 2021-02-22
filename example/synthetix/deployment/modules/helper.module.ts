@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../../src';
 
 export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: ModuleBuilder) => {
   m.library('SafeDecimalMath');

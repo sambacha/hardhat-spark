@@ -282,6 +282,7 @@ export class TxExecutor {
       batches[currentBatch].push(element);
 
       elementsBatches[element.name] = currentBatch;
+
       return;
     }
 

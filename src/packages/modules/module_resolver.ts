@@ -8,7 +8,7 @@ import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { IPrompter } from '../utils/promter';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { UsageEventNotFound, UserError } from '../types/errors';
+import { CliError, UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
@@ -178,12 +178,13 @@ export class ModuleResolver {
   ): ModuleState {
     let resolvedModuleElements: ModuleState = {};
 
+    ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onStart);
     for (const [bindingName, binding] of Object.entries(currentBindings)) {
       if (checkIfExist(resolvedModuleElements[bindingName])) {
         continue;
       }
 
-      resolvedModuleElements = ModuleResolver.resolveContractsAndEvents(resolvedModuleElements, currentBindings, binding, currentEvents, moduleEvents);
+      resolvedModuleElements = ModuleResolver.resolveContractsAndEvents(resolvedModuleElements, currentBindings, binding, currentEvents);
     }
     ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onSuccess);
     ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onCompletion);
@@ -372,7 +373,6 @@ State file: ${stateFileElement.event.eventType}`);
     bindings: { [p: string]: ContractBinding },
     binding: ContractBinding,
     events: Events,
-    moduleEvents: ModuleEvents,
   ): ModuleState {
     if (checkIfExist(moduleState[binding.name])) {
       return moduleState;
@@ -387,7 +387,7 @@ State file: ${stateFileElement.event.eventType}`);
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, argBinding, events, moduleEvents);
+      this.resolveContractsAndEvents(moduleState, bindings, argBinding, events);
     }
 
     if (!checkIfExist(binding?.libraries)) {
@@ -401,7 +401,7 @@ State file: ${stateFileElement.event.eventType}`);
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, libBinding, events, moduleEvents);
+      this.resolveContractsAndEvents(moduleState, bindings, libBinding, events);
     }
 
     for (const deployDeps of binding.deployMetaData.deploymentSpec.deps) {
@@ -410,17 +410,16 @@ State file: ${stateFileElement.event.eventType}`);
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events, moduleEvents);
+      this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events);
     }
 
-    this.handleModuleEvents(moduleState, moduleEvents.onStart);
-    this.resolveBeforeDeployEvents(moduleState, binding, bindings, events, moduleEvents);
+    this.resolveBeforeDeployEvents(moduleState, binding, bindings, events);
 
     // this is necessary in order to surface tx data to user
     bindings[binding.name] = binding;
     moduleState[binding.name] = bindings[binding.name];
 
-    this.resolveAfterDeployEvents(moduleState, binding, bindings, events, moduleEvents);
+    this.resolveAfterDeployEvents(moduleState, binding, bindings, events);
 
     return moduleState;
   }
@@ -430,7 +429,6 @@ State file: ${stateFileElement.event.eventType}`);
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
     events: Events,
-    moduleEvents: ModuleEvents,
   ): void {
     const addEvent = (eventName: string) => {
       if (checkIfExist(moduleState[eventName])) {
@@ -449,7 +447,7 @@ State file: ${stateFileElement.event.eventType}`);
             continue;
           }
 
-          this.resolveContractsAndEvents(moduleState, bindings, bindings[bindingName], events, moduleEvents);
+          this.resolveContractsAndEvents(moduleState, bindings, bindings[bindingName], events);
           bindings[bindingName].deployMetaData.lastEventName = eventName;
           bindings[bindingName].deployMetaData.logicallyDeployed = false;
         }
@@ -502,7 +500,6 @@ State file: ${stateFileElement.event.eventType}`);
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
     events: Events,
-    moduleEvents: ModuleEvents,
   ): void {
     const handleEvent = (eventName: string) => {
       for (const depName of (events[eventName].event as ContractEvent).deps) {
@@ -510,20 +507,17 @@ State file: ${stateFileElement.event.eventType}`);
           continue;
         }
 
-        this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events, moduleEvents);
+        this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events);
       }
 
       for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
         const contractEvent = (events[eventDepName] as StatefulEvent).event as ContractEvent;
 
-        for (const depBindingName of contractEvent.deps) {
-          if (checkIfExist(moduleState[depBindingName])) {
-            continue;
-          }
+        // this is need if event is dependant fo multiple events, in that case above for loop wouldn't be enough
+        this.resolveSingleEvent(moduleState, bindings, events, binding, contractEvent);
 
-          this.resolveContractsAndEvents(moduleState, bindings, bindings[depBindingName], events, moduleEvents);
-          bindings[binding.name].deployMetaData.lastEventName = eventName;
-          bindings[binding.name].deployMetaData.logicallyDeployed = false;
+        if (!checkIfExist(moduleState[contractEvent.name])) {
+          throw new CliError(`Event was not been resolved - ${eventName} ${contractEvent.name}`);
         }
       }
 
@@ -532,7 +526,7 @@ State file: ${stateFileElement.event.eventType}`);
           continue;
         }
 
-        this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events, moduleEvents);
+        this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events);
       }
 
       for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
@@ -561,6 +555,38 @@ State file: ${stateFileElement.event.eventType}`);
     for (const eventIndex in binding.eventsDeps.afterDeployment) {
       handleEvent(binding.eventsDeps.afterDeployment[eventIndex]);
     }
+  }
+
+  static resolveSingleEvent(moduleState: ModuleState, bindings: { [p: string]: ContractBinding }, events: Events, binding: ContractBinding, contractEvent: ContractEvent) {
+    if (checkIfExist(moduleState[contractEvent.name])) {
+      return;
+    }
+
+    for (const depName of contractEvent.deps) {
+      if (checkIfExist(moduleState[depName])) {
+        continue;
+      }
+
+      this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events);
+      bindings[binding.name].deployMetaData.lastEventName = contractEvent.name;
+      bindings[binding.name].deployMetaData.logicallyDeployed = false;
+    }
+    for (const eventDepName of contractEvent.eventDeps) {
+      this.resolveSingleEvent(moduleState, bindings, events, binding, events[eventDepName].event as ContractEvent);
+    }
+
+    for (const usageName of contractEvent.usage) {
+      if (checkIfExist(moduleState[usageName])) {
+        continue;
+      }
+
+      this.resolveContractsAndEvents(moduleState, bindings, bindings[usageName], events);
+    }
+    for (const eventUsageName of contractEvent.eventUsage) {
+      this.resolveSingleEvent(moduleState, bindings, events, binding, events[eventUsageName].event as ContractEvent);
+    }
+
+    moduleState[contractEvent.name] = events[contractEvent.name];
   }
 
   static handleModuleEvents(

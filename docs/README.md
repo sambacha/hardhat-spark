@@ -36,8 +36,9 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | ------------- | ----------------------------------- | ------------------------------------------- |
 | Basic         | Basic showcase of functionality.    | [basic](./tutorial/basic.md)                |
 | Intermediate  | More complex functionality showcase | [intermediate](./tutorial/intermediate.md)  |
-| Factory   | Factory pattern support utilization.| TODO       |
-| Proxy     | Proxy pattern support utilization.  | TODO       |
+| Advanced      | Synthetix deployment module.        | [advanced](./tutorial/advanced.md)  |
+| Factory       | Factory pattern support utilization.| TODO       |
+| Proxy         | Proxy pattern support utilization.  | TODO       |
 
 # Developer UX
 

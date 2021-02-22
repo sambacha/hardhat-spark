@@ -3,6 +3,8 @@ import { ModuleState } from '../../modules/states/module';
 import { SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
+import { checkIfExist } from '../util';
+import { CliError } from '../../types/errors';
 
 enum StateElementStatus {
   'NOT_EXECUTED' = 'not executed',
@@ -140,6 +142,10 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   sendingTx(eventName: string, functionName: string = 'CREATE'): void {
+    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+      throw new CliError('Current module not found when trying to log transactions');
+    }
+
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,
@@ -149,6 +155,10 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   sentTx(eventName: string, functionName: string = 'CREATE'): void {
+    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+      throw new CliError('Current module not found when trying to log transactions');
+    }
+
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,
@@ -158,6 +168,10 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   transactionConfirmation(confirmationNumber: number, eventName: string, functionName: string = 'CREATE'): void {
+    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+      throw new CliError('Current module not found when trying to log transactions');
+    }
+
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,

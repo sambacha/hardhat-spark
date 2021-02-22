@@ -1,4 +1,4 @@
-import { buildModule } from '../../../../src/interfaces/mortar';
+import { buildModule } from '../../../../src';
 import path from 'path';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});

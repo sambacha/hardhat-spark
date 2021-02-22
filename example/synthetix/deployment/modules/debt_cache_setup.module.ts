@@ -1,4 +1,4 @@
-import { ContractEvent, buildModule, ModuleBuilder } from '../../../../src/interfaces/mortar';
+import { ContractEvent, buildModule } from '../../../../src';
 import * as web3utils from 'web3-utils';
 import { DEFAULTS } from '../../util/constants';
 import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
