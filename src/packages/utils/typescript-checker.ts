@@ -36,10 +36,6 @@ export function isTypescriptSupported() {
 }
 
 export function loadTsNode(test?: boolean) {
-  if (true) {
-    return;
-  }
-
   try {
     require.resolve('typescript');
   } catch (error) {

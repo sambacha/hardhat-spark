@@ -96,6 +96,7 @@ export class MortarTests implements IMortarUsage {
       this.txExecutor,
       this.configService,
       this.walletWrapper,
+      true
     );
   }
 
@@ -106,7 +107,8 @@ export class MortarTests implements IMortarUsage {
       this.states,
       this.moduleResolver,
       this.moduleStateRepo,
-      this.configService
+      this.configService,
+      true
     );
   }
 }

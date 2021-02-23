@@ -40,6 +40,13 @@ export default class Init extends Command {
         required: false,
       }
     ),
+    reinit: flags.boolean(
+      {
+        name: 'reinit',
+        description: 'Provide this flag if you would like to overwrite `mortar-config.json`.',
+        required: false,
+      }
+    ),
     debug: flags.boolean(
       {
         name: 'debug',
@@ -50,7 +57,7 @@ export default class Init extends Command {
 
 
   async run() {
-    const {flags} = this.parse(Init);
+    const {args, flags} = this.parse(Init);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
     }
@@ -59,7 +66,7 @@ export default class Init extends Command {
 
     const configService = new ConfigService(process.cwd());
 
-    command.init(flags, configService);
+    command.init(args.reinit, flags, configService);
   }
 
   async catch(error: Error) {

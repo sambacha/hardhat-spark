@@ -17,7 +17,7 @@ import { ethers } from 'ethers';
 import { MortarConfig } from './packages/types/config';
 import { loadScript } from './packages/utils/typescript-checker';
 
-export function init(flags: OutputFlags<any>, configService: ConfigService) {
+export function init(reinit: boolean, flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
 
   const mnemonic = (flags.mnemonic as string);
@@ -40,8 +40,9 @@ export async function deploy(
   executor: TxExecutor,
   configService: IConfigService,
   walletWrapper: WalletWrapper,
+  test: boolean = false
 ) {
-  const modules = await loadScript(migrationFilePath);
+  const modules = await loadScript(migrationFilePath, test);
 
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
@@ -100,8 +101,16 @@ export async function deploy(
   }
 }
 
-export async function diff(resolvedPath: string, config: MortarConfig, states: string[], moduleResolver: ModuleResolver, moduleStateRepo: ModuleStateRepo, configService: IConfigService) {
-  const modules = await loadScript(resolvedPath);
+export async function diff(
+  resolvedPath: string,
+  config: MortarConfig,
+  states: string[],
+  moduleResolver: ModuleResolver,
+  moduleStateRepo: ModuleStateRepo,
+  configService: IConfigService,
+  test: boolean = false
+) {
+  const modules = await loadScript(resolvedPath, test);
 
   const wallets = configService.getAllWallets();
 

@@ -1,13 +1,17 @@
 # Intermediate Tutorial
 
-This would a more complex showcase compared to [basic](./basic.md). It'll tackle most of mortar's custom functionality,
-and it'll explain what is doing in the background.
+This would be a more complex showcase compared to the [basic](./basic.md) one. It'll tackle most of mortar's custom
+functionality, and it'll explain what it is doing in the background.
 
-Please go thought [Project setup](./basic.md#project-setup) first, and initialize all needed packages.
+Please go thought the [project setup](./basic.md#project-setup) first, and initialize all needed packages in an empty
+project.
+
+All contract files are [here](../../example/intermediate/contracts), please copy them into your project. We aren't going
+to explain how all of those contracts are functioning but rather just their underlying dependencies.
 
 ## Init
 
-So lets start first run `mortar init`.
+So lets start first by running `mortar init` in empty project.
 
 ```
 mortar init \
@@ -16,7 +20,7 @@ mortar init \
   --hdPath="m/44'/60'/0'/0"
 ```
 
-This will generate mortar config that is looking something like this:
+This would generate a mortar config file that looks something like this:
 
 ```json
 {
@@ -32,10 +36,9 @@ This will generate mortar config that is looking something like this:
 
 ![image](../images/intermediate.png)
 
-This image is visual representation of module that is [here](../../example/intermediate/deployment/root.module.ts).
-We'll together go thought step by step and explain every part in details.
-
-First lets explain the image:
+This image is a visual representation of the module
+provided [here](../../example/intermediate/deployment/root.module.ts). We'll go thought step by step and explain every
+part in details.
 
 **Square** - Contract Prototype<br>
 **Circle** - Smart-contract<br>
@@ -81,7 +84,7 @@ and rest are constructor arguments of our contract.
 ## After deploy - mint ERC20One
 
 ```typescript
-  ERC20.afterDeploy(m, 'afterDeployMintTokens', async () => {
+ERC20.afterDeploy(m, 'afterDeployMintTokens', async () => {
   const totalSupply = ethers.BigNumber.from(10).pow(18);
   await ERC20.instance().mint(wallets[0].address, totalSupply);
 
@@ -90,13 +93,14 @@ and rest are constructor arguments of our contract.
 ```
 
 In this `afterDeploy` event hook, we are minting new tokens to our first contract. After mint function we are confirming
-that `totalSupply` for our contract is set with `expectFuncRead()`. In case if `totalSupply` was wrong value this
-function would throw error and whole deploy process would stop.
+that `totalSupply` for our contract is set with `expectFuncRead()`. In case if `totalSupply` is not set
+correctly `expectFuncRead` function will throw error and whole deploy process would stop, if that occurs you can look
+under `./mortar/<module_name>` for more information about deployment.
 
 ## Mutator
 
 ```typescript
-  const mutatorEvent = mutator(
+const mutatorEvent = mutator(
   m,
   Proxy,
   'upgradeTo',
@@ -107,12 +111,14 @@ function would throw error and whole deploy process would stop.
 );
 ```
 
-Mutator is specially written macro like function and here main use here is to change implementation from `ERC20One`
-to `ERC20Two`. You can see here that we are specifying `Proxy` as `ContractBinding` and `upgradeTo` function name that
-would be called in order for upgrade to happen. Next is array of `upgradeTo` function arguments and lastly custom `opts`
+Mutator is specially written macro like function. Her main use here is to change implementation from `ERC20One`
+to `ERC20Two`. You can see that we are specifying `Proxy` as `ContractBinding` and `upgradeTo` function name that
+would be called in order for upgrade to be executed. Next is array of `upgradeTo` function arguments and lastly custom `opts`
 object that is housing custom name and slot. If `slot` is specified, instead of smartly determining getter function
 (just removing `set` and putting `get`), it would call `eth_getStorageAt(contractAddress, slot)` and compare returned
-data with contract address of `ERC20Two`  .
+data with contract address of `ERC20Two`.
+
+To put it to simple words, it's upgrading proxy implementation and checking if upgrade actually happened.
 
 ## After deploy - mint ERC20Two
 

@@ -31,7 +31,7 @@ export class WalletWrapper {
     this.gasCalculator = gasCalculator;
     this.moduleStateRepo = moduleStateRepo;
     this.prompter = prompter;
-    this.eventTxExecutor = eventTxExecutor
+    this.eventTxExecutor = eventTxExecutor;
   }
 
   wrapWallets(wallets: ethers.Wallet[]): MortarWallet[] {

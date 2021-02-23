@@ -18,7 +18,7 @@ export default class GenTypes extends Command {
     debug: flags.boolean(
       {
         name: 'debug',
-        description: 'Flag used for debugging'
+        description: 'Flag used for debugging.'
       }
     ),
     configScriptPath: flags.string(
@@ -38,7 +38,7 @@ export default class GenTypes extends Command {
     }
 
     const currentPath = process.cwd();
-    const filePath = args.path as string;
+    const filePath = args.module_file_path as string;
     if (filePath == '') {
       throw new PathNotProvided('Path argument missing from command. \nPlease use --help to better understand usage of this command');
     }

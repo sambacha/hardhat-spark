@@ -13,8 +13,8 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 
 # Concepts
 
-| Concepts                      | Glossary    | Link        |
-| ----------------------------- | ----------- | ----------- |
+| Concepts                      | Glossary                                        | Link        |
+| ----------------------------- | ----------------------------------------------- | ----------- |
 | Module Builder                | Interface for building contract infrastructure. | [module_builder](./concepts/module_builder/module_builder.md)                                        |
 | Events                        | Event hooks for contract deployments.           | [events](./concepts/module_builder/events.md)                                                        |
 | Contract Bindings             | Contract deployment abstraction.                | [contract_bindings](./concepts/module_builder/contract_binding.md)                                   |
@@ -26,9 +26,10 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 
 # Usage
 
-| Usage     | Glossary    | Link        |
-| --------- | ----------- | ----------- |
-| TODO          | TODO       | TODO       |
+| Usage              | Link        |
+| ------------------ | ----------- |
+| Synthetix port     | [synthetix module](../example/synthetix/deployment/module.ts)                |
+| Tornado cash port  | [tornado cash module](../example/tornado_core/deployment/tornado.module.ts)  |
 
 # Tutorials
 
@@ -37,8 +38,6 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | Basic         | Basic showcase of functionality.    | [basic](./tutorial/basic.md)                |
 | Intermediate  | More complex functionality showcase | [intermediate](./tutorial/intermediate.md)  |
 | Advanced      | Synthetix deployment module.        | [advanced](./tutorial/advanced.md)  |
-| Factory       | Factory pattern support utilization.| TODO       |
-| Proxy         | Proxy pattern support utilization.  | TODO       |
 
 # Developer UX
 

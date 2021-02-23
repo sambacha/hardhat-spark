@@ -426,7 +426,7 @@ export class GroupedDependencies {
   }
 }
 
-export class ContractBinding extends Binding {ContractBinding
+export class ContractBinding extends Binding {
   public _isContractBinding: boolean = true;
 
   public contractName: string;
@@ -803,8 +803,9 @@ export class ContractInstance {
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
   private readonly eventSession: Namespace;
-  private readonly signer: ethers.Signer;
   private readonly txGenerator: EthTxGenerator;
+
+  private signer: ethers.Signer;
 
   [key: string]: any;
 
@@ -986,6 +987,12 @@ export class ContractInstance {
     }
 
     return args;
+  }
+
+  public setNewSigner(wallet: ethers.Wallet) {
+    if (wallet._isSigner) {
+      this.signer = wallet as ethers.Signer;
+    }
   }
 }
 
