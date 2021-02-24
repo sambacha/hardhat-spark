@@ -1,10 +1,17 @@
-## `mortar deploy [PATH]`
+`mortar deploy`
+===============
 
-Trigger new module deployment, difference between current and already deployed will be executed.
+Deploy new migrations, difference between current and already deployed.
+
+* [`mortar deploy [MODULE_FILE_PATH]`](#mortar-deploy-module_file_path)
+
+## `mortar deploy [MODULE_FILE_PATH]`
+
+Deploy new migrations, difference between current and already deployed.
 
 ```
 USAGE
-  $ mortar deploy [PATH]
+  $ mortar deploy [MODULE_FILE_PATH]
 
 OPTIONS
   -h, --help                             show CLI help
@@ -29,4 +36,4 @@ OPTIONS
   --yes                                  Used to skip confirmation questions.
 ```
 
-_See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/deploy.ts)_
+_See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.10/src/commands/deploy.ts)_

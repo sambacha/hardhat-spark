@@ -88,6 +88,7 @@ export class TxExecutor {
 
         if (checkIfExist(contractAddress)) {
           element.deployMetaData.contractAddress = contractAddress as string;
+          this.prompter.alreadyDeployed(elementName);
           await this.moduleState.storeSingleBinding(element as ContractBinding);
           continue;
         }

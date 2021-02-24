@@ -1,3 +1,10 @@
+`mortar init`
+=============
+
+Initialize mortar configuration file and configuration script.
+
+* [`mortar init`](#mortar-init)
+
 ## `mortar init`
 
 Initialize mortar configuration file and configuration script.
@@ -17,6 +24,9 @@ OPTIONS
   --mnemonic=mnemonic                  Mnemonic of the deployer accounts
 
   --privateKeys=privateKeys            (required) Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123
+
+  --reinit                             Provide this flag if you would like to overwrite `mortar.config.ts`, otherwise if
+                                       exists, it would error.
 ```
 
-_See code: [src/commands/init.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.0/src/commands/initweb.ts)_
+_See code: [src/commands/init.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.10/src/commands/init.ts)_

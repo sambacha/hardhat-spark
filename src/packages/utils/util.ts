@@ -30,6 +30,12 @@ function arrayEquals(a: any[], b: any[]) {
     a.every((val, index) => val === b[index]);
 }
 
+export function removeLastPathElement(path: string) {
+  const pathElements = path.split('/');
+  pathElements.pop();
+  return( pathElements.join('/') );
+}
+
 export async function checkMutex(mutex: boolean, delayTime: number, retries: number) {
   if (retries === 0) {
     throw new Error('Maximum number of retries reached.');

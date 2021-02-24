@@ -1,4 +1,4 @@
-import { MortarConfig } from '../../src/packages/types/config';
+import { MortarConfig } from '../../src';
 import * as web3utils from 'web3-utils';
 import { ethers } from 'ethers';
 import path from 'path';

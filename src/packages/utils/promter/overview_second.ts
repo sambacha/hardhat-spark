@@ -171,4 +171,10 @@ export class OverviewPrompter2 implements IPrompter {
   generatedTypes(): void {
     cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
   }
+
+  finishedModuleUsageGeneration(moduleName: string) {
+  }
+
+  startingModuleUsageGeneration(moduleName: string) {
+  }
 }

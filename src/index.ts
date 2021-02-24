@@ -16,21 +16,39 @@ import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
 import { MortarConfig } from './packages/types/config';
 import { loadScript } from './packages/utils/typescript-checker';
+import { ModuleUsage } from './packages/modules/module_usage';
+import { MissingContractAddressInStateFile, UserError } from './packages/types/errors';
 
-export function init(reinit: boolean, flags: OutputFlags<any>, configService: ConfigService) {
+export * from './interfaces/mortar';
+export * from './interfaces/helper/expectancy';
+export * from './interfaces/helper/macros';
+export * from './usage_interfaces/tests';
+export * from './usage_interfaces/index';
+export * from './packages/config';
+export * from './packages/types';
+export * from './packages/ethereum/compiler';
+export * from './packages/ethereum/gas';
+export * from './packages/ethereum/transactions';
+export * from './packages/ethereum/wallet/wrapper';
+export * from './packages/modules/states/module';
+export * from './packages/modules/states/registry';
+export * from './packages/modules/states/registry/remote_bucket_storage';
+export * from './packages/modules/typings';
+
+export function init(flags: OutputFlags<any>, configService: ConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
 
   const mnemonic = (flags.mnemonic as string);
   const hdPath = (flags.hdPath as string);
 
   configService.generateAndSaveConfig(privateKeys, mnemonic, hdPath);
-  configService.saveEmptyMortarConfig(process.cwd(), flags.configScriptPath);
+  configService.saveEmptyMortarConfig(process.cwd(), flags.configScriptPath, flags.reinit);
 
   cli.info('You have successfully configured mortar.');
 }
 
 export async function deploy(
-  migrationFilePath: string,
+  deploymentFilePath: string,
   config: MortarConfig,
   states: string[],
   moduleStateRepo: ModuleStateRepo,
@@ -42,7 +60,7 @@ export async function deploy(
   walletWrapper: WalletWrapper,
   test: boolean = false
 ) {
-  const modules = await loadScript(migrationFilePath, test);
+  const modules = await loadScript(deploymentFilePath, test);
 
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
@@ -95,7 +113,6 @@ export async function deploy(
 
       throw error;
     }
-
 
     prompter.finishModuleDeploy(moduleName);
   }
@@ -164,17 +181,62 @@ export async function genTypes(
   }
 }
 
-export * from './interfaces/mortar';
-export * from './interfaces/helper/expectancy';
-export * from './interfaces/helper/macros';
-export * from './usage_interfaces/tests';
-export * from './usage_interfaces/index';
-export * from './packages/config';
-export * from './packages/types';
-export * from './packages/ethereum/compiler';
-export * from './packages/ethereum/gas';
-export * from './packages/ethereum/transactions';
-export * from './packages/ethereum/wallet/wrapper';
-export * from './packages/modules/states/module';
-export * from './packages/modules/states/registry';
-export * from './packages/modules/typings';
+export async function usage(
+  config: MortarConfig,
+  deploymentFilePath: string,
+  states: string[],
+  configService: ConfigService,
+  walletWrapper: WalletWrapper,
+  moduleStateRepo: ModuleStateRepo,
+  moduleResolver: ModuleResolver,
+  moduleUsage: ModuleUsage,
+  prompter: IPrompter,
+) {
+  const modules = await loadScript(deploymentFilePath);
+
+  const networkId = process.env.MORTAR_NETWORK_ID;
+  const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
+  const wallets = configService.getAllWallets(rpcProvider);
+  const mortarWallets = walletWrapper.wrapWallets(wallets);
+
+  for (const [moduleName, moduleFunc] of Object.entries(modules)) {
+    prompter.startingModuleUsageGeneration(moduleName);
+
+    const module = (await moduleFunc) as Module;
+    if (module.isInitialized()) {
+      continue;
+    }
+
+    await module.init(mortarWallets as ethers.Wallet[], undefined, {
+      params: config?.params,
+    });
+    moduleStateRepo.initStateRepo(moduleName);
+
+    let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
+    for (const moduleStateName of states) {
+      const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName);
+
+      stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
+    }
+
+    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+
+    if (!config.resolver) {
+      throw new UserError('Custom config resolver must be provided.');
+    }
+
+    const rawUsage = await moduleUsage.generateRawUsage(moduleName, moduleState);
+
+    for (const [elementName, ] of Object.entries(rawUsage)) {
+      const contractAddress = await config.resolver.resolveContract(Number(networkId), moduleName, elementName);
+
+      if (!checkIfExist(contractAddress)) {
+        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address in binding: ${elementName}`);
+      }
+    }
+
+    const file = await moduleUsage.generateUsageFile(rawUsage);
+    await moduleUsage.storeUsageFile(file);
+    prompter.finishedModuleUsageGeneration(moduleName);
+  }
+}

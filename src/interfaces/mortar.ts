@@ -1198,6 +1198,7 @@ export class ModuleBuilder {
 
     this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args);
     this[name] = this.bindings[name];
+
     return this.bindings[name];
   }
 
@@ -1409,6 +1410,8 @@ export class Prototype {
 }
 
 export class Module {
+  private isUsage: boolean = false;
+
   private initialized: boolean = false;
   private fn: ModuleBuilderFn;
 
@@ -1431,10 +1434,12 @@ export class Module {
     moduleName: string,
     fn: ModuleBuilderFn,
     moduleConfig: ModuleConfig | undefined,
+    usageModule: boolean = false
   ) {
     this.name = moduleName;
     this.fn = fn;
     this.moduleConfig = moduleConfig;
+    this.isUsage = usageModule;
 
     this.opts = {
       params: {}
@@ -1453,7 +1458,7 @@ export class Module {
     moduleBuilder.setParam(opts);
     await this.fn(moduleBuilder, wallets);
 
-    moduleBuilder = await handleModule(moduleBuilder, this.name);
+    moduleBuilder = await handleModule(moduleBuilder, this.name, this.isUsage);
 
     this.bindings = moduleBuilder.getAllBindings();
     this.events = moduleBuilder.getAllEvents();
@@ -1535,7 +1540,11 @@ export async function buildModule(moduleName: string, fn: ModuleBuilderFn, modul
   return new Module(moduleName, fn, moduleConfig);
 }
 
-async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string): Promise<ModuleBuilder> {
+export async function buildUsage(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
+  return new Module(moduleName, fn, moduleConfig, true);
+}
+
+async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string, isUsage: boolean): Promise<ModuleBuilder> {
   const compiler = new HardhatCompiler();
   const moduleValidator = new ModuleValidator();
 
@@ -1550,7 +1559,9 @@ async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string): P
   const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractBuildNames);
   const libraries: LinkReferences = compiler.extractContractLibraries(contractBuildNames);
 
-  moduleValidator.validate(moduleBuilderBindings, abi);
+  if (!isUsage) {
+    moduleValidator.validate(moduleBuilderBindings, abi);
+  }
 
   for (const [bindingName, binding] of Object.entries(moduleBuilderBindings)) {
     moduleBuilderBindings[bindingName].bytecode = bytecodes[binding.contractName];

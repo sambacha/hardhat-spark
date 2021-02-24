@@ -131,4 +131,12 @@ export class StreamlinedPrompter implements IPrompter {
   transactionConfirmation(confirmationNumber: number): void {
     cli.action.stop(`\n${this.whitespaces} Current block confirmation: ${confirmationNumber}`);
   }
+
+  finishedModuleUsageGeneration(moduleName: string) {
+    cli.info(`Finished module usage script file generation - ${moduleName}`);
+  }
+
+  startingModuleUsageGeneration(moduleName: string) {
+    cli.info(`Starting module usage script file generation - ${moduleName}`);
+  }
 }

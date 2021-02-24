@@ -60,7 +60,7 @@ export default class ConfigService implements IConfigService {
           throw err;
         }
 
-        config = {};
+        throw err;
       }
     }
 
@@ -101,15 +101,15 @@ export default class ConfigService implements IConfigService {
     return true;
   }
 
-  saveEmptyMortarConfig(currentPath: string, configScriptPath: string): boolean {
+  saveEmptyMortarConfig(currentPath: string, configScriptPath: string, reinit: boolean = false): boolean {
     const relativeMortarConfigPath = configScriptPath ? configScriptPath : CONFIG_SCRIPT_NAME;
 
     const mortarConfigPath = path.resolve(currentPath, relativeMortarConfigPath);
-    if (fs.existsSync(mortarConfigPath)) {
+    if (!reinit && fs.existsSync(mortarConfigPath)) {
       throw new MortarConfigAlreadyExist('You are trying to init empty mortar config but it already exist!');
     }
 
-    const mortarConfig = `import { MortarConfig } from '@tenderly/mortar/lib/interfaces/mortar';
+    const mortarConfig = `import { MortarConfig } from '@tenderly/mortar';
 
 export const config: MortarConfig = {};
 `;

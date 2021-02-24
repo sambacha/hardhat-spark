@@ -102,7 +102,7 @@ export default class Diff extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
+    cli.url('Github issue link', 'https://github.com/Tenderly/mortar/issues/new');
     cli.error(error);
   }
 }

@@ -184,4 +184,10 @@ export class JsonPrompter implements IPrompter {
       name: 'Successfully generated module types'
     }));
   }
+
+  finishedModuleUsageGeneration(moduleName: string) {
+  }
+
+  startingModuleUsageGeneration(moduleName: string) {
+  }
 }

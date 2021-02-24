@@ -1,7 +1,5 @@
-import { buildModule, ModuleBuilder } from '../../../src';
+import { buildModule, ModuleBuilder, expectFuncRead, mutator } from '../../../src';
 import { ethers } from 'ethers';
-import { mutator } from '../../../src';
-import { expectFuncRead } from '../../../lib';
 
 export const Module = buildModule('Module', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
   m.library('Address');

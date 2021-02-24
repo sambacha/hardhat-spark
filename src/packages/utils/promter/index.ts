@@ -38,4 +38,6 @@ export interface IPrompter {
   finishedExecutionOfWalletTransfer(from: string, to: string): void;
   executeWalletTransfer(address: string, to: string): void;
   generatedTypes(): void;
+  startingModuleUsageGeneration(moduleName: string);
+  finishedModuleUsageGeneration(moduleName: string);
 }

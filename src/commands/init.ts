@@ -43,7 +43,7 @@ export default class Init extends Command {
     reinit: flags.boolean(
       {
         name: 'reinit',
-        description: 'Provide this flag if you would like to overwrite `mortar-config.json`.',
+        description: 'Provide this flag if you would like to overwrite `mortar.config.ts`, otherwise if exists, it would error.',
         required: false,
       }
     ),
@@ -66,7 +66,7 @@ export default class Init extends Command {
 
     const configService = new ConfigService(process.cwd());
 
-    command.init(args.reinit, flags, configService);
+    command.init(flags, configService);
   }
 
   async catch(error: Error) {
@@ -80,7 +80,7 @@ export default class Init extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/mortar-tenderly/issues/new');
+    cli.url('Github issue link', 'https://github.com/Tenderly/mortar/issues/new');
     cli.error(error);
   }
 }

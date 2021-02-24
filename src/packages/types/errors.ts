@@ -117,3 +117,9 @@ export class UsageEventNotFound extends UserError {
     super(message);
   }
 }
+
+export class MissingContractAddressInStateFile extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
