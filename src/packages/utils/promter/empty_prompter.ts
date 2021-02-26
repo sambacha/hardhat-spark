@@ -70,4 +70,10 @@ export class EmptyPrompter implements IPrompter {
   generatedTypes(): void {
   }
 
+  finishedModuleUsageGeneration(moduleName: string) {
+  }
+
+  startingModuleUsageGeneration(moduleName: string) {
+  }
+
 }

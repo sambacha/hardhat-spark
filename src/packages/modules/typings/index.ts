@@ -6,23 +6,12 @@ import { Module } from '../../../interfaces/mortar';
 export class ModuleTypings {
   private readonly statePath: string;
 
-  constructor(currentPath: string) {
-    const dir = path.resolve(currentPath, STATE_DIR_NAME);
-
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
-    }
-    this.statePath = dir;
+  constructor() {
   }
 
-  generate(moduleName: string, module: Module | undefined) {
+  generate(deploymentPath: string, moduleName: string, module: Module | undefined) {
     if (module == undefined) {
       return;
-    }
-
-    const moduleDir = path.resolve(this.statePath, moduleName);
-    if (!fs.existsSync(moduleDir)) {
-      fs.mkdirSync(moduleDir);
     }
 
     const bindings = module.getAllBindings();
@@ -31,7 +20,7 @@ export class ModuleTypings {
     const params = module.getOpts().params;
 
     const fileName = `${moduleName}.d.ts`;
-    const stateDir = path.resolve(moduleDir, fileName);
+    const filePath = path.resolve(deploymentPath, fileName);
 
     let file = `import {
   ModuleBuilder,
@@ -66,6 +55,6 @@ export declare class ${moduleName}Builder extends ModuleBuilder {`;
     file += `
 }`;
 
-    fs.writeFileSync(stateDir, file);
+    fs.writeFileSync(filePath, file);
   }
 }

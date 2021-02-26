@@ -1,4 +1,4 @@
-import { ContractBinding, ContractInput } from '../../interfaces/mortar';
+import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/mortar';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -33,7 +33,7 @@ function arrayEquals(a: any[], b: any[]) {
 export function removeLastPathElement(path: string) {
   const pathElements = path.split('/');
   pathElements.pop();
-  return( pathElements.join('/') );
+  return (pathElements.join('/'));
 }
 
 export async function checkMutex(mutex: boolean, delayTime: number, retries: number) {
@@ -47,4 +47,17 @@ export async function checkMutex(mutex: boolean, delayTime: number, retries: num
   }
 
   return;
+}
+
+export function moduleBuilderStatefulDiff(oldModuleBuilder: ModuleBuilder, newModuleBuilder: ModuleBuilder): ([string, ContractBinding][] | [string, StatefulEvent][])[] {
+  const oldBindings = oldModuleBuilder.getAllBindings();
+  const oldEvents = oldModuleBuilder.getAllEvents();
+
+  const newBindings = newModuleBuilder.getAllBindings();
+  const newEvents = newModuleBuilder.getAllEvents();
+
+  const bindingsDiff = Object.entries(newBindings).splice(0, Object.entries(oldBindings).length);
+  const eventsDiff = Object.entries(newEvents).splice(0, Object.entries(oldEvents).length);
+
+  return [bindingsDiff, eventsDiff];
 }

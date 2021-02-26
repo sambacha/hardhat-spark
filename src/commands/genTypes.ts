@@ -46,7 +46,7 @@ export default class GenTypes extends Command {
     this.prompter = new StreamlinedPrompter();
 
     const resolvedPath = path.resolve(currentPath, filePath);
-    const typings = new ModuleTypings(currentPath);
+    const typings = new ModuleTypings();
 
     const configService = new ConfigService(currentPath);
     const mortarConfig = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);

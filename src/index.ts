@@ -18,6 +18,8 @@ import { MortarConfig } from './packages/types/config';
 import { loadScript } from './packages/utils/typescript-checker';
 import { ModuleUsage } from './packages/modules/module_usage';
 import { MissingContractAddressInStateFile, UserError } from './packages/types/errors';
+import * as cls from 'cls-hooked';
+import * as path from 'path';
 
 export * from './interfaces/mortar';
 export * from './interfaces/helper/expectancy';
@@ -72,8 +74,11 @@ export async function deploy(
       continue;
     }
 
-    await module.init(mortarWallets as ethers.Wallet[], undefined, {
-      params: config?.params,
+    const moduleSession = cls.createNamespace('module');
+    await moduleSession.runAndReturn(async () => {
+      await module.init(moduleSession, mortarWallets as ethers.Wallet[], undefined, {
+        params: config?.params,
+      });
     });
     moduleStateRepo.initStateRepo(moduleName);
 
@@ -137,8 +142,11 @@ export async function diff(
       continue;
     }
 
-    await module.init(wallets, undefined, {
-      params: config?.params,
+    const moduleSession = cls.createNamespace('module');
+    await moduleSession.runAndReturn(async () => {
+      await module.init(moduleSession, wallets, undefined, {
+        params: config?.params,
+      });
     });
     moduleStateRepo.initStateRepo(moduleName);
 
@@ -175,9 +183,13 @@ export async function genTypes(
 
   for (const [moduleName, modFunc] of Object.entries(modules)) {
     const module = await modFunc as Module;
-    await module.init(wallets, undefined, mortarConfig as ModuleOptions);
+    const moduleSession = cls.createNamespace('module');
+    await moduleSession.runAndReturn(async () => {
+      await module.init(moduleSession, wallets, undefined, mortarConfig as ModuleOptions);
+    });
 
-    moduleTypings.generate(moduleName, module);
+    const deploymentFolder = path.dirname(resolvedPath);
+    moduleTypings.generate(deploymentFolder, moduleName, module);
   }
 }
 
@@ -207,8 +219,11 @@ export async function usage(
       continue;
     }
 
-    await module.init(mortarWallets as ethers.Wallet[], undefined, {
-      params: config?.params,
+    const moduleSession = cls.createNamespace('module');
+    await moduleSession.runAndReturn(async () => {
+      await module.init(moduleSession, mortarWallets as ethers.Wallet[], undefined, {
+        params: config?.params,
+      });
     });
     moduleStateRepo.initStateRepo(moduleName);
 
@@ -227,7 +242,7 @@ export async function usage(
 
     const rawUsage = await moduleUsage.generateRawUsage(moduleName, moduleState);
 
-    for (const [elementName, ] of Object.entries(rawUsage)) {
+    for (const [elementName,] of Object.entries(rawUsage)) {
       const contractAddress = await config.resolver.resolveContract(Number(networkId), moduleName, elementName);
 
       if (!checkIfExist(contractAddress)) {
@@ -239,4 +254,8 @@ export async function usage(
     await moduleUsage.storeUsageFile(file);
     prompter.finishedModuleUsageGeneration(moduleName);
   }
+}
+
+export async function tutorial () {
+
 }

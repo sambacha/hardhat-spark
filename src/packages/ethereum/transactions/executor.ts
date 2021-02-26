@@ -32,6 +32,7 @@ import { ModuleResolver } from '../../modules/module_resolver';
 import { Batcher } from '../../modules/events/batcher';
 import { Namespace } from 'cls-hooked';
 import { EventTxExecutor } from './event_executor';
+import { clsNamespaces } from '../../utils/continuation_local_storage';
 
 const CONSTRUCTOR_TYPE = 'constructor';
 export const BLOCK_CONFIRMATION_NUMBER = 1;
@@ -229,7 +230,7 @@ export class TxExecutor {
     return new Promise((resolve, reject) => {
       try {
         this.eventSession.run(async () => {
-          this.eventSession.set('parallelize', true);
+          this.eventSession.set(clsNamespaces.PARALLELIZE, true);
 
           const eventPromise = [];
           for (let i = 0; i < batch.length; i++) {
@@ -338,7 +339,7 @@ export class TxExecutor {
     return new Promise(((resolve, reject) => {
       this.eventSession.run(async () => {
         try {
-          this.eventSession.set('eventName', event.event.name);
+          this.eventSession.set(clsNamespaces.EVENT_NAME, event.event.name);
 
           switch (event.event.eventType) {
             case EventType.BeforeDeployEvent: {

@@ -1,6 +1,10 @@
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { HardhatCompiler } from '../packages/ethereum/compiler/hardhat';
-import { checkIfExist, checkIfSameInputs, checkIfSuitableForInstantiating } from '../packages/utils/util';
+import {
+  checkIfExist,
+  checkIfSameInputs,
+  checkIfSuitableForInstantiating
+} from '../packages/utils/util';
 import { ModuleValidator } from '../packages/modules/module_validator';
 import { JsonFragment, JsonFragmentType } from '../packages/types/artifacts/abi';
 import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
@@ -19,6 +23,7 @@ import { INonceManager, ITransactionSigner } from '../packages/ethereum/transact
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import { Namespace } from 'cls-hooked';
 import { Deferrable } from '@ethersproject/properties';
+import { clsNamespaces } from '../packages/utils/continuation_local_storage';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -175,6 +180,7 @@ export class StatefulEvent {
   public _isStatefulEvent: boolean = true;
 
   public event: Event;
+  public moduleName: string;
   public executed: boolean;
   public txData: { [bindingName: string]: EventTransactionData };
 
@@ -434,6 +440,8 @@ export class ContractBinding extends Binding {
   public eventsDeps: EventsDepRef;
   public deployMetaData: Deployed;
 
+  public moduleName: string;
+
   public bytecode: string | undefined;
   public abi: JsonFragment[] | undefined;
   public library: boolean = false;
@@ -456,7 +464,7 @@ export class ContractBinding extends Binding {
 
   constructor(
     // metadata
-    name: string, contractName: string, args: Arguments,
+    name: string, contractName: string, args: Arguments, moduleName: string,
     bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, deployMetaData?: Deployed, txData?: TransactionData,
     // event hooks
     events?: EventsDepRef,
@@ -507,6 +515,7 @@ export class ContractBinding extends Binding {
     this.eventSession = eventSession;
 
     this.forceFlag = false;
+    this.moduleName = moduleName;
   }
 
   instance(): ethers.Contract {
@@ -543,6 +552,24 @@ export class ContractBinding extends Binding {
     this.forceFlag = true;
 
     return this;
+  }
+
+  changeBytecode(bytecode: string) {
+    this.bytecode = bytecode;
+  }
+
+  recompile() {
+    const compiler = new HardhatCompiler();
+
+    compiler.compile();
+  }
+
+  refetchAllContractMetadata() {
+    const compiler = new HardhatCompiler();
+
+    this.bytecode = compiler.extractBytecode([this.contractName])[this.contractName];
+    this.abi = compiler.extractContractInterface([this.contractName])[this.contractName];
+    this.libraries = compiler.extractContractLibraries([this.contractName])[this.contractName];
   }
 
   setLibrary() {
@@ -786,17 +813,6 @@ export type EventTransactionData = {
   contractOutput: TransactionResponse[]
 };
 
-export class RegistryContractBinding extends ContractBinding {
-  constructor(
-    // metadata
-    name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, deployMetaData?: Deployed, txData?: TransactionData,
-    // event hooks
-    events?: EventsDepRef | undefined
-  ) {
-    super(name, contractName, args, bytecode, abi, libraries, deployMetaData, txData, events);
-  }
-}
-
 export class ContractInstance {
   private readonly contractBinding: ContractBinding;
   private readonly prompter: IPrompter;
@@ -871,7 +887,7 @@ export class ContractInstance {
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
     return async (...args: Array<any>): Promise<TransactionResponse> => {
       const func = async function (...args: Array<any>): Promise<TransactionResponse> {
-        const sessionEventName = this.eventSession.get('eventName');
+        const sessionEventName = this.eventSession.get(clsNamespaces.EVENT_NAME);
         if (args.length > fragment.inputs.length + 1) {
           throw new UserError(`Trying to call contract function with more arguments then in interface - ${fragment.name}`);
         }
@@ -933,7 +949,7 @@ export class ContractInstance {
         await this.prompter.sentTx(sessionEventName, fragment.name);
 
         this.prompter.waitTransactionConfirmation();
-        if (!this.eventSession.get('parallelize')) {
+        if (!this.eventSession.get(clsNamespaces.PARALLELIZE)) {
           const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
           await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
           this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, sessionEventName, fragment.name);
@@ -946,7 +962,7 @@ export class ContractInstance {
         return tx;
       }.bind(this);
 
-      const currentEventAbstraction = this.eventSession.get('eventName');
+      const currentEventAbstraction = this.eventSession.get(clsNamespaces.EVENT_NAME);
       const txSender = await this.signer.getAddress();
       this.eventTxExecutor.add(currentEventAbstraction, txSender, func);
 
@@ -1030,7 +1046,7 @@ export class MortarWallet extends ethers.Wallet {
     const func = async (): Promise<TransactionResponse> => {
       const toAddr = await transaction.to;
       await this.prompter.executeWalletTransfer(this.address, toAddr);
-      const currentEventName = this.sessionNamespace.get('eventName');
+      const currentEventName = this.sessionNamespace.get(clsNamespaces.EVENT_NAME);
       if (!checkIfExist(currentEventName)) {
         throw new UserError('Wallet function is running outside event!');
       }
@@ -1042,7 +1058,7 @@ export class MortarWallet extends ethers.Wallet {
       const txResp = await super.sendTransaction(mortarTransaction);
       await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
 
-      if (!this.sessionNamespace.get('parallelize')) {
+      if (!this.sessionNamespace.get(clsNamespaces.PARALLELIZE)) {
         this.prompter.waitTransactionConfirmation();
         const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
         this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
@@ -1055,7 +1071,7 @@ export class MortarWallet extends ethers.Wallet {
       return txResp;
     };
 
-    const currentEventName = this.sessionNamespace.get('eventName');
+    const currentEventName = this.sessionNamespace.get(clsNamespaces.EVENT_NAME);
     this.eventTxExecutor.add(currentEventName, this.address, func);
 
     return this.eventTxExecutor.executeSingle(currentEventName);
@@ -1134,7 +1150,10 @@ export class ModuleBuilder {
   private nonceManager: INonceManager | undefined;
   private transactionSigner: ITransactionSigner | undefined;
 
-  constructor(opts?: ModuleOptions) {
+  private readonly subModules: ModuleBuilder[];
+  private readonly moduleSession: Namespace;
+
+  constructor(moduleSession: Namespace, opts?: ModuleOptions) {
     this.bindings = {};
     this.actions = {};
     this.prototypes = {};
@@ -1153,6 +1172,8 @@ export class ModuleBuilder {
     if (checkIfExist(opts)) {
       this.opts = opts as ModuleOptions;
     }
+    this.subModules = [];
+    this.moduleSession = moduleSession;
   }
 
   // use links all definitions from the provided Module
@@ -1165,7 +1186,8 @@ export class ModuleBuilder {
       cli.exit(0);
     }
 
-    this.bindings[name] = new ContractBinding(name, name, args);
+    const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
+    this.bindings[name] = new ContractBinding(name, name, args, moduleName);
     this[name] = this.bindings[name];
     return this.bindings[name];
   }
@@ -1196,7 +1218,8 @@ export class ModuleBuilder {
       throw new PrototypeNotFound(`Prototype with name ${prototypeName} is not found in this module`);
     }
 
-    this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args);
+    const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
+    this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args, moduleName);
     this[name] = this.bindings[name];
 
     return this.bindings[name];
@@ -1263,15 +1286,16 @@ export class ModuleBuilder {
     return action;
   }
 
-  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<void> {
+  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
       m = await m;
     }
 
+    let moduleBuilder: ModuleBuilder;
     if (!m.isInitialized()) {
-      await m.init(wallets, this, options);
+      moduleBuilder = await m.init(this.moduleSession, wallets, this, options);
     }
 
     const bindings = m.getAllBindings();
@@ -1305,6 +1329,12 @@ export class ModuleBuilder {
     }
 
     this.prototypes = m.getAllPrototypes();
+
+    return moduleBuilder;
+  }
+
+  getAllSubModules(): ModuleBuilder[] {
+    return this.subModules;
   }
 
   getBinding(name: string): ContractBinding {
@@ -1450,15 +1480,18 @@ export class Module {
     return this.initialized;
   }
 
-  async init(wallets?: ethers.Wallet[], m?: ModuleBuilder, opts?: ModuleOptions) {
+  async init(moduleSession: Namespace, wallets?: ethers.Wallet[], m?: ModuleBuilder, opts?: ModuleOptions): Promise<ModuleBuilder> {
     if (checkIfExist(opts)) {
       this.opts = opts;
     }
-    let moduleBuilder = m ? m : new ModuleBuilder(opts);
+    let moduleBuilder = m ? m : new ModuleBuilder(moduleSession, opts);
     moduleBuilder.setParam(opts);
+
+    // this is needed in order for ContractBindings to be aware of their originating module for later context changes
+    moduleSession.set(clsNamespaces.MODULE_NAME, this.name);
     await this.fn(moduleBuilder, wallets);
 
-    moduleBuilder = await handleModule(moduleBuilder, this.name, this.isUsage);
+    moduleBuilder = await handleModule(moduleBuilder, this.name, this.isUsage, !!m);
 
     this.bindings = moduleBuilder.getAllBindings();
     this.events = moduleBuilder.getAllEvents();
@@ -1473,6 +1506,8 @@ export class Module {
     this.opts = moduleBuilder.getAllOpts();
 
     this.initialized = true;
+
+    return moduleBuilder;
   }
 
   getAllBindings(): { [name: string]: ContractBinding } {
@@ -1544,17 +1579,19 @@ export async function buildUsage(moduleName: string, fn: ModuleBuilderFn, module
   return new Module(moduleName, fn, moduleConfig, true);
 }
 
-async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string, isUsage: boolean): Promise<ModuleBuilder> {
+async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string, isUsage: boolean, isSubModule: boolean): Promise<ModuleBuilder> {
   const compiler = new HardhatCompiler();
   const moduleValidator = new ModuleValidator();
 
   const contractBuildNames: string[] = [];
   const moduleBuilderBindings = moduleBuilder.getAllBindings();
   for (const [, bind] of Object.entries(moduleBuilderBindings)) {
-    contractBuildNames.push(bind.contractName + '.json');
+    contractBuildNames.push(bind.contractName);
   }
 
-  compiler.compile(); // @TODO: make this more suitable for other compilers
+  if (!isSubModule) {
+    compiler.compile(); // @TODO: make this more suitable for other compilers
+  }
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(contractBuildNames);
   const abi: { [name: string]: JsonFragment[] } = compiler.extractContractInterface(contractBuildNames);
   const libraries: LinkReferences = compiler.extractContractLibraries(contractBuildNames);

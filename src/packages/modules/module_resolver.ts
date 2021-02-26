@@ -421,6 +421,8 @@ State file: ${stateFileElement.event.eventType}`);
 
     this.resolveAfterDeployEvents(moduleState, binding, bindings, events);
 
+    // this.resolveAllElementsInSubModule() //@TODO think if this is needded
+
     return moduleState;
   }
 

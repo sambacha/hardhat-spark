@@ -14,7 +14,7 @@ export class StreamlinedPrompter implements IPrompter {
   }
 
   generatedTypes(): void {
-    cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
+    cli.info('Successfully generated module types, look for .d.ts file in your deployment folder.');
   }
 
   nothingToDeploy(): void {
