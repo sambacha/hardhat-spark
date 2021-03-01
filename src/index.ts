@@ -20,6 +20,9 @@ import { ModuleUsage } from './packages/modules/module_usage';
 import { MissingContractAddressInStateFile, UserError } from './packages/types/errors';
 import * as cls from 'cls-hooked';
 import * as path from 'path';
+import chalk from 'chalk';
+import { INITIAL_MSG, MODULE_NAME_DESC } from './packages/tutorial/tutorial_desc';
+import { TutorialService } from './packages/tutorial/tutorial_service';
 
 export * from './interfaces/mortar';
 export * from './interfaces/helper/expectancy';
@@ -256,6 +259,22 @@ export async function usage(
   }
 }
 
-export async function tutorial () {
+export async function tutorial(
+  tutorialService: TutorialService,
+) {
+  const scriptRoot = process.cwd();
 
+  cli.info(INITIAL_MSG);
+  const yes = await cli.confirm('Are you ready to start? (make sure you have some contracts to start with ;)) (yes/no)');
+  if (!yes) {
+    cli.exit(0);
+  }
+
+  cli.info(chalk.gray(MODULE_NAME_DESC));
+  const moduleName = await cli.prompt('Module name?');
+
+  tutorialService.setDeploymentPath(scriptRoot);
+  tutorialService.setModuleName(moduleName);
+
+  await tutorialService.start();
 }
