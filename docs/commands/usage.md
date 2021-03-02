@@ -26,4 +26,4 @@ OPTIONS
                                        will be store.
 ```
 
-_See code: [src/commands/usage.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.10/src/commands/usage.ts)_
+_See code: [src/commands/usage.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/usage.ts)_

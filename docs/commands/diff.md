@@ -23,4 +23,4 @@ OPTIONS
                                        if you are deploying more than one module that are dependant on each other.
 ```
 
-_See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.10/src/commands/diff.ts)_
+_See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/diff.ts)_

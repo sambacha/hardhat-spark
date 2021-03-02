@@ -36,4 +36,4 @@ OPTIONS
   --yes                                  Used to skip confirmation questions.
 ```
 
-_See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.10/src/commands/deploy.ts)_
+_See code: [src/commands/deploy.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/deploy.ts)_

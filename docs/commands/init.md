@@ -29,4 +29,4 @@ OPTIONS
                                        exists, it would error.
 ```
 
-_See code: [src/commands/init.ts](https://github.com/Tenderly/mortar-tenderly/blob/v0.0.10/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/init.ts)_
