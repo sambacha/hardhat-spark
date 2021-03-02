@@ -10,4 +10,7 @@ export const TestTokenModule = buildModule('TestTokenModule', async (m: ModuleBu
   */
   const Migrations = m.contract('Migrations');
   const TestToken = m.contract('TestToken');
+
+  m.prototype('TestToken');
+  m.bindPrototype('TestTokenSECOND', 'TestToken');
 });

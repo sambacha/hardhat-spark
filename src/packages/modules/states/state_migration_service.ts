@@ -4,6 +4,7 @@ import path from 'path';
 import { checkIfExist } from '../../utils/util';
 import { IModuleState, ModuleStateFile } from './module';
 import { ContractBindingMetaData, Deployed } from '../../../interfaces/mortar';
+import { cli } from 'cli-ux';
 
 export class StateMigrationService {
   private readonly moduleState: IModuleState;
@@ -80,8 +81,16 @@ export class StateMigrationService {
       }
 
       const content = fs.readFileSync(path.resolve(currentPath, fileName), {encoding: 'utf-8'});
+      let jsonContent;
+      try {
+        jsonContent = JSON.parse(content);
+      } catch (e) {
+        cli.error(e);
 
-      results.push(JSON.parse(content) as Build);
+        return;
+      }
+
+      results.push(jsonContent as Build);
     });
 
     return results;

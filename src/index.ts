@@ -286,7 +286,7 @@ export async function migrate(
   stateFileType: Migration, // currently only truffle so it is not used
   moduleName: string
 ) {
-  const currentPath = process.cwd();
+  const currentPath = path.resolve(process.cwd(), 'build');
 
   // search for truffle build folder
   const builds = stateMigrationService.searchBuild(currentPath);
