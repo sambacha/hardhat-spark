@@ -4,12 +4,22 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 
 # Commands
 
-| Commands                      | Glossary                                                      | Link                                      |
-| ----------------------------- | ------------------------------------------------------------- | ----------------------------------------- |
-| Mortar Init                   | Initialize mortar config file and script.                     | [mortar init](./commands/init.md)         |
-| Mortar Diff                   | Show difference between current and already deployed module.  | [mortar diff](./commands/diff.md)         |
-| Mortar Deploy                 | Run/Continue deployment of the module.                        | [mortar deploy](./commands/deploy.md)     |
-| Mortar GenTypes               | Generate custom module types on top of current module.        | [mortar genTypes](./commands/genTypes.md) |
+| Commands                      | Glossary                                                              | Link                                        |
+| ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
+| Mortar Init                   | Initialize mortar config file and script.                             | [mortar init](./commands/init.md)           |
+| Mortar Diff                   | Show difference between current and already deployed module.          | [mortar diff](./commands/diff.md)           |
+| Mortar Deploy                 | Run/Continue deployment of the module.                                | [mortar deploy](./commands/deploy.md)       |
+| Mortar GenTypes               | Generate custom module types on top of current module.                | [mortar genTypes](./commands/genTypes.md)   |
+| Mortar Usage                  | Generate usage module, module made only for usage in other modules    | [mortar usage](./commands/usage.md)         |
+| Mortar Migration              | Ability to migrate from other build/state files to mortar state file. | [mortar migration](./commands/migration.md) |
+
+# Tutorials
+
+| Tutorials     | Glossary                            | Link                                        |
+| ------------- | ----------------------------------- | ------------------------------------------- |
+| Basic         | Basic showcase of functionality.    | [basic](./tutorial/basic.md)                |
+| Intermediate  | More complex functionality showcase | [intermediate](./tutorial/intermediate.md)  |
+| Advanced      | Synthetix deployment module.        | [advanced](./tutorial/advanced.md)  |
 
 # Concepts
 
@@ -24,20 +34,21 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | Module State File             | Detailed data of deployment process.            | [module_state_file](./concepts/module_state_file/module_state_file.md)                               |
 | Config                        | Mortar configuration options.                   | [config](./concepts/config.md)                                                                       |
 
-# Usage
+# On-boarding - Migrations and External module
 
-| Usage              | Link        |
-| ------------------ | ----------- |
-| Synthetix port     | [synthetix module](../example/synthetix/deployment/module.ts)                |
-| Tornado cash port  | [tornado cash module](../example/tornado_core/deployment/tornado.module.ts)  |
+| On-boarding             | Link        |
+| ----------------------- | ----------- |
+| Migration process       | [migration-process](./on-boarding/migration.md)|
+| Usage module generation | [usage-module-gen](./on-boarding/usage-module.md#usage-generation)|
+| Usage module usage      | [usage-module-usage](./on-boarding/usage-module.md#usage-of-usage-module-in-other-projects)|
 
-# Tutorials
 
-| Tutorials     | Glossary                            | Link                                        |
-| ------------- | ----------------------------------- | ------------------------------------------- |
-| Basic         | Basic showcase of functionality.    | [basic](./tutorial/basic.md)                |
-| Intermediate  | More complex functionality showcase | [intermediate](./tutorial/intermediate.md)  |
-| Advanced      | Synthetix deployment module.        | [advanced](./tutorial/advanced.md)  |
+# Ported projects
+
+| Projects          | Link        |
+| ----------------- | ----------- |
+| Synthetix port    | [synthetix module](../example/synthetix/deployment/module.ts)                |
+| Tornado cash port | [tornado cash module](../example/tornado_core/deployment/tornado.module.ts)  |
 
 # Developer UX
 
