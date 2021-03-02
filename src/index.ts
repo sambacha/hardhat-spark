@@ -23,6 +23,8 @@ import * as path from 'path';
 import chalk from 'chalk';
 import { INITIAL_MSG, MODULE_NAME_DESC } from './packages/tutorial/tutorial_desc';
 import { TutorialService } from './packages/tutorial/tutorial_service';
+import { Migration } from './packages/types/migration';
+import { StateMigrationService } from './packages/modules/states/state_migration_service';
 
 export * from './interfaces/mortar';
 export * from './interfaces/helper/expectancy';
@@ -277,4 +279,24 @@ export async function tutorial(
   tutorialService.setModuleName(moduleName);
 
   await tutorialService.start();
+}
+
+export async function migrate(
+  stateMigrationService: StateMigrationService,
+  stateFileType: Migration, // currently only truffle so it is not used
+  moduleName: string
+) {
+  const currentPath = process.cwd();
+
+  // search for truffle build folder
+  const builds = stateMigrationService.searchBuild(currentPath);
+
+  // extract potential build files
+  const validBuilds = stateMigrationService.extractValidBuilds(builds);
+
+  // map build files data to mortar state file
+  const mortarStateFiles = stateMigrationService.mapBuildsToStateFile(validBuilds);
+
+  // store mortar state file
+  await stateMigrationService.storeNewStateFiles(moduleName, mortarStateFiles);
 }
