@@ -54,7 +54,7 @@ export type EventFnCompiled = () => void;
 export type EventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
 
-export type ShouldRedeployFn = (diff: ContractBinding) => boolean;
+export type ShouldRedeployFn = (curr: ContractBinding) => boolean;
 
 export type DeployReturn = {
   transaction: TransactionReceipt,
@@ -576,9 +576,9 @@ export class ContractBinding extends Binding {
     this.library = true;
   }
 
-  proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicName: string, ...args: any): void {
+  proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicFuncName: string, ...args: any): void {
     m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
-      await proxy.instance()[setLogicName](logic);
+      await proxy.instance()[setLogicFuncName](logic);
     });
   }
 

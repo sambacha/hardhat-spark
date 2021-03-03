@@ -2,7 +2,7 @@ import {
   DeployReturn,
   buildModule,
   ModuleBuilder,
-} from '../../../src/interfaces/mortar';
+} from '../../../src';
 
 export const FactoryModule = buildModule('FactoryModule', async (m: ModuleBuilder) => {
   const factory = m.contract('Factory');

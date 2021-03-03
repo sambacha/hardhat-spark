@@ -17,4 +17,12 @@ export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) =
 
 ## Custom signers
 
-@TODO
+If you would like to change singer/deployer of contract function call you can use it like this:
+
+```
+A.instance().setDeployer(newWallet)
+```
+
+```
+setDeployer(wallet: ethers.Wallet): ContractBinding
+```

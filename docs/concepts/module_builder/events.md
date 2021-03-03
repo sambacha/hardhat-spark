@@ -56,7 +56,7 @@ This will be run every time when module deployment is finished/completed.
 
 ### On success
 
-If there is no errors and everything deployed successfully.
+If there are no errors and everything deployed successfully.
 
 ### On Error
 

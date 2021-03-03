@@ -12,6 +12,7 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | Mortar GenTypes               | Generate custom module types on top of current module.                | [mortar genTypes](./commands/genTypes.md)   |
 | Mortar Usage                  | Generate usage module, module made only for usage in other modules    | [mortar usage](./commands/usage.md)         |
 | Mortar Migration              | Ability to migrate from other build/state files to mortar state file. | [mortar migration](./commands/migration.md) |
+| Mortar Tutorial               | Step by step creation of simple deployment module with description.   | [mortar migration](./commands/migration.md) |
 
 # Tutorials
 
@@ -34,14 +35,13 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | Module State File             | Detailed data of deployment process.            | [module_state_file](./concepts/module_state_file/module_state_file.md)                               |
 | Config                        | Mortar configuration options.                   | [config](./concepts/config.md)                                                                       |
 
-# On-boarding - Migrations and External module
+# On-boarding - Migrations and external module usage
 
 | On-boarding             | Link        |
 | ----------------------- | ----------- |
 | Migration process       | [migration-process](./on-boarding/migration.md)|
 | Usage module generation | [usage-module-gen](./on-boarding/usage-module.md#usage-generation)|
-| Usage module usage      | [usage-module-usage](./on-boarding/usage-module.md#usage-of-usage-module-in-other-projects)|
-
+| External module usage   | [usage-module-usage](./on-boarding/usage-module.md#usage-of-usage-module-in-other-projects)|
 
 # Ported projects
 
