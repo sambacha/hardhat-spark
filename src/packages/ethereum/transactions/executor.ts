@@ -63,6 +63,7 @@ export class TxExecutor {
   }
 
   async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined): Promise<void> {
+    // store everything before execution is started
     await this.moduleState.storeNewState(moduleName, moduleState);
 
     if (this.parallelize) {
@@ -80,6 +81,7 @@ export class TxExecutor {
       if (checkIfExist((element as ContractBinding)?.bytecode)) {
         const contractAddress = await resolver?.resolveContract(this.networkId, moduleName, elementName);
 
+        // check if already deployed
         element = element as ContractBinding;
         if (checkIfExist(element.deployMetaData?.contractAddress)) {
           this.prompter.alreadyDeployed(elementName);
@@ -87,6 +89,7 @@ export class TxExecutor {
           continue;
         }
 
+        // if contract is present in registry it would be resolved thought resolver
         if (checkIfExist(contractAddress)) {
           element.deployMetaData.contractAddress = contractAddress as string;
           this.prompter.alreadyDeployed(elementName);
@@ -94,10 +97,12 @@ export class TxExecutor {
           continue;
         }
 
+        // in case if it is specified in module config for contract not to be deployed
         if (moduleConfig && checkIfExist(moduleConfig[element.name]) && !moduleConfig[element.name].deploy) {
           continue;
         }
 
+        // executing user defined shouldRedeploy function and skipping execution if user desired that.
         if (
           element.deployMetaData.shouldRedeploy &&
           !element.deployMetaData.shouldRedeploy(element)) {
@@ -130,6 +135,7 @@ export class TxExecutor {
 
     const elementsBatches: { [elementName: string]: number } = {};
 
+    // batched libraries in first batch, if they exist
     let hasLibraries = false;
     for (let [, element] of Object.entries(moduleState)) {
       if (checkIfExist((element as ContractBinding)?.bytecode)) {
@@ -141,6 +147,7 @@ export class TxExecutor {
       }
     }
 
+    // batching elements depending on dependant tree depth.
     for (const [, element] of Object.entries(moduleState)) {
       if (hasLibraries) {
         await this.handleElement(1, batches, element, moduleState, elementsBatches);
@@ -150,6 +157,7 @@ export class TxExecutor {
       await this.handleElement(0, batches, element, moduleState, elementsBatches);
     }
 
+    // batched execution
     await this.executeBatches(moduleName, batches, moduleState, registry, resolver, moduleConfig);
   }
 

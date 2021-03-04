@@ -81,7 +81,9 @@ export type BaseEvent = {
   name: string,
   eventType: EventType,
 
+  // contract dependencies
   deps: string[],
+  // event dependencies
   eventDeps: string[],
 
   usage: string[],

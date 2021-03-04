@@ -178,14 +178,17 @@ export class ModuleResolver {
   ): ModuleState {
     let resolvedModuleElements: ModuleState = {};
 
+    // onStart module event resolving
     ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onStart);
     for (const [bindingName, binding] of Object.entries(currentBindings)) {
       if (checkIfExist(resolvedModuleElements[bindingName])) {
         continue;
       }
 
+      // contract and his events resolving
       resolvedModuleElements = ModuleResolver.resolveContractsAndEvents(resolvedModuleElements, currentBindings, binding, currentEvents);
     }
+    // onSuccess and onCompletion module event
     ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onSuccess);
     ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onCompletion);
 
@@ -374,10 +377,12 @@ State file: ${stateFileElement.event.eventType}`);
     binding: ContractBinding,
     events: Events,
   ): ModuleState {
+    // recursion exit
     if (checkIfExist(moduleState[binding.name])) {
       return moduleState;
     }
 
+    // resolving all contracts and his events that are provided as constructor args
     for (const arg of binding.args) {
       if (!checkIfExist(arg?.name)) {
         continue;
@@ -394,6 +399,7 @@ State file: ${stateFileElement.event.eventType}`);
       throw new UserError(`Contract is not compiled correctly - ${binding.name}`);
     }
 
+    // resolve all libraries usage
     binding.libraries = binding.libraries as SingleContractLinkReference;
     for (const [bindingName] of Object.entries(binding.libraries)) {
       const libBinding = bindings[bindingName];
@@ -404,6 +410,7 @@ State file: ${stateFileElement.event.eventType}`);
       this.resolveContractsAndEvents(moduleState, bindings, libBinding, events);
     }
 
+    // in case custom deployFn is provided with their deps, resolve them first
     for (const deployDeps of binding.deployMetaData.deploymentSpec.deps) {
       const deployDepsBinding = bindings[deployDeps.name];
       if (!checkIfExist(deployDepsBinding)) {
@@ -413,15 +420,17 @@ State file: ${stateFileElement.event.eventType}`);
       this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events);
     }
 
+    // resolving before deploy events for this contract (beforeCompile, afterCompile, beforeDeploy, beforeDeployment)
     this.resolveBeforeDeployEvents(moduleState, binding, bindings, events);
 
     // this is necessary in order to surface tx data to user
     bindings[binding.name] = binding;
     moduleState[binding.name] = bindings[binding.name];
 
+    // resolving after deploy events for this contract (afterDeploy, afterDeployment, onChange)
     this.resolveAfterDeployEvents(moduleState, binding, bindings, events);
 
-    // this.resolveAllElementsInSubModule() //@TODO think if this is needded
+    // this.resolveAllElementsInSubModule() //@TODO think if this is needed
 
     return moduleState;
   }
@@ -432,68 +441,28 @@ State file: ${stateFileElement.event.eventType}`);
     bindings: { [p: string]: ContractBinding },
     events: Events,
   ): void {
-    const addEvent = (eventName: string) => {
-      if (checkIfExist(moduleState[eventName])) {
-        return;
-      }
-
-      for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
-        const event = (events[eventDepName] as StatefulEvent).event as ContractEvent;
-        if (!checkIfExist(event.eventDeps)) {
-          continue;
-        }
-
-        const eventDeps = event.eventDeps;
-        for (const bindingName of eventDeps) {
-          if (checkIfExist(moduleState[bindingName])) {
-            continue;
-          }
-
-          this.resolveContractsAndEvents(moduleState, bindings, bindings[bindingName], events);
-          bindings[bindingName].deployMetaData.lastEventName = eventName;
-          bindings[bindingName].deployMetaData.logicallyDeployed = false;
-        }
-      }
-
-      for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
-        const event = (events[eventDepName] as StatefulEvent).event as ContractEvent;
-        if (!checkIfExist(event.eventDeps)) {
-          continue;
-        }
-
-        const eventDeps = event.eventDeps;
-        for (const bindingName of eventDeps) {
-          if (!checkIfExist(moduleState[bindingName])) {
-            throw new UsageEventNotFound('Event that you are trying to use is not present in module.');
-          }
-        }
-      }
-
-      moduleState[eventName] = events[eventName];
-    };
-
     for (const eventIndex in binding.eventsDeps.beforeCompile) {
       const eventName = binding.eventsDeps.beforeCompile[eventIndex];
 
-      addEvent(eventName);
+      this.addEvent(eventName, moduleState, binding, bindings, events);
     }
 
     for (const eventIndex in binding.eventsDeps.afterCompile) {
       const eventName = binding.eventsDeps.afterCompile[eventIndex];
 
-      addEvent(eventName);
+      this.addEvent(eventName, moduleState, binding, bindings, events);
     }
 
     for (const eventIndex in binding.eventsDeps.beforeDeployment) {
       const eventName = binding.eventsDeps.beforeDeployment[eventIndex];
 
-      addEvent(eventName);
+      this.addEvent(eventName, moduleState, binding, bindings, events);
     }
 
     for (const eventIndex in binding.eventsDeps.beforeDeploy) {
       const eventName = binding.eventsDeps.beforeDeploy[eventIndex];
 
-      addEvent(eventName);
+      this.addEvent(eventName, moduleState, binding, bindings, events);
     }
   }
 
@@ -503,60 +472,71 @@ State file: ${stateFileElement.event.eventType}`);
     bindings: { [p: string]: ContractBinding },
     events: Events,
   ): void {
-    const handleEvent = (eventName: string) => {
-      for (const depName of (events[eventName].event as ContractEvent).deps) {
-        if (checkIfExist(moduleState[depName])) {
-          continue;
-        }
-
-        this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events);
-      }
-
-      for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
-        const contractEvent = (events[eventDepName] as StatefulEvent).event as ContractEvent;
-
-        // this is need if event is dependant fo multiple events, in that case above for loop wouldn't be enough
-        this.resolveSingleEvent(moduleState, bindings, events, binding, contractEvent);
-
-        if (!checkIfExist(moduleState[contractEvent.name])) {
-          throw new CliError(`Event was not been resolved - ${eventName} ${contractEvent.name}`);
-        }
-      }
-
-      for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
-        if (checkIfExist(moduleState[usageBindingName])) {
-          continue;
-        }
-
-        this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events);
-      }
-
-      for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
-        const eventUsage = (events[eventDepName] as StatefulEvent).event as ContractEvent;
-
-        for (const bindingUsageName of eventUsage.deps) {
-          const eventUsageBinding = bindings[bindingUsageName] as ContractBinding;
-
-          if (!checkIfExist(moduleState[eventUsageBinding.name])) {
-            throw new UsageEventNotFound(`Event that you want to use is not present in your module, please check dependencies. ${events[eventName].event.name} - ${eventDepName} - ${eventUsageBinding.name}`);
-          }
-        }
-      }
-
-      moduleState[eventName] = events[eventName];
-    };
 
     for (const eventIndex in binding.eventsDeps.afterDeploy) {
-      handleEvent(binding.eventsDeps.afterDeploy[eventIndex]);
+      this.addEvent(binding.eventsDeps.afterDeploy[eventIndex], moduleState, binding, bindings, events);
     }
 
     for (const eventIndex in binding.eventsDeps.onChange) {
-      handleEvent(binding.eventsDeps.onChange[eventIndex]);
+      this.addEvent(binding.eventsDeps.onChange[eventIndex], moduleState, binding, bindings, events);
     }
 
     for (const eventIndex in binding.eventsDeps.afterDeployment) {
-      handleEvent(binding.eventsDeps.afterDeployment[eventIndex]);
+      this.addEvent(binding.eventsDeps.afterDeployment[eventIndex], moduleState, binding, bindings, events);
     }
+  }
+
+  private static addEvent(
+    eventName: string,
+    moduleState: ModuleState,
+    binding: ContractBinding,
+    bindings: { [p: string]: ContractBinding },
+    events: Events,
+  ) {
+    // iterate over all contract dependencies and resolve them
+    for (const depName of (events[eventName].event as ContractEvent).deps) {
+      if (checkIfExist(moduleState[depName])) {
+        continue;
+      }
+
+      this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events);
+    }
+
+    // iterate over all event dependencies and resolve them
+    for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
+      const contractEvent = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+
+      // this is need if event is dependant fo multiple events, in that case above for loop wouldn't be enough
+      this.resolveSingleEvent(moduleState, bindings, events, binding, contractEvent);
+
+      if (!checkIfExist(moduleState[contractEvent.name])) {
+        throw new CliError(`Event was not been resolved - ${eventName} ${contractEvent.name}`);
+      }
+    }
+
+    // iterate over all contract usage and resolve them
+    for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
+      if (checkIfExist(moduleState[usageBindingName])) {
+        continue;
+      }
+
+      this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events);
+    }
+
+    // iterate over all event usage and throw error if missing
+    for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
+      const eventUsage = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+
+      for (const bindingUsageName of eventUsage.deps) {
+        const eventUsageBinding = bindings[bindingUsageName] as ContractBinding;
+
+        if (!checkIfExist(moduleState[eventUsageBinding.name])) {
+          throw new UsageEventNotFound(`Event that you want to use is not present in your module, please check dependencies. ${events[eventName].event.name} - ${eventDepName} - ${eventUsageBinding.name}`);
+        }
+      }
+    }
+
+    moduleState[eventName] = events[eventName];
   }
 
   static resolveSingleEvent(moduleState: ModuleState, bindings: { [p: string]: ContractBinding }, events: Events, binding: ContractBinding, contractEvent: ContractEvent) {

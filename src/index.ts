@@ -1,7 +1,7 @@
 import { cli } from 'cli-ux';
 import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
-import { Module, ModuleOptions, StatefulEvent } from './interfaces/mortar';
+import { Module, ModuleOptions } from './interfaces/mortar';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';
@@ -79,6 +79,7 @@ export async function deploy(
       continue;
     }
 
+    // ability to surface module's context when using subModule functionality
     const moduleSession = cls.createNamespace('module');
     await moduleSession.runAndReturn(async () => {
       await module.init(moduleSession, mortarWallets as ethers.Wallet[], undefined, {
@@ -87,6 +88,7 @@ export async function deploy(
     });
     moduleStateRepo.initStateRepo(moduleName);
 
+    // merging state file with provided states files
     let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
     for (const moduleStateName of states) {
       const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName);
@@ -94,13 +96,14 @@ export async function deploy(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
+    // resolving contract and events dependencies and determining execution order
     const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
     await prompter.startModuleDeploy(moduleName, moduleState);
     if (!checkIfExist(moduleState)) {
       prompter.nothingToDeploy();
     }
 
-    // initialize empty tx data
+    // setting up custom functionality
     if (module.getCustomGasPriceProvider()) {
       txGenerator.changeGasPriceCalculator(config.gasPriceProvider);
     }
@@ -247,7 +250,7 @@ export async function usage(
 
     const rawUsage = await moduleUsage.generateRawUsage(moduleName, moduleState);
 
-    for (const [elementName,] of Object.entries(rawUsage)) {
+    for (const [elementName, ] of Object.entries(rawUsage)) {
       const contractAddress = await config.resolver.resolveContract(Number(networkId), moduleName, elementName);
 
       if (!checkIfExist(contractAddress)) {

@@ -1,10 +1,8 @@
 import { Build } from '../../types/migration';
-import fs from 'fs';
-import path from 'path';
 import { checkIfExist } from '../../utils/util';
 import { IModuleState, ModuleStateFile } from './module';
 import { ContractBindingMetaData, Deployed } from '../../../interfaces/mortar';
-import { cli } from 'cli-ux';
+import { searchBuilds } from '../../utils/files';
 
 export class StateMigrationService {
   private readonly moduleState: IModuleState;
@@ -14,7 +12,7 @@ export class StateMigrationService {
   }
 
   searchBuild(currentPath: string): Build[] {
-    return this.searchBuilds(currentPath, []);
+    return searchBuilds(currentPath, []) as Build[];
   }
 
   extractValidBuilds(builds: Build[]) {
@@ -67,32 +65,5 @@ export class StateMigrationService {
     for (const [networkId, stateFile] of Object.entries(stateFiles)) {
       await this.moduleState.storeStates(+networkId, moduleName, stateFile);
     }
-  }
-
-  private searchBuilds(currentPath: string, results: any[]): Build[] {
-    const filenames = fs.readdirSync(currentPath);
-
-    filenames.forEach((fileName: string) => {
-      if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
-        return this.searchBuilds(path.resolve(currentPath, fileName), results);
-      }
-      if (path.parse(fileName).ext != '.json') {
-        return;
-      }
-
-      const content = fs.readFileSync(path.resolve(currentPath, fileName), {encoding: 'utf-8'});
-      let jsonContent;
-      try {
-        jsonContent = JSON.parse(content);
-      } catch (e) {
-        cli.error(e);
-
-        return;
-      }
-
-      results.push(jsonContent as Build);
-    });
-
-    return results;
   }
 }

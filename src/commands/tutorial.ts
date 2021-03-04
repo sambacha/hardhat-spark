@@ -7,6 +7,7 @@ import { TutorialService } from '../packages/tutorial/tutorial_service';
 import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_gen';
 import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
 import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 
 export default class Tutorial extends Command {
   static description = 'Easiest way to get started with mortar, create couple contracts and start deploying.';
@@ -22,7 +23,6 @@ export default class Tutorial extends Command {
     )
   };
 
-
   async run() {
     const {args, flags} = this.parse(Tutorial);
     if (flags.debug) {
@@ -32,7 +32,8 @@ export default class Tutorial extends Command {
     this.prompter = new StreamlinedPrompter();
     const deploymentFileRepo = new DeploymentFileRepo();
     const deploymentFileGenerator = new DeploymentFileGenerator(deploymentFileRepo);
-    const tutorialService = new TutorialService(deploymentFileGenerator);
+    const systemCrawlingService = new SystemCrawlingService(process.cwd());
+    const tutorialService = new TutorialService(deploymentFileGenerator, systemCrawlingService);
 
     await command.tutorial(tutorialService);
   }

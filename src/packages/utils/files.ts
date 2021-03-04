@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { cli } from 'cli-ux';
 
 export function parseSolFiles(sourcePath: string, contractNames: string[], result: string[]): string[] {
   const filenames = fs.readdirSync(sourcePath);
@@ -60,4 +61,31 @@ export function parseFiles(sourcePath: string, contractNames: string[], result: 
   );
 
   return result;
+}
+
+export function searchBuilds(currentPath: string, results: any[]): object[] {
+  const filenames = fs.readdirSync(currentPath);
+
+  filenames.forEach((fileName: string) => {
+    if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
+      return searchBuilds(path.resolve(currentPath, fileName), results);
+    }
+    if (path.parse(fileName).ext != '.json') {
+      return;
+    }
+
+    const content = fs.readFileSync(path.resolve(currentPath, fileName), {encoding: 'utf-8'});
+    let jsonContent;
+    try {
+      jsonContent = JSON.parse(content);
+    } catch (e) {
+      cli.error(e);
+
+      return;
+    }
+
+    results.push(jsonContent);
+  });
+
+  return results;
 }
