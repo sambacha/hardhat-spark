@@ -3,7 +3,7 @@ import { HardhatCompiler } from '../packages/ethereum/compiler/hardhat';
 import {
   checkIfExist,
   checkIfSameInputs,
-  checkIfSuitableForInstantiating
+  checkIfSuitableForInstantiating, compareBytecode
 } from '../packages/utils/util';
 import { ModuleValidator } from '../packages/modules/module_validator';
 import { JsonFragment, JsonFragmentType } from '../packages/types/artifacts/abi';
@@ -1318,7 +1318,7 @@ export class ModuleBuilder {
       if (
         checkIfExist(this.bindings[bindingName]) &&
         this.bindings[bindingName] &&
-        this.bindings[bindingName].bytecode != binding.bytecode
+        !compareBytecode(this.bindings[bindingName].bytecode, binding.bytecode)
       ) {
         throw new UserError('Conflict when merging two modules, check if their is same binding name.');
       }

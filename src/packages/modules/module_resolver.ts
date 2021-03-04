@@ -3,7 +3,7 @@ import {
   StatefulEvent,
   ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData, EventsDepRef,
 } from '../../interfaces/mortar';
-import { checkIfExist } from '../utils/util';
+import { checkIfExist, compareBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { IPrompter } from '../utils/promter';
@@ -56,7 +56,7 @@ export class ModuleResolver {
         oldModuleElement = (oldModuleElement as ContractBindingMetaData);
         newModuleElement = (newModuleElement as ContractBinding);
 
-        if (oldModuleElement.bytecode != newModuleElement.bytecode) {
+        if (!compareBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
           return true;
         }
 
@@ -112,7 +112,7 @@ export class ModuleResolver {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
         newModuleElement = newModuleElement as ContractBinding;
 
-        if (oldModuleElement.bytecode != newModuleElement.bytecode) {
+        if (!compareBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
           cli.info('~', 'Contract: ', newModuleElement.name);
           printArgs(newModuleElement.args, '  ');
         }
@@ -213,7 +213,7 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
         if (
           resolvedModuleStateElement.forceFlag == true ||
           (
-            stateFileElement.bytecode != resolvedModuleStateElement.bytecode &&
+            !compareBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
             !(!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
               resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement))
           )

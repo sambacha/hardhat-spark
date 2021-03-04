@@ -14,6 +14,16 @@ export function checkIfSameInputs(input: ContractInput, fragmentName: string, ar
   return input.functionName === fragmentName && arrayEquals(input.inputs, args);
 }
 
+export function compareBytecode(bytecodeOne: string, bytecodeTwo: string): boolean {
+  const metaDataLengthOne = parseInt(bytecodeOne.slice(-4), 16) * 2 + 4;
+  const formattedBytecodeOne = bytecodeOne.substr(0, bytecodeOne.length - metaDataLengthOne);
+
+  const metaDataLengthTwo = parseInt(bytecodeTwo.slice(-4), 16) * 2 + 4;
+  const formattedBytecodeTwo = bytecodeTwo.slice(0, bytecodeTwo.length - metaDataLengthTwo);
+
+  return formattedBytecodeOne == formattedBytecodeTwo;
+}
+
 export function checkIfSuitableForInstantiating(contractBinding: ContractBinding): boolean {
   return checkIfExist(contractBinding?.deployMetaData.contractAddress) &&
     checkIfExist(contractBinding?.abi) &&
