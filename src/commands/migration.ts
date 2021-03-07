@@ -9,7 +9,7 @@ import { StateMigrationService } from '../packages/modules/states/state_migratio
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
 
 export default class Tutorial extends Command {
-  static description = 'Migrate truffle build folder to mortar state file.';
+  static description = 'Migrate deployment meta data from other deployers to mortar state file.';
   private prompter: StreamlinedPrompter;
 
   static flags = {

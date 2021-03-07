@@ -14,7 +14,7 @@ import { ModuleUsage } from '../packages/modules/module_usage';
 
 export default class Usage extends Command {
   private mutex = false;
-  static description = 'Generate public usage module';
+  static description = 'Generate public usage module from standard module.';
   private prompter: IPrompter | undefined;
 
   static flags = {

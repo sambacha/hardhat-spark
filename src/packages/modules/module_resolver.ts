@@ -441,28 +441,68 @@ State file: ${stateFileElement.event.eventType}`);
     bindings: { [p: string]: ContractBinding },
     events: Events,
   ): void {
+    const addEvent = (eventName: string) => {
+      if (checkIfExist(moduleState[eventName])) {
+        return;
+      }
+
+      for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
+        const event = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+        if (!checkIfExist(event.eventDeps)) {
+          continue;
+        }
+
+        const deps = event.deps;
+        for (const bindingName of deps) {
+          if (checkIfExist(moduleState[bindingName])) {
+            continue;
+          }
+
+          this.resolveContractsAndEvents(moduleState, bindings, bindings[bindingName], events);
+          bindings[bindingName].deployMetaData.lastEventName = eventName;
+          bindings[bindingName].deployMetaData.logicallyDeployed = false;
+        }
+      }
+
+      for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
+        const event = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+        if (!checkIfExist(event.eventDeps)) {
+          continue;
+        }
+
+        const deps = event.deps;
+        for (const bindingName of deps) {
+          if (!checkIfExist(moduleState[bindingName])) {
+            throw new UsageEventNotFound('Event that you are trying to use is not present in module.');
+          }
+        }
+      }
+
+      moduleState[eventName] = events[eventName];
+    };
+
     for (const eventIndex in binding.eventsDeps.beforeCompile) {
       const eventName = binding.eventsDeps.beforeCompile[eventIndex];
 
-      this.addEvent(eventName, moduleState, binding, bindings, events);
+      addEvent(eventName);
     }
 
     for (const eventIndex in binding.eventsDeps.afterCompile) {
       const eventName = binding.eventsDeps.afterCompile[eventIndex];
 
-      this.addEvent(eventName, moduleState, binding, bindings, events);
+      addEvent(eventName);
     }
 
     for (const eventIndex in binding.eventsDeps.beforeDeployment) {
       const eventName = binding.eventsDeps.beforeDeployment[eventIndex];
 
-      this.addEvent(eventName, moduleState, binding, bindings, events);
+      addEvent(eventName);
     }
 
     for (const eventIndex in binding.eventsDeps.beforeDeploy) {
       const eventName = binding.eventsDeps.beforeDeploy[eventIndex];
 
-      this.addEvent(eventName, moduleState, binding, bindings, events);
+      addEvent(eventName);
     }
   }
 

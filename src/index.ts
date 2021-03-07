@@ -1,5 +1,4 @@
 import { cli } from 'cli-ux';
-import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
 import { Module, ModuleOptions } from './interfaces/mortar';
 import { checkIfExist } from './packages/utils/util';
@@ -42,7 +41,9 @@ export * from './packages/modules/states/registry';
 export * from './packages/modules/states/registry/remote_bucket_storage';
 export * from './packages/modules/typings';
 
-export function init(flags: OutputFlags<any>, configService: ConfigService) {
+export * as hardhat from './packages/hardhat_plugin';
+
+export function init(flags: OutputFlags<any>, configService: IConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
 
   const mnemonic = (flags.mnemonic as string);
@@ -184,7 +185,7 @@ export async function genTypes(
   resolvedPath: string,
   mortarConfig: MortarConfig,
   moduleTypings: ModuleTypings,
-  config: ConfigService,
+  config: IConfigService,
 ) {
   const modules = await loadScript(resolvedPath);
   const wallets = config.getAllWallets();
@@ -205,7 +206,7 @@ export async function usage(
   config: MortarConfig,
   deploymentFilePath: string,
   states: string[],
-  configService: ConfigService,
+  configService: IConfigService,
   walletWrapper: WalletWrapper,
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
@@ -272,7 +273,7 @@ export async function tutorial(
   cli.info(INITIAL_MSG);
   const yes = await cli.confirm('Are you ready to start? (make sure you have some contracts to start with ;)) (yes/no)');
   if (!yes) {
-    cli.exit(0);
+    return;
   }
 
   cli.info(chalk.gray(MODULE_NAME_DESC));

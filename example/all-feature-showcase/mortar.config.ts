@@ -1,4 +1,4 @@
-import { RemoteBucketStorage } from '../../src/packages/modules/states/registry/remote_bucket_storage';
+import { RemoteBucketStorage } from '../../src';
 import { MortarConfig } from '../../src';
 // @ts-ignore
 import { EthGasStationProvider, GasPriceType } from './deployment/custom_providers/eth_gas_station_provider';

@@ -12,5 +12,5 @@ export interface IConfigService {
   getAllWallets(rpcPath?: string): ethers.Wallet[];
   generateAndSaveConfig(privateKeys: string[], mnemonic: string, hdPath: string): boolean;
   getMortarConfig(currentPath: string, configScriptPath: string): Promise<MortarConfig>;
-  saveEmptyMortarConfig(currentPath: string, configScriptPath: string): boolean;
+  saveEmptyMortarConfig(currentPath: string, configScriptPath: string, reinit?: boolean): boolean;
 }
