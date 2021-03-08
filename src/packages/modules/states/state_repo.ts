@@ -205,6 +205,7 @@ export class ModuleStateRepo {
           argBinding.args,
           argBinding.bytecode,
           argBinding.abi,
+          argBinding.library,
           argBinding.libraries,
           argBinding.txData,
           this.convertDeployMetaData(argBinding.deployMetaData),
@@ -212,7 +213,7 @@ export class ModuleStateRepo {
       }
     }
 
-    return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.libraries, binding.txData, this.convertDeployMetaData(binding.deployMetaData));
+    return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.library, binding.libraries, binding.txData, this.convertDeployMetaData(binding.deployMetaData));
   }
 
   static convertDeployMetaData(deployMetaData: Deployed): Deployed {

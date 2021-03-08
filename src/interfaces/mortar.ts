@@ -1104,12 +1104,15 @@ export class ContractBindingMetaData {
   public txData: TransactionData | undefined;
   public deployMetaData: Deployed;
 
-  constructor(name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, txData?: TransactionData, deployMetaData?: Deployed) {
+  public library: boolean = false;
+
+  constructor(name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], library?: boolean, libraries?: SingleContractLinkReference, txData?: TransactionData, deployMetaData?: Deployed) {
     this.name = name;
     this.contractName = contractName;
     this.args = args;
     this.bytecode = bytecode;
     this.abi = abi;
+    this.library = library;
     this.libraries = libraries;
     this.txData = txData;
     this.deployMetaData = deployMetaData || {

@@ -234,7 +234,6 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
           // this is necessary in order to surface contract metadata to consumer;
           currentBindings[moduleElementName] = resolvedModuleStateElement;
 
-          // @TODO add "invalidation" for every event and binding that is using this contractBinding.
           ModuleResolver.invalidateStateElementDependant(moduleStateFile, resolvedModuleElements, resolvedModuleStateElement);
 
           i++;
@@ -512,7 +511,6 @@ State file: ${stateFileElement.event.eventType}`);
     bindings: { [p: string]: ContractBinding },
     events: Events,
   ): void {
-
     for (const eventIndex in binding.eventsDeps.afterDeploy) {
       this.addEvent(binding.eventsDeps.afterDeploy[eventIndex], moduleState, binding, bindings, events);
     }

@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
+import { HardhatBuild } from '../types/migration';
+
+const HARDHAT_CHAIN_ID_FILENAME = '.chainId';
 
 export function parseSolFiles(sourcePath: string, contractNames: string[], result: string[]): string[] {
   const filenames = fs.readdirSync(sourcePath);
@@ -78,6 +81,41 @@ export function searchBuilds(currentPath: string, results: any[]): object[] {
     let jsonContent;
     try {
       jsonContent = JSON.parse(content);
+    } catch (e) {
+      cli.error(e);
+
+      return;
+    }
+
+    results.push(jsonContent);
+  });
+
+  return results;
+}
+
+export function searchBuildsAndNetworks(currentPath: string, results: any[], chainId: string = undefined): object[] {
+  const filenames = fs.readdirSync(currentPath);
+
+  let newChainId = chainId;
+  if (filenames.includes(HARDHAT_CHAIN_ID_FILENAME)) {
+    newChainId = fs.readFileSync(path.resolve(currentPath, HARDHAT_CHAIN_ID_FILENAME), {encoding: 'utf-8'});
+  }
+
+  filenames.forEach((fileName: string) => {
+    if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
+      return searchBuildsAndNetworks(path.resolve(currentPath, fileName), results, newChainId);
+    }
+
+    if (path.parse(fileName).ext != '.json') {
+      return;
+    }
+
+    const content = fs.readFileSync(path.resolve(currentPath, fileName), {encoding: 'utf-8'});
+    let jsonContent: HardhatBuild;
+    try {
+      jsonContent = JSON.parse(content) as HardhatBuild;
+      jsonContent.networkId = newChainId;
+      jsonContent.contractName = path.parse(fileName).name;
     } catch (e) {
       cli.error(e);
 

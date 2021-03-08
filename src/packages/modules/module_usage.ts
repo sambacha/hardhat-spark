@@ -1,12 +1,12 @@
 import { ModuleStateRepo } from './states/state_repo';
-import { ModuleState } from './states/module';
-import { ContractBinding } from '../../interfaces/mortar';
+import { ModuleStateFile } from './states/module';
+import { ContractBindingMetaData } from '../../interfaces/mortar';
 import { checkIfExist, removeLastPathElement } from '../utils/util';
 import { CliError } from '../types/errors';
 import fs from 'fs';
 import * as path from 'path';
 
-export type ModuleRawUsage = { [p: string]: ContractBinding };
+export type ModuleRawUsage = { [p: string]: ContractBindingMetaData };
 export type ModuleUsageFile = string;
 
 export class ModuleUsage {
@@ -20,15 +20,15 @@ export class ModuleUsage {
     this.fileLocation = removeLastPathElement(deploymentFilePath);
   }
 
-  generateRawUsage(moduleName: string, moduleState: ModuleState): ModuleRawUsage {
+  generateRawUsage(moduleName: string, moduleStateFile: ModuleStateFile): ModuleRawUsage {
     if (checkIfExist(this.moduleName)) {
       throw new CliError('Usage generation has not been concluded.');
     }
     this.moduleName = moduleName;
-    const rawUsage = {};
-    for (let [elementName, element] of Object.entries(moduleState)) {
-      element = element as ContractBinding;
-      if (!element._isContractBinding) {
+    const rawUsage: ModuleRawUsage = {};
+    for (let [elementName, element] of Object.entries(moduleStateFile)) {
+      element = element as ContractBindingMetaData;
+      if (!element._isContractBindingMetaData) {
         continue;
       }
 
@@ -94,12 +94,12 @@ export const ${this.moduleName} = buildUsage('${this.moduleName}', async (m: Mod
     return prototypesInitialization;
   }
 
-  private static genLibrary(element: ContractBinding): string {
+  private static genLibrary(element: ContractBindingMetaData): string {
     return `
   const ${element.contractName} = m.library('${element.contractName}');`;
   }
 
-  private static genContract(element: ContractBinding, isPrototype: boolean): string {
+  private static genContract(element: ContractBindingMetaData, isPrototype: boolean): string {
     if (isPrototype) {
       return `
   const ${element.name} = m.bindPrototype('${element.name}', '${element.contractName}');`;

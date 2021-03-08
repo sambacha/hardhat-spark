@@ -241,16 +241,10 @@ export async function usage(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-
-    const rawUsage = await moduleUsage.generateRawUsage(moduleName, moduleState);
+    const rawUsage = await moduleUsage.generateRawUsage(moduleName, stateFileRegistry);
 
     for (const [elementName, element] of Object.entries(rawUsage)) {
-      let resolvedContractAddress: string;
-      if (config?.resolver) {
-        resolvedContractAddress = await config?.resolver.resolveContract(Number(networkId), moduleName, elementName);
-      }
-      const contractAddress = resolvedContractAddress ? resolvedContractAddress : element.deployMetaData.contractAddress;
+      const contractAddress = element.deployMetaData.contractAddress;
 
       if (!checkIfExist(contractAddress)) {
         throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for binding: ${elementName}`);
@@ -288,10 +282,8 @@ export async function migrate(
   stateFileType: Migration, // currently only truffle so it is not used
   moduleName: string
 ) {
-  const currentPath = path.resolve(process.cwd(), 'build');
-
   // search for truffle build folder
-  const builds = stateMigrationService.searchBuild(currentPath);
+  const builds = stateMigrationService.searchBuild();
 
   // extract potential build files
   const validBuilds = stateMigrationService.extractValidBuilds(builds);

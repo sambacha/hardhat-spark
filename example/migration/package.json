@@ -28,6 +28,7 @@
     "truffle-hdwallet-provider-privkey": "^1.0.3"
   },
   "devDependencies": {
-    "hardhat": "^2.0.11"
+    "hardhat": "^2.0.11",
+    "hardhat-deploy": "^0.7.0-beta.46"
   }
 }

@@ -202,7 +202,6 @@ task('mortar:init', 'Initialize mortar configuration file and configuration scri
     'Path to the mortar.config.js script, default is same as current path.',
     undefined,
     undefined,
-    true
   )
   .addFlag(
     'reinit',

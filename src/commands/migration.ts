@@ -18,7 +18,7 @@ export default class Tutorial extends Command {
     from: flags.enum({
       name: 'from',
       description: 'Deployment package name (truffle)',
-      options: [Migration.truffle],
+      options: [Migration.truffle, Migration.hardhatDeploy],
       default: Migration.truffle
     }),
     moduleName: flags.string({
@@ -48,7 +48,7 @@ export default class Tutorial extends Command {
 
     this.prompter = new StreamlinedPrompter();
     const moduleState = new FileSystemModuleState(process.cwd());
-    const stateMigrationService = new StateMigrationService(moduleState);
+    const stateMigrationService = new StateMigrationService(moduleState, flags.from);
 
     await command.migrate(stateMigrationService, flags.from, moduleName);
   }
