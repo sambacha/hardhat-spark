@@ -41,8 +41,6 @@ export * from './packages/modules/states/registry';
 export * from './packages/modules/states/registry/remote_bucket_storage';
 export * from './packages/modules/typings';
 
-export * as hardhat from './packages/hardhat_plugin';
-
 export function init(flags: OutputFlags<any>, configService: IConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
 
@@ -245,17 +243,17 @@ export async function usage(
 
     const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
 
-    if (!config.resolver) {
-      throw new UserError('Custom config resolver must be provided.');
-    }
-
     const rawUsage = await moduleUsage.generateRawUsage(moduleName, moduleState);
 
-    for (const [elementName, ] of Object.entries(rawUsage)) {
-      const contractAddress = await config.resolver.resolveContract(Number(networkId), moduleName, elementName);
+    for (const [elementName, element] of Object.entries(rawUsage)) {
+      let resolvedContractAddress: string;
+      if (config?.resolver) {
+        resolvedContractAddress = await config?.resolver.resolveContract(Number(networkId), moduleName, elementName);
+      }
+      const contractAddress = resolvedContractAddress ? resolvedContractAddress : element.deployMetaData.contractAddress;
 
       if (!checkIfExist(contractAddress)) {
-        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address in binding: ${elementName}`);
+        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for binding: ${elementName}`);
       }
     }
 
@@ -303,4 +301,6 @@ export async function migrate(
 
   // store mortar state file
   await stateMigrationService.storeNewStateFiles(moduleName, mortarStateFiles);
+
+  cli.info('Migration successfully completed!');
 }

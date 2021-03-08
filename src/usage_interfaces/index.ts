@@ -27,43 +27,43 @@ export interface TutorialArgs {
 export interface DiffArgs {
   moduleFilePath: string;
   networkId: string;
-  state: string;
-  configScriptPath: string;
+  state?: string;
+  configScriptPath?: string;
 }
 
 export interface DeployArgs {
   moduleFilePath: string;
   networkId: string;
-  rpcProvider: string;
-  parallelize: boolean;
-  prompting: Prompters;
-  state: string;
-  configScriptPath: string;
-  testEnv: boolean;
+  rpcProvider?: string;
+  parallelize?: boolean;
+  prompting?: Prompters;
+  state?: string;
+  configScriptPath?: string;
+  testEnv?: boolean;
 }
 
 export interface GenTypesArgs {
   moduleFilePath: string;
-  configScriptPath: string;
+  configScriptPath?: string;
 }
 
 export interface InitArgs {
   privateKeys: string;
-  mnemonic: string;
-  configScriptPath: string;
-  hdPath: string;
-  reinit: string;
+  mnemonic?: string;
+  configScriptPath?: string;
+  hdPath?: string;
+  reinit?: string;
 }
 
 export interface MigrationArgs {
-  from: string;
+  from?: string;
   moduleName: string;
 }
 
 export interface UsageArgs {
   moduleFilePath: string;
   networkId: string;
-  testEnv: boolean;
-  state: string;
-  configScriptPath: string;
+  testEnv?: boolean;
+  state?: string;
+  configScriptPath?: string;
 }

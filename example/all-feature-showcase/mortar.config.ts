@@ -30,9 +30,9 @@ const registryAndResolver = new RemoteBucketStorage(
 );
 
 export const config: MortarConfig = {
-  registry: registryAndResolver,
+  // registry: registryAndResolver,
   resolver: registryAndResolver,
-  gasPriceProvider: gasPriceProvider,
-  nonceManager: txManager,
-  transactionSinger: txManager
+  // gasPriceProvider: gasPriceProvider,
+  // nonceManager: txManager,
+  // transactionSinger: txManager
 };

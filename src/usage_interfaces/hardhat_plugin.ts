@@ -30,6 +30,10 @@ import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_ge
 import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
 import * as path from 'path';
+import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { JsonPrompter } from '../packages/utils/promter/json_prompter';
+import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
+import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 
 export type HardhatMortarConfig = {
   config: Config,
@@ -169,7 +173,7 @@ export class MortarHardhat implements IMortar {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.init(
-      this.conf.config,
+      args,
       this.configService,
     );
   }
@@ -213,7 +217,23 @@ export class MortarHardhat implements IMortar {
     // @TODO singleton and partial reinit if needed.
     const currentPath = process.cwd();
 
-    this.prompter = new EmptyPrompter();
+    let prompter;
+    switch (args.prompting) {
+      case Prompters.streamlined:
+        prompter = new StreamlinedPrompter();
+        break;
+      case Prompters.json:
+        prompter = new JsonPrompter();
+        break;
+      case Prompters.overview:
+        prompter = new OverviewPrompter();
+        break;
+      case Prompters.simple:
+      default: {
+        prompter = new SimpleOverviewPrompter();
+      }
+    }
+    this.prompter = prompter;
 
     this.provider = new ethers.providers.JsonRpcProvider();
     if (checkIfExist(args.rpcProvider)) {
@@ -225,6 +245,9 @@ export class MortarHardhat implements IMortar {
     this.gasProvider = new GasPriceCalculator(this.provider);
     this.configService = new MemoryConfigService(configFile);
 
+    this.eventSession = cls.createNamespace('event');
+    this.eventTxExecutor = new EventTxExecutor(this.eventSession);
+
     if (checkIfExist(args.networkId)) {
       process.env.MORTAR_NETWORK_ID = String(args.networkId);
 
@@ -235,16 +258,12 @@ export class MortarHardhat implements IMortar {
 
       this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
       this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, +args.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
-
     }
 
     if (checkIfExist(args.state)) {
       this.states = args.state.split(',');
     }
 
-    this.eventSession = cls.createNamespace('event');
-
-    this.eventTxExecutor = new EventTxExecutor(this.eventSession);
     this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession);
 
     this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);

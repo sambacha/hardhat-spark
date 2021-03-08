@@ -7,8 +7,10 @@ import {
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
-  InitArgs, MigrationArgs,
-  TutorialArgs, UsageArgs
+  InitArgs,
+  MigrationArgs,
+  TutorialArgs,
+  UsageArgs
 } from '../../usage_interfaces';
 import { MortarHardhat, MortarHardhatActions } from '../../usage_interfaces/hardhat_plugin';
 import './type_extentions';
@@ -137,7 +139,7 @@ task('mortar:deploy', 'Deploy new module, difference between current module and 
   .addParam<Prompters>(
     'prompting',
     'Prompting type: streamlined, overview or json. default: overview',
-    Prompters.overview,
+    Prompters.simple,
     undefined,
     true,
   )
@@ -195,7 +197,7 @@ task('mortar:init', 'Initialize mortar configuration file and configuration scri
     undefined,
     true,
   )
-  .addPositionalParam<string>(
+  .addParam<string>(
     'configScriptPath',
     'Path to the mortar.config.js script, default is same as current path.',
     undefined,
@@ -209,20 +211,27 @@ task('mortar:init', 'Initialize mortar configuration file and configuration scri
   .setAction(init);
 
 task('mortar:migration', 'Migrate deployment meta data from other deployers to mortar state file.')
-  .addPositionalParam<Migration>(
+  .addParam<Migration>(
     'from',
     'Deployment package name (truffle)',
+    Migration.truffle,
+    undefined,
+    true
+  )
+  .addParam<string>(
+    'moduleName',
+    'Module name for which you would like to migrate state file to.',
     undefined,
     undefined,
     false,
   )
-  .addOptionalPositionalParam<string>(
-    'moduleName',
-    'Module name for which you would like to migrate state file to.'
-  )
   .setAction(migration);
 
 task('mortar:usage', 'Generate public usage module from standard module.')
+  .addPositionalParam(
+    'moduleFilePath',
+    'Path to module deployment file.'
+  )
   .addParam<string>(
     'networkId',
     'Network ID of the network you are willing to deploy your contracts.',
@@ -230,19 +239,17 @@ task('mortar:usage', 'Generate public usage module from standard module.')
     undefined,
     false,
   )
-  .addPositionalParam<string>(
+  .addOptionalParam<string>(
     'configScriptPath',
     'Path to the mortar.config.js script, default is same as current path.',
     undefined,
     undefined,
-    true
   )
-  .addPositionalParam<string>(
+  .addOptionalParam<string>(
     'state',
     'Provide name of module\'s that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other.',
+    '',
     undefined,
-    undefined,
-    true
   )
   .addFlag(
     'testEnv',

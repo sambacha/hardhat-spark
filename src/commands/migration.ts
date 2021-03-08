@@ -7,10 +7,11 @@ import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { Migration } from '../packages/types/migration';
 import { StateMigrationService } from '../packages/modules/states/state_migration_service';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
+import { IPrompter } from '../packages/utils/promter';
 
 export default class Tutorial extends Command {
   static description = 'Migrate deployment meta data from other deployers to mortar state file.';
-  private prompter: StreamlinedPrompter;
+  private prompter: IPrompter;
 
   static flags = {
     help: flags.help({char: 'h'}),

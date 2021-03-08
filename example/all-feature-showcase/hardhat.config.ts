@@ -1,4 +1,4 @@
-import '../../src/packages/hardhat_plugin';
+import '../../src/hardhat';
 // @ts-ignore
 import { config } from './mortar.config';
 
