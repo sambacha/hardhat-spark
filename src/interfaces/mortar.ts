@@ -118,10 +118,6 @@ export interface OnChangeEvent extends BaseEvent {
   fn: RedeployFn;
 }
 
-export interface DeployEvent extends BaseEvent {
-  fn: RedeployFn;
-}
-
 export type ModuleEvent = { name: string, eventType: EventType, fn: ModuleEventFn };
 
 export type MetaDataEvent = { name: string, eventType: EventType, deps?: string[], eventDeps?: string[], usage?: string[], eventUsage?: string[] };
@@ -566,7 +562,7 @@ export class ContractBinding extends Binding {
     compiler.compile();
   }
 
-  refetchAllContractMetadata() {
+  fetchAllContractMetadata() {
     const compiler = new HardhatCompiler();
 
     this.bytecode = compiler.extractBytecode([this.contractName])[this.contractName];
@@ -792,13 +788,6 @@ type TxData = {
   from: string
   input: string
 };
-
-export enum TransactionState {
-  UNKNOWN,
-  PENDING,
-  REPLACED,
-  IN_BLOCK,
-}
 
 export type ContractInput = {
   functionName: string
@@ -1115,12 +1104,15 @@ export class ContractBindingMetaData {
   public txData: TransactionData | undefined;
   public deployMetaData: Deployed;
 
-  constructor(name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, txData?: TransactionData, deployMetaData?: Deployed) {
+  public library: boolean = false;
+
+  constructor(name: string, contractName: string, args: Arguments, bytecode?: string, abi?: JsonFragment[], library?: boolean, libraries?: SingleContractLinkReference, txData?: TransactionData, deployMetaData?: Deployed) {
     this.name = name;
     this.contractName = contractName;
     this.args = args;
     this.bytecode = bytecode;
     this.abi = abi;
+    this.library = library;
     this.libraries = libraries;
     this.txData = txData;
     this.deployMetaData = deployMetaData || {

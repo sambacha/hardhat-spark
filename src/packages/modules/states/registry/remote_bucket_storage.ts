@@ -80,14 +80,25 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     });
 
     req.on('sign', () => {
-      req.httpRequest.headers['Authorization'] =
-        req.httpRequest.headers['Authorization']
-          .replace('Credential=/', `Credential=${this.accessKey}`);
+      if (
+        !checkIfExist(req.httpRequest.headers['Authorization']) &&
+        checkIfExist(this.accessKey)
+      ) {
+        req.httpRequest.headers['Authorization'] = `Credential=${this.accessKey}`;
+
+        return;
+      }
 
       if (this.accessKey == '') {
         delete req.httpRequest.headers['Authorization'];
         req.httpRequest.headers['public-read'] = 'public-read';
+
+        return;
       }
+
+      req.httpRequest.headers['Authorization'] =
+        req.httpRequest.headers['Authorization']
+          .replace('Credential=/', `Credential=${this.accessKey}`);
     });
 
     const object = await req.promise();

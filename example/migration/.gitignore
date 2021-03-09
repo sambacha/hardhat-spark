@@ -80,3 +80,7 @@ typings/
 
 # truffle
 /build/contracts/*
+artifacts
+.mortar
+cache
+deployments

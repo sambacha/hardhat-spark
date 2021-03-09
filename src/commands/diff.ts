@@ -18,7 +18,7 @@ import chalk from 'chalk';
 import { IPrompter } from '../packages/utils/promter';
 
 export default class Diff extends Command {
-  static description = 'Difference between deployed and current migrations.';
+  static description = 'Difference between deployed and current deployment.';
   private prompter: IPrompter | undefined;
 
   static flags = {

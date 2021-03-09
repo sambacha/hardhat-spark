@@ -488,7 +488,10 @@ export class TxExecutor {
           binding.args[i] = dependencyName;
           const dependencyTxData = moduleState[dependencyName].txData as TransactionData;
           const dependencyDeployData = (moduleState[dependencyName] as ContractBinding).deployMetaData as Deployed;
-          if (!checkIfExist(dependencyTxData) || !checkIfExist(dependencyTxData.input) || !checkIfExist(dependencyTxData.output)) {
+          if (
+            !checkIfExist(dependencyTxData) ||
+            !checkIfExist(dependencyTxData.input)
+          ) {
             throw new ContractTypeMismatch(`Dependency contract not deployed \n Binding name: ${binding.name} \n Dependency name: ${binding.args[i]}`);
           }
 

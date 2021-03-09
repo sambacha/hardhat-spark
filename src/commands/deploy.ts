@@ -25,7 +25,7 @@ import { JsonPrompter } from '../packages/utils/promter/json_prompter';
 
 export default class Deploy extends Command {
   private mutex = false;
-  static description = 'Deploy new migrations, difference between current and already deployed.';
+  static description = 'Deploy new module, difference between current module and already deployed one.';
   private prompter: IPrompter | undefined;
 
   static flags = {

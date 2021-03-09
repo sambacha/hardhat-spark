@@ -7,17 +7,19 @@ import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { Migration } from '../packages/types/migration';
 import { StateMigrationService } from '../packages/modules/states/state_migration_service';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
+import { IPrompter } from '../packages/utils/promter';
+import { ModuleMigrationService } from '../packages/modules/module_migration';
 
 export default class Tutorial extends Command {
-  static description = 'Migrate truffle build folder to mortar state file.';
-  private prompter: StreamlinedPrompter;
+  static description = 'Migrate deployment meta data from other deployers to mortar state file.';
+  private prompter: IPrompter;
 
   static flags = {
     help: flags.help({char: 'h'}),
     from: flags.enum({
       name: 'from',
       description: 'Deployment package name (truffle)',
-      options: [Migration.truffle],
+      options: [Migration.truffle, Migration.hardhatDeploy],
       default: Migration.truffle
     }),
     moduleName: flags.string({
@@ -45,11 +47,13 @@ export default class Tutorial extends Command {
       moduleName = await cli.prompt('Module name');
     }
 
+    const currentPath = process.cwd();
     this.prompter = new StreamlinedPrompter();
-    const moduleState = new FileSystemModuleState(process.cwd());
-    const stateMigrationService = new StateMigrationService(moduleState);
+    const moduleState = new FileSystemModuleState(currentPath);
+    const stateMigrationService = new StateMigrationService(moduleState, flags.from);
+    const moduleMigrationService = new ModuleMigrationService(currentPath);
 
-    await command.migrate(stateMigrationService, flags.from, moduleName);
+    await command.migrate(stateMigrationService, moduleMigrationService, moduleName);
   }
 
   async catch(error: Error) {

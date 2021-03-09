@@ -1,8 +1,35 @@
-export enum Migration {
-  'truffle' = 'truffle',
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
+import { ContractBindingMetaData } from '../../interfaces/mortar';
+
+export type ModuleFile = string;
+export type ModuleStateBindings = { [name: string]: ContractBindingMetaData };
+
+export const USAGE_FUNC = 'buildUsage';
+export const MODULE_FUNC = 'buildModule';
+
+export enum FileGenerationType {
+  'usage' = 'usage',
+  'module' = 'module',
 }
 
-export type Build = TruffleBuild;
+export enum Migration {
+  'truffle' = 'truffle',
+  'hardhatDeploy' = 'hardhatDeploy'
+}
+
+export type Build = TruffleBuild | HardhatBuild;
+
+export type HardhatBuild = {
+  contractName?: string;
+  address: string;
+  abi: Array<object>;
+  transactionHash: string;
+  receipt: TransactionReceipt;
+  args: any[];
+  bytecode: string;
+  deployedBytecode: string;
+  networkId?: string
+};
 
 export type TruffleBuild = {
   contractName: string;

@@ -1,5 +1,4 @@
 import { cli } from 'cli-ux';
-import ConfigService from './packages/config/service';
 import { OutputFlags } from '@oclif/parser/lib/parse';
 import { Module, ModuleOptions } from './interfaces/mortar';
 import { checkIfExist } from './packages/utils/util';
@@ -23,8 +22,8 @@ import * as path from 'path';
 import chalk from 'chalk';
 import { INITIAL_MSG, MODULE_NAME_DESC } from './packages/tutorial/tutorial_desc';
 import { TutorialService } from './packages/tutorial/tutorial_service';
-import { Migration } from './packages/types/migration';
 import { StateMigrationService } from './packages/modules/states/state_migration_service';
+import { ModuleMigrationService } from './packages/modules/module_migration';
 
 export * from './interfaces/mortar';
 export * from './interfaces/helper/expectancy';
@@ -42,7 +41,7 @@ export * from './packages/modules/states/registry';
 export * from './packages/modules/states/registry/remote_bucket_storage';
 export * from './packages/modules/typings';
 
-export function init(flags: OutputFlags<any>, configService: ConfigService) {
+export function init(flags: OutputFlags<any>, configService: IConfigService) {
   const privateKeys = (flags.privateKeys as string).split(',');
 
   const mnemonic = (flags.mnemonic as string);
@@ -184,7 +183,7 @@ export async function genTypes(
   resolvedPath: string,
   mortarConfig: MortarConfig,
   moduleTypings: ModuleTypings,
-  config: ConfigService,
+  config: IConfigService,
 ) {
   const modules = await loadScript(resolvedPath);
   const wallets = config.getAllWallets();
@@ -205,7 +204,7 @@ export async function usage(
   config: MortarConfig,
   deploymentFilePath: string,
   states: string[],
-  configService: ConfigService,
+  configService: IConfigService,
   walletWrapper: WalletWrapper,
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
@@ -242,19 +241,13 @@ export async function usage(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+    const rawUsage = await moduleUsage.generateRawUsage(moduleName, stateFileRegistry);
 
-    if (!config.resolver) {
-      throw new UserError('Custom config resolver must be provided.');
-    }
-
-    const rawUsage = await moduleUsage.generateRawUsage(moduleName, moduleState);
-
-    for (const [elementName, ] of Object.entries(rawUsage)) {
-      const contractAddress = await config.resolver.resolveContract(Number(networkId), moduleName, elementName);
+    for (const [elementName, element] of Object.entries(rawUsage)) {
+      const contractAddress = element.deployMetaData.contractAddress;
 
       if (!checkIfExist(contractAddress)) {
-        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address in binding: ${elementName}`);
+        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for binding: ${elementName}`);
       }
     }
 
@@ -272,7 +265,7 @@ export async function tutorial(
   cli.info(INITIAL_MSG);
   const yes = await cli.confirm('Are you ready to start? (make sure you have some contracts to start with ;)) (yes/no)');
   if (!yes) {
-    cli.exit(0);
+    return;
   }
 
   cli.info(chalk.gray(MODULE_NAME_DESC));
@@ -286,13 +279,11 @@ export async function tutorial(
 
 export async function migrate(
   stateMigrationService: StateMigrationService,
-  stateFileType: Migration, // currently only truffle so it is not used
+  moduleMigrationService: ModuleMigrationService,
   moduleName: string
 ) {
-  const currentPath = path.resolve(process.cwd(), 'build');
-
   // search for truffle build folder
-  const builds = stateMigrationService.searchBuild(currentPath);
+  const builds = stateMigrationService.searchBuild();
 
   // extract potential build files
   const validBuilds = stateMigrationService.extractValidBuilds(builds);
@@ -302,4 +293,10 @@ export async function migrate(
 
   // store mortar state file
   await stateMigrationService.storeNewStateFiles(moduleName, mortarStateFiles);
+
+  const moduleStateBindings = await moduleMigrationService.mapModuleStateFileToContractBindingsMetaData(mortarStateFiles);
+  const moduleFile = await moduleMigrationService.generateModuleFile(moduleStateBindings);
+  await moduleMigrationService.storeModuleFile(moduleFile, moduleName);
+
+  cli.info('Migration successfully completed!');
 }
