@@ -1,7 +1,16 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
-import { HardhatBuild } from '../types/migration';
+import {
+  FileGenerationType,
+  HardhatBuild,
+  MODULE_FUNC,
+  ModuleFile,
+  ModuleStateBindings,
+  USAGE_FUNC
+} from '../types/migration';
+import { ContractBindingMetaData } from '../../interfaces/mortar';
+import { CliError } from '../types/errors';
 
 const HARDHAT_CHAIN_ID_FILENAME = '.chainId';
 
@@ -126,4 +135,76 @@ export function searchBuildsAndNetworks(currentPath: string, results: any[], cha
   });
 
   return results;
+}
+
+export function generateModuleFile(moduleStateBindings: ModuleStateBindings, fileGenerationType: FileGenerationType): ModuleFile {
+  let buildName;
+  switch (fileGenerationType) {
+    case FileGenerationType.module:
+      buildName = USAGE_FUNC;
+      break;
+    case FileGenerationType.usage:
+      buildName = MODULE_FUNC;
+      break;
+    default:
+      throw new CliError('File type generation is not valid.');
+  }
+
+  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/mortar';
+
+export const ${this.moduleName} = ${buildName}('${this.moduleName}', async (m: ModuleBuilder) => {`;
+
+  file += genPrototypes(moduleStateBindings);
+
+  file += '\n';
+
+  for (const [, element] of Object.entries(moduleStateBindings)) {
+    if (element.library) {
+      file += genLibrary(element);
+      continue;
+    }
+
+    file += genContract(element, element.name != element.contractName);
+  }
+
+  file += `
+});`;
+
+  return file;
+}
+
+function genPrototypes(moduleStateBindings: ModuleStateBindings): string {
+  const contractMap: { [name: string]: number } = {};
+
+  for (const [, element] of Object.entries(moduleStateBindings)) {
+    if (contractMap[element.contractName]) {
+      contractMap[element.contractName]++;
+      continue;
+    }
+
+    contractMap[element.contractName] = 1;
+  }
+
+  let prototypesInitialization = ``;
+  Object.entries(contractMap).map((value: [string, number]) => {
+    prototypesInitialization += `
+  m.prototype('${value[0]}');`;
+  });
+
+  return prototypesInitialization;
+}
+
+function genLibrary(element: ContractBindingMetaData): string {
+  return `
+  const ${element.contractName} = m.library('${element.contractName}');`;
+}
+
+function genContract(element: ContractBindingMetaData, isPrototype: boolean): string {
+  if (isPrototype) {
+    return `
+  const ${element.name} = m.bindPrototype('${element.name}', '${element.contractName}');`;
+  }
+
+  return `
+  const ${element.name} = m.contract('${element.contractName}');`;
 }

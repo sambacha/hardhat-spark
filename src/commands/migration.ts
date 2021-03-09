@@ -8,6 +8,7 @@ import { Migration } from '../packages/types/migration';
 import { StateMigrationService } from '../packages/modules/states/state_migration_service';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
 import { IPrompter } from '../packages/utils/promter';
+import { ModuleMigrationService } from '../packages/modules/module_migration';
 
 export default class Tutorial extends Command {
   static description = 'Migrate deployment meta data from other deployers to mortar state file.';
@@ -46,11 +47,13 @@ export default class Tutorial extends Command {
       moduleName = await cli.prompt('Module name');
     }
 
+    const currentPath = process.cwd();
     this.prompter = new StreamlinedPrompter();
-    const moduleState = new FileSystemModuleState(process.cwd());
+    const moduleState = new FileSystemModuleState(currentPath);
     const stateMigrationService = new StateMigrationService(moduleState, flags.from);
+    const moduleMigrationService = new ModuleMigrationService(currentPath);
 
-    await command.migrate(stateMigrationService, flags.from, moduleName);
+    await command.migrate(stateMigrationService, moduleMigrationService, moduleName);
   }
 
   async catch(error: Error) {

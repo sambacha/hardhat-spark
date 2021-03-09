@@ -1,4 +1,16 @@
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
+import { ContractBindingMetaData } from '../../interfaces/mortar';
+
+export type ModuleFile = string;
+export type ModuleStateBindings = { [name: string]: ContractBindingMetaData };
+
+export const USAGE_FUNC = 'buildUsage';
+export const MODULE_FUNC = 'buildModule';
+
+export enum FileGenerationType {
+  'usage' = 'usage',
+  'module' = 'module',
+}
 
 export enum Migration {
   'truffle' = 'truffle',

@@ -34,6 +34,7 @@ import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { JsonPrompter } from '../packages/utils/promter/json_prompter';
 import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
+import { ModuleMigrationService } from '../packages/modules/module_migration';
 
 export type HardhatMortarConfig = {
   config: Config,
@@ -121,6 +122,7 @@ export class MortarHardhat implements IMortar {
   public tutorialService: TutorialService;
   public stateMigrationService: StateMigrationService;
   public moduleUsage: ModuleUsage;
+  public moduleMigrationService: ModuleMigrationService;
 
   public conf: HardhatMortarConfig;
 
@@ -183,7 +185,7 @@ export class MortarHardhat implements IMortar {
 
     await command.migrate(
       this.stateMigrationService,
-      args.from as Migration,
+      this.moduleMigrationService,
       args.moduleName,
     );
   }
@@ -278,6 +280,7 @@ export class MortarHardhat implements IMortar {
     );
 
     const moduleState = new FileSystemModuleState(currentPath);
-    this.stateMigrationService = new StateMigrationService(moduleState);
+    this.stateMigrationService = new StateMigrationService(moduleState, args.from as Migration);
+    this.moduleMigrationService = new ModuleMigrationService(currentPath);
   }
 }
