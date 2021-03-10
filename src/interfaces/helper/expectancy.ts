@@ -1,9 +1,17 @@
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { checkIfExist } from '../../packages/utils/util';
-import { UserError } from '../../packages/types/errors';
+import { UserError, ValueMismatch } from '../../packages/types/errors';
 import { ethers } from 'ethers';
 import { ContractBinding } from '../mortar';
 
+/**
+ * This function is checking if `get_StorageAt` call for `slot` in `contract` is same as `expectedValue`.
+ * @param expectedValue Expected value to be returned.
+ * @param contract Contract for slot is going to be read.
+ * @param slot Slot value.
+ *
+ * @returns Promise<boolean>
+ */
 export async function expectSlotRead(expectedValue: ContractBinding | any | undefined, contract: ethers.Contract, slot: string | any): Promise<boolean> {
   const value = (await contract.provider.getStorageAt(contract.address, slot)).toLowerCase();
   if (!checkIfExist(expectedValue)) {
@@ -11,7 +19,7 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
       return true;
     }
 
-    throw new UserError(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
+    throw new ValueMismatch(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
   }
 
   if (expectedValue._isContractBinding) {
@@ -26,12 +34,12 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
   if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
     && value.length != 0 && expectedValue.length != 0) {
     if (value.length != expectedValue.length) {
-      throw new UserError(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
+      throw new ValueMismatch(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
     }
 
     for (let i = 0; i < value.length; i++) {
       if (value[i] != expectedValue[i]) {
-        throw new UserError(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
+        throw new ValueMismatch(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
       }
     }
 
@@ -57,7 +65,16 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
   throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
 }
 
-
+/**
+ * This function is checking if `readFunc` with `readArgs` for `contract` is same as `expectedValue`. In case of error it
+ * would throw ValueMismatch.
+ *
+ * @param expectedValue Expected value to be returned.
+ * @param readFunc Read function name without arguments and braces.
+ * @param readArgs Read function arguments.
+ *
+ * @returns Promise<boolean>
+ */
 export async function expectFuncRead(expectedValue: ContractBinding | any | undefined, readFunc: ContractFunction | any, ...readArgs: any): Promise<boolean> {
   const value = await readFunc(...readArgs);
   if (!checkIfExist(expectedValue)) {
@@ -65,7 +82,7 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
       return true;
     }
 
-    throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+    throw new ValueMismatch(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
   }
 
   if (expectedValue._isContractBinding
@@ -76,12 +93,12 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
   if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
     && value.length != 0 && expectedValue.length != 0) {
     if (value.length != expectedValue.length) {
-      throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+      throw new ValueMismatch(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
     }
 
     for (let i = 0; i < value.length; i++) {
       if (value[i] != expectedValue[i]) {
-        throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+        throw new ValueMismatch(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
       }
     }
 
@@ -119,6 +136,15 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
   throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
 }
 
+/**
+ * Same as expectFuncRead but it would not throw Error, but rather return true or false.
+ *
+ * @param expectedValue
+ * @param readFunc
+ * @param readArgs
+ *
+ * @returns Promise<boolean> true if expectedValue is equal to readFunc value, otherwise false.
+ */
 export async function gracefulExpectFuncRead(expectedValue: ContractBinding | any, readFunc: ContractFunction, ...readArgs: any): Promise<boolean> {
   const value = await readFunc(...readArgs);
   if (!checkIfExist(expectedValue)) {
@@ -172,6 +198,13 @@ export async function gracefulExpectFuncRead(expectedValue: ContractBinding | an
   return expectedValue == value;
 }
 
+/**
+ * Comparing firstValue with secondValue and throwing error in case they don't match.
+ * @param firstValue
+ * @param secondValue
+ *
+ * @returns boolean
+ */
 export function expect(firstValue: any, secondValue: any): boolean {
   if (firstValue == secondValue) {
     return true;
@@ -180,6 +213,14 @@ export function expect(firstValue: any, secondValue: any): boolean {
   throw new UserError(`Failed on expectFuncRead - couldn't match ${firstValue} with ${secondValue}`);
 }
 
+/**
+ * Comparing firstValue with secondValue.
+ *
+ * @param firstValue
+ * @param secondValue
+ *
+ * @returns boolean
+ */
 export function gracefulExpect(firstValue: any, secondValue: any): boolean {
   return firstValue == secondValue;
 }

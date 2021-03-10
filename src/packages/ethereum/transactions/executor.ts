@@ -432,7 +432,7 @@ export class TxExecutor {
     }
 
     if (binding.deployMetaData.deploymentSpec.deployFn) {
-      // @TODO this doesn't work for parallelized
+      // @TODO this doesn't work when running parallelized
       this.moduleState.setSingleEventName(`Deploy${binding.name}`);
       const resp = await binding.deployMetaData.deploymentSpec.deployFn();
       await this.moduleState.finishCurrentEvent(moduleName, moduleState, `Deploy${binding.name}`);
@@ -452,6 +452,7 @@ export class TxExecutor {
     const values: any[] = [];
     const types: any[] = [];
 
+    // constructor params validation
     for (let i = 0; i < constructorFragmentInputs?.length; i++) {
       switch (typeof binding.args[i]) {
         case 'object': {

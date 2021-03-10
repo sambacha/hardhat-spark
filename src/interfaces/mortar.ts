@@ -516,6 +516,13 @@ export class ContractBinding extends Binding {
     this.moduleName = moduleName;
   }
 
+  /**
+   * This is only available to be called inside event hook function execution.
+   *
+   * This function is instantiating wrapped ether.Contract. It has all ether.Contract functionality, as shown in
+   * interface, with record keeping functionality. This is needed in case if some of underlying contract function
+   * fail in execution so when mortar continue it will "skip" successfully executed transaction.
+   */
   instance(): ethers.Contract {
     if (this.contractInstance) {
       return this.contractInstance;
@@ -540,28 +547,48 @@ export class ContractBinding extends Binding {
     return this.contractInstance;
   }
 
+  /**
+   * Sets custom contract deployer. This means that `wallet` is going to sing contract creation transaction.
+   *
+   * @param wallet Ethers wallet object referencing deployer.
+   */
   setDeployer(wallet: ethers.Wallet): ContractBinding {
     this.wallet = wallet;
 
     return this;
   }
 
+  /**
+   * Flag provided in case user wants to force contract deployment even if contract is already has record in state file.
+   */
   force(): ContractBinding {
     this.forceFlag = true;
 
     return this;
   }
 
+  /**
+   * Ability for hot-swapping contract bytecode in case of any on-fly changes by user.
+   *
+   * @param bytecode New contract bytecode.
+   */
   changeBytecode(bytecode: string) {
     this.bytecode = bytecode;
   }
 
+  /**
+   * Run hardhat compiler on top of whole project, most commonly used if their is on fly contract source changes.
+   */
   recompile() {
     const compiler = new HardhatCompiler();
 
     compiler.compile();
   }
 
+  /**
+   * Fetching bytecode, abi and libraries metadata from artifacts and injecting them into contract object inside module
+   * builder for use.
+   */
   fetchAllContractMetadata() {
     const compiler = new HardhatCompiler();
 
@@ -570,23 +597,43 @@ export class ContractBinding extends Binding {
     this.libraries = compiler.extractContractLibraries([this.contractName])[this.contractName];
   }
 
+  /**
+   * This functions is setting library flag to true, in order for mortar to know how to resolve library usage.
+   */
   setLibrary() {
     this.library = true;
   }
 
-  proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicFuncName: string, ...args: any): void {
+  /**
+   * This is helper function that is setting new logic contract for proxy.
+   *
+   * @param m ModuleBuilder object
+   * @param proxy Proxy contract instance
+   * @param logic Logic contract instance
+   * @param setLogicFuncName Function used to change logic contract in proxy
+   */
+  proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicFuncName: string): void {
     m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
       await proxy.instance()[setLogicFuncName](logic);
     });
   }
 
+  /**
+   * Helper function for factory contracts to easily create new children contracts.
+   *
+   * @param m ModuleBuilder object.
+   * @param childName Child contract name
+   * @param createFuncName Contract creation func name in factory
+   * @param args Contract creation arguments
+   * @param opts Custom object that can overwrite smartly defined getterFunc and getterArgs.
+   */
   factoryCreate(m: ModuleBuilder, childName: string, createFuncName: string, args: any[], opts?: FactoryCustomOpts): ContractBinding {
     const getFunctionName = opts.getterFunc ? opts.getterFunc : 'get' + createFuncName.substr(5);
     const getFunctionArgs = opts.getterArgs ? opts.getterArgs : [];
 
     const child = m.contract(childName);
     child.deployFn(async () => {
-      const tx = await this.instance()[createFuncName](123);
+      const tx = await this.instance()[createFuncName](...args);
 
       const children = await this.instance()[getFunctionName](getFunctionArgs);
 
@@ -599,6 +646,12 @@ export class ContractBinding extends Binding {
     return child;
   }
 
+  /**
+   * Custom deploy function that
+   *
+   * @param deployFn
+   * @param deps
+   */
   deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding {
     this.deployMetaData.deploymentSpec = {
       deployFn,
@@ -608,7 +661,20 @@ export class ContractBinding extends Binding {
     return this;
   }
 
-  // beforeDeployment executes each time a deployment command is executed.
+  /**
+   * Setup beforeDeployment event hook on desired contract.
+   *
+   * It is running always before contract deployment, this means that even if contract is already deployed and their is
+   * record in mortar state file, the function would be executed.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object.
+   * @param eventName Unique event name.
+   * @param fn Function to be executed before contract deployment.
+   * @param usages Usage contracts.
+   */
   beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeDeployment.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -626,8 +692,18 @@ export class ContractBinding extends Binding {
     return beforeDeployment;
   }
 
-  // afterDeployment executes each time after a deployment has finished.
-  // The deployment doesn't actually have to perform any deployments for this event to trigger.
+  /**
+   * Setup afterDeployment event hook. It is running always before contract deployment, this means that even if contract
+   * is already deployed and their is record in mortar state file, the function would be executed.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object.
+   * @param eventName Unique event name.
+   * @param fn Function that is going to be executed immediately after contract deployment.
+   * @param usages Usage contracts.
+   */
   afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.afterDeployment.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -645,8 +721,18 @@ export class ContractBinding extends Binding {
     return afterDeploymentEvent;
   }
 
-  // beforeDeploy runs each time the Binding is about to be triggered.
-  // This event can be used to force the binding in question to be deployed.
+  /**
+   * Before deploy event hook. It is running only if contract that event is bounded to this event is actually going to
+   * be deployed.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object.
+   * @param eventName Unique event name.
+   * @param fn
+   * @param usages
+   */
   beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeDeploy.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -664,7 +750,18 @@ export class ContractBinding extends Binding {
     return beforeDeployEvent;
   }
 
-  // afterDeploy runs after the Binding was deployed.
+  /**
+   *  After deploy event hook. It is running only if contract that event is bounded to this event is actually going to
+   *  be deployed.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object
+   * @param eventName Unique event name
+   * @param fn
+   * @param usages
+   */
   afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.afterDeploy.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -682,11 +779,29 @@ export class ContractBinding extends Binding {
     return afterDeployEvent;
   }
 
+  /**
+   * This function is assigning custom ShouldRedeployFn that is returning either true or false, that is enabling for
+   * mortar to determine if this contract should be redeployed. As argument inside the ShouldRedeployFn is curr
+   * parameter is contract with state file metadata for that contract. This way you can determine if their is a need
+   * for contract to be redeployed.
+   *
+   * @param fn Function that is suggesting if contract should be redeployed.
+   */
   shouldRedeploy(fn: ShouldRedeployFn): void {
     this.deployMetaData.shouldRedeploy = fn;
   }
 
-  // beforeCompile runs before the source code is compiled.
+  /**
+   *  Before compile event hook. Runs immediately before compile.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object.
+   * @param eventName Unique event name.
+   * @param fn
+   * @param usages
+   */
   beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeCompile.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -704,7 +819,17 @@ export class ContractBinding extends Binding {
     return beforeCompileEvent;
   }
 
-  // afterCompile runs after the source code is compiled and the bytecode is available.
+  /**
+   *  After compile event hook. Runs immediately after compile event when bytecode, abi and other metadata is available.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object.
+   * @param eventName Unique event name.
+   * @param fn
+   * @param usages
+   */
   afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.afterCompile.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -722,7 +847,17 @@ export class ContractBinding extends Binding {
     return afterCompileEvent;
   }
 
-  // onChange runs after the Binding gets redeployed or changed
+  /**
+   *  On change event hook. Runs only if contract has been changed.
+   *
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
+   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   *
+   * @param m ModuleBuilder object.
+   * @param eventName Unique event name.
+   * @param fn
+   * @param usages
+   */
   onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.onChange.includes(eventName)) {
       throw new UserError(`Event with same name already initialized - ${eventName}`);
@@ -1170,10 +1305,14 @@ export class ModuleBuilder {
     this.moduleSession = moduleSession;
   }
 
-  // use links all definitions from the provided Module
-  // and returns the provided Module so its' bindings can be used?.
-  // use(m: Module, opts?: ModuleOptions): Module;
-
+  /**
+   * Define contract with name and his constructor arguments.
+   *
+   * Usage example: m.contract(name, arg1, arg2, ...)
+   *
+   * @param name Contract name defined in solidity file.
+   * @param args Constructor arguments. In case of contract binding just provide reference.
+   */
   contract(name: string, ...args: Arguments): ContractBinding {
     if (checkIfExist(this.bindings[name])) {
       cli.info('Contract already bind to the module - ', name);
@@ -1193,16 +1332,35 @@ export class ModuleBuilder {
     return binding;
   }
 
+  /**
+   * This grouping of contract's and event hooks in order to assign event that has multiple dependencies.
+   *
+   * e.g. This is useful if you want to run afterDeploy event hook for multiple contracts.
+   *
+   * @param dependencies
+   */
   group(...dependencies: (ContractBinding | ContractEvent)[]): GroupedDependencies {
     return new GroupedDependencies(dependencies);
   }
 
+  /**
+   * Prototype is the way to say to mortar that this contract is going to be deployed multiple times.
+   *
+   * @param name Solidity contract name
+   */
   prototype(name: string): Prototype {
     this.prototypes[name] = new Prototype(name);
 
     return this.prototypes[name];
   }
 
+  /**
+   * Create contract deployment for contract with `prototypeName` that you previously defined.
+   *
+   * @param name Unique "friendly" contract name
+   * @param prototypeName Solidity contract name provided in .protytpe function
+   * @param args Constructor arguments.
+   */
   bindPrototype(name: string, prototypeName: string, ...args: Arguments): ContractBinding {
     if (checkIfExist(this.bindings[name])) {
       throw new BindingsConflict(`Contract already bind to the module - ${name}`);
@@ -1219,10 +1377,21 @@ export class ModuleBuilder {
     return this.bindings[name];
   }
 
+  /**
+   * Sets single custom module parameter.
+   *
+   * @param name Parameter name
+   * @param value Parameter value.
+   */
   param(name: string, value: any) {
     this.opts.params[name] = value;
   }
 
+  /**
+   * Fetching custom module parameter.
+   *
+   * @param name
+   */
   getParam(name: string): any {
     if (!checkIfExist(this.opts)) {
       throw new CliError('This module doesnt have params, check if you are deploying right module!');
@@ -1231,6 +1400,11 @@ export class ModuleBuilder {
     return this.opts.params[name];
   }
 
+  /**
+   * Sets custom module parameters.
+   *
+   * @param opts Module options.
+   */
   setParam(opts: ModuleOptions) {
     if (!checkIfExist(opts.params)) {
       return;
@@ -1272,6 +1446,12 @@ export class ModuleBuilder {
     return this.moduleEvents;
   }
 
+  /**
+   * Action is best way to wrap some dynamic functionality in order to be executed in later execution.
+   *
+   * @param name Action name
+   * @param fn User defined custom fucntion.
+   */
   registerAction(name: string, fn: ActionFn): Action {
     const action = new Action(name, fn);
     this.actions[name] = action;
@@ -1280,6 +1460,16 @@ export class ModuleBuilder {
     return action;
   }
 
+  /**
+   * Assigning sub-module. This function will share current share current module builder data (contracts and event) with
+   * sub-module. On function execution it will return the context.
+   *
+   * @param m Module object
+   * @param opts Optional module options
+   * @param wallets Optional wallets that is going to be surfaced inside sub-module,
+   *
+   * @returns Module builder data from sub-module.
+   */
   async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
@@ -1391,7 +1581,12 @@ export class ModuleBuilder {
     return this.opts;
   }
 
-  // module eventsDeps below
+  /**
+   * OnStart Module event. This event is always running first, before another event in event lifecycle.
+   *
+   * @param eventName Unique event name
+   * @param fn Module event function
+   */
   onStart(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onStart[eventName] = {
       name: eventName,
@@ -1400,6 +1595,12 @@ export class ModuleBuilder {
     };
   }
 
+  /**
+   * OnCompletion module event is run when module execution is finished, event if it has errored.
+   *
+   * @param eventName Unique event name
+   * @param fn Module event function
+   */
   onCompletion(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onCompletion[eventName] = {
       name: eventName,
@@ -1408,6 +1609,12 @@ export class ModuleBuilder {
     };
   }
 
+  /**
+   * OnSuccess module event is run only if module execution is successfully finished.
+   *
+   * @param eventName Unique event name
+   * @param fn Module event function
+   */
   onSuccess(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onSuccess[eventName] = {
       name: eventName,
@@ -1416,6 +1623,12 @@ export class ModuleBuilder {
     };
   }
 
+  /**
+   * OnFail module event is run only if module execution errored or failed for any other reason.
+   *
+   * @param eventName Unique event name
+   * @param fn Module event function
+   */
   onFail(eventName: string, fn: ModuleEventFn): void {
     this.moduleEvents.onFail[eventName] = {
       name: eventName,
@@ -1565,10 +1778,27 @@ export class Module {
   }
 }
 
+/**
+ * This function is instantiating module class that will be used by mortar in order to read user defined contracts and
+ * events in order.
+ *
+ * @param moduleName Name of the module
+ * @param fn Function that will be used to build module.
+ * @param moduleConfig Deployment module config, defines which bindings would be skipped.
+ */
 export async function buildModule(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
   return new Module(moduleName, fn, moduleConfig);
 }
 
+/**
+ * This function is instantiating module class that will be used by mortar in order to read user defined contracts and
+ * events in order. This is not intended to be a valid deployment module, but rather to be used only as a sub-module
+ * with resolver specified in mortar.config.ts/js script.
+ *
+ * @param moduleName Name of the module
+ * @param fn Function that will be used to build module.
+ * @param moduleConfig Deployment module config, defines which bindings would be skipped.
+ */
 export async function buildUsage(moduleName: string, fn: ModuleBuilderFn, moduleConfig: ModuleConfig | undefined = undefined): Promise<Module> {
   return new Module(moduleName, fn, moduleConfig, true);
 }

@@ -50,6 +50,14 @@ export const mutator = (
   }, ...usages);
 };
 
+/**
+ * This is helper function that will send 1 ether to all wallets from root wallet. It is mainly intended for testing
+ * purposes.
+ *
+ * @param m ModuleBuilder object provided in ModuleBuilderFn
+ * @param rootWallet Sender of the funds
+ * @param wallets Receivers of the funds
+ */
 export const filler = (
   m: ModuleBuilder,
   rootWallet: ethers.Wallet,
