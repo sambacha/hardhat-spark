@@ -22,7 +22,7 @@ Just after all contract compilation. This is ideal for deletion or addition of s
 
 ### Before Deployment
 
-This event will be executed every time when mortar arrives to deployment of contract's that event is binded to. This
+This event will be executed every time when mortar arrives to deployment of contract's that event is bound to. This
 means that if mortar decides that this contract shouldn't be deployed (e.g. it already did deploy) this event will be
 triggered.
 

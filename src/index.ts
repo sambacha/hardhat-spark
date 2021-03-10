@@ -16,7 +16,7 @@ import { ethers } from 'ethers';
 import { MortarConfig } from './packages/types/config';
 import { loadScript } from './packages/utils/typescript-checker';
 import { ModuleUsage } from './packages/modules/module_usage';
-import { MissingContractAddressInStateFile, UserError } from './packages/types/errors';
+import { MissingContractAddressInStateFile } from './packages/types/errors';
 import * as cls from 'cls-hooked';
 import * as path from 'path';
 import chalk from 'chalk';
@@ -66,14 +66,19 @@ export async function deploy(
   walletWrapper: WalletWrapper,
   test: boolean = false
 ) {
+  // this is needed in order to support both js and ts
   const modules = await loadScript(deploymentFilePath, test);
 
+  // wrapping ether.Wallet in order to support state file storage
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
   const mortarWallets = walletWrapper.wrapWallets(wallets);
 
   for (const [moduleName, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
+
+    // if module is initialized it means it is sub module inside bigger one. Only modules that are not initialized
+    // can be executed
     if (module.isInitialized()) {
       continue;
     }
@@ -213,7 +218,6 @@ export async function usage(
 ) {
   const modules = await loadScript(deploymentFilePath);
 
-  const networkId = process.env.MORTAR_NETWORK_ID;
   const rpcProvider = process.env.MORTAR_RPC_PROVIDER;
   const wallets = configService.getAllWallets(rpcProvider);
   const mortarWallets = walletWrapper.wrapWallets(wallets);

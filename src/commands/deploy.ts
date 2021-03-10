@@ -123,6 +123,7 @@ export default class Deploy extends Command {
 
     process.env.MORTAR_RPC_PROVIDER = String(flags.rpcProvider || 'http://localhost:8545');
 
+    // choosing right prompter from user desires
     let prompter;
     switch (flags.prompting) {
       case Prompters.streamlined:
@@ -139,6 +140,8 @@ export default class Deploy extends Command {
         prompter = new SimpleOverviewPrompter();
       }
     }
+
+    // initializing all service's and repos
     this.prompter = prompter;
     const configService = new ConfigService(currentPath);
 

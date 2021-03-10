@@ -15,6 +15,7 @@ export function checkIfSameInputs(input: ContractInput, fragmentName: string, ar
 }
 
 export function compareBytecode(bytecodeOne: string, bytecodeTwo: string): boolean {
+  // https://docs.soliditylang.org/en/latest/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   const metaDataLengthOne = parseInt(bytecodeOne.slice(-4), 16) * 2 + 4;
   const formattedBytecodeOne = bytecodeOne.substr(0, bytecodeOne.length - metaDataLengthOne);
 
