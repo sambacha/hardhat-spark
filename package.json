@@ -1,13 +1,13 @@
 {
-  "name": "@tenderly/mortar",
+  "name": "@tenderly/ignition",
   "description": "Solidity IaC deployment tool",
   "version": "0.1.1",
   "author": "Tenderly",
   "bin": {
-    "mortar": "bin/run"
+    "ignition": "bin/run"
   },
   "bugs": {
-    "url": "https://github.com/Tenderly/mortar/issues"
+    "url": "https://github.com/Tenderly/ignition/issues"
   },
   "dependencies": {
     "@oclif/command": "^1",
@@ -67,19 +67,19 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/Tenderly/mortar-tenderly",
+  "homepage": "https://github.com/Tenderly/ignition",
   "license": "MIT",
   "main": "lib/index.js",
   "oclif": {
     "commands": "./lib/commands",
-    "bin": "mortar",
+    "bin": "ignition",
     "plugins": [
       "@oclif/plugin-help"
     ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tenderly/mortar-tenderly.git"
+    "url": "git+https://github.com/Tenderly/ignition.git"
   },
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",

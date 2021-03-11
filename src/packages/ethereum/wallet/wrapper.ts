@@ -1,6 +1,6 @@
 import { Namespace } from 'cls-hooked';
 import { ethers } from 'ethers';
-import { MortarWallet } from '../../../interfaces/mortar';
+import { IgnitionWallet } from '../../../interfaces/ignition';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { INonceManager } from '../transactions';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
@@ -34,11 +34,11 @@ export class WalletWrapper {
     this.eventTxExecutor = eventTxExecutor;
   }
 
-  wrapWallets(wallets: ethers.Wallet[]): MortarWallet[] {
-    const mortarWallets = [];
+  wrapWallets(wallets: ethers.Wallet[]): IgnitionWallet[] {
+    const ignitionWallets = [];
     for (const wallet of wallets) {
-      mortarWallets.push(
-        new MortarWallet(
+      ignitionWallets.push(
+        new IgnitionWallet(
           wallet,
           this.eventSession,
           this.nonceManager,
@@ -51,6 +51,6 @@ export class WalletWrapper {
       );
     }
 
-    return mortarWallets;
+    return ignitionWallets;
   }
 }

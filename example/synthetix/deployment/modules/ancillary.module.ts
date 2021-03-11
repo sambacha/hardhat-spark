@@ -1,5 +1,5 @@
 import { buildModule } from '../../../../src';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 
 export const SynthetixAncillary = buildModule('SynthetixAncillary', async (m: SynthetixModuleBuilder) => {
   const ReadProxyAddressResolver = m.ReadProxyAddressResolver;

@@ -1,7 +1,7 @@
 import { ContractEvent, buildModule } from '../../../../src';
 import * as web3utils from 'web3-utils';
 import { DEFAULTS } from '../../util/constants';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 
 export const SynthetixDebtCacheSetup = buildModule('SynthetixDebtCacheSetup', async (m: SynthetixModuleBuilder) => {
   const DebtCache = m.DebtCache;

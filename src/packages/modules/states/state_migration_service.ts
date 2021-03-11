@@ -1,7 +1,7 @@
 import { Build, HardhatBuild, Migration, TruffleBuild } from '../../types/migration';
 import { checkIfExist } from '../../utils/util';
 import { IModuleState, ModuleStateFile } from './module';
-import { ContractBindingMetaData, Deployed } from '../../../interfaces/mortar';
+import { ContractBindingMetaData, Deployed } from '../../../interfaces/ignition';
 import { searchBuilds, searchBuildsAndNetworks } from '../../utils/files';
 import { CliError, UserError } from '../../types/errors';
 import path from 'path';

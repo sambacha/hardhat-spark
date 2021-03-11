@@ -1,4 +1,4 @@
-import { ContractBinding, TransactionData } from '../../../interfaces/mortar';
+import { ContractBinding, TransactionData } from '../../../interfaces/ignition';
 import { checkIfExist } from '../../utils/util';
 import { Wallet, providers, BigNumber } from 'ethers';
 import { ModuleState } from '../../modules/states/module';

@@ -11,7 +11,7 @@ import {
   ModuleEvent, ModuleEventFn,
   OnChangeEvent,
   StatefulEvent
-} from '../../../interfaces/mortar';
+} from '../../../interfaces/ignition';
 import { checkIfExist } from '../../utils/util';
 import { ModuleStateRepo } from '../states/state_repo';
 import { ModuleState } from '../states/module';

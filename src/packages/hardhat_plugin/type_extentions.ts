@@ -1,22 +1,22 @@
 import 'hardhat/types/config';
 import 'hardhat/types/runtime';
 
-import { HardhatMortarConfig } from '../../usage_interfaces/hardhat_plugin';
-import { IMortar } from '../../usage_interfaces';
+import { HardhatIgnitionConfig } from '../../usage_interfaces/hardhat_plugin';
+import { IIgnition } from '../../usage_interfaces';
 
 declare module 'hardhat/types/runtime' {
   export interface HardhatRuntimeEnvironment {
-    mortar: IMortar;
+    mortar: IIgnition;
   }
 }
 
 declare module 'hardhat/types/config' {
   export interface HardhatUserConfig {
-    mortar?: HardhatMortarConfig;
+    mortar?: HardhatIgnitionConfig;
 
   }
 
   export interface HardhatConfig {
-    mortar: HardhatMortarConfig;
+    mortar: HardhatIgnitionConfig;
   }
 }

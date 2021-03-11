@@ -1,7 +1,7 @@
 import * as path from 'path';
-import { buildModule } from '../../../src/interfaces/mortar';
+import { buildModule } from '../../../src/interfaces/ignition';
 // @ts-ignore
-import { DaiModuleBuilder } from '../.mortar/DaiModule/DaiModule';
+import { DaiModuleBuilder } from '../.ignition/DaiModule/DaiModule';
 
 require('dotenv').config({path: path.resolve(__dirname + './../.env')});
 

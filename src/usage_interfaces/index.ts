@@ -6,12 +6,12 @@ export type ConfigFlags = {
   rpcProvider?: string,
 };
 
-export interface IMortarUsage {
+export interface IIgnitionUsage {
   deploy(migrationFilePath: string): Promise<void>;
   diff(deploymentFilePath: string): Promise<void>;
 }
 
-export interface IMortar {
+export interface IIgnition {
   deploy(moduleFilePath: string, args: DeployArgs): Promise<void>;
   diff(moduleFilePath: string, args: DiffArgs): Promise<void>;
   genTypes(moduleFilePath: string, args: GenTypesArgs): Promise<void>;

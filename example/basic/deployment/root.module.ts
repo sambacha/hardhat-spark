@@ -1,5 +1,5 @@
 import { buildModule } from '../../../src';
-import { FirstModuleBuilder } from '../.mortar/FirstModule/FirstModule';
+import { FirstModuleBuilder } from '../.ignition/FirstModule/FirstModule';
 
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
   const A = m.contract('A');

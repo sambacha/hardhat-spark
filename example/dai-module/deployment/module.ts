@@ -1,8 +1,8 @@
-import { buildModule } from '../../../src/interfaces/mortar';
+import { buildModule } from '../../../src/interfaces/ignition';
 // @ts-ignore
 import { DaiModule } from './dai_module';
 // @ts-ignore
-import { ModuleBuilder } from '../../../src/interfaces/mortar';
+import { ModuleBuilder } from '../../../src/interfaces/ignition';
 
 export const DaiExampleModule = buildModule('DaiExampleModule', async (m: ModuleBuilder) => {
   await m.module(DaiModule);

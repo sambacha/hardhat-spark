@@ -7,7 +7,7 @@ import {
   EventType,
   MetaDataEvent, ModuleEvent,
   StatefulEvent,
-} from '../../../interfaces/mortar';
+} from '../../../interfaces/ignition';
 import { CliError } from '../../types/errors';
 import { TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { checkIfExist } from '../../utils/util';

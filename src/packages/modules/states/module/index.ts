@@ -1,11 +1,11 @@
 import {
   ContractBinding, ContractBindingMetaData,
   StatefulEvent
-} from '../../../../interfaces/mortar';
+} from '../../../../interfaces/ignition';
 
 export type ModuleState = { [p: string]: ContractBinding | StatefulEvent };
 export type ModuleStateFile = { [p: string]: ContractBindingMetaData | StatefulEvent };
-export const STATE_DIR_NAME = '.mortar';
+export const STATE_DIR_NAME = '.ignition';
 export const STATE_NAME = 'deployed_module_state.json';
 
 export interface IModuleState {

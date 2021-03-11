@@ -521,7 +521,7 @@ export class ContractBinding extends Binding {
    *
    * This function is instantiating wrapped ether.Contract. It has all ether.Contract functionality, as shown in
    * interface, with record keeping functionality. This is needed in case if some of underlying contract function
-   * fail in execution so when mortar continue it will "skip" successfully executed transaction.
+   * fail in execution so when ignition continue it will "skip" successfully executed transaction.
    */
   instance(): ethers.Contract {
     if (this.contractInstance) {
@@ -598,7 +598,7 @@ export class ContractBinding extends Binding {
   }
 
   /**
-   * This functions is setting library flag to true, in order for mortar to know how to resolve library usage.
+   * This functions is setting library flag to true, in order for ignition to know how to resolve library usage.
    */
   setLibrary() {
     this.library = true;
@@ -665,7 +665,7 @@ export class ContractBinding extends Binding {
    * Setup beforeDeployment event hook on desired contract.
    *
    * It is running always before contract deployment, this means that even if contract is already deployed and their is
-   * record in mortar state file, the function would be executed.
+   * record in ignition state file, the function would be executed.
    *
    * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
    * -> afterDeployment -> onCompletion -> onSuccess -> onError
@@ -694,7 +694,7 @@ export class ContractBinding extends Binding {
 
   /**
    * Setup afterDeployment event hook. It is running always before contract deployment, this means that even if contract
-   * is already deployed and their is record in mortar state file, the function would be executed.
+   * is already deployed and their is record in ignition state file, the function would be executed.
    *
    * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
    * -> afterDeployment -> onCompletion -> onSuccess -> onError
@@ -781,7 +781,7 @@ export class ContractBinding extends Binding {
 
   /**
    * This function is assigning custom ShouldRedeployFn that is returning either true or false, that is enabling for
-   * mortar to determine if this contract should be redeployed. As argument inside the ShouldRedeployFn is curr
+   * ignition to determine if this contract should be redeployed. As argument inside the ShouldRedeployFn is curr
    * parameter is contract with state file metadata for that contract. This way you can determine if their is a need
    * for contract to be redeployed.
    *
@@ -1138,7 +1138,7 @@ export class ContractInstance {
   }
 }
 
-export class MortarWallet extends ethers.Wallet {
+export class IgnitionWallet extends ethers.Wallet {
   private sessionNamespace: Namespace;
   private moduleStateRepo: ModuleStateRepo;
   private nonceManager: INonceManager;
@@ -1179,9 +1179,9 @@ export class MortarWallet extends ethers.Wallet {
 
       await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
 
-      const mortarTransaction = await this.populateTransactionWithMortarMetadata(transaction);
+      const ignitionTransaction = await this.populateTransactionWithIgnitionMetadata(transaction);
 
-      const txResp = await super.sendTransaction(mortarTransaction);
+      const txResp = await super.sendTransaction(ignitionTransaction);
       await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
 
       if (!this.sessionNamespace.get(clsNamespaces.PARALLELIZE)) {
@@ -1190,7 +1190,7 @@ export class MortarWallet extends ethers.Wallet {
         this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
       }
 
-      await this.moduleStateRepo.storeEventTransactionData(this.address, mortarTransaction, txResp, currentEventName);
+      await this.moduleStateRepo.storeEventTransactionData(this.address, ignitionTransaction, txResp, currentEventName);
 
       await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
 
@@ -1203,7 +1203,7 @@ export class MortarWallet extends ethers.Wallet {
     return this.eventTxExecutor.executeSingle(currentEventName);
   }
 
-  private async populateTransactionWithMortarMetadata(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
+  private async populateTransactionWithIgnitionMetadata(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
     if (!checkIfExist(transaction.nonce)) {
       transaction.nonce = this.nonceManager.getAndIncrementTransactionCount(this.address);
     }
@@ -1344,7 +1344,7 @@ export class ModuleBuilder {
   }
 
   /**
-   * Prototype is the way to say to mortar that this contract is going to be deployed multiple times.
+   * Prototype is the way to say to ignition that this contract is going to be deployed multiple times.
    *
    * @param name Solidity contract name
    */
@@ -1485,7 +1485,7 @@ export class ModuleBuilder {
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
 
-    const networkId = process.env.MORTAR_NETWORK_ID || '';
+    const networkId = process.env.IGNITION_NETWORK_ID || '';
     const resolver = await m.getRegistry();
 
     for (const [eventName, event] of Object.entries(events)) {
@@ -1779,7 +1779,7 @@ export class Module {
 }
 
 /**
- * This function is instantiating module class that will be used by mortar in order to read user defined contracts and
+ * This function is instantiating module class that will be used by ignition in order to read user defined contracts and
  * events in order.
  *
  * @param moduleName Name of the module
@@ -1791,9 +1791,9 @@ export async function buildModule(moduleName: string, fn: ModuleBuilderFn, modul
 }
 
 /**
- * This function is instantiating module class that will be used by mortar in order to read user defined contracts and
+ * This function is instantiating module class that will be used by ignition in order to read user defined contracts and
  * events in order. This is not intended to be a valid deployment module, but rather to be used only as a sub-module
- * with resolver specified in mortar.config.ts/js script.
+ * with resolver specified in ignition.config.ts/js script.
  *
  * @param moduleName Name of the module
  * @param fn Function that will be used to build module.

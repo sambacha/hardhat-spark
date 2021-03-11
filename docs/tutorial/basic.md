@@ -5,10 +5,10 @@ This will help you to understand a basic workflow and process of setting up simp
 
 ## Project setup 
 
-You will need to have hardhat and mortar installed in some project.
+You will need to have hardhat and ignition installed in some project.
 ```
 yarn add hardhat --dev
-yarn add @tenderly/mortar --dev
+yarn add @tenderly/ignition --dev
 ```
 
 Init hardhat and run hardhat node as a test environment.
@@ -54,18 +54,18 @@ contract A {
 }
 ```
 
-### Mortar initialization
+### Ignition initialization
 
 Firstly we will need to run next command in root of your project
 
 ```
-mortar init --privateKeys=<private_key>
+ignition init --privateKeys=<private_key>
 ```
 You can put hardhat generated `<private_key>` for testing.
 
-This command will generate `mortar-config.json` and `mortar.config.ts` files.
+This command will generate `ignition-config.json` and `ignition.config.ts` files.
 
-`mortar-config.json` should look something like this.
+`ignition-config.json` should look something like this.
 
 ```json
 {
@@ -75,12 +75,12 @@ This command will generate `mortar-config.json` and `mortar.config.ts` files.
 }
 ```
 
-`mortar.config.ts` should look something like this.
+`ignition.config.ts` should look something like this.
 
 ```typescript
-import { MortarConfig } from '@tenderly/mortar';
+import { IgnitionConfig } from '@tenderly/ignition';
 
-export const config: MortarConfig = {}
+export const config: IgnitionConfig = {}
 ```
 
 ### Deployment module
@@ -88,14 +88,14 @@ export const config: MortarConfig = {}
 Next thing is to set up your own deployment module. Let's create file under `./deployment/first.module.ts`.
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+import { buildModule, ModuleBuilder } from '@tenderly/ignition';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 });
 ```
 
-So here, we initialized our `FirstModule`. So we are using `buildModule()` from mortar interface, and we named
+So here, we initialized our `FirstModule`. So we are using `buildModule()` from ignition interface, and we named
 it `FirstModule` alongside the function that has `m: ModuleBuilder`. `ModuleBuilder` is how you can specify what you
 want to deploy/execute.
 
@@ -134,7 +134,7 @@ transaction gets confirmed you will get `TransactionReceipt` object as return.
 You should end up with something like this:
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+import { buildModule, ModuleBuilder } from '@tenderly/ignition';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
@@ -152,7 +152,7 @@ Let's see what will be deployed if we stop here.
 Run next command:
 
 ```
-mortar diff ./deployment/first.module.ts --networkId=31337
+ignition diff ./deployment/first.module.ts --networkId=31337
 ```
 
 This should be output in the console.
@@ -173,17 +173,17 @@ First check if you have your local node running.
 npx hardhat node
 ```
 
-Run `mortar deploy` command.
+Run `ignition deploy` command.
 
 ```
-mortar deploy ./deployment/first.module.ts --networkId=31337
+ignition deploy ./deployment/first.module.ts --networkId=31337
 ```
 
 After command is successfully run, you should see in your logs something like this
 
 ![log image](../images/basic_usage_log.png)
 
-Also, you should check `./.mortar/FirstModule/31337_deployed_module_state.json` file to confirm execution and check if
+Also, you should check `./.ignition/FirstModule/31337_deployed_module_state.json` file to confirm execution and check if
 everything is correctly deployed.
 
 ### Additional contract binding
@@ -213,7 +213,7 @@ const B = m.contract('B', A);
 Your `FirstModule` should look something like this.
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+import { buildModule, ModuleBuilder } from '@tenderly/ignition';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
@@ -232,7 +232,7 @@ Now lets see what is the difference between the already deployed module and new 
 Run next command:
 
 ```
-mortar diff ./deployment/first.module.ts --networkId=31337
+ignition diff ./deployment/first.module.ts --networkId=31337
 ```
 
 Console output should be something like this.
@@ -253,7 +253,7 @@ Let's change some part of the solidity code of `A.sol`, I'll just add more `oooo
 Now run command:
 
 ```
-mortar diff ./deployment/first.module.ts --networkId=31337
+ignition diff ./deployment/first.module.ts --networkId=31337
 ```
 
 You should see this in your console logs:
@@ -271,7 +271,7 @@ Module: FirstModule
 We now want to execute our changes in `FirstModule` so let's run next command:
 
 ```
-mortar deploy ./deployment/first.module.ts --network_id=31337
+ignition deploy ./deployment/first.module.ts --network_id=31337
 ```
 
 This should be execution logs:
@@ -284,10 +284,10 @@ As a final step, lets generate typehints for your module for future development.
 Run next command:
 
 ```
-mortar genTypes ./deployment/first.module.ts
+ignition genTypes ./deployment/first.module.ts
 ```
 
-You can now see that additional file is generated under `./.mortar/FirstModule` - `FirstModule.d.ts`
+You can now see that additional file is generated under `./.ignition/FirstModule` - `FirstModule.d.ts`
 
 It should have class that is similar to this one:
 
@@ -304,8 +304,8 @@ So you can now have type hint in your module if you change from `m: ModuleBuilde
 Your module function should look like this in order to have typehints:
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/mortar';
-import { FirstModuleBuilder } from '../.mortar/FirstModule/FirstModule';
+import { buildModule, ModuleBuilder } from '@tenderly/ignition';
+import { FirstModuleBuilder } from '../.ignition/FirstModule/FirstModule';
 
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
   const A = m.contract('A');

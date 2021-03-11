@@ -12,13 +12,13 @@ import {
   TutorialArgs,
   UsageArgs
 } from '../../usage_interfaces';
-import { MortarHardhat, MortarHardhatActions } from '../../usage_interfaces/hardhat_plugin';
+import { IgnitionHardhat, IgnitionHardhatActions } from '../../usage_interfaces/hardhat_plugin';
 import './type_extentions';
 
 export const PluginName = 'mortar';
 
 extendEnvironment(env => {
-  env.mortar = lazyObject(() => new MortarHardhat(env.config.mortar));
+  env.mortar = lazyObject(() => new IgnitionHardhat(env.config.mortar));
 });
 
 const tutorial: ActionType<TutorialArgs> = async (
@@ -29,7 +29,7 @@ const tutorial: ActionType<TutorialArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.tutorial(config.mortar, tutorialArgs);
+  await IgnitionHardhatActions.tutorial(config.mortar, tutorialArgs);
 };
 
 const diff: ActionType<DiffArgs> = async (
@@ -40,7 +40,7 @@ const diff: ActionType<DiffArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.diff(config.mortar, diffArgs);
+  await IgnitionHardhatActions.diff(config.mortar, diffArgs);
 };
 
 const deploy: ActionType<DeployArgs> = async (
@@ -51,7 +51,7 @@ const deploy: ActionType<DeployArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.deploy(config.mortar, deployArgs);
+  await IgnitionHardhatActions.deploy(config.mortar, deployArgs);
 };
 
 const genTypes: ActionType<GenTypesArgs> = async (
@@ -62,7 +62,7 @@ const genTypes: ActionType<GenTypesArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.genTypes(config.mortar, genTypesArgs);
+  await IgnitionHardhatActions.genTypes(config.mortar, genTypesArgs);
 };
 
 const init: ActionType<InitArgs> = async (
@@ -73,7 +73,7 @@ const init: ActionType<InitArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.init(config.mortar, initArgs);
+  await IgnitionHardhatActions.init(config.mortar, initArgs);
 };
 
 const migration: ActionType<MigrationArgs> = async (
@@ -84,7 +84,7 @@ const migration: ActionType<MigrationArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.migration(config.mortar, migrationArgs);
+  await IgnitionHardhatActions.migration(config.mortar, migrationArgs);
 };
 
 const usage: ActionType<UsageArgs> = async (
@@ -95,7 +95,7 @@ const usage: ActionType<UsageArgs> = async (
     run
   }
 ) => {
-  await MortarHardhatActions.usage(config.mortar, usageArgs);
+  await IgnitionHardhatActions.usage(config.mortar, usageArgs);
 };
 
 task('mortar:tutorial', 'Easiest way to get started with mortar, create couple contracts and start deploying.')

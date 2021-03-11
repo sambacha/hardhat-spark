@@ -81,6 +81,6 @@ typings/
 # truffle
 /build/contracts/*
 artifacts
-.mortar
+.ignition
 cache
 deployments

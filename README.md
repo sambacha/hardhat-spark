@@ -1,6 +1,6 @@
-# Mortar
+# Ignition
 
-Mortar is a solidity tool for building, deploying, versioning and changing of Ethereum smart contract infrastructure.
+Ignition is a solidity tool for building, deploying, versioning and changing of Ethereum smart contract infrastructure.
 
 # Glossary
 
@@ -9,7 +9,13 @@ Mortar is a solidity tool for building, deploying, versioning and changing of Et
 # Installation
 
 ```
-npm i @tenderly/mortar -g
+npm i @tenderly/ignition -g
+```
+
+And this inside your smart contract project:
+
+```
+npm i @tenderly/ignition --save
 ```
 
 # Documentation

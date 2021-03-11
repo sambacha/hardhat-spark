@@ -22,7 +22,7 @@
 In a case that you want to specify any custom functionality for your deployment procedure, or you want to parametrize some variable this is place to do it.
 
 ```typescript
-export type MortarConfig = {
+export type IgnitionConfig = {
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,
@@ -32,7 +32,7 @@ export type MortarConfig = {
 };
 ```
 
-All specified custom interfaces will be injected and used for every aspect of module execution. Same stands for params, you can take a look at [synthetix](../../example/synthetix/mortar.config.ts) for detailed usage.
+All specified custom interfaces will be injected and used for every aspect of module execution. Same stands for params, you can take a look at [synthetix](../../example/synthetix/ignition.config.ts) for detailed usage.
 
 
 

@@ -190,7 +190,7 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   generatedTypes(): void {
-    cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
+    cli.info("Successfully generated module types, look under './.ignition/<module_name>'");
   }
 
   finishedModuleUsageGeneration(moduleName: string) {

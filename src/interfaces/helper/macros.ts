@@ -1,4 +1,4 @@
-import { ContractBinding, ContractEvent, ModuleBuilder } from '../mortar';
+import { ContractBinding, ContractEvent, ModuleBuilder } from '../ignition';
 import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
 import { checkIfExist } from '../../packages/utils/util';

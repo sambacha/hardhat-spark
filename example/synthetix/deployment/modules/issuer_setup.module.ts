@@ -4,7 +4,7 @@ import {
 } from '../../../../src';
 import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src';
 import { toBytes32 } from '../../util/util';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 
 export const SynthetixIssuerSetup = buildModule('SynthetixIssuerSetup', async (m: SynthetixModuleBuilder) => {
   const Issuer = m.Issuer;

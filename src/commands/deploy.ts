@@ -52,7 +52,7 @@ export default class Deploy extends Command {
     parallelize: flags.boolean(
       {
         name: 'parallelize',
-        description: 'If this flag is provided mortar will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
+        description: 'If this flag is provided ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
         required: false,
       }
     ),
@@ -78,7 +78,7 @@ export default class Deploy extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the mortar.config.js script, default is same as current path.',
+        description: 'Path to the ignition.config.js script, default is same as current path.',
       }
     ),
     testEnv: flags.boolean(
@@ -107,13 +107,13 @@ export default class Deploy extends Command {
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;
     if (filePath == '') {
-      cli.info('Their is no mortar config, please run init first.\n   Use --help for more information.');
+      cli.info('Their is no ignition config, please run init first.\n   Use --help for more information.');
     }
     if (!checkIfExist(flags.networkId)) {
       cli.info('Network id flag not provided, please use --help');
       cli.exit(1);
     }
-    process.env.MORTAR_NETWORK_ID = String(flags.networkId);
+    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
     const states: string[] = flags.state?.split(',') || [];
 
     let provider = new ethers.providers.JsonRpcProvider();
@@ -121,7 +121,7 @@ export default class Deploy extends Command {
       provider = new ethers.providers.JsonRpcProvider(flags.rpcProvider);
     }
 
-    process.env.MORTAR_RPC_PROVIDER = String(flags.rpcProvider || 'http://localhost:8545');
+    process.env.IGNITION_RPC_PROVIDER = String(flags.rpcProvider || 'http://localhost:8545');
 
     // choosing right prompter from user desires
     let prompter;
@@ -161,7 +161,7 @@ export default class Deploy extends Command {
 
     const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
 
-    const config = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
+    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
     await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
@@ -178,7 +178,7 @@ export default class Deploy extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/mortar/issues/new');
+    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
     cli.error(error);
   }
 }

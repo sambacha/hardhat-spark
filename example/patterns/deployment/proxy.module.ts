@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../src/interfaces/ignition';
 
 export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) => {
   m.contract('Registry');

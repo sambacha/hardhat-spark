@@ -2,7 +2,7 @@ import { buildModule } from '../../../../src';
 import path from 'path';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 

@@ -41,7 +41,7 @@ export default class Usage extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the mortar.config.js script, default is same as current path.',
+        description: 'Path to the ignition.config.js script, default is same as current path.',
       }
     ),
     debug: flags.boolean(
@@ -62,10 +62,10 @@ export default class Usage extends Command {
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;
     if (filePath == '') {
-      cli.info('Their is no mortar config, please run init first.\n   Use --help for more information.');
+      cli.info('Their is no ignition config, please run init first.\n   Use --help for more information.');
     }
 
-    process.env.MORTAR_NETWORK_ID = String(flags.networkId);
+    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
     this.prompter = new StreamlinedPrompter();
 
     const configService = new ConfigService(process.cwd());
@@ -89,7 +89,7 @@ export default class Usage extends Command {
       undefined
     );
 
-    const config = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
+    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
     const deploymentFilePath = path.resolve(currentPath, filePath);
     const states: string[] = flags.state?.split(',') || [];
     const moduleUsage = new ModuleUsage(deploymentFilePath, moduleStateRepo);
@@ -108,7 +108,7 @@ export default class Usage extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/mortar/issues/new');
+    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
     cli.error(error);
   }
 }

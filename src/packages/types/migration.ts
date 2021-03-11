@@ -1,5 +1,5 @@
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import { ContractBindingMetaData } from '../../interfaces/mortar';
+import { ContractBindingMetaData } from '../../interfaces/ignition';
 
 export type ModuleFile = string;
 export type ModuleStateBindings = { [name: string]: ContractBindingMetaData };

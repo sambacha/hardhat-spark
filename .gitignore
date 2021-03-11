@@ -10,7 +10,7 @@ node_modules
 .idea
 ./example/artifacts
 ./example/cache
-./example/.mortar
+./example/.ignition
 ./example/.env
-./.mortar
+./.ignition
 ./oclif.manifest.json

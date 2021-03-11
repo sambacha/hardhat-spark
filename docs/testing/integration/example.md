@@ -1,13 +1,13 @@
 # Integration testing
 
-This a simple example of one single integration test. We explain basic process and idea on how to test mortar
+This a simple example of one single integration test. We explain basic process and idea on how to test ignition
 deployment. If you want to see more example you can go to [here](../../../test/commands/deploy_command.test.ts).
 
 ## Code Example
 
 ```typescript
-describe('mortar deploy - integration', () => {
-  const mortar = new MortarTests(
+describe('ignition deploy - integration', () => {
+  const ignition = new IgnitionTests(
     {
       networkId: networkId,
       stateFileNames: [],
@@ -20,14 +20,14 @@ describe('mortar deploy - integration', () => {
   it('should be able to deploy module - single new binding', async () => {
     const projectFileName = 'single-new-binding';
     process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-    await loadStateFile(mortar, projectFileName);
-    await runDeployCommand(mortar, projectFileName);
+    await loadStateFile(ignition, projectFileName);
+    await runDeployCommand(ignition, projectFileName);
 
-    const moduleStateFile = await mortar.getStateFile(moduleName);
+    const moduleStateFile = await ignition.getStateFile(moduleName);
     const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
     assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
     assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
-    mortar.cleanup();
+    ignition.cleanup();
   });
 })
 ```
@@ -36,11 +36,11 @@ describe('mortar deploy - integration', () => {
 
 In this example we are using `mocha` and `chai` for testing.
 
-We've implemented `MortarTests` class in order make mortar user test their deployment's. You can call `deploy()`
-and `diff()` on this class in order to run same mortar commands programmatically. The main difference is that test are
+We've implemented `IgnitionTests` class in order make ignition user test their deployment's. You can call `deploy()`
+and `diff()` on this class in order to run same ignition commands programmatically. The main difference is that test are
 run in-memory so file-system wouldn't be overwritten. 
 
-In order for assertion, deployment validation and testing scenarios we also added next functions to the `MortarTests` 
+In order for assertion, deployment validation and testing scenarios we also added next functions to the `IgnitionTests` 
 ```typescript
   cleanup() {
     this.moduleStateRepo.clear();

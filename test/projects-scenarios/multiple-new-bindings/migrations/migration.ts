@@ -1,4 +1,4 @@
-import { ModuleBuilder, buildModule } from '../../../../src/interfaces/mortar';
+import { ModuleBuilder, buildModule } from '../../../../src/interfaces/ignition';
 
 export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilder) => {
   // Bind contracts for deployment.
