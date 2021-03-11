@@ -62,3 +62,11 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | Testing       | Glossary                                   | Link                                     |
 | ------------- | ------------------------------------------ | ---------------------------------------- |
 | Integration   | Integration test example and explanation.  | [test](./testing/integration/example.md) |
+
+# Hardhat plugin
+
+| Hardhat plugin      | Glossary                                                     | Link                                       |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------------ |
+| Setup               | How to setup hardhat config for ignition to work.            | [setup](./hardhat-plugin/hardhat-plugin.md)|
+| Tasks               | Interface for running hardhat's ignition tasks.              | [tasks](./hardhat-plugin/tasks.md)|
+| Extended environment| Surfaced all ignition functionality in hardhat environment.  | [enviroment](./hardhat-plugin/enviroment.md)|

@@ -129,11 +129,11 @@ export class IgnitionHardhat implements IIgnition {
     this.conf = conf;
   }
 
-  async deploy(moduleFilePath: string, args: DeployArgs): Promise<void> {
+  async deploy(fullPath: string, args: DeployArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.deploy(
-      moduleFilePath,
+      fullPath,
       this.conf.ignitionConfig,
       this.states,
       this.moduleStateRepo,
@@ -262,6 +262,7 @@ export class IgnitionHardhat implements IIgnition {
       this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, +args.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
     }
 
+    this.states = [];
     if (checkIfExist(args.state)) {
       this.states = args.state.split(',');
     }
