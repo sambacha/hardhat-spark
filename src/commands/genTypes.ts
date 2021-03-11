@@ -51,8 +51,7 @@ export default class GenTypes extends Command {
     const configService = new ConfigService(currentPath);
     const ignitionConfig = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
 
-    await command.genTypes(resolvedPath, ignitionConfig, typings, configService);
-    this.prompter.generatedTypes();
+    await command.genTypes(resolvedPath, ignitionConfig, typings, configService, this.prompter);
   }
 
   async catch(error: Error) {

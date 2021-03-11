@@ -25,8 +25,6 @@ export class StateMigrationService {
       case Migration.hardhatDeploy:
         this.artifactsPath = path.resolve(process.cwd(), HARDHAT_DEPLOYMENTS_DIR_NAME);
         break;
-      default:
-        throw new UserError('Provided migration file type is not supported!');
     }
   }
 
@@ -37,7 +35,7 @@ export class StateMigrationService {
       case Migration.hardhatDeploy:
         return searchBuildsAndNetworks(this.artifactsPath, []) as HardhatBuild[];
       default:
-        throw new CliError('Migration not found, please check.');
+        throw new CliError('Migration type not found, please check.');
     }
   }
 

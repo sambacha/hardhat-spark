@@ -6,17 +6,17 @@ import { IIgnition } from '../../usage_interfaces';
 
 declare module 'hardhat/types/runtime' {
   export interface HardhatRuntimeEnvironment {
-    mortar: IIgnition;
+    ignition: IIgnition;
   }
 }
 
 declare module 'hardhat/types/config' {
   export interface HardhatUserConfig {
-    mortar?: HardhatIgnitionConfig;
+    ignition?: HardhatIgnitionConfig;
 
   }
 
   export interface HardhatConfig {
-    mortar: HardhatIgnitionConfig;
+    ignition: HardhatIgnitionConfig;
   }
 }

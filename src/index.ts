@@ -189,6 +189,7 @@ export async function genTypes(
   ignitionConfig: IgnitionConfig,
   moduleTypings: ModuleTypings,
   config: IConfigService,
+  prompter: IPrompter,
 ) {
   const modules = await loadScript(resolvedPath);
   const wallets = config.getAllWallets();
@@ -203,6 +204,8 @@ export async function genTypes(
     const deploymentFolder = path.dirname(resolvedPath);
     moduleTypings.generate(deploymentFolder, moduleName, module);
   }
+
+  prompter.generatedTypes();
 }
 
 export async function usage(

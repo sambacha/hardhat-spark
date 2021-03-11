@@ -18,7 +18,7 @@ export default class Tutorial extends Command {
     help: flags.help({char: 'h'}),
     from: flags.enum({
       name: 'from',
-      description: 'Deployment package name (truffle)',
+      description: 'Deployment package name',
       options: [Migration.truffle, Migration.hardhatDeploy],
       default: Migration.truffle
     }),

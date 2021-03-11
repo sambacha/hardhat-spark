@@ -15,10 +15,10 @@ import {
 import { IgnitionHardhat, IgnitionHardhatActions } from '../../usage_interfaces/hardhat_plugin';
 import './type_extentions';
 
-export const PluginName = 'mortar';
+export const PluginName = 'ignition';
 
 extendEnvironment(env => {
-  env.mortar = lazyObject(() => new IgnitionHardhat(env.config.mortar));
+  env.ignition = lazyObject(() => new IgnitionHardhat(env.config.ignition));
 });
 
 const tutorial: ActionType<TutorialArgs> = async (
@@ -29,7 +29,7 @@ const tutorial: ActionType<TutorialArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.tutorial(config.mortar, tutorialArgs);
+  await IgnitionHardhatActions.tutorial(config.ignition, tutorialArgs);
 };
 
 const diff: ActionType<DiffArgs> = async (
@@ -40,7 +40,7 @@ const diff: ActionType<DiffArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.diff(config.mortar, diffArgs);
+  await IgnitionHardhatActions.diff(config.ignition, diffArgs);
 };
 
 const deploy: ActionType<DeployArgs> = async (
@@ -51,7 +51,7 @@ const deploy: ActionType<DeployArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.deploy(config.mortar, deployArgs);
+  await IgnitionHardhatActions.deploy(config.ignition, deployArgs);
 };
 
 const genTypes: ActionType<GenTypesArgs> = async (
@@ -62,7 +62,7 @@ const genTypes: ActionType<GenTypesArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.genTypes(config.mortar, genTypesArgs);
+  await IgnitionHardhatActions.genTypes(config.ignition, genTypesArgs);
 };
 
 const init: ActionType<InitArgs> = async (
@@ -73,7 +73,7 @@ const init: ActionType<InitArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.init(config.mortar, initArgs);
+  await IgnitionHardhatActions.init(config.ignition, initArgs);
 };
 
 const migration: ActionType<MigrationArgs> = async (
@@ -84,7 +84,7 @@ const migration: ActionType<MigrationArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.migration(config.mortar, migrationArgs);
+  await IgnitionHardhatActions.migration(config.ignition, migrationArgs);
 };
 
 const usage: ActionType<UsageArgs> = async (
@@ -95,13 +95,13 @@ const usage: ActionType<UsageArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.usage(config.mortar, usageArgs);
+  await IgnitionHardhatActions.usage(config.ignition, usageArgs);
 };
 
-task('mortar:tutorial', 'Easiest way to get started with mortar, create couple contracts and start deploying.')
+task('ignition:tutorial', 'Easiest way to get started with ignition, create couple contracts and start deploying.')
   .setAction(tutorial);
 
-task('mortar:diff', 'Difference between deployed and current deployment.')
+task('ignition:diff', 'Difference between deployed and current deployment.')
   .addPositionalParam(
      'moduleFilePath',
     'Path to module deployment file.'
@@ -120,11 +120,11 @@ task('mortar:diff', 'Difference between deployed and current deployment.')
   )
   .addOptionalParam<string>(
     'configScriptPath',
-    'Path to the mortar.config.js script, default is same as current path.',
+    'Path to the ignition.config.js script, default is same as current path.',
   )
   .setAction(diff);
 
-task('mortar:deploy', 'Deploy new module, difference between current module and already deployed one.')
+task('ignition:deploy', 'Deploy new module, difference between current module and already deployed one.')
   .addPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
@@ -157,7 +157,7 @@ task('mortar:deploy', 'Deploy new module, difference between current module and 
   )
   .addFlag(
     'parallelize',
-    'If this flag is provided mortar will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
+    'If this flag is provided ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
   )
   .addFlag(
     'testEnv',
@@ -165,17 +165,21 @@ task('mortar:deploy', 'Deploy new module, difference between current module and 
   )
   .setAction(deploy);
 
-task('mortar:genTypes', 'It\'ll generate .d.ts file for written deployment modules for better type hinting.')
+task('ignition:genTypes', 'It\'ll generate .d.ts file for written deployment modules for better type hinting.')
+  .addPositionalParam(
+    'moduleFilePath',
+    'Path to module deployment file.'
+  )
   .addPositionalParam<string>(
     'configScriptPath',
-    'Path to the mortar.config.js script, default is same as current path.',
+    'Path to the ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
     true
   )
   .setAction(genTypes);
 
-task('mortar:init', 'Initialize mortar configuration file and configuration script.')
+task('ignition:init', 'Initialize ignition configuration file and configuration script.')
   .addParam<string>(
     'privateKeys',
     'Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123',
@@ -199,20 +203,20 @@ task('mortar:init', 'Initialize mortar configuration file and configuration scri
   )
   .addParam<string>(
     'configScriptPath',
-    'Path to the mortar.config.js script, default is same as current path.',
+    'Path to the ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
   )
   .addFlag(
     'reinit',
-    'Provide this flag if you would like to overwrite `mortar.config.ts`, otherwise if exists, it would error.'
+    'Provide this flag if you would like to overwrite `ignition.config.ts`, otherwise if exists, it would error.'
   )
   .setAction(init);
 
-task('mortar:migration', 'Migrate deployment meta data from other deployers to mortar state file.')
+task('ignition:migration', 'Migrate deployment meta data from other deployers to ignition state file.')
   .addParam<Migration>(
     'from',
-    'Deployment package name (truffle)',
+    'Deployment package name (truffle, hardhatDeploy)',
     Migration.truffle,
     undefined,
     true
@@ -226,7 +230,7 @@ task('mortar:migration', 'Migrate deployment meta data from other deployers to m
   )
   .setAction(migration);
 
-task('mortar:usage', 'Generate public usage module from standard module.')
+task('ignition:usage', 'Generate public usage module from standard module.')
   .addPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
@@ -240,7 +244,7 @@ task('mortar:usage', 'Generate public usage module from standard module.')
   )
   .addOptionalParam<string>(
     'configScriptPath',
-    'Path to the mortar.config.js script, default is same as current path.',
+    'Path to the ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
   )

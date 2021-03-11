@@ -167,6 +167,7 @@ export class IgnitionHardhat implements IIgnition {
       this.conf.ignitionConfig,
       this.moduleTyping,
       this.configService,
+      this.prompter,
     );
   }
 
@@ -241,7 +242,7 @@ export class IgnitionHardhat implements IIgnition {
       this.provider = new ethers.providers.JsonRpcProvider(args.rpcProvider);
     }
 
-    process.env.MORTAR_RPC_PROVIDER = String(args?.rpcProvider || 'http://localhost:8545');
+    process.env.IGNITION_RPC_PROVIDER = String(args?.rpcProvider || 'http://localhost:8545');
 
     this.gasProvider = new GasPriceCalculator(this.provider);
     this.configService = new MemoryConfigService(configFile);
@@ -250,7 +251,7 @@ export class IgnitionHardhat implements IIgnition {
     this.eventTxExecutor = new EventTxExecutor(this.eventSession);
 
     if (checkIfExist(args.networkId)) {
-      process.env.MORTAR_NETWORK_ID = String(args.networkId);
+      process.env.IGNITION_NETWORK_ID = String(args.networkId);
 
       this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), +args.networkId, this.gasProvider, this.gasProvider);
       this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, +args.networkId, this.provider, this.transactionManager, this.transactionManager);
@@ -279,7 +280,7 @@ export class IgnitionHardhat implements IIgnition {
     );
 
     const moduleState = new FileSystemModuleState(currentPath);
-    this.stateMigrationService = new StateMigrationService(moduleState, args.from as Migration);
+    this.stateMigrationService = new StateMigrationService(moduleState, args?.from as Migration);
     this.moduleMigrationService = new ModuleMigrationService(currentPath);
   }
 }
