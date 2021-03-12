@@ -146,11 +146,11 @@ export class IgnitionHardhat implements IIgnition {
     );
   }
 
-  async diff(moduleFilePath: string, args: DiffArgs): Promise<void> {
+  async diff(fullPath: string, args: DiffArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.diff(
-      moduleFilePath,
+      fullPath,
       this.conf.ignitionConfig,
       this.states,
       this.moduleResolver,
@@ -159,11 +159,11 @@ export class IgnitionHardhat implements IIgnition {
     );
   }
 
-  async genTypes(moduleFilePath: string, args: GenTypesArgs): Promise<void> {
+  async genTypes(fullPath: string, args: GenTypesArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.genTypes(
-      moduleFilePath,
+      fullPath,
       this.conf.ignitionConfig,
       this.moduleTyping,
       this.configService,
@@ -198,13 +198,13 @@ export class IgnitionHardhat implements IIgnition {
     );
   }
 
-  async usage(moduleFilePath: string, args: UsageArgs): Promise<void> {
+  async usage(fullPath: string, args: UsageArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
-    this.moduleUsage = new ModuleUsage(moduleFilePath, this.moduleStateRepo);
+    this.moduleUsage = new ModuleUsage(fullPath, this.moduleStateRepo);
 
     await command.usage(
       this.conf.ignitionConfig,
-      moduleFilePath,
+      fullPath,
       args.state.split(','),
       this.configService,
       this.walletWrapper,

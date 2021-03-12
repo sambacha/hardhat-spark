@@ -1,6 +1,6 @@
 import hre from 'hardhat';
 import '../../src/hardhat';
-import { IgnitionHardhat } from '../../src/usage_interfaces/hardhat_plugin';
+import { HardhatIgnitionConfig, IgnitionHardhat } from '../../src/usage_interfaces/hardhat_plugin';
 import * as path from 'path';
 
 const modulePath = './deployment/module.ts';
@@ -14,6 +14,9 @@ async function main() {
     moduleFilePath: modulePath,
     networkId: networkId
   });
+
+  // @ts-ignore
+  console.log(hre.config.ignition as HardhatIgnitionConfig);
 }
 
 main()

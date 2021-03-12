@@ -69,4 +69,4 @@ Solidity infrastructure as a code tool for easy deployment and management of sma
 | ------------------- | ------------------------------------------------------------ | ------------------------------------------ |
 | Setup               | How to setup hardhat config for ignition to work.            | [setup](./hardhat-plugin/hardhat-plugin.md)|
 | Tasks               | Interface for running hardhat's ignition tasks.              | [tasks](./hardhat-plugin/tasks.md)|
-| Extended environment| Surfaced all ignition functionality in hardhat environment.  | [enviroment](./hardhat-plugin/enviroment.md)|
+| Extended environment| Surfaced all ignition functionality in hardhat environment.  | [extended_enviroment](./hardhat-plugin/extended_enviroment.md)|

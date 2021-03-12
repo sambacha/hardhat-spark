@@ -15,7 +15,6 @@ declare module 'hardhat/types/runtime' {
 declare module 'hardhat/types/config' {
   export interface HardhatUserConfig {
     ignition?: HardhatIgnitionConfig;
-
   }
 
   export interface HardhatConfig {
