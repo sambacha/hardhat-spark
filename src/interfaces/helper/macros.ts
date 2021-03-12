@@ -3,6 +3,17 @@ import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
 import { checkIfExist } from '../../packages/utils/util';
 
+/**
+ * Mutator or proxy setter is fastest way to "mutate"/set new value and validate if that actions is correctly set. It
+ * "smartly" determines what shall be getter function and arguments from setterFunc and setterArgs. If want to overwrite
+ * any of smartly determined parameters you can do that in `opts` object.
+ *
+ * @param m ModuleBuilder object
+ * @param setter Contract binding of contract on which "mutate"/set action shall be applied on.
+ * @param setterFunc Name set function that need to be called.
+ * @param setterArgs Arguments towards setterFunc
+ * @param opts Params that you wish to overwrite with your desired data. name, getterFunc, getterArgs, expectedValue, deps, slot
+ */
 export const mutator = (
   m: ModuleBuilder,
   setter: ContractBinding,

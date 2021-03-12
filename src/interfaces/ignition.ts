@@ -163,6 +163,9 @@ export type Deployed = {
   } | undefined,
 };
 
+/**
+ * Module config is simple way to specify if desired contract should be deployed or not.
+ */
 export type ModuleConfig = {
   [contractName: string]: {
     deploy: boolean
@@ -1263,6 +1266,11 @@ export class ContractBindingMetaData {
   }
 }
 
+/**
+ * ModuleBuilder is essential backbone in building your deployment infrastructure. It stores raw contract bindings,
+ * contract event hooks, module event hooks and actions. It is surfacing interface for user interaction for specifying
+ * this sub-components of the ModuleBuilder.
+ */
 export class ModuleBuilder {
   [key: string]: ContractBinding | Event | Action | any;
 
@@ -1325,6 +1333,14 @@ export class ModuleBuilder {
     return this.bindings[name];
   }
 
+  /**
+   * Define contract with name and his constructor arguments that is library to other contracts.
+   *
+   * Usage example: m.library(name, arg1, arg2, ...)
+   *
+   * @param name Contract name.
+   * @param args Constructor arguments, if any.
+   */
   library(name: string, ...args: Arguments): ContractBinding {
     const binding = this.contract(name, ...args);
     binding.setLibrary();
