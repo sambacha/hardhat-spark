@@ -102,10 +102,6 @@ export async function deploy(
 
     // resolving contract and events dependencies and determining execution order
     const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-    await prompter.startModuleDeploy(moduleName, moduleState);
-    if (!checkIfExist(moduleState)) {
-      prompter.nothingToDeploy();
-    }
 
     // setting up custom functionality
     if (module.getCustomGasPriceProvider()) {

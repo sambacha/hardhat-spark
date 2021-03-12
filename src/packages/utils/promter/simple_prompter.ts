@@ -4,7 +4,7 @@ import { SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
 import { checkIfExist } from '../util';
-import { CliError } from '../../types/errors';
+import { CliError, DeniedConfirmation } from '../../types/errors';
 
 enum StateElementStatus {
   'NOT_EXECUTED' = 'not executed',
@@ -30,6 +30,16 @@ export class SimpleOverviewPrompter implements IPrompter {
   constructor() {
     this.moduleBars = {};
   }
+
+  async parallelizationExperimental() {
+    cli.info(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
+    cli.confirm('Confirm you are willing to continue');
+    const yes = await cli.confirm('Do you wish to continue with deployment of this module? (Y/n)');
+    if (!yes) {
+      throw new DeniedConfirmation('Confirmation has been declined.');
+    }
+  }
+
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
   }

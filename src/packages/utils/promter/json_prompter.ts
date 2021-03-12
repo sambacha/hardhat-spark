@@ -190,4 +190,7 @@ export class JsonPrompter implements IPrompter {
 
   startingModuleUsageGeneration(moduleName: string) {
   }
+
+  async parallelizationExperimental() {
+  }
 }

@@ -189,4 +189,9 @@ export class OverviewPrompter implements IPrompter {
 
   startingModuleUsageGeneration(moduleName: string) {
   }
+
+  parallelizationExperimental() {
+    cli.warn(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
+    cli.confirm('Confirm you are willing to continue');
+  }
 }
