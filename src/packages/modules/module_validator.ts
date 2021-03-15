@@ -1,4 +1,4 @@
-import { ContractBinding } from '../../interfaces/mortar';
+import { ContractBinding } from '../../interfaces/ignition';
 import { JsonFragment } from '../types/artifacts/abi';
 import { handleTypes } from '../types/checker';
 import { AbiMismatch } from '../types/errors';

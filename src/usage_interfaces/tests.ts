@@ -1,4 +1,4 @@
-import { ConfigFlags, IMortarUsage } from './index';
+import { ConfigFlags, IIgnitionUsage } from './index';
 import * as command from '../index';
 import { checkIfExist } from '../packages/utils/util';
 import { ethers, Wallet } from 'ethers';
@@ -22,7 +22,7 @@ import { EmptyPrompter } from '../packages/utils/promter/empty_prompter';
 import { IPrompter } from '../packages/utils/promter';
 
 
-export class MortarTests implements IMortarUsage {
+export class IgnitionTests implements IIgnitionUsage {
   public configFlags: ConfigFlags;
   public configFile: Config;
 
@@ -42,7 +42,7 @@ export class MortarTests implements IMortarUsage {
   public walletWrapper: WalletWrapper;
 
   constructor(configFlags: ConfigFlags, configFile: Config) {
-    process.env.MORTAR_NETWORK_ID = String(configFlags.networkId);
+    process.env.IGNITION_NETWORK_ID = String(configFlags.networkId);
     this.states = configFlags.stateFileNames;
 
     this.provider = new ethers.providers.JsonRpcProvider();
@@ -50,7 +50,7 @@ export class MortarTests implements IMortarUsage {
       this.provider = new ethers.providers.JsonRpcProvider(configFlags.rpcProvider);
     }
 
-    process.env.MORTAR_RPC_PROVIDER = String(configFlags.rpcProvider || 'http://localhost:8545');
+    process.env.IGNITION_RPC_PROVIDER = String(configFlags.rpcProvider || 'http://localhost:8545');
 
     this.prompter = new EmptyPrompter();
     this.configService = new MemoryConfigService(configFile);

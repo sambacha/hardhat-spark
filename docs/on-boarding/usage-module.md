@@ -10,7 +10,7 @@ Next command is resolving contract and events dependencies and generating "usage
 bindings without any private deployment data.
 
 ```
-mortar usage ./deployment/MODULE_NAME.module.ts --networkId 
+ignition usage ./deployment/MODULE_NAME.module.ts --networkId 
 ```
 
 After running command you can that next file is generated: `module_name.usage.ts`.

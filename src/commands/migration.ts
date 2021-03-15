@@ -11,14 +11,14 @@ import { IPrompter } from '../packages/utils/promter';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 
 export default class Tutorial extends Command {
-  static description = 'Migrate deployment meta data from other deployers to mortar state file.';
+  static description = 'Migrate deployment meta data from other deployers to ignition state file.';
   private prompter: IPrompter;
 
   static flags = {
     help: flags.help({char: 'h'}),
     from: flags.enum({
       name: 'from',
-      description: 'Deployment package name (truffle)',
+      description: 'Deployment package name',
       options: [Migration.truffle, Migration.hardhatDeploy],
       default: Migration.truffle
     }),
@@ -67,7 +67,7 @@ export default class Tutorial extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/mortar/issues/new');
+    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
     cli.error(error);
   }
 }

@@ -45,7 +45,7 @@ export default class Diff extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the mortar.config.js script, default is same as current path.',
+        description: 'Path to the ignition.config.js script, default is same as current path.',
       }
     ),
   };
@@ -66,7 +66,7 @@ export default class Diff extends Command {
     if (!checkIfExist(flags.networkId)) {
       throw new NetworkIdNotProvided('Network id flag not provided, please use --help');
     }
-    process.env.MORTAR_NETWORK_ID = String(flags.networkId);
+    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
     const states: string[] = flags.state?.split(',') || [];
 
     const resolvedPath = path.resolve(currentPath, filePath);
@@ -86,7 +86,7 @@ export default class Diff extends Command {
     const eventTxExecutor = new EventTxExecutor(eventSession);
     const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession);
 
-    const config = await configService.getMortarConfig(process.cwd(), flags.configScriptPath);
+    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
 
     await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService);
   }
@@ -102,7 +102,7 @@ export default class Diff extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/mortar/issues/new');
+    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
     cli.error(error);
   }
 }

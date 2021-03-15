@@ -1,21 +1,21 @@
-`mortar usage`
+`ignition usage`
 ==============
 
 Generate public usage module
 
-* [`mortar usage [MODULE_FILE_PATH]`](#mortar-usage-module_file_path)
+* [`ignition usage [MODULE_FILE_PATH]`](#ignition-usage-module_file_path)
 
-## `mortar usage [MODULE_FILE_PATH]`
+## `ignition usage [MODULE_FILE_PATH]`
 
 Generate public usage module
 
 ```
 USAGE
-  $ mortar usage [MODULE_FILE_PATH]
+  $ ignition usage [MODULE_FILE_PATH]
 
 OPTIONS
   -h, --help                           show CLI help
-  --configScriptPath=configScriptPath  Path to the mortar.config.js script, default is same as current path.
+  --configScriptPath=configScriptPath  Path to the ignition.config.js script, default is same as current path.
   --debug                              Flag used for debugging
   --networkId=networkId                (required) Network ID of the network you are willing to deploy your contracts.
 
@@ -26,4 +26,4 @@ OPTIONS
                                        will be store.
 ```
 
-_See code: [src/commands/usage.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/usage.ts)_
+_See code: [src/commands/usage.ts](https://github.com/Tenderly/ignition/blob/main/src/commands/usage.ts)_

@@ -1,7 +1,7 @@
 import { DeploymentFileRepo } from './deployment_file_repo';
 import { CONTRACT_DESC, EVENT_DESC, MODULE_NAME_DESC, PROTOTYPE_DESC } from './tutorial_desc';
 import { checkIfExist } from '../utils/util';
-import { EventType } from '../../interfaces/mortar';
+import { EventType } from '../../interfaces/ignition';
 
 export class DeploymentFileGenerator {
   private deploymentFileRepo: DeploymentFileRepo;
@@ -75,7 +75,7 @@ export class DeploymentFileGenerator {
   }
 
   private generateModuleFile() {
-    let fileContent = `import { buildModule, ModuleBuilder } from '@tenderly/mortar';
+    let fileContent = `import { buildModule, ModuleBuilder } from '@tenderly/ignition';
 
 /*
 ${MODULE_NAME_DESC}

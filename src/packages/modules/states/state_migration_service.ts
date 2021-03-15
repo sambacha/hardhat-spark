@@ -1,7 +1,7 @@
 import { Build, HardhatBuild, Migration, TruffleBuild } from '../../types/migration';
 import { checkIfExist } from '../../utils/util';
 import { IModuleState, ModuleStateFile } from './module';
-import { ContractBindingMetaData, Deployed } from '../../../interfaces/mortar';
+import { ContractBindingMetaData, Deployed } from '../../../interfaces/ignition';
 import { searchBuilds, searchBuildsAndNetworks } from '../../utils/files';
 import { CliError, UserError } from '../../types/errors';
 import path from 'path';
@@ -25,8 +25,6 @@ export class StateMigrationService {
       case Migration.hardhatDeploy:
         this.artifactsPath = path.resolve(process.cwd(), HARDHAT_DEPLOYMENTS_DIR_NAME);
         break;
-      default:
-        throw new UserError('Provided migration file type is not supported!');
     }
   }
 
@@ -37,7 +35,7 @@ export class StateMigrationService {
       case Migration.hardhatDeploy:
         return searchBuildsAndNetworks(this.artifactsPath, []) as HardhatBuild[];
       default:
-        throw new CliError('Migration not found, please check.');
+        throw new CliError('Migration type not found, please check.');
     }
   }
 

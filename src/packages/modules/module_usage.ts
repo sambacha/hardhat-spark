@@ -1,6 +1,6 @@
 import { ModuleStateRepo } from './states/state_repo';
 import { ModuleStateFile } from './states/module';
-import { ContractBindingMetaData } from '../../interfaces/mortar';
+import { ContractBindingMetaData } from '../../interfaces/ignition';
 import { checkIfExist, removeLastPathElement } from '../utils/util';
 import { CliError } from '../types/errors';
 import fs from 'fs';
@@ -42,7 +42,7 @@ export class ModuleUsage {
       throw new CliError('Module name is missing.');
     }
 
-    return generateModuleFile(moduleRawUsage, FileGenerationType.usage);
+    return generateModuleFile(this.moduleName, moduleRawUsage, FileGenerationType.usage);
   }
 
   storeUsageFile(moduleRawUsage: ModuleFile) {

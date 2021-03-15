@@ -1,7 +1,7 @@
 // @ts-ignore
 import { getStateIfExist, storeNewState } from '../utils/files';
 import { assert } from 'chai';
-import { MortarTests } from '../../src';
+import { IgnitionTests } from '../../src';
 import * as path from 'path';
 import { ContractBindingMetaData } from '../../src';
 
@@ -10,9 +10,9 @@ const testPrivateKey = '0xde9be858da4a475276426320d5e9262ecfc3ba460bfac56360bfa6
 const moduleName = 'ExampleModule';
 const rootDir = process.cwd();
 
-describe('mortar deploy', () => {
-  describe('mortar deploy - integration', () => {
-    const mortar = new MortarTests(
+describe('ignition deploy', () => {
+  describe('ignition deploy - integration', () => {
+    const ignition = new IgnitionTests(
       {
         networkId: networkId,
         stateFileNames: [],
@@ -25,23 +25,23 @@ describe('mortar deploy', () => {
     it('should be able to deploy module - single new binding', async () => {
       const projectFileName = 'single-new-binding';
       process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(mortar, projectFileName);
-      await runDeployCommand(mortar, projectFileName);
+      await loadStateFile(ignition, projectFileName);
+      await runDeployCommand(ignition, projectFileName);
 
-      const moduleStateFile = await mortar.getStateFile(moduleName);
+      const moduleStateFile = await ignition.getStateFile(moduleName);
       const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
       assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
-      mortar.cleanup();
+      ignition.cleanup();
     });
 
     it('should be able to deploy module - multiple new bindings', async () => {
       const projectFileName = 'multiple-new-bindings';
       process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(mortar, projectFileName);
-      await runDeployCommand(mortar, projectFileName);
+      await loadStateFile(ignition, projectFileName);
+      await runDeployCommand(ignition, projectFileName);
 
-      const moduleStateFile = await mortar.getStateFile(moduleName);
+      const moduleStateFile = await ignition.getStateFile(moduleName);
       const firstContractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
       const secondContractBinding = moduleStateFile['SecondExample'] as unknown as ContractBindingMetaData;
 
@@ -51,17 +51,17 @@ describe('mortar deploy', () => {
       assert.equal(secondContractBinding.deployMetaData.contractAddress.length > 0, true);
       assert.equal(secondContractBinding.deployMetaData.logicallyDeployed, true);
 
-      mortar.cleanup();
+      ignition.cleanup();
     });
 
     it('should be able to deploy module - single modified binding', async () => {
       const projectFileName = 'single-modified-binding';
       process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(mortar, projectFileName);
-      const moduleStateFileBefore = await mortar.getStateFile(moduleName);
+      await loadStateFile(ignition, projectFileName);
+      const moduleStateFileBefore = await ignition.getStateFile(moduleName);
 
-      const output = await runDeployCommand(mortar, projectFileName);
-      const moduleStateFileAfter = await mortar.getStateFile(moduleName);
+      const output = await runDeployCommand(ignition, projectFileName);
+      const moduleStateFileAfter = await ignition.getStateFile(moduleName);
 
 
       const contractBindingBefore = moduleStateFileBefore['Example'] as unknown as ContractBindingMetaData;
@@ -72,17 +72,17 @@ describe('mortar deploy', () => {
         , true);
       assert.equal(contractBindingBefore.deployMetaData.logicallyDeployed, true);
       assert.equal(contractBindingAfter.deployMetaData.logicallyDeployed, true);
-      mortar.cleanup();
+      ignition.cleanup();
     });
 
     it('should be able to deploy module - multiple modified binding', async () => {
       const projectFileName = 'multiple-modified-binding';
       process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(mortar, projectFileName);
-      const moduleStateFileBefore = await mortar.getStateFile(moduleName);
+      await loadStateFile(ignition, projectFileName);
+      const moduleStateFileBefore = await ignition.getStateFile(moduleName);
 
-      const output = await runDeployCommand(mortar, projectFileName);
-      const moduleStateFileAfter = await mortar.getStateFile(moduleName);
+      const output = await runDeployCommand(ignition, projectFileName);
+      const moduleStateFileAfter = await ignition.getStateFile(moduleName);
 
 
       const firstContractBindingBefore = moduleStateFileBefore['Example'] as unknown as ContractBindingMetaData;
@@ -105,38 +105,38 @@ describe('mortar deploy', () => {
       assert.equal(secondContractBindingBefore.deployMetaData.logicallyDeployed, true);
       assert.equal(secondContractBindingAfter.deployMetaData.logicallyDeployed, true);
 
-      mortar.cleanup();
+      ignition.cleanup();
     });
 
     it('should do nothing if their is no difference in modules', async () => {
       const projectFileName = 'no-difference-in-binding';
       process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(mortar, projectFileName);
-      const oldModuleStateFile = await mortar.getStateFile(moduleName);
+      await loadStateFile(ignition, projectFileName);
+      const oldModuleStateFile = await ignition.getStateFile(moduleName);
 
-      await runDeployCommand(mortar, projectFileName);
+      await runDeployCommand(ignition, projectFileName);
 
-      const newModuleStateFile = await mortar.getStateFile(moduleName);
+      const newModuleStateFile = await ignition.getStateFile(moduleName);
 
       const newContractBinding = newModuleStateFile['Example'] as unknown as ContractBindingMetaData;
       const oldContractBinding = oldModuleStateFile['Example'] as unknown as ContractBindingMetaData;
       assert.equal(newContractBinding.deployMetaData.contractAddress, oldContractBinding.deployMetaData.contractAddress);
       assert.equal(newContractBinding.deployMetaData.logicallyDeployed, true);
       assert.equal(oldContractBinding.deployMetaData.logicallyDeployed, true);
-      mortar.cleanup();
+      ignition.cleanup();
     });
 
     it('should do nothing if their is less bindings in modules compared to deployed one', async () => {
       const projectFileName = 'less-bindings';
       process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(mortar, projectFileName);
-      await runDeployCommand(mortar, projectFileName);
+      await loadStateFile(ignition, projectFileName);
+      await runDeployCommand(ignition, projectFileName);
 
-      const moduleStateFile = await mortar.getStateFile(moduleName);
+      const moduleStateFile = await ignition.getStateFile(moduleName);
       const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
       assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
-      mortar.cleanup();
+      ignition.cleanup();
     });
   });
 
@@ -145,19 +145,19 @@ describe('mortar deploy', () => {
   });
 });
 
-async function loadStateFile(mortar: MortarTests, projectFileName: string) {
-  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/.mortar/ExampleModule/${networkId}_deployed_module_state.json`);
+async function loadStateFile(ignition: IgnitionTests, projectFileName: string) {
+  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/.ignition/ExampleModule/${networkId}_deployed_module_state.json`);
   let stateFile;
   try {
     stateFile = require(stateFilePath);
   } catch (e) {
     stateFile = {};
   }
-  mortar.setStateFile(moduleName, stateFile);
+  ignition.setStateFile(moduleName, stateFile);
 }
 
-async function runDeployCommand(mortar: MortarTests, projectFileName: string): Promise<void> {
+async function runDeployCommand(ignition: IgnitionTests, projectFileName: string): Promise<void> {
   const migrationPath = `./test/projects-scenarios/${projectFileName}/migrations/migration.ts`;
 
-  await mortar.deploy(path.resolve(rootDir, migrationPath));
+  await ignition.deploy(path.resolve(rootDir, migrationPath));
 }

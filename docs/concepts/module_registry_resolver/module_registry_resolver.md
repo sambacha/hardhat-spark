@@ -1,6 +1,6 @@
 # Module Registry Resolver
 
-Mortar provide ability to keep contract version with their currently deployed address. Most common reason for this
+Ignition provide ability to keep contract version with their currently deployed address. Most common reason for this
 feature is ability to distribute your module to other people/projects for easier integration.
 
 ### Example Module
@@ -45,14 +45,14 @@ export interface IModuleRegistryResolver {
 
 ## Explanation
 
-When this function is called (inside mortar execution) it will set `address` to `bindingNmae` for `module_name`
+When this function is called (inside ignition execution) it will set `address` to `bindingNmae` for `module_name`
 and `network_id`.
 
 ```
   setAddress(networkId: number, moduleName: string, bindingName: string, address: string): Promise<boolean>;
 ```
 
-On bootstrap, mortar will try to fetch already deployed contract address using this function.
+On bootstrap, ignition will try to fetch already deployed contract address using this function.
 
 ```
   resolveContract(networkId: number, moduleName: string, bindingName: string): Promise<string>;

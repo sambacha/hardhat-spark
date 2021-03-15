@@ -7,7 +7,7 @@ import {
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent
-} from '../../../interfaces/mortar';
+} from '../../../interfaces/ignition';
 import { checkIfExist } from '../../utils/util';
 import { CliError } from '../../types/errors';
 

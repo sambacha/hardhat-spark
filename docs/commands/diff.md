@@ -1,21 +1,21 @@
-`mortar diff`
+`ignition diff`
 =============
 
 Difference between deployed and current migrations.
 
-* [`mortar diff [MODULE_FILE_PATH]`](#mortar-diff-module_file_path)
+* [`ignition diff [MODULE_FILE_PATH]`](#ignition-diff-module_file_path)
 
-## `mortar diff [MODULE_FILE_PATH]`
+## `ignition diff [MODULE_FILE_PATH]`
 
 Difference between deployed and current migrations.
 
 ```
 USAGE
-  $ mortar diff [MODULE_FILE_PATH]
+  $ ignition diff [MODULE_FILE_PATH]
 
 OPTIONS
   -h, --help                           show CLI help
-  --configScriptPath=configScriptPath  Path to the mortar.config.js script, default is same as current path.
+  --configScriptPath=configScriptPath  Path to the ignition.config.js script, default is same as current path.
   --debug                              Flag used for debugging
   --networkId=networkId                (required) Network ID of the network you are willing to deploy your contracts.
 
@@ -23,4 +23,4 @@ OPTIONS
                                        if you are deploying more than one module that are dependant on each other.
 ```
 
-_See code: [src/commands/diff.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/diff.ts)_
+_See code: [src/commands/diff.ts](https://github.com/Tenderly/ignition-tenderly/blob/main/src/commands/diff.ts)_

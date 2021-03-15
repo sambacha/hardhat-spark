@@ -15,7 +15,7 @@ import {
   OnChangeEvent,
   StatefulEvent,
   TransactionData,
-} from '../../../interfaces/mortar';
+} from '../../../interfaces/ignition';
 import { IPrompter } from '../../utils/promter';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { checkIfExist } from '../../utils/util';
@@ -67,11 +67,21 @@ export class TxExecutor {
     await this.moduleState.storeNewState(moduleName, moduleState);
 
     if (this.parallelize) {
+      await this.prompter.parallelizationExperimental();
+      await this.prompter.startModuleDeploy(moduleName, moduleState);
+      if (!checkIfExist(moduleState)) {
+        this.prompter.nothingToDeploy();
+      }
+
       await this.executeParallel(moduleName, moduleState, registry, resolver, moduleConfig);
 
       return;
     }
 
+    await this.prompter.startModuleDeploy(moduleName, moduleState);
+    if (!checkIfExist(moduleState)) {
+      this.prompter.nothingToDeploy();
+    }
     await this.executeSync(moduleName, moduleState, registry, resolver, moduleConfig);
     return;
   }

@@ -1,4 +1,4 @@
-describe('mortar diff - unit', () => {
+describe('ignition diff - unit', () => {
   it('should be able to show difference in modules - single new binding');
   it('should be able to show difference in modules - multiple new bindings');
   it('should be able to show difference in modules - single modified binding');

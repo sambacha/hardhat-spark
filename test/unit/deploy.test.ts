@@ -1,4 +1,4 @@
-describe('mortar deploy - unit', () => {
+describe('ignition deploy - unit', () => {
   it('should be able to deploy module - single new binding');
   it('should be able to deploy module - multiple new binding');
   it('should be able to deploy module - single modified binding');

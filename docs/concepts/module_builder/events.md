@@ -22,8 +22,8 @@ Just after all contract compilation. This is ideal for deletion or addition of s
 
 ### Before Deployment
 
-This event will be executed every time when mortar arrives to deployment of contract's that event is bound to. This
-means that if mortar decides that this contract shouldn't be deployed (e.g. it already did deploy) this event will be
+This event will be executed every time when ignition arrives to deployment of contract's that event is bound to. This
+means that if ignition decides that this contract shouldn't be deployed (e.g. it already did deploy) this event will be
 triggered.
 
 ### Before Deploy
@@ -36,8 +36,8 @@ Similar to <b>After Deployment</b> just this event is going to be executed only 
 
 ### After Deployment
 
-This event will be executed every time when mortar finish contract deployment of the contract that event is binded to.
-This means that if mortar has decided that that contract shouldn't be deployed (e.g. it already did deploy) this event
+This event will be executed every time when ignition finish contract deployment of the contract that event is binded to.
+This means that if ignition has decided that that contract shouldn't be deployed (e.g. it already did deploy) this event
 will be triggered.
 
 ### On change

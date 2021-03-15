@@ -1,17 +1,17 @@
-`mortar help`
+`ignition help`
 =============
 
-display help for mortar
+display help for ignition
 
-* [`mortar help [COMMAND]`](#mortar-help-command)
+* [`ignition help [COMMAND]`](#ignition-help-command)
 
-## `mortar help [COMMAND]`
+## `ignition help [COMMAND]`
 
-display help for mortar
+display help for ignition
 
 ```
 USAGE
-  $ mortar help [COMMAND]
+  $ ignition help [COMMAND]
 
 ARGUMENTS
   COMMAND  command to show help for

@@ -9,10 +9,10 @@ import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';
 import { checkIfExist } from '../../../../src/packages/utils/util';
 import { ethers } from 'ethers';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 
 const {
-  MORTAR_NETWORK_ID
+  IGNITION_NETWORK_ID
 } = process.env;
 
 export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
@@ -110,10 +110,10 @@ export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m
     await expectFuncRead(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT'], SystemSettings.instance().crossDomainMessageGasLimit);
 
     // @ts-ignore
-    if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+MORTAR_NETWORK_ID]])) {
+    if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]])) {
       // @ts-ignore
-      await SystemSettings.instance().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+MORTAR_NETWORK_ID]]);
-      await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+MORTAR_NETWORK_ID]], SystemSettings.instance().aggregatorWarningFlags);
+      await SystemSettings.instance().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]]);
+      await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]], SystemSettings.instance().aggregatorWarningFlags);
     }
   });
 });

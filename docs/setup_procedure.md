@@ -1,9 +1,9 @@
 ## Initial project setup
 
-You will need to have hardhat and mortar installed in some project.
+You will need to have hardhat and ignition installed in some project.
 ```
 yarn add hardhat --dev
-yarn add @tenderly/mortar --dev
+yarn add @tenderly/ignition --dev
 ```
 
 Init hardhat and run hardhat node as a test environment in order to test deployment.

@@ -2,10 +2,10 @@ import { ContractBinding, buildModule } from '../../../../src';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { mutator } from '../../../../src';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 
 const {
-  MORTAR_NETWORK_ID
+  IGNITION_NETWORK_ID
 } = process.env;
 
 export const SynthetixSynths = buildModule('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
@@ -14,7 +14,7 @@ export const SynthetixSynths = buildModule('SynthetixSynths', async (m: Syntheti
   for (const {name: currencyKey, subclass, asset} of m.synths) {
     const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 
-    const synthProxyIsLegacy = currencyKey === 'sUSD' && MORTAR_NETWORK_ID === '1';
+    const synthProxyIsLegacy = currencyKey === 'sUSD' && IGNITION_NETWORK_ID === '1';
 
     const ProxyForSynth = m.bindPrototype(
       `Proxy${currencyKey}`,

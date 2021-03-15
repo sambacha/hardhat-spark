@@ -1,7 +1,7 @@
 import path from 'path';
 import { STATE_DIR_NAME } from '../states/module';
 import fs from 'fs';
-import { Module } from '../../../interfaces/mortar';
+import { Module } from '../../../interfaces/ignition';
 
 export class ModuleTypings {
   private readonly statePath: string;
@@ -27,7 +27,7 @@ export class ModuleTypings {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '@tenderly/mortar/lib/interfaces/mortar';
+} from '@tenderly/ignition';
 
 export declare class ${moduleName}Builder extends ModuleBuilder {`;
     for (const binding of Object.values(bindings)) {

@@ -1,6 +1,6 @@
 import { buildModule } from '../../../../src';
 import path from 'path';
-import { SynthetixModuleBuilder } from '../../.mortar/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});
 
 export const DappUtilities = buildModule('DappUtilities', async (m: SynthetixModuleBuilder) => {

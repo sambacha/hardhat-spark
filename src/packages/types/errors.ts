@@ -22,7 +22,7 @@ export class ValueMismatch extends UserError {
   }
 }
 
-export class MortarConfigAlreadyExist extends UserError {
+export class IgnitionConfigAlreadyExist extends UserError {
   constructor(message: string) {
     super(message);
   }

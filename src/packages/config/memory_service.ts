@@ -1,4 +1,4 @@
-import { Config, MortarConfig } from '../types/config';
+import { Config, IgnitionConfig } from '../types/config';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
@@ -95,11 +95,11 @@ export default class MemoryConfigService implements IConfigService {
     return privateKeys[0];
   }
 
-  getMortarConfig(currentPath: string, configScriptPath: string): Promise<MortarConfig> {
+  getIgnitionConfig(currentPath: string, configScriptPath: string): Promise<IgnitionConfig> {
     return Promise.resolve({});
   }
 
-  saveEmptyMortarConfig(currentPath: string, configScriptPath: string): boolean {
+  saveEmptyIgnitionConfig(currentPath: string, configScriptPath: string): boolean {
     return true;
   }
 }

@@ -1,21 +1,21 @@
-`mortar tutorial`
+`ignition tutorial`
 =================
 
-Easiest way to get started with mortar, create couple contracts and start deploying.
+Easiest way to get started with ignition, create couple contracts and start deploying.
 
-* [`mortar tutorial`](#mortar-tutorial)
+* [`ignition tutorial`](#ignition-tutorial)
 
-## `mortar tutorial`
+## `ignition tutorial`
 
-Easiest way to get started with mortar, create couple contracts and start deploying.
+Easiest way to get started with ignition, create couple contracts and start deploying.
 
 ```
 USAGE
-  $ mortar tutorial
+  $ ignition tutorial
 
 OPTIONS
   -h, --help  show CLI help
   --debug     Flag used for debugging
 ```
 
-_See code: [src/commands/tutorial.ts](https://github.com/Tenderly/mortar-tenderly/blob/main/src/commands/tutorial.ts)_
+_See code: [src/commands/tutorial.ts](https://github.com/Tenderly/ignition-tenderly/blob/main/src/commands/tutorial.ts)_

@@ -1,6 +1,6 @@
 import { ModuleStateFile } from './states/module';
 import { checkIfExist } from '../utils/util';
-import { ContractBindingMetaData } from '../../interfaces/mortar';
+import { ContractBindingMetaData } from '../../interfaces/ignition';
 import { generateModuleFile } from '../utils/files';
 import { FileGenerationType, ModuleStateBindings } from '../types/migration';
 import path from 'path';
@@ -36,8 +36,8 @@ export class ModuleMigrationService {
     return unifiedStateFile;
   }
 
-  generateModuleFile(moduleStateBindings: ModuleStateBindings): string {
-    return generateModuleFile(moduleStateBindings, FileGenerationType.module);
+  generateModuleFile(moduleName: string, moduleStateBindings: ModuleStateBindings): string {
+    return generateModuleFile(moduleName, moduleStateBindings, FileGenerationType.module);
   }
 
   storeModuleFile(moduleFile: string, moduleName: string) {

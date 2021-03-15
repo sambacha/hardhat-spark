@@ -40,4 +40,5 @@ export interface IPrompter {
   generatedTypes(): void;
   startingModuleUsageGeneration(moduleName: string);
   finishedModuleUsageGeneration(moduleName: string);
+  parallelizationExperimental();
 }

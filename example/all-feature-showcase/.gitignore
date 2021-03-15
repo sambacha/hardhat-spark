@@ -5,6 +5,6 @@ node_modules
 cache
 artifacts
 
-#mortar files
-.mortar
-mortar-config.json
+#ignition files
+.ignition
+ignition-config.json

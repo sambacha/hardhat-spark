@@ -139,4 +139,13 @@ export class StreamlinedPrompter implements IPrompter {
   startingModuleUsageGeneration(moduleName: string) {
     cli.info(`Starting module usage script file generation - ${moduleName}`);
   }
+
+  async parallelizationExperimental() {
+    cli.warn(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
+    cli.confirm('Confirm you are willing to continue');
+    const yes = await cli.confirm('Do you wish to continue with deployment of this module? (Y/n)');
+    if (!yes) {
+      throw new DeniedConfirmation('Confirmation has been declined.');
+    }
+  }
 }

@@ -169,12 +169,17 @@ export class OverviewPrompter2 implements IPrompter {
   }
 
   generatedTypes(): void {
-    cli.info("Successfully generated module types, look under './.mortar/<module_name>'");
+    cli.info("Successfully generated module types, look under './.ignition/<module_name>'");
   }
 
   finishedModuleUsageGeneration(moduleName: string) {
   }
 
   startingModuleUsageGeneration(moduleName: string) {
+  }
+
+  parallelizationExperimental() {
+    cli.warn(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
+    cli.confirm('Confirm you are willing to continue');
   }
 }

@@ -76,4 +76,6 @@ export class EmptyPrompter implements IPrompter {
   startingModuleUsageGeneration(moduleName: string) {
   }
 
+  parallelizationExperimental() {
+  }
 }

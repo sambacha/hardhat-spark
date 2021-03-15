@@ -1,16 +1,16 @@
 import '../../src/hardhat';
 // @ts-ignore
-import { config } from './mortar.config';
+import { config } from './ignition.config';
 
-const mortarJsonConfig = require('./mortar-config.json');
+const ignitionJsonConfig = require('./ignition-config.json');
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
   solidity: '0.7.3',
-  mortar: {
-    mortarConfig: config,
-    config: mortarJsonConfig
+  ignition: {
+    ignitionConfig: config,
+    config: ignitionJsonConfig
   }
 };

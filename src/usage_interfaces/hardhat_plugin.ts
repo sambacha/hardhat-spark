@@ -1,7 +1,6 @@
-import { DeployArgs, DiffArgs, GenTypesArgs, IMortar, InitArgs, MigrationArgs, TutorialArgs, UsageArgs } from './index';
+import { DeployArgs, DiffArgs, GenTypesArgs, IIgnition, InitArgs, MigrationArgs, TutorialArgs, UsageArgs } from './index';
 import { ethers, Wallet } from 'ethers';
 import { checkIfExist } from '../packages/utils/util';
-import { EmptyPrompter } from '../packages/utils/promter/empty_prompter';
 import MemoryConfigService from '../packages/config/memory_service';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
@@ -14,7 +13,7 @@ import { EventHandler } from '../packages/modules/events/handler';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import { IPrompter, Prompters } from '../packages/utils/promter';
-import { IConfigService, MortarConfig } from '../packages/config';
+import { IConfigService, IgnitionConfig } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
 import { Namespace } from 'cls-hooked';
 import { Config } from '../packages/types/config';
@@ -36,9 +35,9 @@ import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 
-export type HardhatMortarConfig = {
+export type HardhatIgnitionConfig = {
   config: Config,
-  mortarConfig: MortarConfig
+  ignitionConfig: IgnitionConfig
 };
 
 export type Args = {
@@ -54,55 +53,55 @@ export type Args = {
   moduleName?: string;
 };
 
-export class MortarHardhatActions {
-  static async deploy(config: HardhatMortarConfig, args: DeployArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+export class IgnitionHardhatActions {
+  static async deploy(config: HardhatIgnitionConfig, args: DeployArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
-    await mortarHardhat.deploy(fullPath, args);
+    await ignitionHardhat.deploy(fullPath, args);
   }
 
-  static async diff(config: HardhatMortarConfig, args: DiffArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+  static async diff(config: HardhatIgnitionConfig, args: DiffArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
-    await mortarHardhat.diff(fullPath, args);
+    await ignitionHardhat.diff(fullPath, args);
   }
 
-  static async genTypes(config: HardhatMortarConfig, args: GenTypesArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+  static async genTypes(config: HardhatIgnitionConfig, args: GenTypesArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
-    await mortarHardhat.genTypes(fullPath, args);
+    await ignitionHardhat.genTypes(fullPath, args);
   }
 
-  static async init(config: HardhatMortarConfig, args: InitArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+  static async init(config: HardhatIgnitionConfig, args: InitArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
 
-    await mortarHardhat.init(args);
+    await ignitionHardhat.init(args);
   }
 
-  static async migration(config: HardhatMortarConfig, args: MigrationArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+  static async migration(config: HardhatIgnitionConfig, args: MigrationArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
 
-    await mortarHardhat.migration(args);
+    await ignitionHardhat.migration(args);
   }
 
-  static async tutorial(config: HardhatMortarConfig, args: TutorialArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+  static async tutorial(config: HardhatIgnitionConfig, args: TutorialArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
 
-    await mortarHardhat.tutorial(args);
+    await ignitionHardhat.tutorial(args);
   }
 
-  static async usage(config: HardhatMortarConfig, args: UsageArgs): Promise<void> {
-    const mortarHardhat = new MortarHardhat(config);
+  static async usage(config: HardhatIgnitionConfig, args: UsageArgs): Promise<void> {
+    const ignitionHardhat = new IgnitionHardhat(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
-    await mortarHardhat.usage(fullPath, args);
+    await ignitionHardhat.usage(fullPath, args);
   }
 }
 
-export class MortarHardhat implements IMortar {
+export class IgnitionHardhat implements IIgnition {
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
   public prompter: IPrompter;
@@ -124,18 +123,18 @@ export class MortarHardhat implements IMortar {
   public moduleUsage: ModuleUsage;
   public moduleMigrationService: ModuleMigrationService;
 
-  public conf: HardhatMortarConfig;
+  public conf: HardhatIgnitionConfig;
 
-  constructor(conf: HardhatMortarConfig) {
+  constructor(conf: HardhatIgnitionConfig) {
     this.conf = conf;
   }
 
-  async deploy(moduleFilePath: string, args: DeployArgs): Promise<void> {
+  async deploy(fullPath: string, args: DeployArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.deploy(
-      moduleFilePath,
-      this.conf.mortarConfig,
+      fullPath,
+      this.conf.ignitionConfig,
       this.states,
       this.moduleStateRepo,
       this.moduleResolver,
@@ -147,12 +146,12 @@ export class MortarHardhat implements IMortar {
     );
   }
 
-  async diff(moduleFilePath: string, args: DiffArgs): Promise<void> {
+  async diff(fullPath: string, args: DiffArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.diff(
-      moduleFilePath,
-      this.conf.mortarConfig,
+      fullPath,
+      this.conf.ignitionConfig,
       this.states,
       this.moduleResolver,
       this.moduleStateRepo,
@@ -160,14 +159,15 @@ export class MortarHardhat implements IMortar {
     );
   }
 
-  async genTypes(moduleFilePath: string, args: GenTypesArgs): Promise<void> {
+  async genTypes(fullPath: string, args: GenTypesArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
 
     await command.genTypes(
-      moduleFilePath,
-      this.conf.mortarConfig,
+      fullPath,
+      this.conf.ignitionConfig,
       this.moduleTyping,
       this.configService,
+      this.prompter,
     );
   }
 
@@ -198,13 +198,13 @@ export class MortarHardhat implements IMortar {
     );
   }
 
-  async usage(moduleFilePath: string, args: UsageArgs): Promise<void> {
+  async usage(fullPath: string, args: UsageArgs): Promise<void> {
     await this.setupServicesAndEnvironment(this.conf.config, args);
-    this.moduleUsage = new ModuleUsage(moduleFilePath, this.moduleStateRepo);
+    this.moduleUsage = new ModuleUsage(fullPath, this.moduleStateRepo);
 
     await command.usage(
-      this.conf.mortarConfig,
-      moduleFilePath,
+      this.conf.ignitionConfig,
+      fullPath,
       args.state.split(','),
       this.configService,
       this.walletWrapper,
@@ -242,7 +242,7 @@ export class MortarHardhat implements IMortar {
       this.provider = new ethers.providers.JsonRpcProvider(args.rpcProvider);
     }
 
-    process.env.MORTAR_RPC_PROVIDER = String(args?.rpcProvider || 'http://localhost:8545');
+    process.env.IGNITION_RPC_PROVIDER = String(args?.rpcProvider || 'http://localhost:8545');
 
     this.gasProvider = new GasPriceCalculator(this.provider);
     this.configService = new MemoryConfigService(configFile);
@@ -251,7 +251,7 @@ export class MortarHardhat implements IMortar {
     this.eventTxExecutor = new EventTxExecutor(this.eventSession);
 
     if (checkIfExist(args.networkId)) {
-      process.env.MORTAR_NETWORK_ID = String(args.networkId);
+      process.env.IGNITION_NETWORK_ID = String(args.networkId);
 
       this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), +args.networkId, this.gasProvider, this.gasProvider);
       this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, +args.networkId, this.provider, this.transactionManager, this.transactionManager);
@@ -262,6 +262,7 @@ export class MortarHardhat implements IMortar {
       this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, +args.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
     }
 
+    this.states = [];
     if (checkIfExist(args.state)) {
       this.states = args.state.split(',');
     }
@@ -280,7 +281,7 @@ export class MortarHardhat implements IMortar {
     );
 
     const moduleState = new FileSystemModuleState(currentPath);
-    this.stateMigrationService = new StateMigrationService(moduleState, args.from as Migration);
+    this.stateMigrationService = new StateMigrationService(moduleState, args?.from as Migration);
     this.moduleMigrationService = new ModuleMigrationService(currentPath);
   }
 }

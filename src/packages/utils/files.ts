@@ -9,7 +9,7 @@ import {
   ModuleStateBindings,
   USAGE_FUNC
 } from '../types/migration';
-import { ContractBindingMetaData } from '../../interfaces/mortar';
+import { ContractBindingMetaData } from '../../interfaces/ignition';
 import { CliError } from '../types/errors';
 
 const HARDHAT_CHAIN_ID_FILENAME = '.chainId';
@@ -137,22 +137,22 @@ export function searchBuildsAndNetworks(currentPath: string, results: any[], cha
   return results;
 }
 
-export function generateModuleFile(moduleStateBindings: ModuleStateBindings, fileGenerationType: FileGenerationType): ModuleFile {
+export function generateModuleFile(moduleName: string, moduleStateBindings: ModuleStateBindings, fileGenerationType: FileGenerationType): ModuleFile {
   let buildName;
   switch (fileGenerationType) {
-    case FileGenerationType.module:
+    case FileGenerationType.usage:
       buildName = USAGE_FUNC;
       break;
-    case FileGenerationType.usage:
+    case FileGenerationType.module:
       buildName = MODULE_FUNC;
       break;
     default:
       throw new CliError('File type generation is not valid.');
   }
 
-  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/mortar';
+  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/ignition';
 
-export const ${this.moduleName} = ${buildName}('${this.moduleName}', async (m: ModuleBuilder) => {`;
+export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuilder) => {`;
 
   file += genPrototypes(moduleStateBindings);
 

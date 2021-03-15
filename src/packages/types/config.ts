@@ -8,7 +8,7 @@ export type Config = {
   hdPath?: string;
 };
 
-export type MortarConfig = {
+export type IgnitionConfig = {
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,

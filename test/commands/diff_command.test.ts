@@ -3,7 +3,7 @@ import { assert } from 'chai';
 
 const NETWORK_ID = 31337;
 
-describe('mortar diff - integration', () => {
+describe('ignition diff - integration', () => {
   it('should be able to show difference in modules - single new binding', ctx => {
     const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
       cwd: './test/projects-scenarios/single-new-binding'

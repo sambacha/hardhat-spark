@@ -241,7 +241,7 @@ Bind contract with `name` and his constructor arguments `args`. It will validate
 
 <hr>
 
-This way you can tell mortar that you are using libraries, and it will deploy them first, and if any other binding is using them inside thier bytecode it will dynamically inject them so you don't need to worry about that.
+This way you can tell ignition that you are using libraries, and it will deploy them first, and if any other binding is using them inside thier bytecode it will dynamically inject them so you don't need to worry about that.
 
 ```typescript
 library(name: string, ...args: Arguments): ContractBinding;

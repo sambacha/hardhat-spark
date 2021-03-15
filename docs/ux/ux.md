@@ -71,10 +71,10 @@ const mutator = (
   setterFunc: string, // name of setter function
   setterArgs: any[], // setter args
   opts?: {
-    name?: string, // mortar will dynamically generate name, you can overwrite it here
-    getterFunc?: string, // mortar will replace "set" with "get", you can overwrite name of getter function here
-    getterArgs?: any[], // mortar will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
-    expectedValue?: any, // mortar will expect last element of setterArgs to be equal to getterFunc return value
+    name?: string, // ignition will dynamically generate name, you can overwrite it here
+    getterFunc?: string, // ignition will replace "set" with "get", you can overwrite name of getter function here
+    getterArgs?: any[], // ignition will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
+    expectedValue?: any, // ignition will expect last element of setterArgs to be equal to getterFunc return value
     deps?: (ContractBinding | Event)[] // define dependencies for setter/getter execution
     slot?: string, // option if their is no function for read and you need to use `getStorateAt`
   }

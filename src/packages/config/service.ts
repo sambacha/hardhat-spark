@@ -1,4 +1,4 @@
-import { Config, MortarConfig } from '../types/config';
+import { Config, IgnitionConfig } from '../types/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
@@ -6,7 +6,7 @@ import { ethers } from 'ethers';
 import {
   FailedToWriteToFile,
   MnemonicNotValid,
-  MortarConfigAlreadyExist,
+  IgnitionConfigAlreadyExist,
   PrivateKeyNotValid,
   UserError
 } from '../types/errors';
@@ -35,7 +35,7 @@ export default class ConfigService implements IConfigService {
     }
   }
 
-  async getMortarConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<MortarConfig> {
+  async getIgnitionConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<IgnitionConfig> {
     let configFilePath;
     if (configScriptPath) {
       configFilePath = path.resolve(currentPath, configScriptPath);
@@ -43,7 +43,7 @@ export default class ConfigService implements IConfigService {
       configFilePath = path.resolve(currentPath, CONFIG_SCRIPT_NAME);
     }
 
-    let config: MortarConfig;
+    let config: IgnitionConfig;
     if (configFilePath) {
       try {
         const configModules = await loadScript(configFilePath);
@@ -52,8 +52,8 @@ export default class ConfigService implements IConfigService {
           throw new UserError('Sorry, but you can only have one config object!');
         }
 
-        for (const [, mortarConfig] of Object.entries(configModules)) {
-          config = mortarConfig as MortarConfig;
+        for (const [, ignitionConfig] of Object.entries(configModules)) {
+          config = ignitionConfig as IgnitionConfig;
         }
       } catch (err) {
         if (err._isUserError) {
@@ -101,21 +101,21 @@ export default class ConfigService implements IConfigService {
     return true;
   }
 
-  saveEmptyMortarConfig(currentPath: string, configScriptPath: string, reinit: boolean = false): boolean {
-    const relativeMortarConfigPath = configScriptPath ? configScriptPath : CONFIG_SCRIPT_NAME;
+  saveEmptyIgnitionConfig(currentPath: string, configScriptPath: string, reinit: boolean = false): boolean {
+    const relativeIgnitionConfigPath = configScriptPath ? configScriptPath : CONFIG_SCRIPT_NAME;
 
-    const mortarConfigPath = path.resolve(currentPath, relativeMortarConfigPath);
-    if (!reinit && fs.existsSync(mortarConfigPath)) {
-      throw new MortarConfigAlreadyExist('You are trying to init empty mortar config but it already exist!');
+    const ignitionConfigPath = path.resolve(currentPath, relativeIgnitionConfigPath);
+    if (!reinit && fs.existsSync(ignitionConfigPath)) {
+      throw new IgnitionConfigAlreadyExist('You are trying to init empty ignition config but it already exist!');
     }
 
-    const mortarConfig = `import { MortarConfig } from '@tenderly/mortar';
+    const ignitionConfig = `import { IgnitionConfig } from '@tenderly/ignition';
 
-export const config: MortarConfig = {};
+export const config: IgnitionConfig = {};
 `;
 
     try {
-      fs.writeFileSync(mortarConfigPath, mortarConfig);
+      fs.writeFileSync(ignitionConfigPath, ignitionConfig);
     } catch (e) {
       throw new FailedToWriteToFile('Failed to write to file.');
     }
