@@ -2,10 +2,6 @@
 
 Ignition is a solidity tool for building, deploying, versioning and changing of Ethereum smart contract infrastructure.
 
-# Glossary
-
-
-
 # Installation
 
 ```
