@@ -1,3 +1,9 @@
+# Installation
+
+```
+npm i @tenderly/ignition -g
+```
+
 ## Initial project setup
 
 You will need to have hardhat and ignition installed in some project.
