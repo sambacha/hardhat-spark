@@ -23,7 +23,7 @@ everyone.
 
 ## How Ignition is solving it?
 
-**Ignition** is a batteries-included declarative deployment framework for Ethereum smart contracts. Mortar can easily
+**Ignition** is a batteries-included declarative deployment framework for Ethereum smart contracts. Ignition can easily
 manage any smart contract project, regardless of its size or complexity, by utilizing smart dependency resolution and
 flexible configuration management.
 
