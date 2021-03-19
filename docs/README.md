@@ -21,7 +21,7 @@ The result is a wide array of complex, brittle collection of deployment scripts,
 its own way, missing a great opportunity for a single focused effort solving smart contract deployment issues for
 everyone.
 
-## How Ignition is solving it?
+## How is Ignition solving it?
 
 **Ignition** is a batteries-included declarative deployment framework for Ethereum smart contracts. Ignition can easily
 manage any smart contract project, regardless of its size or complexity, by utilizing smart dependency resolution and
