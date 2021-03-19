@@ -27,7 +27,7 @@ export type IgnitionConfig = {
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,
   nonceManager?: INonceManager,
-  transactionSinger?: ITransactionSigner
+  transactionSigner?: ITransactionSigner
   params?: {[name: string]: any},
 };
 ```

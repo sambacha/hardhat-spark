@@ -112,8 +112,8 @@ export async function deploy(
       txGenerator.changeNonceManager(config.nonceManager);
     }
 
-    if (module.getCustomTransactionSinger()) {
-      txGenerator.changeTransactionSinger(config.transactionSinger);
+    if (module.getCustomTransactionSigner()) {
+      txGenerator.changeTransactionSigner(config.transactionSigner);
     }
 
     const initializedTxModuleState = txGenerator.initTx(moduleState);

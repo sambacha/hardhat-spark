@@ -36,7 +36,7 @@ Similar to <b>After Deployment</b> just this event is going to be executed only 
 
 ### After Deployment
 
-This event will be executed every time when ignition finish contract deployment of the contract that event is binded to.
+This event will be executed every time when ignition finish contract deployment of the contract that event is bounded to.
 This means that if ignition has decided that that contract shouldn't be deployed (e.g. it already did deploy) this event
 will be triggered.
 

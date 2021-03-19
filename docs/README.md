@@ -23,7 +23,7 @@ everyone.
 
 ## How Ignition is solving it?
 
-**Ignition** is a batteries-included declarative deployment framework for Ethereum smart contracts. Mortar can easily
+**Ignition** is a batteries-included declarative deployment framework for Ethereum smart contracts. Ignition can easily
 manage any smart contract project, regardless of its size or complexity, by utilizing smart dependency resolution and
 flexible configuration management.
 
@@ -78,9 +78,21 @@ how to use ignition. Not too much theory, just practical application to get you 
 
 | On-boarding             | Link        |
 | ----------------------- | ----------- |
+| Ignition tutorial       | [ignition-tutorial](./on-boarding/tutorial.md)|
 | Migration process       | [migration-process](./on-boarding/migration.md)|
-| Usage module generation | [usage-module-gen](./on-boarding/usage-module.md#usage-generation)|
-| External module usage   | [usage-module-usage](./on-boarding/usage-module.md#usage-of-usage-module-in-other-projects)|
+| Usage module            | [usage-module](./on-boarding/usage-module.md)|
+
+### All usable commands
+
+| Commands                      | Glossary                                                              | Link                                        |
+| ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
+| Mortar Init                   | Initialize mortar config file and script.                             | [mortar init](./commands/init.md)           |
+| Mortar Diff                   | Show difference between current and already deployed module.          | [mortar diff](./commands/diff.md)           |
+| Mortar Deploy                 | Run/Continue deployment of the module.                                | [mortar deploy](./commands/deploy.md)       |
+| Mortar GenTypes               | Generate custom module types on top of current module.                | [mortar genTypes](./commands/genTypes.md)   |
+| Mortar Usage                  | Generate usage module, module made only for usage in other modules    | [mortar usage](./commands/usage.md)         |
+| Mortar Migration              | Ability to migrate from other build/state files to mortar state file. | [mortar migration](./commands/migration.md) |
+| Mortar Tutorial               | Step by step creation of simple deployment module with description.   | [mortar tutorial](./commands/tutorial.md) |
 
 ### Developer UX
 
@@ -114,7 +126,7 @@ how to use ignition. Not too much theory, just practical application to get you 
 
 | Concepts       | Glossary                                   | Link                                     |
 | -------------- | ------------------------------------------ | ---------------------------------------- |
-| Module Builder | Module builder is root | [module_builder](./concepts/module_builder/module_builder.md)
+| Module Builder | Module builder is a class that is surfacing interface for module definition. | [module_builder](./concepts/module_builder/module_builder.md)
 | Module Deployment | Explanation how deployment is executing. | [module_deployment](./concepts/module_deployment/module_deployment.md)
 | Dependencies resolving | Detailed explanation how dependencies resolving is happening.| [module_deps_resolver](./concepts/module_deps_resolver/module_deps_resolver.md)
 | Contracts resolver and registry | Concept of contract address registry and resolver. | [module_registry_resolver](./concepts/module_registry_resolver/module_registry_resolver.md)
@@ -124,7 +136,8 @@ how to use ignition. Not too much theory, just practical application to get you 
 # Contribution guideline
 
 Ignition is built not to be standalone project with strict process of contributing. Anyone can submit feature proposal,
-some improvements, fix bugs or anything else. Only limitation is that it needs to make sense to be part of ignition.
+some improvements, bug fixes or anything else. Only limitation is that it needs to make sense, if it does than it can be
+discussed, implemented and finally merged.
 
 ## Code structure
 
@@ -140,8 +153,14 @@ This is level 1 structure of the code.
 ```
 
 `commands` - dir is sheltering all executable commands under ignition binary.
+
 `hardhat.ts` - file that should be included when writing integration with a hardhat, either in script or in config file
+
 `index.ts` - file is for surfacing ignition functionality to multiple usage_interface's
+
 `usage_interfaces` - dir is covering all available ways that you can use ignition.
+
 `packages` - dir is storing all business specific logic
+
 `interfaces` - in this dir you can find all user-facing functionality for writing ignition deployment module
+

@@ -17,7 +17,8 @@ export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) =
 
 ## Custom signers
 
-If you would like to change singer/deployer of contract function call you can use it like this:
+In case that you desire to change signer/deployer/sender of any function call that is triggered for contract A, here is 
+how you can do that:
 
 ```
 A.instance().setDeployer(newWallet)

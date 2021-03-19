@@ -76,7 +76,7 @@ const mutator = (
     getterArgs?: any[], // ignition will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
     expectedValue?: any, // ignition will expect last element of setterArgs to be equal to getterFunc return value
     deps?: (ContractBinding | Event)[] // define dependencies for setter/getter execution
-    slot?: string, // option if their is no function for read and you need to use `getStorateAt`
+    slot?: string, // option if their is no function for read and you need to use `eth_getStorageAt`
   }
 ): ContractEvent
 ```

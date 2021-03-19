@@ -31,15 +31,17 @@ After you have initialized ignition, lets start with the migration process. It i
 command:
 
 ```
-ignition migration --moduleName=YourModuleName
+ignition migration --moduleName=YourModuleName --from=truffle
 ```
+
+If you deployed your project with `hardhat-deploy` you can specify `--from=hardhatDeploy` instead of truffle.
 
 This command will look under `./build` folder and try to find if you already have deployed some contracts in order to
 replicate ignition state file based on those contract deployment data.
 
 ### Deployment file replication
 
-After you can either manually try to replicate deployment file or try tutorial.
+After you can either manually try to replicate deployment file or try our tutorial.
 
 ```
 ignition tutorial

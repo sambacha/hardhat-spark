@@ -2,10 +2,10 @@
 
 This will help you to understand a basic workflow and process of setting up simple deployment and what you can expect.
 
-
-## Project setup 
+## Project setup
 
 You will need to have hardhat and ignition installed in some project.
+
 ```
 yarn add hardhat --dev
 yarn add @tenderly/ignition --dev
@@ -61,6 +61,7 @@ Firstly we will need to run next command in root of your project
 ```
 ignition init --privateKeys=<private_key>
 ```
+
 You can put hardhat generated `<private_key>` for testing.
 
 This command will generate `ignition-config.json` and `ignition.config.ts` files.
@@ -248,7 +249,8 @@ new, so we have `+` prefix.
 
 ### Change current binding
 
-Let's change some part of the solidity code of `A.sol`, I'll just add more `oooo` to `hello` string in order to change bytecode.
+Let's change some part of the solidity code of `A.sol`, I'll just replace `hello` with `something` string in order to
+change the bytecode. Symbol that is suggesting that we changed this contract, `~` should the prefix.
 
 Now run command:
 
@@ -261,7 +263,7 @@ You should see this in your console logs:
 ```
 Module: FirstModule
 ~ Contract:  A
-~ Event afterDeployBandC
+~ Event afterDeployA
 + Contract B
   └── Contract: A
 ```
@@ -311,7 +313,7 @@ export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuild
   const A = m.contract('A');
   const B = m.contract('B', A);
 
-  A.afterDeploy(m, 'afterDeployBandC', async () => {
+  A.afterDeploy(m, 'afterDeployA', async () => {
     await A.instance().setExample(11);
   });
 });

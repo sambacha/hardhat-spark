@@ -39,6 +39,7 @@ export default class Tutorial extends Command {
     const {args, flags} = this.parse(Tutorial);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
 
     let moduleName = flags.moduleName;

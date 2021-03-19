@@ -53,8 +53,8 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     this.nonceManager = newNonceManager;
   }
 
-  changeTransactionSinger(newTransactionSinger: ITransactionSigner) {
-    this.transactionSigner = newTransactionSinger;
+  changeTransactionSigner(newTransactionSigner: ITransactionSigner) {
+    this.transactionSigner = newTransactionSigner;
   }
 
   initTx(moduleState: ModuleState): ModuleState {

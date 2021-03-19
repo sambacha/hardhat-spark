@@ -35,6 +35,7 @@ export default class GenTypes extends Command {
     const {args, flags} = this.parse(GenTypes);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
 
     const currentPath = process.cwd();

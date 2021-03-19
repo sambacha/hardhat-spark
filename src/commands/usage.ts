@@ -58,6 +58,7 @@ export default class Usage extends Command {
     const {args, flags} = this.parse(Usage);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;

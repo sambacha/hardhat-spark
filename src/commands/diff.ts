@@ -56,6 +56,7 @@ export default class Diff extends Command {
     const {args, flags} = this.parse(Diff);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
 
     const currentPath = process.cwd();

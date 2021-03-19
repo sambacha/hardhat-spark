@@ -20,7 +20,7 @@ class Module {
   private resolver: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;
   private nonceManager: INonceManager | undefined;
-  private transactionSinger: ITransactionSigner | undefined;
+  private transactionSigner: ITransactionSigner | undefined;
 }
 ```
 
@@ -153,10 +153,10 @@ nonceManager: INonceManager | undefined
 
 <hr>
 
-Custom transaction singer
+Custom transaction signer
 
 ```
-transactionSinger: ITransactionSigner | undefined
+transactionSigner: ITransactionSigner | undefined
 ```
 
 # Full module interface
@@ -408,19 +408,4 @@ Get custom module contract address registry.
 
 ```
   getRegistry(): IModuleRegistryResolver | undefined;
-```
-
-```
-  setCustomGasPriceProvider(provider: IGasPriceCalculator): void;
-```
-
-  getCustomGasPriceProvider(): IGasPriceCalculator;
-
-  setCustomNonceManager(nonceManager: INonceManager): void;
-
-  getCustomNonceManager(): INonceManager;
-
-  setCustomTransactionSigner(txSigner: ITransactionSigner): void;
-
-  getCustomTransactionSigner(): ITransactionSigner;
 ```

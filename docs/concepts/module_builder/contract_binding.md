@@ -2,7 +2,7 @@
 
 Contract binding is way to specify contract deployment and his constructor arguments. In case if any of constructor
 parameters are other contracts, then deployment would only occur when dependencies contract is deployed. You can look
-under [here](../module_deps_resovler/module_deps_resolver.md) to better understand module dependency resolving.
+under [here](../module_deps_resolver/module_deps_resolver.md) to better understand module dependency resolving.
 
 ```typescript
 const contractBinding = m.contract('CONTRACT_NAME', 'FIRST', 'SECOND');

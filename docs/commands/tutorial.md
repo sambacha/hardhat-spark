@@ -18,4 +18,4 @@ OPTIONS
   --debug     Flag used for debugging
 ```
 
-_See code: [src/commands/tutorial.ts](https://github.com/Tenderly/ignition-tenderly/blob/main/src/commands/tutorial.ts)_
+_See code: [src/commands/tutorial.ts](https://github.com/Tenderly/ignition/blob/main/src/commands/tutorial.ts)_

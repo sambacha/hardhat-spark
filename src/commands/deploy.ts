@@ -102,6 +102,7 @@ export default class Deploy extends Command {
     const {args, flags} = this.parse(Deploy);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
 
     const currentPath = process.cwd();

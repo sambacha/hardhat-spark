@@ -1681,7 +1681,7 @@ export class Module {
   private resolver: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;
   private nonceManager: INonceManager | undefined;
-  private transactionSinger: ITransactionSigner | undefined;
+  private transactionSigner: ITransactionSigner | undefined;
 
   constructor(
     moduleName: string,
@@ -1724,7 +1724,7 @@ export class Module {
     this.resolver = moduleBuilder.getResolver();
     this.gasPriceProvider = moduleBuilder.getCustomGasPriceProvider();
     this.nonceManager = moduleBuilder.getCustomNonceManager();
-    this.transactionSinger = moduleBuilder.getCustomTransactionSigner();
+    this.transactionSigner = moduleBuilder.getCustomTransactionSigner();
     this.prototypes = moduleBuilder.getAllPrototypes();
     this.opts = moduleBuilder.getAllOpts();
 
@@ -1789,8 +1789,8 @@ export class Module {
     return this.nonceManager;
   }
 
-  getCustomTransactionSinger(): ITransactionSigner {
-    return this.transactionSinger;
+  getCustomTransactionSigner(): ITransactionSigner {
+    return this.transactionSigner;
   }
 }
 

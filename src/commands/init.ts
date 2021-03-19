@@ -60,6 +60,7 @@ export default class Init extends Command {
     const {args, flags} = this.parse(Init);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
 
     this.prompter = new StreamlinedPrompter();

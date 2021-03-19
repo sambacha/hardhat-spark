@@ -35,7 +35,7 @@ import { EventTxExecutor } from './event_executor';
 import { clsNamespaces } from '../../utils/continuation_local_storage';
 
 const CONSTRUCTOR_TYPE = 'constructor';
-export const BLOCK_CONFIRMATION_NUMBER = 1;
+export const BLOCK_CONFIRMATION_NUMBER = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
 
 export class TxExecutor {
   private readonly networkId: number;
