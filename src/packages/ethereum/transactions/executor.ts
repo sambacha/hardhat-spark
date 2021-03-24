@@ -82,6 +82,7 @@ export class TxExecutor {
     if (!checkIfExist(moduleState)) {
       this.prompter.nothingToDeploy();
     }
+
     await this.executeSync(moduleName, moduleState, registry, resolver, moduleConfig);
     return;
   }

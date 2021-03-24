@@ -1,7 +1,6 @@
 import hre from 'hardhat';
 import '../../src/hardhat';
-import { HardhatIgnition } from '../../src/usage_interfaces/hardhat_plugin';
-import { HardhatIgnitionConfig } from '../../src';
+import { HardhatPluginIgnitionConfig, HardhatIgnition } from '../../src/usage_interfaces/hardhat_plugin';
 import * as path from 'path';
 
 const modulePath = './deployment/module.ts';
@@ -15,6 +14,9 @@ async function main() {
     moduleFilePath: modulePath,
     networkId: networkId
   });
+
+  // just showcasing how to extract ignition config
+  console.log(ign.conf as HardhatPluginIgnitionConfig);
 }
 
 main()

@@ -21,7 +21,7 @@ Here is example of the function that is used for sub-modules
   async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder>
 ```
 
-And this is how it is used inside deployment function:~~~~
+And this is how it is used inside deployment function:
 ```
 await m.module(INTERNAL_MODULE);
 ```
