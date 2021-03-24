@@ -74,13 +74,19 @@ how to use ignition. Not too much theory, just practical application to get you 
 
 # How-to guides
 
-### On-boarding - Migrations and external module usage
+### Usage guides
 
-| On-boarding             | Link        |
-| ----------------------- | ----------- |
-| Ignition tutorial       | [ignition-tutorial](./on-boarding/tutorial.md)|
-| Migration process       | [migration-process](./on-boarding/migration.md)|
-| Usage module            | [usage-module](./on-boarding/usage-module.md)|
+| Usage guides     | Description  | Link |
+| --------------------------------- | --------------------------------------------------------- | ---- |
+| Initialize ignition               | How to init ignition for your own uses. | |
+| Write deployment script           | How to write deployment script. | |
+| How to deploy new module          | How to deploy module. | [module deploy](./usage/deploy-module.md)|
+| Generate module typehints         | How to generate module types for your module | [module typehints](./usage/module-typehints.md) |
+| Proxy pattern helpers             | List and brief description of proxy helper functions. | [proxy](./usage/patterns/proxy.md)|
+| Factory pattern helpers           | List and brief description og factory helpers. | [factory](./usage/patterns/factory.md)|
+| Module separation and sub-modules | How to specify module separation and how module context is shared. | [module separation](./usage/module-separation.md)|
+| Debugging tips                    | Tips for debugging errors in deployments. | [debugging tips](./debugging/tips.md)|
+| Logging options                   | What are logging options for mortar, and how to use them. | [logging](./logging/logging.md) |
 
 ### All usable commands
 
@@ -94,18 +100,13 @@ how to use ignition. Not too much theory, just practical application to get you 
 | Ignition Migration              | Ability to migrate from other build/state files to ignition state file. | [ignition migration](./commands/migration.md) |
 | Ignition Tutorial               | Step by step creation of simple deployment module with description.   | [ignition tutorial](./commands/tutorial.md) |
 
-### Usage guides
+### On-boarding - Migrations and external module usage
 
-| Usage guides     | Description  | Link |
-| --------------------------------- | --------------------------------------------------------- | ---- |
-| Initialize ignition               | How to init ignition for your own uses. | |
-| How to deploy new module          | How to deploy module. | [module deploy](./usage/deploy-module.md)|
-| Generate module typehints         | How to generate module types for your module | [module typehints](./usage/module-typehints.md) |
-| Proxy pattern helpers             | List and brief description of proxy helper functions. | [proxy](./usage/patterns/proxy.md)|
-| Factory pattern helpers           | List and brief description og factory helpers. | [factory](./usage/patterns/factory.md)|
-| Module separation and sub-modules | How to specify module separation and how module context is shared. | [module separation](./usage/module-separation.md)|
-| Debugging tips                    | Tips for debugging errors in deployments. | [debugging tips](./debugging/tips.md)|
-| Logging options                   | What are logging options for mortar, and how to use them. | [logging](./logging/logging.md) | 
+| On-boarding             | Link        |
+| ----------------------- | ----------- |
+| Ignition tutorial       | [ignition-tutorial](./on-boarding/tutorial.md)|
+| Migration process       | [migration-process](./on-boarding/migration.md)|
+| Usage module            | [usage-module](./on-boarding/usage-module.md)|
 
 ### Developer UX
 
