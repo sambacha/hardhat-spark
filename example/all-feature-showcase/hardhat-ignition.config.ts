@@ -1,5 +1,5 @@
 import { RemoteBucketStorage } from '../../src';
-import { IgnitionConfig } from '../../src';
+import { HardhatIgnitionConfig } from '../../src';
 // @ts-ignore
 import { EthGasStationProvider, GasPriceType } from './deployment/custom_providers/eth_gas_station_provider';
 // @ts-ignore
@@ -29,10 +29,10 @@ const registryAndResolver = new RemoteBucketStorage(
   GOOGLE_SECRET_ACCESS_KEY || '',
 );
 
-export const config: IgnitionConfig = {
+export const config: HardhatIgnitionConfig = {
   // registry: registryAndResolver,
   // resolver: registryAndResolver,
   // gasPriceProvider: gasPriceProvider,
   // nonceManager: txManager,
-  // transactionSinger: txManager
+  // transactionSigner: txManager
 };

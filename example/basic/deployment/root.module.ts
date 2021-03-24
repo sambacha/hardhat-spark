@@ -1,5 +1,5 @@
 import { buildModule } from '../../../src';
-import { FirstModuleBuilder } from '../.ignition/FirstModule/FirstModule';
+import { FirstModuleBuilder } from './FirstModule';
 
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
   const A = m.contract('A');

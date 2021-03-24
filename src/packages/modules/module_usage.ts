@@ -1,6 +1,6 @@
 import { ModuleStateRepo } from './states/state_repo';
 import { ModuleStateFile } from './states/module';
-import { ContractBindingMetaData } from '../../interfaces/ignition';
+import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
 import { checkIfExist, removeLastPathElement } from '../utils/util';
 import { CliError } from '../types/errors';
 import fs from 'fs';

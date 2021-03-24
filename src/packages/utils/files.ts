@@ -9,7 +9,7 @@ import {
   ModuleStateBindings,
   USAGE_FUNC
 } from '../types/migration';
-import { ContractBindingMetaData } from '../../interfaces/ignition';
+import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
 import { CliError } from '../types/errors';
 
 const HARDHAT_CHAIN_ID_FILENAME = '.chainId';
@@ -150,7 +150,7 @@ export function generateModuleFile(moduleName: string, moduleStateBindings: Modu
       throw new CliError('File type generation is not valid.');
   }
 
-  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/ignition';
+  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuilder) => {`;
 

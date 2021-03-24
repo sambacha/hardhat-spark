@@ -1,17 +1,17 @@
-`ignition migration`
+`hardhat-ignition migration`
 ==================
 
-Migrate truffle build folder to ignition state file.
+Migrate truffle build folder to hardhat-ignition state file.
 
-* [`ignition migration`](#ignition-migration)
+* [`hardhat-ignition migration`](#hardhat-ignition-migration)
 
-## `ignition migration`
+## `hardhat-ignition migration`
 
-Migrate truffle build folder to ignition state file.
+Migrate truffle build folder to hardhat-ignition state file.
 
 ```
 USAGE
-  $ ignition migration
+  $ hardhat-ignition migration
 
 OPTIONS
   -h, --help               show CLI help
@@ -20,4 +20,4 @@ OPTIONS
   --moduleName=moduleName  Module name for which you would like to migrate state file to.
 ```
 
-_See code: [src/commands/migration.ts](https://github.com/Tenderly/ignition/blob/main/src/commands/migration.ts)_
+_See code: [src/commands/migration.ts](https://github.com/nomiclabs/hardhat-ignition/blob/main/src/commands/migration.ts)_

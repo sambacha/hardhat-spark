@@ -13,11 +13,11 @@ import { SynthetixRebuildCache } from './modules/rebuild_cache_module.module';
 import { SystemSettingsModule } from './modules/system_setting_setup.module';
 import { SynthetixIssuerSetup } from './modules/issuer_setup.module';
 import { SynthetixDebtCacheSetup } from './modules/debt_cache_setup.module';
-import { ModuleBuilder } from '../../../src';
+import { SynthetixModuleBuilder } from './SynthetixModule';
 
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
-export const SynthetixModule = buildModule('SynthetixModule', async (m: ModuleBuilder) => {
+export const SynthetixModule = buildModule('SynthetixModule', async (m: SynthetixModuleBuilder) => {
   await m.module(SynthetixLibraries);
   await m.module(SynthetixPrototypes);
 

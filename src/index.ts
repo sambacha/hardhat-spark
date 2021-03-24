@@ -1,6 +1,6 @@
 import { cli } from 'cli-ux';
 import { OutputFlags } from '@oclif/parser/lib/parse';
-import { Module, ModuleOptions } from './interfaces/ignition';
+import { Module, ModuleOptions } from './interfaces/hardhat_ignition';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';
@@ -13,7 +13,7 @@ import { IConfigService } from './packages/config';
 import { IPrompter } from './packages/utils/promter';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
-import { IgnitionConfig } from './packages/types/config';
+import { HardhatIgnitionConfig } from './packages/types/config';
 import { loadScript } from './packages/utils/typescript-checker';
 import { ModuleUsage } from './packages/modules/module_usage';
 import { MissingContractAddressInStateFile } from './packages/types/errors';
@@ -25,7 +25,7 @@ import { TutorialService } from './packages/tutorial/tutorial_service';
 import { StateMigrationService } from './packages/modules/states/state_migration_service';
 import { ModuleMigrationService } from './packages/modules/module_migration';
 
-export * from './interfaces/ignition';
+export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
 export * from './interfaces/helper/macros';
 export * from './usage_interfaces/tests';
@@ -55,7 +55,7 @@ export function init(flags: OutputFlags<any>, configService: IConfigService) {
 
 export async function deploy(
   deploymentFilePath: string,
-  config: IgnitionConfig,
+  config: HardhatIgnitionConfig,
   states: string[],
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
@@ -120,7 +120,7 @@ export async function deploy(
     await prompter.promptContinueDeployment();
 
     try {
-      await executor.execute(moduleName, initializedTxModuleState, config.registry, config.resolver, module.getModuleConfig());
+      await executor.execute(moduleName, initializedTxModuleState, config?.registry, config?.resolver, module.getModuleConfig());
     } catch (error) {
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
 
@@ -133,7 +133,7 @@ export async function deploy(
 
 export async function diff(
   resolvedPath: string,
-  config: IgnitionConfig,
+  config: HardhatIgnitionConfig,
   states: string[],
   moduleResolver: ModuleResolver,
   moduleStateRepo: ModuleStateRepo,
@@ -182,7 +182,7 @@ export async function diff(
 
 export async function genTypes(
   resolvedPath: string,
-  ignitionConfig: IgnitionConfig,
+  ignitionConfig: HardhatIgnitionConfig,
   moduleTypings: ModuleTypings,
   config: IConfigService,
   prompter: IPrompter,
@@ -205,7 +205,7 @@ export async function genTypes(
 }
 
 export async function usage(
-  config: IgnitionConfig,
+  config: HardhatIgnitionConfig,
   deploymentFilePath: string,
   states: string[],
   configService: IConfigService,

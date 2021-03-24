@@ -7,7 +7,7 @@ import {
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent
-} from '../../../interfaces/ignition';
+} from '../../../interfaces/hardhat_ignition';
 import { checkIfExist } from '../../utils/util';
 import { CliError } from '../../types/errors';
 

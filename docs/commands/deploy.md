@@ -1,25 +1,25 @@
-`ignition deploy`
+`hardhat-hardhat-ignition deploy`
 ===============
 
 Deploy new migrations, difference between current and already deployed.
 
-* [`ignition deploy [MODULE_FILE_PATH]`](#ignition-deploy-module_file_path)
+* [`hardhat-igniton deploy [MODULE_FILE_PATH]`](#hardhat-ignition-deploy-module_file_path)
 
-## `ignition deploy [MODULE_FILE_PATH]`
+## `hardhat-ignition deploy [MODULE_FILE_PATH]`
 
 Deploy new migrations, difference between current and already deployed.
 
 ```
 USAGE
-  $ ignition deploy [MODULE_FILE_PATH]
+  $ hardhat-ignition deploy [MODULE_FILE_PATH]
 
 OPTIONS
   -h, --help                             show CLI help
-  --configScriptPath=configScriptPath    Path to the ignition.config.js script, default is same as current path.
+  --configScriptPath=configScriptPath    Path to the hardhat-ignition.config.js script, default is same as current path.
   --debug                                Used for debugging purposes.
   --networkId=networkId                  (required) Network ID of the network you are willing to deploy your contracts.
 
-  --parallelize                          If this flag is provided ignition will try to parallelize transactions, this mean
+  --parallelize                          If this flag is provided hardhat-ignition will try to parallelize transactions, this mean
                                          that it will batch transaction and track dynamically their confirmation.
 
   --prompting=(json|streamlined|simple)  Prompting type: streamlined, overview or json. default: overview
@@ -36,4 +36,4 @@ OPTIONS
   --yes                                  Used to skip confirmation questions.
 ```
 
-_See code: [src/commands/deploy.ts](https://github.com/Tenderly/ignition/blob/main/src/commands/deploy.ts)_
+_See code: [src/commands/deploy.ts](https://github.com/nomiclabs/hardhat-ignition/blob/main/src/commands/deploy.ts)_

@@ -52,7 +52,7 @@ export default class Deploy extends Command {
     parallelize: flags.boolean(
       {
         name: 'parallelize',
-        description: 'If this flag is provided ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
+        description: 'If this flag is provided hardhat-ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
         required: false,
       }
     ),
@@ -78,7 +78,7 @@ export default class Deploy extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the ignition.config.js script, default is same as current path.',
+        description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
     testEnv: flags.boolean(
@@ -108,7 +108,7 @@ export default class Deploy extends Command {
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;
     if (filePath == '') {
-      cli.info('Their is no ignition config, please run init first.\n   Use --help for more information.');
+      cli.info('Their is no hardhat-ignition config, please run init first.\n   Use --help for more information.');
     }
     if (!checkIfExist(flags.networkId)) {
       cli.info('Network id flag not provided, please use --help');
@@ -179,7 +179,7 @@ export default class Deploy extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
+    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
     cli.error(error);
   }
 }

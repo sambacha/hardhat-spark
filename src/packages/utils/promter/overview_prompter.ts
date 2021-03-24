@@ -181,7 +181,7 @@ export class OverviewPrompter implements IPrompter {
   }
 
   generatedTypes(): void {
-    cli.info("Successfully generated module types, look under './.ignition/<module_name>'");
+    cli.info('Successfully generated module types, look under your deployments folder for .d.ts file.');
   }
 
   finishedModuleUsageGeneration(moduleName: string) {

@@ -197,7 +197,7 @@ export type ModuleOptions = {
   params: { [name: string]: any }
 };
 
-export type ModuleBuilderFn = (m: ModuleBuilder, wallets?: ethers.Wallet[]) => Promise<void>;
+export type ModuleBuilderFn = (m: ModuleBuilder | any, wallets?: ethers.Wallet[]) => Promise<void>;
 
 export abstract class Binding {
   public name: string;
@@ -524,7 +524,7 @@ export class ContractBinding extends Binding {
    *
    * This function is instantiating wrapped ether.Contract. It has all ether.Contract functionality, as shown in
    * interface, with record keeping functionality. This is needed in case if some of underlying contract function
-   * fail in execution so when ignition continue it will "skip" successfully executed transaction.
+   * fail in execution so when hardhat-ignition continue it will "skip" successfully executed transaction.
    */
   instance(): ethers.Contract {
     if (this.contractInstance) {
@@ -601,7 +601,7 @@ export class ContractBinding extends Binding {
   }
 
   /**
-   * This functions is setting library flag to true, in order for ignition to know how to resolve library usage.
+   * This functions is setting library flag to true, in order for hardhat-ignition to know how to resolve library usage.
    */
   setLibrary() {
     this.library = true;
@@ -668,7 +668,7 @@ export class ContractBinding extends Binding {
    * Setup beforeDeployment event hook on desired contract.
    *
    * It is running always before contract deployment, this means that even if contract is already deployed and their is
-   * record in ignition state file, the function would be executed.
+   * record in hardhat-ignition state file, the function would be executed.
    *
    * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
    * -> afterDeployment -> onCompletion -> onSuccess -> onError
@@ -697,7 +697,7 @@ export class ContractBinding extends Binding {
 
   /**
    * Setup afterDeployment event hook. It is running always before contract deployment, this means that even if contract
-   * is already deployed and their is record in ignition state file, the function would be executed.
+   * is already deployed and their is record in hardhat-ignition state file, the function would be executed.
    *
    * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
    * -> afterDeployment -> onCompletion -> onSuccess -> onError
@@ -784,7 +784,7 @@ export class ContractBinding extends Binding {
 
   /**
    * This function is assigning custom ShouldRedeployFn that is returning either true or false, that is enabling for
-   * ignition to determine if this contract should be redeployed. As argument inside the ShouldRedeployFn is curr
+   * hardhat-ignition to determine if this contract should be redeployed. As argument inside the ShouldRedeployFn is curr
    * parameter is contract with state file metadata for that contract. This way you can determine if their is a need
    * for contract to be redeployed.
    *
@@ -1360,7 +1360,7 @@ export class ModuleBuilder {
   }
 
   /**
-   * Prototype is the way to say to ignition that this contract is going to be deployed multiple times.
+   * Prototype is the way to say to hardhat-ignition that this contract is going to be deployed multiple times.
    *
    * @param name Solidity contract name
    */
@@ -1795,7 +1795,7 @@ export class Module {
 }
 
 /**
- * This function is instantiating module class that will be used by ignition in order to read user defined contracts and
+ * This function is instantiating module class that will be used by hardhat-ignition in order to read user defined contracts and
  * events in order.
  *
  * @param moduleName Name of the module
@@ -1807,9 +1807,9 @@ export async function buildModule(moduleName: string, fn: ModuleBuilderFn, modul
 }
 
 /**
- * This function is instantiating module class that will be used by ignition in order to read user defined contracts and
+ * This function is instantiating module class that will be used by hardhat-ignition in order to read user defined contracts and
  * events in order. This is not intended to be a valid deployment module, but rather to be used only as a sub-module
- * with resolver specified in ignition.config.ts/js script.
+ * with resolver specified in hardhat-ignition.config.ts/js script.
  *
  * @param moduleName Name of the module
  * @param fn Function that will be used to build module.

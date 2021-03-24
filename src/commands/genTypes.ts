@@ -24,7 +24,7 @@ export default class GenTypes extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the ignition.config.js script, default is same as current path.',
+        description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
   };
@@ -50,9 +50,9 @@ export default class GenTypes extends Command {
     const typings = new ModuleTypings();
 
     const configService = new ConfigService(currentPath);
-    const ignitionConfig = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
+    const hardhatIgnitionConfig = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
 
-    await command.genTypes(resolvedPath, ignitionConfig, typings, configService, this.prompter);
+    await command.genTypes(resolvedPath, hardhatIgnitionConfig, typings, configService, this.prompter);
   }
 
   async catch(error: Error) {
@@ -66,7 +66,7 @@ export default class GenTypes extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
+    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
     cli.error(error);
   }
 }

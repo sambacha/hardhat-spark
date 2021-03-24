@@ -5,7 +5,7 @@ talk about it here, or you can just run next command and start writing the modul
 that you have some contracts inside your repo)
 
 ```
-ignition tutorial
+hardhat-ignition tutorial
 ```
 
 Good luck wizard :)

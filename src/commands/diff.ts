@@ -45,7 +45,7 @@ export default class Diff extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the ignition.config.js script, default is same as current path.',
+        description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
   };
@@ -103,7 +103,7 @@ export default class Diff extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
+    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
     cli.error(error);
   }
 }

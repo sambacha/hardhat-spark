@@ -1,4 +1,4 @@
-import { IgnitionConfig } from '../../src';
+import { HardhatIgnitionConfig } from '../../src';
 import { RemoteBucketStorage } from '../../src';
 import path from 'path';
 
@@ -17,6 +17,6 @@ const registryAndResolver = new RemoteBucketStorage(
   GOOGLE_SECRET_ACCESS_KEY || '',
 );
 
-export const config: IgnitionConfig = {
-  resolver: registryAndResolver,
+export const config: HardhatIgnitionConfig = {
+  // resolver: registryAndResolver,
 };

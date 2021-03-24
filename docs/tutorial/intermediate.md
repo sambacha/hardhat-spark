@@ -1,6 +1,6 @@
 # Intermediate Tutorial
 
-This would be a more complex showcase compared to the [basic](./basic.md) one. It'll tackle some of ignition's custom
+This would be a more complex showcase compared to the [basic](./basic.md) one. It'll tackle some of hardhat-ignition's custom
 functionality, and it'll explain what it is doing in the background.
 
 Please go thought the [project setup](./basic.md#project-setup) first, and initialize all needed packages in an empty
@@ -11,16 +11,16 @@ to explain how all of those contracts are functioning but rather just their inne
 
 ## Init
 
-So lets start first by running `ignition init` in empty project.
+So lets start first by running `hardhat-ignition init` in empty project.
 
 ```
-ignition init \
+hardhat-ignition init \
   --privateKeys=<private_key> \
   --mnemonic="test test test test test test test test test test test junk" \
   --hdPath="m/44'/60'/0'/0"
 ```
 
-This would generate an ignition config file that looks something like this:
+This would generate an hardhat-ignition config file that looks something like this:
 
 ```json
 {
@@ -65,7 +65,7 @@ m.prototype('ERC20');
 ```
 
 `m.library()` - is an easy way to specify if contract is library and that it should be deployed first before any other
-contract. Along the way ignition will automatically replace library contract address whenever library usage occurs.
+contract. Along the way hardhat-ignition will automatically replace library contract address whenever library usage occurs.
 
 `m.prototype()` - is a contract abstraction for later use, most common use is if you need to deploy single contract
 multiple times, we will see later how to do that.
@@ -95,7 +95,7 @@ ERC20.afterDeploy(m, 'afterDeployMintTokens', async () => {
 In this `afterDeploy()` event hook, we are minting new tokens to our first contract. After mint function we are
 confirming that `totalSupply` for our contract is set with `expectFuncRead()`. In case if `totalSupply` is not set
 correctly `expectFuncRead()` function will throw error and whole deploy process would stop, if that occurs you can look
-under `./ignition/<module_name>` for more information about deployment.
+under `./.hardhat-ignition/<module_name>` for more information about deployment.
 
 ## Mutator
 

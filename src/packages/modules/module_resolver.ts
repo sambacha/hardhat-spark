@@ -2,7 +2,7 @@ import {
   Events,
   StatefulEvent,
   ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData, EventsDepRef,
-} from '../../interfaces/ignition';
+} from '../../interfaces/hardhat_ignition';
 import { checkIfExist, compareBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';

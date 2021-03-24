@@ -1,4 +1,4 @@
-import { IgnitionConfig } from '../../src';
+import { HardhatIgnitionConfig } from '../../src';
 import * as web3utils from 'web3-utils';
 import { ethers } from 'ethers';
 import path from 'path';
@@ -9,7 +9,7 @@ const {
   ETH_ADDRESS
 } = process.env;
 
-export const config: IgnitionConfig = {
+export const config: HardhatIgnitionConfig = {
   params: {
     day: 24 * 60 * 60,
     maxOraclePriceAge: 120 * 60, // Price updates are accepted from up to two hours before maturity to allow for delayed chainlink heartbeats.

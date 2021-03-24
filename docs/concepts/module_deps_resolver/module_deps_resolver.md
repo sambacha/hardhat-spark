@@ -20,8 +20,6 @@ Upon execution of "last" needed dependencies of our event will be resolved.
 
 4. Execute `afterDeploy` event hook after `B` and `C` has been deployed
 
-For more complex example you can look at [this](../../usage/complex.md).
-
 ### Representation with an array of classes after resolving
 
 ```

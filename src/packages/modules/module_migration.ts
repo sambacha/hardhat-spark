@@ -1,6 +1,6 @@
 import { ModuleStateFile } from './states/module';
 import { checkIfExist } from '../utils/util';
-import { ContractBindingMetaData } from '../../interfaces/ignition';
+import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
 import { generateModuleFile } from '../utils/files';
 import { FileGenerationType, ModuleStateBindings } from '../types/migration';
 import path from 'path';

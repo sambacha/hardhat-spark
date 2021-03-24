@@ -1,4 +1,4 @@
-import { Config, IgnitionConfig } from '../types/config';
+import { Config, HardhatIgnitionConfig } from '../types/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
@@ -35,7 +35,7 @@ export default class ConfigService implements IConfigService {
     }
   }
 
-  async getIgnitionConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<IgnitionConfig> {
+  async getIgnitionConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<HardhatIgnitionConfig> {
     let configFilePath;
     if (configScriptPath) {
       configFilePath = path.resolve(currentPath, configScriptPath);
@@ -43,7 +43,7 @@ export default class ConfigService implements IConfigService {
       configFilePath = path.resolve(currentPath, CONFIG_SCRIPT_NAME);
     }
 
-    let config: IgnitionConfig;
+    let config: HardhatIgnitionConfig;
     if (configFilePath) {
       try {
         const configModules = await loadScript(configFilePath);
@@ -53,7 +53,7 @@ export default class ConfigService implements IConfigService {
         }
 
         for (const [, ignitionConfig] of Object.entries(configModules)) {
-          config = ignitionConfig as IgnitionConfig;
+          config = ignitionConfig as HardhatIgnitionConfig;
         }
       } catch (err) {
         if (err._isUserError) {
@@ -106,10 +106,10 @@ export default class ConfigService implements IConfigService {
 
     const ignitionConfigPath = path.resolve(currentPath, relativeIgnitionConfigPath);
     if (!reinit && fs.existsSync(ignitionConfigPath)) {
-      throw new IgnitionConfigAlreadyExist('You are trying to init empty ignition config but it already exist!');
+      throw new IgnitionConfigAlreadyExist('You are trying to init empty hardhat ignition config but it already exist!');
     }
 
-    const ignitionConfig = `import { IgnitionConfig } from '@tenderly/ignition';
+    const ignitionConfig = `import { IgnitionConfig } from '@tenderly/hardhat-ignition';
 
 export const config: IgnitionConfig = {};
 `;

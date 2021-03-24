@@ -12,13 +12,13 @@ import {
   TutorialArgs,
   UsageArgs
 } from '../../usage_interfaces';
-import { IgnitionHardhat, IgnitionHardhatActions } from '../../usage_interfaces/hardhat_plugin';
+import { HardhatIgnition, IgnitionHardhatActions } from '../../usage_interfaces/hardhat_plugin';
 import './type_extentions';
 
-export const PluginName = 'ignition';
+export const PluginName = 'hardhat-ignition';
 
 extendEnvironment(env => {
-  env.ignition = lazyObject(() => new IgnitionHardhat(env.config.ignition));
+  env.ignition = lazyObject(() => new HardhatIgnition(env.config.ignition));
 });
 
 const tutorial: ActionType<TutorialArgs> = async (
@@ -98,7 +98,7 @@ const usage: ActionType<UsageArgs> = async (
   await IgnitionHardhatActions.usage(config.ignition, usageArgs);
 };
 
-task('ignition:tutorial', 'Easiest way to get started with ignition, create couple contracts and start deploying.')
+task('ignition:tutorial', 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.')
   .setAction(tutorial);
 
 task('ignition:diff', 'Difference between deployed and current deployment.')
@@ -120,7 +120,7 @@ task('ignition:diff', 'Difference between deployed and current deployment.')
   )
   .addOptionalParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
   )
   .setAction(diff);
 
@@ -157,7 +157,7 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
   )
   .addFlag(
     'parallelize',
-    'If this flag is provided ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
+    'If this flag is provided hardhat-ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
   )
   .addFlag(
     'testEnv',
@@ -172,14 +172,14 @@ task('ignition:genTypes', 'It\'ll generate .d.ts file for written deployment mod
   )
   .addPositionalParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
     true
   )
   .setAction(genTypes);
 
-task('ignition:init', 'Initialize ignition configuration file and configuration script.')
+task('ignition:init', 'Initialize hardhat-ignition configuration file and configuration script.')
   .addParam<string>(
     'privateKeys',
     'Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123',
@@ -203,17 +203,17 @@ task('ignition:init', 'Initialize ignition configuration file and configuration 
   )
   .addParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
   )
   .addFlag(
     'reinit',
-    'Provide this flag if you would like to overwrite `ignition.config.ts`, otherwise if exists, it would error.'
+    'Provide this flag if you would like to overwrite `hardhat-ignition.config.ts`, otherwise if exists, it would error.'
   )
   .setAction(init);
 
-task('ignition:migration', 'Migrate deployment meta data from other deployers to ignition state file.')
+task('ignition:migration', 'Migrate deployment meta data from other deployers to hardhat-ignition state file.')
   .addParam<Migration>(
     'from',
     'Deployment package name (truffle, hardhatDeploy)',
@@ -244,7 +244,7 @@ task('ignition:usage', 'Generate public usage module from standard module.')
   )
   .addOptionalParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
   )

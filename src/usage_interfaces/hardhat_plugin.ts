@@ -13,7 +13,7 @@ import { EventHandler } from '../packages/modules/events/handler';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import { IPrompter, Prompters } from '../packages/utils/promter';
-import { IConfigService, IgnitionConfig } from '../packages/config';
+import { IConfigService, HardhatIgnitionConfig } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
 import { Namespace } from 'cls-hooked';
 import { Config } from '../packages/types/config';
@@ -35,9 +35,9 @@ import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 
-export type HardhatIgnitionConfig = {
+export type HardhatPluginIgnitionConfig = {
   config: Config,
-  ignitionConfig: IgnitionConfig
+  ignitionConfig: HardhatIgnitionConfig
 };
 
 export type Args = {
@@ -54,54 +54,54 @@ export type Args = {
 };
 
 export class IgnitionHardhatActions {
-  static async deploy(config: HardhatIgnitionConfig, args: DeployArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async deploy(config: HardhatPluginIgnitionConfig, args: DeployArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
     await ignitionHardhat.deploy(fullPath, args);
   }
 
-  static async diff(config: HardhatIgnitionConfig, args: DiffArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async diff(config: HardhatPluginIgnitionConfig, args: DiffArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
     await ignitionHardhat.diff(fullPath, args);
   }
 
-  static async genTypes(config: HardhatIgnitionConfig, args: GenTypesArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async genTypes(config: HardhatPluginIgnitionConfig, args: GenTypesArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
     await ignitionHardhat.genTypes(fullPath, args);
   }
 
-  static async init(config: HardhatIgnitionConfig, args: InitArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async init(config: HardhatPluginIgnitionConfig, args: InitArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
 
     await ignitionHardhat.init(args);
   }
 
-  static async migration(config: HardhatIgnitionConfig, args: MigrationArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async migration(config: HardhatPluginIgnitionConfig, args: MigrationArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
 
     await ignitionHardhat.migration(args);
   }
 
-  static async tutorial(config: HardhatIgnitionConfig, args: TutorialArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async tutorial(config: HardhatPluginIgnitionConfig, args: TutorialArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
 
     await ignitionHardhat.tutorial(args);
   }
 
-  static async usage(config: HardhatIgnitionConfig, args: UsageArgs): Promise<void> {
-    const ignitionHardhat = new IgnitionHardhat(config);
+  static async usage(config: HardhatPluginIgnitionConfig, args: UsageArgs): Promise<void> {
+    const ignitionHardhat = new HardhatIgnition(config);
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
     await ignitionHardhat.usage(fullPath, args);
   }
 }
 
-export class IgnitionHardhat implements IIgnition {
+export class HardhatIgnition implements IIgnition {
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
   public prompter: IPrompter;
@@ -123,9 +123,9 @@ export class IgnitionHardhat implements IIgnition {
   public moduleUsage: ModuleUsage;
   public moduleMigrationService: ModuleMigrationService;
 
-  public conf: HardhatIgnitionConfig;
+  public conf: HardhatPluginIgnitionConfig;
 
-  constructor(conf: HardhatIgnitionConfig) {
+  constructor(conf: HardhatPluginIgnitionConfig) {
     this.conf = conf;
   }
 

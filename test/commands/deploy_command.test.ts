@@ -1,7 +1,7 @@
 // @ts-ignore
 import { getStateIfExist, storeNewState } from '../utils/files';
 import { assert } from 'chai';
-import { IgnitionTests } from '../../src';
+import { IgnitionTests, STATE_DIR_NAME } from '../../src';
 import * as path from 'path';
 import { ContractBindingMetaData } from '../../src';
 
@@ -146,7 +146,7 @@ describe('ignition deploy', () => {
 });
 
 async function loadStateFile(ignition: IgnitionTests, projectFileName: string) {
-  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/.ignition/ExampleModule/${networkId}_deployed_module_state.json`);
+  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/${STATE_DIR_NAME}/ExampleModule/${networkId}_deployed_module_state.json`);
   let stateFile;
   try {
     stateFile = require(stateFilePath);

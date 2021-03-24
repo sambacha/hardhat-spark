@@ -8,7 +8,7 @@ export type Config = {
   hdPath?: string;
 };
 
-export type IgnitionConfig = {
+export type HardhatIgnitionConfig = {
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,

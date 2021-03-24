@@ -2,7 +2,7 @@ import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { checkIfExist } from '../../packages/utils/util';
 import { UserError, ValueMismatch } from '../../packages/types/errors';
 import { ethers } from 'ethers';
-import { ContractBinding } from '../ignition';
+import { ContractBinding } from '../hardhat_ignition';
 
 /**
  * This function is checking if `get_StorageAt` call for `slot` in `contract` is same as `expectedValue`.

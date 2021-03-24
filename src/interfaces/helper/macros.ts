@@ -1,4 +1,4 @@
-import { ContractBinding, ContractEvent, ModuleBuilder } from '../ignition';
+import { ContractBinding, ContractEvent, ModuleBuilder } from '../hardhat_ignition';
 import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
 import { checkIfExist } from '../../packages/utils/util';
@@ -8,14 +8,14 @@ import { checkIfExist } from '../../packages/utils/util';
  * "smartly" determines what shall be getter function and arguments from setterFunc and setterArgs. If want to overwrite
  * any of smartly determined parameters you can do that in `opts` object.
  *
- * @param m ModuleBuilder object
+ * @param m ModuleBuilder object or type extended moduleBuilder
  * @param setter Contract binding of contract on which "mutate"/set action shall be applied on.
  * @param setterFunc Name set function that need to be called.
  * @param setterArgs Arguments towards setterFunc
  * @param opts Params that you wish to overwrite with your desired data. name, getterFunc, getterArgs, expectedValue, deps, slot
  */
 export const mutator = (
-  m: ModuleBuilder,
+  m: ModuleBuilder | any,
   setter: ContractBinding,
   setterFunc: string,
   setterArgs: any[],
@@ -68,18 +68,20 @@ export const mutator = (
  * @param m ModuleBuilder object provided in ModuleBuilderFn
  * @param rootWallet Sender of the funds
  * @param wallets Receivers of the funds
+ * @param value
  */
 export const filler = (
   m: ModuleBuilder,
   rootWallet: ethers.Wallet,
-  wallets: ethers.Wallet[]
+  wallets: ethers.Wallet[],
+  value: ethers.BigNumber = ethers.utils.parseUnits('1', 'ether'),
 ): void => {
   m.onStart('on start distribute ethers to all accounts', async () => {
     for (let i = 0; i < wallets.length; i++) {
       await rootWallet.sendTransaction({
         from: rootWallet.getAddress(),
         to: wallets[i].getAddress(),
-        value: ethers.utils.parseUnits('1', 'ether'),
+        value: value,
         gasLimit: 21000,
       });
     }

@@ -1,4 +1,4 @@
-import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/ignition';
+import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/hardhat_ignition';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 

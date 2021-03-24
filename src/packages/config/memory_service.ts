@@ -1,4 +1,4 @@
-import { Config, IgnitionConfig } from '../types/config';
+import { Config, HardhatIgnitionConfig } from '../types/config';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
@@ -95,7 +95,7 @@ export default class MemoryConfigService implements IConfigService {
     return privateKeys[0];
   }
 
-  getIgnitionConfig(currentPath: string, configScriptPath: string): Promise<IgnitionConfig> {
+  getIgnitionConfig(currentPath: string, configScriptPath: string): Promise<HardhatIgnitionConfig> {
     return Promise.resolve({});
   }
 

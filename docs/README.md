@@ -86,13 +86,26 @@ how to use ignition. Not too much theory, just practical application to get you 
 
 | Commands                      | Glossary                                                              | Link                                        |
 | ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
-| Mortar Init                   | Initialize mortar config file and script.                             | [mortar init](./commands/init.md)           |
-| Mortar Diff                   | Show difference between current and already deployed module.          | [mortar diff](./commands/diff.md)           |
-| Mortar Deploy                 | Run/Continue deployment of the module.                                | [mortar deploy](./commands/deploy.md)       |
-| Mortar GenTypes               | Generate custom module types on top of current module.                | [mortar genTypes](./commands/genTypes.md)   |
-| Mortar Usage                  | Generate usage module, module made only for usage in other modules    | [mortar usage](./commands/usage.md)         |
-| Mortar Migration              | Ability to migrate from other build/state files to mortar state file. | [mortar migration](./commands/migration.md) |
-| Mortar Tutorial               | Step by step creation of simple deployment module with description.   | [mortar tutorial](./commands/tutorial.md) |
+| Ignition Init                   | Initialize ignition config file and script.                             | [ignition init](./commands/init.md)           |
+| Ignition Diff                   | Show difference between current and already deployed module.          | [ignition diff](./commands/diff.md)           |
+| Ignition Deploy                 | Run/Continue deployment of the module.                                | [ignition deploy](./commands/deploy.md)       |
+| Ignition GenTypes               | Generate custom module types on top of current module.                | [ignition genTypes](./commands/genTypes.md)   |
+| Ignition Usage                  | Generate usage module, module made only for usage in other modules    | [ignition usage](./commands/usage.md)         |
+| Ignition Migration              | Ability to migrate from other build/state files to ignition state file. | [ignition migration](./commands/migration.md) |
+| Ignition Tutorial               | Step by step creation of simple deployment module with description.   | [ignition tutorial](./commands/tutorial.md) |
+
+### Usage guides
+
+| Usage guides     | Description  | Link |
+| --------------------------------- | --------------------------------------------------------- | ---- |
+| Initialize ignition               | How to init ignition for your own uses. | |
+| How to deploy new module          | How to deploy module. | [module deploy](./usage/deploy-module.md)|
+| Generate module typehints         | How to generate module types for your module | [module typehints](./usage/module-typehints.md) |
+| Proxy pattern helpers             | List and brief description of proxy helper functions. | [proxy](./usage/patterns/proxy.md)|
+| Factory pattern helpers           | List and brief description og factory helpers. | [factory](./usage/patterns/factory.md)|
+| Module separation and sub-modules | How to specify module separation and how module context is shared. | [module separation](./usage/module-separation.md)|
+| Debugging tips                    | Tips for debugging errors in deployments. | [debugging tips](./debugging/tips.md)|
+| Logging options                   | What are logging options for mortar, and how to use them. | [logging](./logging/logging.md) | 
 
 ### Developer UX
 

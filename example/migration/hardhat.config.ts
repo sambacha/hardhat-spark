@@ -1,8 +1,8 @@
 import 'hardhat-deploy';
 import '../../src/hardhat';
 // @ts-ignore
-import { config } from './ignition.config';
-const ignitionJsonConfig = require('./ignition-config.json');
+import { config } from './hardhat-ignition.config';
+const ignitionJsonConfig = require('./hardhat-ignition-config.json');
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

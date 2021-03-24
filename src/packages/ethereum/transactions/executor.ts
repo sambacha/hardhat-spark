@@ -15,7 +15,7 @@ import {
   OnChangeEvent,
   StatefulEvent,
   TransactionData,
-} from '../../../interfaces/ignition';
+} from '../../../interfaces/hardhat_ignition';
 import { IPrompter } from '../../utils/promter';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { checkIfExist } from '../../utils/util';

@@ -1,7 +1,7 @@
 import { buildModule, ModuleBuilder, expectFuncRead, mutator } from '../../../src';
 import { ethers } from 'ethers';
 
-export const Module = buildModule('Module', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
+export const SomeModule = buildModule('SomeModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
   m.library('Address');
   m.prototype('TransparentUpgradeableProxy');
   m.prototype('ERC20');

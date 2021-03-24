@@ -10,7 +10,7 @@ import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 
 export default class Tutorial extends Command {
-  static description = 'Easiest way to get started with ignition, create couple contracts and start deploying.';
+  static description = 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.';
   private prompter: StreamlinedPrompter;
 
   static flags = {
@@ -50,7 +50,7 @@ export default class Tutorial extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
+    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
     cli.error(error);
   }
 }

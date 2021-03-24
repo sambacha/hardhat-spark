@@ -8,7 +8,7 @@ import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { IPrompter } from '../packages/utils/promter';
 
 export default class Init extends Command {
-  static description = 'Initialize ignition configuration file and configuration script.';
+  static description = 'Initialize hardhat-ignition configuration file and configuration script.';
   private prompter: IPrompter | undefined;
 
   static flags = {
@@ -30,7 +30,7 @@ export default class Init extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the ignition.config.js script, default is same as current path.',
+        description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
     hdPath: flags.string(
@@ -43,7 +43,7 @@ export default class Init extends Command {
     reinit: flags.boolean(
       {
         name: 'reinit',
-        description: 'Provide this flag if you would like to overwrite `ignition.config.ts`, otherwise if exists, it would error.',
+        description: 'Provide this flag if you would like to overwrite `hardhat-ignition.config.ts`, otherwise if exists, it would error.',
         required: false,
       }
     ),
@@ -81,7 +81,7 @@ export default class Init extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
+    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
     cli.error(error);
   }
 }

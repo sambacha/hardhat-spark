@@ -41,7 +41,7 @@ export default class Usage extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the ignition.config.js script, default is same as current path.',
+        description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
     debug: flags.boolean(
@@ -63,7 +63,7 @@ export default class Usage extends Command {
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;
     if (filePath == '') {
-      cli.info('Their is no ignition config, please run init first.\n   Use --help for more information.');
+      cli.info('Their is no hardhat-ignition config, please run init first.\n   Use --help for more information.');
     }
 
     process.env.IGNITION_NETWORK_ID = String(flags.networkId);
@@ -109,7 +109,7 @@ export default class Usage extends Command {
     }
 
     cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
+    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
     cli.error(error);
   }
 }

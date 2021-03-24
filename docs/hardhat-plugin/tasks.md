@@ -5,7 +5,7 @@
 ```
 Usage: hardhat [GLOBAL OPTIONS] ignition:tutorial
 
-ignition:tutorial: Easiest way to get started with ignition, create couple contracts and start deploying.
+ignition:tutorial: Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.
 ```
 
 ## Init
@@ -15,13 +15,13 @@ Usage: hardhat [GLOBAL OPTIONS] ignition:init --config-script-path <STRING> --hd
 
 OPTIONS:
 
-  --config-script-path  Path to the ignition.config.js script, default is same as current path. 
+  --config-script-path  Path to the hardhat-ignition.config.js script, default is same as current path. 
   --hd-path             Associated with mnemonic - The HD parent of all the derived keys. Default value: "m/44'/60'/0'/0" 
   --mnemonic            Mnemonic of the deployer accounts 
   --private-keys        Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123 
-  --reinit              Provide this flag if you would like to overwrite `ignition.config.ts`, otherwise if exists, it would error. 
+  --reinit              Provide this flag if you would like to overwrite `hardhat-ignition.config.ts`, otherwise if exists, it would error. 
 
-ignition:init: Initialize ignition configuration file and configuration script.
+ignition:init: Initialize hardhat-ignition configuration file and configuration script.
 ```
 
 ## Diff
@@ -31,7 +31,7 @@ Usage: hardhat [GLOBAL OPTIONS] ignition:diff --config-script-path <STRING> --ne
 
 OPTIONS:
 
-  --config-script-path  Path to the ignition.config.js script, default is same as current path. 
+  --config-script-path  Path to the hardhat-ignition.config.js script, default is same as current path. 
   --network-id          Network ID of the network you are willing to deploy your contracts. 
   --state               Provide name of module's that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other. (default: "")
 
@@ -49,7 +49,7 @@ Usage: hardhat [GLOBAL OPTIONS] ignition:deploy --network-id <STRING> [--paralle
 OPTIONS:
 
   --network-id          Network ID of the network you are willing to deploy your contracts. 
-  --parallelize         If this flag is provided ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation. 
+  --parallelize         If this flag is provided hardhat-ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation. 
   --prompting           Prompting type: streamlined, overview or json. default: overview (default: "simple")
   --rpc-provider        RPC Provider - URL of open RPC interface for your ethereum node. 
   --state               Provide name of module's that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other. (default: "")
@@ -70,7 +70,7 @@ Usage: hardhat [GLOBAL OPTIONS] ignition:genTypes moduleFilePath configScriptPat
 POSITIONAL ARGUMENTS:
 
   moduleFilePath        Path to module deployment file. 
-  configScriptPath      Path to the ignition.config.js script, default is same as current path. 
+  configScriptPath      Path to the hardhat-ignition.config.js script, default is same as current path. 
 
 ignition:genTypes: It'll generate .d.ts file for written deployment modules for better type hinting.
 ```
@@ -82,7 +82,7 @@ Usage: hardhat [GLOBAL OPTIONS] ignition:usage --config-script-path <STRING> --n
 
 OPTIONS:
 
-  --config-script-path  Path to the ignition.config.js script, default is same as current path. 
+  --config-script-path  Path to the hardhat-ignition.config.js script, default is same as current path. 
   --network-id          Network ID of the network you are willing to deploy your contracts. 
   --state               Provide name of module's that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other. (default: "")
   --test-env            This should be provided in case of test and/or CI/CD, it means that no state file will be store. 
@@ -104,5 +104,5 @@ OPTIONS:
   --from        Deployment package name (truffle, hardhatDeploy) (default: "truffle")
   --module-name Module name for which you would like to migrate state file to. 
 
-ignition:migration: Migrate deployment meta data from other deployers to ignition state file.
+ignition:migration: Migrate deployment meta data from other deployers to hardhat-ignition state file.
 ```
