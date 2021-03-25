@@ -1,7 +1,6 @@
 require('dotenv').config({path: '../.env'});
-import { module, ModuleBuilder } from '../../../src/interfaces/mortar';
+import { buildModule, ModuleBuilder } from '../../../src';
 import { ethers } from 'ethers';
-import { LibrariesModule } from './libraries.module';
 
 const {
   MERKLE_TREE_HEIGHT,
@@ -9,9 +8,7 @@ const {
   TOKEN_AMOUNT,
 } = process.env;
 
-export const ERC20TornadoModule = module('ERC20TornadoModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
-  await m.bindModule(LibrariesModule);
-
+export const ERC20TornadoModule = buildModule('ERC20TornadoModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
   const token = ERC20_TOKEN;
   let mock;
   if (token === '') {
