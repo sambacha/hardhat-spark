@@ -2,7 +2,7 @@ import { ContractBinding, buildModule } from '../../../../src';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { mutator } from '../../../../src';
-import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 const {
   IGNITION_NETWORK_ID
@@ -11,6 +11,7 @@ const {
 export const SynthetixSynths = buildModule('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
+  // @ts-ignore
   for (const {name: currencyKey, subclass, asset} of m.synths) {
     const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 

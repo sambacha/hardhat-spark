@@ -1,4 +1,4 @@
-import { ContractBinding, ContractEvent, buildModule } from '../../../../src/interfaces/hardhat_ignition';
+import { ContractBinding, ContractEvent, buildModule } from '../../../../src';
 import { expectFuncRead } from '../../../../src';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 import { checkIfExist } from '../../../../src/packages/utils/util';

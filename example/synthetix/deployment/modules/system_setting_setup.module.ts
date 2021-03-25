@@ -9,7 +9,7 @@ import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';
 import { checkIfExist } from '../../../../src/packages/utils/util';
 import { ethers } from 'ethers';
-import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 const {
   IGNITION_NETWORK_ID
@@ -17,6 +17,7 @@ const {
 
 export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
+  // @ts-ignore
   for (const {name: currencyKey} of m.synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);
     const Synth = m.getBinding(`Synth${currencyKey}`);

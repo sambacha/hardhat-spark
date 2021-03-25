@@ -3,8 +3,9 @@ import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
 import { mutator } from '../../../../src';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
-export const SynthetixCore = buildModule('SynthetixCore', async (m: ModuleBuilder) => {
+export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixModuleBuilder) => {
   await m.module(SynthetixLibraries);
   await m.module(SynthetixPrototypes);
 

@@ -1520,7 +1520,7 @@ export class ModuleBuilder {
         this.bindings[bindingName] &&
         !compareBytecode(this.bindings[bindingName].bytecode, binding.bytecode)
       ) {
-        throw new UserError('Conflict when merging two modules, check if their is same binding name.');
+        continue;
       }
 
       binding.deployMetaData.contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName);
