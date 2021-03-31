@@ -85,7 +85,6 @@ how to use ignition. Not too much theory, just practical application to get you 
 | Module separation and sub-modules | How to specify module separation and how module context is shared. | [module separation](./usage/module-separation.md)|
 | Proxy pattern helpers             | List and brief description of proxy helper functions. | [proxy](./usage/patterns/proxy.md)|
 | Factory pattern helpers           | List and brief description og factory helpers. | [factory](./usage/patterns/factory.md)|
-| Debugging tips                    | Tips for debugging errors in deployments. | [debugging tips](./debugging/tips.md)|
 | Logging options                   | What are logging options for mortar, and how to use them. | [logging](./logging/logging.md) |
 
 ### All usable commands
