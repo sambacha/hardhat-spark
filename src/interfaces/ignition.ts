@@ -1486,7 +1486,7 @@ export class ModuleBuilder {
    *
    * @returns Module builder data from sub-module.
    */
-  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder> {
+  async module(m: Module | Promise<Module>, wallets?: ethers.Wallet[], opts?: ModuleOptions): Promise<ModuleBuilder> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
@@ -1520,7 +1520,7 @@ export class ModuleBuilder {
         this.bindings[bindingName] &&
         !compareBytecode(this.bindings[bindingName].bytecode, binding.bytecode)
       ) {
-        throw new UserError('Conflict when merging two modules, check if their is same binding name.');
+        continue;
       }
 
       binding.deployMetaData.contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName);

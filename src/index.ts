@@ -120,7 +120,7 @@ export async function deploy(
     await prompter.promptContinueDeployment();
 
     try {
-      await executor.execute(moduleName, initializedTxModuleState, config.registry, config.resolver, module.getModuleConfig());
+      await executor.execute(moduleName, initializedTxModuleState, config?.registry, config?.resolver, module.getModuleConfig());
     } catch (error) {
       await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
 
