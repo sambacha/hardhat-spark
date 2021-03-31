@@ -120,14 +120,23 @@ export default class Deploy extends Command {
     const configService = new ConfigService(String(flags.networkId));
     const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
     let provider = new ethers.providers.JsonRpcProvider();
-    if (checkIfExist(flags.rpcProvider) || checkIfExist(config.networks[String(flags.networkId)].rpc_provider)) {
+    process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
+    if (
+      checkIfExist(config.networks) &&
+      checkIfExist(config.networks[String(flags.networkId)]) &&
+      checkIfExist(config.networks[String(flags.networkId)].rpc_provider)
+    ) {
       provider = new ethers.providers.JsonRpcProvider(
-        flags?.rpcProvider ||
-        config.networks[String(flags.networkId)].rpc_provider
+        String(config?.networks[String(flags.networkId)]?.rpc_provider)
       );
+      process.env.IGNITION_RPC_PROVIDER = String(config?.networks[String(flags.networkId)]?.rpc_provider);
     }
-
-    process.env.IGNITION_RPC_PROVIDER = String(flags?.rpcProvider || config?.networks[String(flags.networkId)]?.rpc_provider || 'http://localhost:8545');
+    if (checkIfExist(flags.rpcProvider)) {
+      provider = new ethers.providers.JsonRpcProvider(
+        flags?.rpcProvider
+      );
+      process.env.IGNITION_RPC_PROVIDER = String(flags?.rpcProvider);
+    }
 
     // choosing right prompter from user desires
     let prompter;

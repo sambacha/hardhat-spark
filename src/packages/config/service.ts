@@ -61,9 +61,23 @@ export default class ConfigService implements IConfigService {
       return [];
     }
 
-    const privateKeys = config.networks[this.networkId]?.privateKeys || config?.privateKeys;
-    const mnemonic = config.networks[this.networkId]?.mnemonic || config?.mnemonic;
-    let hdPath = config.networks[this.networkId]?.hdPath || config?.hdPath;
+    let privateKeys = config?.privateKeys;
+    let mnemonic = config?.mnemonic;
+    let hdPath = config?.hdPath;
+    if (
+      checkIfExist(config?.networks) &&
+      checkIfExist(config?.networks[this.networkId])
+    ) {
+      if (checkIfExist(config.networks[this.networkId]?.privateKeys)) {
+        privateKeys = config.networks[this.networkId]?.privateKeys;
+      }
+      if (checkIfExist(config.networks[this.networkId]?.mnemonic)) {
+        mnemonic = config.networks[this.networkId]?.mnemonic;
+      }
+      if (checkIfExist(config.networks[this.networkId]?.hdPath)) {
+        hdPath = config.networks[this.networkId]?.hdPath;
+      }
+    }
 
     const provider = new ethers.providers.JsonRpcProvider(rpcPath);
 
@@ -89,7 +103,17 @@ export default class ConfigService implements IConfigService {
   }
 
   getFirstPrivateKey(): string {
-    const privateKeys = this.config.networks[this.networkId]?.privateKeys || this.config?.privateKeys;
+    let privateKeys = [];
+    if (checkIfExist(this.config?.privateKeys)) {
+      privateKeys = this.config?.privateKeys;
+    }
+    if (
+      checkIfExist(this.config.networks) &&
+      checkIfExist(this.config.networks[this.networkId]) &&
+      checkIfExist(this.config.networks[this.networkId]?.privateKeys)
+    ) {
+      privateKeys = this.config.networks[this.networkId]?.privateKeys;
+    }
     if (privateKeys.length < 1) {
       throw new PrivateKeyIsMissing('Private keys are missing. Please provide them inside hardhat-ignition config file.');
     }
