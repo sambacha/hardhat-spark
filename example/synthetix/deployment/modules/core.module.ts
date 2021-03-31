@@ -1,18 +1,14 @@
-import { buildModule, ModuleBuilder } from '../../../../src';
+import { buildModule } from '../../../../src';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { SynthetixLibraries, SynthetixPrototypes } from './helper.module';
-import { mutator } from '../../../../src';
+import { sendAfterDeploy } from '../../../../src';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixModuleBuilder) => {
-  await m.module(SynthetixLibraries);
-  await m.module(SynthetixPrototypes);
-
   const AddressResolver = m.contract('AddressResolver', m.ETH_ADDRESS);
-  const ReadProxyAddressResolver = m.bindPrototype('ReadProxyAddressResolver', 'ReadProxy', m.ETH_ADDRESS);
+  const ReadProxyAddressResolver = m.bindTemplate('ReadProxyAddressResolver', 'ReadProxy', m.ETH_ADDRESS);
 
-  mutator(m,
+  sendAfterDeploy(m,
     ReadProxyAddressResolver,
     'setTarget',
     [AddressResolver],
@@ -27,21 +23,21 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
   const SynthetixEscrow = m.contract('SynthetixEscrow', m.ETH_ADDRESS, ethers.constants.AddressZero);
   const SynthetixState = m.contract('SynthetixState', m.ETH_ADDRESS, m.ETH_ADDRESS);
 
-  const ProxyFeePool = m.bindPrototype('ProxyFeePool', 'Proxy', m.ETH_ADDRESS);
+  const ProxyFeePool = m.bindTemplate('ProxyFeePool', 'Proxy', m.ETH_ADDRESS);
 
-  const DelegateApprovalsEternalStorage = m.bindPrototype('DelegateApprovalsEternalStorage', 'EternalStorage', m.ETH_ADDRESS, ethers.constants.AddressZero);
+  const DelegateApprovalsEternalStorage = m.bindTemplate('DelegateApprovalsEternalStorage', 'EternalStorage', m.ETH_ADDRESS, ethers.constants.AddressZero);
   const DelegateApprovals = m.contract('DelegateApprovals', m.ETH_ADDRESS, DelegateApprovalsEternalStorage);
 
-  mutator(m,
+  sendAfterDeploy(m,
     DelegateApprovalsEternalStorage,
     'setAssociatedContract',
     [DelegateApprovals],
   );
 
   const Liquidations = m.contract('Liquidations', m.ETH_ADDRESS, ReadProxyAddressResolver);
-  const EternalStorageLiquidations = m.bindPrototype('EternalStorageLiquidations', 'EternalStorage', m.ETH_ADDRESS, Liquidations);
+  const EternalStorageLiquidations = m.bindTemplate('EternalStorageLiquidations', 'EternalStorage', m.ETH_ADDRESS, Liquidations);
 
-  mutator(m,
+  sendAfterDeploy(m,
     EternalStorageLiquidations,
     'setAssociatedContract',
     [Liquidations],
@@ -50,13 +46,13 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
   const FeePoolEternalStorage = m.contract('FeePoolEternalStorage', m.ETH_ADDRESS, ethers.constants.AddressZero);
   const FeePool = m.contract('FeePool', ProxyFeePool, AddressResolver, ReadProxyAddressResolver);
 
-  mutator(m,
+  sendAfterDeploy(m,
     FeePoolEternalStorage,
     'setAssociatedContract',
     [FeePool],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     ProxyFeePool,
     'setTarget',
     [FeePool],
@@ -64,7 +60,7 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
 
   const FeePoolState = m.contract('FeePoolState', m.ETH_ADDRESS, FeePool);
 
-  mutator(m,
+  sendAfterDeploy(m,
     FeePoolState,
     'setFeePool',
     [FeePool],
@@ -79,10 +75,10 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
     ProxyFeePool
   );
 
-  const ProxyERC20Synthetix = m.bindPrototype('ProxyERC20Synthetix', 'ProxyERC20', m.ETH_ADDRESS);
-  const TokenStateSynthetix = m.bindPrototype('TokenStateSynthetix', 'TokenState', m.ETH_ADDRESS, m.ETH_ADDRESS);
+  const ProxyERC20Synthetix = m.bindTemplate('ProxyERC20Synthetix', 'ProxyERC20', m.ETH_ADDRESS);
+  const TokenStateSynthetix = m.bindTemplate('TokenStateSynthetix', 'TokenState', m.ETH_ADDRESS, m.ETH_ADDRESS);
 
-  const synthetix = m.bindPrototype(
+  const synthetix = m.bindTemplate(
     'Synthetix',
     m.useOvm ? 'MintableSynthetix' : 'Synthetix',
     ProxyERC20Synthetix,
@@ -92,34 +88,34 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
     ReadProxyAddressResolver
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     ProxyERC20Synthetix,
     'setTarget',
     [synthetix],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     synthetix,
     'setProxy',
     [ProxyERC20Synthetix],
   );
 
-  const ProxySynthetix = m.bindPrototype('ProxySynthetix', 'Proxy', m.ETH_ADDRESS);
+  const ProxySynthetix = m.bindTemplate('ProxySynthetix', 'Proxy', m.ETH_ADDRESS);
 
-  mutator(m,
+  sendAfterDeploy(m,
     ProxySynthetix,
     'setTarget',
     [synthetix],
   );
 
-  m.bindPrototype(
+  m.bindTemplate(
     'DebtCache',
     m.useOvm ? 'RealtimeDebtCache' : 'DebtCache',
     m.ETH_ADDRESS,
     ReadProxyAddressResolver
   );
 
-  const exchanger = m.bindPrototype(
+  const exchanger = m.bindTemplate(
     'Exchanger',
     m.useOvm ? 'Exchanger' : 'ExchangerWithVirtualSynth',
     m.ETH_ADDRESS,
@@ -127,13 +123,13 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
   );
   const exchangeState = m.contract('ExchangeState', m.ETH_ADDRESS, exchanger);
 
-  mutator(m,
+  sendAfterDeploy(m,
     exchangeState,
     'setAssociatedContract',
     [exchanger],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     SystemStatus,
     'updateAccessControl',
     [toBytes32('Synth'), exchanger, true, false],
@@ -144,19 +140,19 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
     }
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     TokenStateSynthetix,
     'setBalanceOf',
     [m.ETH_ADDRESS, m.currentSynthetixSupply],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     TokenStateSynthetix,
     'setAssociatedContract',
     [synthetix],
   );
 
-  const issuer = m.bindPrototype('Issuer',
+  const issuer = m.bindTemplate('Issuer',
     m.useOvm ? 'Issuer' : 'IssuerWithoutLiquidations',
     m.ETH_ADDRESS,
     ReadProxyAddressResolver
@@ -165,7 +161,7 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
   m.contract('TradingRewards', m.ETH_ADDRESS, m.ETH_ADDRESS, ReadProxyAddressResolver);
 
 
-  mutator(m,
+  sendAfterDeploy(m,
     SynthetixState,
     'setAssociatedContract',
     [issuer],
@@ -173,20 +169,20 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
 
   m.contract('EscrowChecker', SynthetixEscrow);
 
-  mutator(m,
+  sendAfterDeploy(m,
     RewardEscrow,
     'setSynthetix',
     [synthetix],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     RewardEscrow,
     'setFeePool',
     [FeePool],
   );
 
   if (m.useOvm) {
-    m.bindPrototype('SupplySchedule', 'FixedSupplySchedule',
+    m.bindTemplate('SupplySchedule', 'FixedSupplySchedule',
       m.ETH_ADDRESS,
       ReadProxyAddressResolver,
       m.inflationStartDate,
@@ -201,26 +197,26 @@ export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixMod
   } else {
     const supplySchedule = m.contract('SupplySchedule', m.ETH_ADDRESS, m.currentLastMintEvent, m.currentWeekOfInflation);
 
-    mutator(m,
+    sendAfterDeploy(m,
       supplySchedule,
       'setSynthetixProxy',
       [synthetix],
     );
   }
 
-  mutator(m,
+  sendAfterDeploy(m,
     RewardsDistribution,
     'setAuthority',
     [synthetix],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     RewardsDistribution,
     'setSynthetixProxy',
     [ProxyERC20Synthetix],
   );
 
-  mutator(m,
+  sendAfterDeploy(m,
     SynthetixEscrow,
     'setSynthetix',
     [synthetix],

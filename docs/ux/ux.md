@@ -11,7 +11,7 @@ async function expectFuncRead(expectedValue: ContractBinding | any | undefined, 
 ```typescript
 await expectFuncRead(
   ContractBinding(A), 
-  B.instance().getAddressA
+  B.deployed().getAddressA
 );
 ```
 
@@ -26,7 +26,7 @@ async function expectSlotRead(expectedValue: ContractBinding | any | undefined, 
 ```typescript
 await expectSlotRead(
   ContractBinding(A), 
-  B.instance(),
+  B.deployed(),
   '<slot_hash>'
 );
 ```
@@ -42,7 +42,7 @@ async function gracefulExpectFuncRead(expectedValue: ContractBinding | any, read
 ```typescript
 gracefulExpectFuncRead(
   ContractBinding(A),
-  B.instance().getAddressA
+  B.deployed().getAddressA
 )
 ```
 
@@ -65,7 +65,7 @@ gracefulExpect(firstValue: any, secondValue: any): boolean
 Mutator is the easies way to execute `set` function and immediately after call `get` function to check if desired value is set. If it doesn't it will throw `UserError`.
 
 ```typescript
-const mutator = (
+const sendAfterDeploy = (
   m: ModuleBuilder, // ModuleBuilder provided in module function as parameter
   setter: ContractBinding, // ContractBinding of contract upon which setter function will be called
   setterFunc: string, // name of setter function

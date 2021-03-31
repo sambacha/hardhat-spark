@@ -20,9 +20,9 @@ export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async 
       }
     });
 
-    await AddressResolver.instance().importAddresses(contractBytes, contractAddresses);
+    await AddressResolver.deployed().importAddresses(contractBytes, contractAddresses);
 
-    await expectFuncRead(undefined, AddressResolver.instance().areAddressesImported, contractBytes, contractAddresses);
+    await expectFuncRead(undefined, AddressResolver.deployed().areAddressesImported, contractBytes, contractAddresses);
   });
 
   const setTargetInResolverFromReadProxy = m.mutatorsetTargetReadProxyAddressResolver.event as ContractEvent;
@@ -53,23 +53,23 @@ export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async 
       const chunks = splitArrayIntoChunks(addressesToCache, 4);
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        await AddressResolver.instance().rebuildCaches([chunk], {
+        await AddressResolver.deployed().rebuildCaches([chunk], {
           gasLimit: 7e6
         });
       }
     } else {
-      await AddressResolver.instance().rebuildCaches(addressesToCache, {
+      await AddressResolver.deployed().rebuildCaches(addressesToCache, {
         gasLimit: 7e6
       });
     }
 
     for (let contractBinding of contractsWithRebuildableCache.dependencies) {
       contractBinding = contractBinding as ContractBinding;
-      await contractBinding.instance().rebuildCache({
+      await contractBinding.deployed().rebuildCache({
         gasLimit: 500e3,
       });
 
-      await expectFuncRead(true, contractBinding.instance().isResolverCached, {
+      await expectFuncRead(true, contractBinding.deployed().isResolverCached, {
         gasLimit: 500e3,
       });
     }
@@ -83,11 +83,11 @@ export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async 
 
     for (let target of contractsWithLegacyResolverCaching.dependencies) {
       target = target as ContractBinding;
-      await target.instance().setResolverAndSyncCache(ReadProxyAddressResolver, {
+      await target.deployed().setResolverAndSyncCache(ReadProxyAddressResolver, {
         gasLimit: 500e3,
       });
 
-      await expectFuncRead(true, target.instance().isResolverCached, {
+      await expectFuncRead(true, target.deployed().isResolverCached, {
         gasLimit: 500e3,
       });
     }
@@ -99,11 +99,11 @@ export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async 
       });
     for (let target of contractsWithLegacyResolverNoCache.dependencies) {
       target = target as ContractBinding;
-      await target.instance().setResolver(ReadProxyAddressResolver, {
+      await target.deployed().setResolver(ReadProxyAddressResolver, {
         gasLimit: 500e3,
       });
 
-      await expectFuncRead(ReadProxyAddressResolver, target.instance().resolver, {
+      await expectFuncRead(ReadProxyAddressResolver, target.deployed().resolver, {
         gasLimit: 500e3,
       });
     }

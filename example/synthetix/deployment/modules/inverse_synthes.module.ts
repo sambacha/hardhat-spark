@@ -18,7 +18,7 @@ export const SynthetixInverseSynths = buildModule('SynthetixInverseSynths', asyn
         freezeAtLowerLimit: boolean
       }) =>
         ExchangeRates.afterDeploy(m, `afterDeployExchangeRatesSynth${currencyKey}`, async (): Promise<void> => {
-          await ExchangeRates.instance().setInversePricing(
+          await ExchangeRates.deployed().setInversePricing(
             toBytes32(currencyKey),
             web3utils.toWei(entryPoint.toString()),
             web3utils.toWei(upperLimit.toString()),

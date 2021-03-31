@@ -15,7 +15,7 @@ export const SynthetixDebtCacheSetup = buildModule('SynthetixDebtCacheSetup', as
     const validityChanged = wasInvalid !== isInvalid;
 
     if (force || validityChanged) {
-      DebtCache.instance().takeDebtSnapshot({
+      DebtCache.deployed().takeDebtSnapshot({
         gasLimit: 2.5e6
       });
     } else if (!validityChanged) {
@@ -24,8 +24,8 @@ export const SynthetixDebtCacheSetup = buildModule('SynthetixDebtCacheSetup', as
   };
 
   const checkSnapshot = async () => {
-    const cacheInfo = await DebtCache.instance().cacheInfo();
-    const currentDebt = await DebtCache.instance().currentDebt();
+    const cacheInfo = await DebtCache.deployed().cacheInfo();
+    const currentDebt = await DebtCache.deployed().currentDebt();
 
     // Check if the snapshot is stale and can be fixed.
     if (cacheInfo.isStale && !currentDebt.anyRateIsInvalid) {

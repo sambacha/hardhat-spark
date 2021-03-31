@@ -1,14 +1,14 @@
-import { Config, HardhatIgnitionConfig } from '../types/config';
+import { HardhatIgnitionConfig } from '../types/config';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { MnemonicNotValid, PrivateKeyNotValid } from '../types/errors';
+import { PrivateKeyNotValid } from '../types/errors';
 import { checkIfExist } from '../utils/util';
 import { IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
 
 export default class MemoryConfigService implements IConfigService {
-  private config: Config;
+  private config: HardhatIgnitionConfig;
 
-  constructor(config?: Config) {
+  constructor(config?: HardhatIgnitionConfig) {
     if (checkIfExist(config)) {
       this.config = config;
     } else {
@@ -18,34 +18,6 @@ export default class MemoryConfigService implements IConfigService {
         hdPath: '',
       };
     }
-  }
-
-  generateAndSaveConfig(privateKeys: string[], mnemonic?: string, hdPath?: string): boolean {
-    for (const privateKey of privateKeys) {
-      try {
-        new ethers.utils.SigningKey(privateKey);
-      } catch (error) {
-        cli.debug(error);
-
-        throw new PrivateKeyNotValid('You have provided string that is not private key.');
-      }
-    }
-
-    try {
-      ethers.Wallet.fromMnemonic(mnemonic, hdPath);
-    } catch (error) {
-      cli.debug(error);
-
-      throw new MnemonicNotValid('You have provided string that is not private key.');
-    }
-
-    this.config = {
-      privateKeys: privateKeys,
-      mnemonic: mnemonic,
-      hdPath: hdPath,
-    };
-
-    return true;
   }
 
   getAllWallets(rpcPath?: string): ethers.Wallet[] {
@@ -95,11 +67,7 @@ export default class MemoryConfigService implements IConfigService {
     return privateKeys[0];
   }
 
-  getIgnitionConfig(currentPath: string, configScriptPath: string): Promise<HardhatIgnitionConfig> {
-    return Promise.resolve({});
-  }
-
-  saveEmptyIgnitionConfig(currentPath: string, configScriptPath: string): boolean {
-    return true;
+  initializeIgnitionConfig(currentPath: string, configScriptPath: string): Promise<HardhatIgnitionConfig> {
+    return Promise.resolve(this.config);
   }
 }

@@ -41,18 +41,6 @@ export * from './packages/modules/states/registry';
 export * from './packages/modules/states/registry/remote_bucket_storage';
 export * from './packages/modules/typings';
 
-export function init(flags: OutputFlags<any>, configService: IConfigService) {
-  const privateKeys = (flags.privateKeys as string).split(',');
-
-  const mnemonic = (flags.mnemonic as string);
-  const hdPath = (flags.hdPath as string);
-
-  configService.generateAndSaveConfig(privateKeys, mnemonic, hdPath);
-  configService.saveEmptyIgnitionConfig(process.cwd(), flags.configScriptPath, flags.reinit);
-
-  cli.info('You have successfully configured ignition.');
-}
-
 export async function deploy(
   deploymentFilePath: string,
   config: HardhatIgnitionConfig,

@@ -65,17 +65,6 @@ const genTypes: ActionType<GenTypesArgs> = async (
   await IgnitionHardhatActions.genTypes(config.ignition, genTypesArgs);
 };
 
-const init: ActionType<InitArgs> = async (
-  initArgs: InitArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
-) => {
-  await IgnitionHardhatActions.init(config.ignition, initArgs);
-};
-
 const migration: ActionType<MigrationArgs> = async (
   migrationArgs: MigrationArgs,
   {
@@ -178,40 +167,6 @@ task('ignition:genTypes', 'It\'ll generate .d.ts file for written deployment mod
     true
   )
   .setAction(genTypes);
-
-task('ignition:init', 'Initialize hardhat-ignition configuration file and configuration script.')
-  .addParam<string>(
-    'privateKeys',
-    'Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123',
-    undefined,
-    undefined,
-    false,
-  )
-  .addParam<string>(
-    'mnemonic',
-    'Mnemonic of the deployer accounts',
-    undefined,
-    undefined,
-    true,
-  )
-  .addParam<string>(
-    'hdPath',
-    'Associated with mnemonic - The HD parent of all the derived keys. Default value: "m/44\'/60\'/0\'/0"',
-    undefined,
-    undefined,
-    true,
-  )
-  .addParam<string>(
-    'configScriptPath',
-    'Path to the hardhat-ignition.config.js script, default is same as current path.',
-    undefined,
-    undefined,
-  )
-  .addFlag(
-    'reinit',
-    'Provide this flag if you would like to overwrite `hardhat-ignition.config.ts`, otherwise if exists, it would error.'
-  )
-  .setAction(init);
 
 task('ignition:migration', 'Migrate deployment meta data from other deployers to hardhat-ignition state file.')
   .addParam<Migration>(

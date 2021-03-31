@@ -15,7 +15,7 @@ import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { IPrompter } from '../packages/utils/promter';
 import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/executor';
-import { BindingsConflict, CliError, PrototypeNotFound, UserError } from '../packages/types/errors';
+import { BindingsConflict, CliError, TemplateNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
@@ -64,8 +64,6 @@ export type DeployFn = () => Promise<DeployReturn>;
 
 export enum EventType {
   'OnChangeEvent' = 'OnChangeEvent',
-  'BeforeDeploymentEvent' = 'BeforeDeploymentEvent',
-  'AfterDeploymentEvent' = 'AfterDeploymentEvent',
   'BeforeDeployEvent' = 'BeforeDeployEvent',
   'AfterDeployEvent' = 'AfterDeployEvent',
   'AfterCompileEvent' = 'AfterCompileEvent',
@@ -94,15 +92,7 @@ export interface BeforeDeployEvent extends BaseEvent {
   fn: EventFnCompiled;
 }
 
-export interface BeforeDeploymentEvent extends BaseEvent {
-  fn: EventFnCompiled;
-}
-
 export interface AfterDeployEvent extends BaseEvent {
-  fn: EventFnDeployed;
-}
-
-export interface AfterDeploymentEvent extends BaseEvent {
   fn: EventFnDeployed;
 }
 
@@ -125,8 +115,6 @@ export type MetaDataEvent = { name: string, eventType: EventType, deps?: string[
 export type ContractEvent =
   BeforeDeployEvent |
   AfterDeployEvent |
-  AfterDeploymentEvent |
-  BeforeDeploymentEvent |
   BeforeCompileEvent |
   AfterCompileEvent |
   OnChangeEvent;
@@ -145,8 +133,6 @@ export type ModuleEvents = {
 export type EventsDepRef = {
   beforeCompile: string[]
   afterCompile: string[]
-  beforeDeployment: string[]
-  afterDeployment: string[]
   beforeDeploy: string[]
   afterDeploy: string[]
   onChange: string[]
@@ -206,7 +192,7 @@ export abstract class Binding {
     this.name = name;
   }
 
-  instance(m: ModuleBuilder): any {
+  deployed(m: ModuleBuilder): any {
     return {
       name: this.name
     };
@@ -270,52 +256,6 @@ export class GroupedDependencies {
   }
 
   // event hooks
-  beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeploymentEvent'], this.dependencies, usages);
-    const beforeDeployment: BeforeDeploymentEvent = {
-      ...generateBaseEvent,
-      fn,
-    };
-
-    for (let dep of this.dependencies) {
-      dep = dep as ContractBinding;
-      if (dep._isContractBinding) {
-        if (dep.eventsDeps.beforeDeployment.includes(eventName)) {
-          continue;
-        }
-
-        dep.eventsDeps.beforeDeployment.push(eventName);
-      }
-    }
-
-    m.addEvent(eventName, beforeDeployment);
-    return beforeDeployment;
-  }
-
-  // afterDeployment executes each time after a deployment has finished.
-  // The deployment doesn't actually have to perform any deployments for this event to trigger.
-  afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeploymentEvent'], this.dependencies, usages);
-    const afterDeployment: AfterDeploymentEvent = {
-      ...generateBaseEvent,
-      fn,
-    };
-
-    for (let dep of this.dependencies) {
-      dep = dep as ContractBinding;
-      if (dep._isContractBinding) {
-        if (dep.eventsDeps.afterDeployment.includes(eventName)) {
-          continue;
-        }
-
-        dep.eventsDeps.afterDeployment.push(eventName);
-      }
-    }
-
-    m.addEvent(eventName, afterDeployment);
-    return afterDeployment;
-  }
-
   // beforeDeploy runs each time the Binding is about to be triggered.
   // This event can be used to force the binding in question to be deployed.
   beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
@@ -492,8 +432,6 @@ export class ContractBinding extends Binding {
     this.eventsDeps = events || {
       beforeCompile: [],
       afterCompile: [],
-      beforeDeployment: [],
-      afterDeployment: [],
       beforeDeploy: [],
       afterDeploy: [],
       onChange: []
@@ -526,7 +464,7 @@ export class ContractBinding extends Binding {
    * interface, with record keeping functionality. This is needed in case if some of underlying contract function
    * fail in execution so when hardhat-ignition continue it will "skip" successfully executed transaction.
    */
-  instance(): ethers.Contract {
+  deployed(): ethers.Contract {
     if (this.contractInstance) {
       return this.contractInstance;
     }
@@ -611,13 +549,13 @@ export class ContractBinding extends Binding {
    * This is helper function that is setting new logic contract for proxy.
    *
    * @param m ModuleBuilder object
-   * @param proxy Proxy contract instance
-   * @param logic Logic contract instance
+   * @param proxy Proxy contract deployed
+   * @param logic Logic contract deployed
    * @param setLogicFuncName Function used to change logic contract in proxy
    */
   proxySetNewLogic(m: ModuleBuilder, proxy: ContractBinding, logic: ContractBinding, setLogicFuncName: string): void {
     m.group(proxy, logic).afterDeploy(m, `setNewLogicContract${proxy.name}${logic.name}`, async () => {
-      await proxy.instance()[setLogicFuncName](logic);
+      await proxy.deployed()[setLogicFuncName](logic);
     });
   }
 
@@ -636,9 +574,9 @@ export class ContractBinding extends Binding {
 
     const child = m.contract(childName);
     child.deployFn(async () => {
-      const tx = await this.instance()[createFuncName](...args);
+      const tx = await this.deployed()[createFuncName](...args);
 
-      const children = await this.instance()[getFunctionName](getFunctionArgs);
+      const children = await this.deployed()[getFunctionName](getFunctionArgs);
 
       return {
         transaction: tx,
@@ -665,71 +603,11 @@ export class ContractBinding extends Binding {
   }
 
   /**
-   * Setup beforeDeployment event hook on desired contract.
-   *
-   * It is running always before contract deployment, this means that even if contract is already deployed and their is
-   * record in hardhat-ignition state file, the function would be executed.
-   *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
-   *
-   * @param m ModuleBuilder object.
-   * @param eventName Unique event name.
-   * @param fn Function to be executed before contract deployment.
-   * @param usages Usage contracts.
-   */
-  beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    if (this.eventsDeps.beforeDeployment.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
-    }
-    this.eventsDeps.beforeDeployment.push(eventName);
-
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeploymentEvent'], [this], usages);
-
-    const beforeDeployment: BeforeDeploymentEvent = {
-      ...generateBaseEvent,
-      fn,
-    };
-    m.addEvent(eventName, beforeDeployment);
-
-    return beforeDeployment;
-  }
-
-  /**
-   * Setup afterDeployment event hook. It is running always before contract deployment, this means that even if contract
-   * is already deployed and their is record in hardhat-ignition state file, the function would be executed.
-   *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
-   *
-   * @param m ModuleBuilder object.
-   * @param eventName Unique event name.
-   * @param fn Function that is going to be executed immediately after contract deployment.
-   * @param usages Usage contracts.
-   */
-  afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    if (this.eventsDeps.afterDeployment.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
-    }
-    this.eventsDeps.afterDeployment.push(eventName);
-
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeploymentEvent'], [this], usages);
-
-    const afterDeploymentEvent: AfterDeploymentEvent = {
-      ...generateBaseEvent,
-      fn,
-    };
-    m.addEvent(eventName, afterDeploymentEvent);
-
-    return afterDeploymentEvent;
-  }
-
-  /**
    * Before deploy event hook. It is running only if contract that event is bounded to this event is actually going to
    * be deployed.
    *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeploy -> onChange -> afterDeploy
+   * -> onCompletion -> onSuccess -> onError
    *
    * @param m ModuleBuilder object.
    * @param eventName Unique event name.
@@ -757,8 +635,8 @@ export class ContractBinding extends Binding {
    *  After deploy event hook. It is running only if contract that event is bounded to this event is actually going to
    *  be deployed.
    *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeploy -> onChange -> afterDeploy
+   * -> onCompletion -> onSuccess -> onError
    *
    * @param m ModuleBuilder object
    * @param eventName Unique event name
@@ -797,8 +675,8 @@ export class ContractBinding extends Binding {
   /**
    *  Before compile event hook. Runs immediately before compile.
    *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeploy -> onChange -> afterDeploy
+   * -> onCompletion -> onSuccess -> onError
    *
    * @param m ModuleBuilder object.
    * @param eventName Unique event name.
@@ -825,8 +703,8 @@ export class ContractBinding extends Binding {
   /**
    *  After compile event hook. Runs immediately after compile event when bytecode, abi and other metadata is available.
    *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeploy -> onChange -> afterDeploy
+   * -> onCompletion -> onSuccess -> onError
    *
    * @param m ModuleBuilder object.
    * @param eventName Unique event name.
@@ -853,8 +731,8 @@ export class ContractBinding extends Binding {
   /**
    *  On change event hook. Runs only if contract has been changed.
    *
-   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeployment -> beforeDeploy -> onChange -> afterDeploy
-   * -> afterDeployment -> onCompletion -> onSuccess -> onError
+   * Event lifecycle: beforeCompile -> afterCompile -> beforeDeploy -> onChange -> afterDeploy
+   * -> onCompletion -> onSuccess -> onError
    *
    * @param m ModuleBuilder object.
    * @param eventName Unique event name.
@@ -1134,7 +1012,7 @@ export class ContractInstance {
     return args;
   }
 
-  public setNewSigner(wallet: ethers.Wallet) {
+  public withSigner(wallet: ethers.Wallet) {
     if (wallet._isSigner) {
       this.signer = wallet as ethers.Signer;
     }
@@ -1279,7 +1157,7 @@ export class ModuleBuilder {
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
   private readonly actions: { [name: string]: Action };
-  private prototypes: { [name: string]: Prototype };
+  private templates: { [name: string]: Template};
 
   private resolver: IModuleRegistryResolver | undefined;
   private registry: IModuleRegistryResolver | undefined;
@@ -1293,7 +1171,7 @@ export class ModuleBuilder {
   constructor(moduleSession: Namespace, opts?: ModuleOptions) {
     this.bindings = {};
     this.actions = {};
-    this.prototypes = {};
+    this.templates = {};
     this.resolver = undefined;
     this.registry = undefined;
     this.contractEvents = {};
@@ -1360,34 +1238,34 @@ export class ModuleBuilder {
   }
 
   /**
-   * Prototype is the way to say to hardhat-ignition that this contract is going to be deployed multiple times.
+   * Contract template is the way to say to hardhat-ignition that this contract is going to be deployed multiple times.
    *
    * @param name Solidity contract name
    */
-  prototype(name: string): Prototype {
-    this.prototypes[name] = new Prototype(name);
+  contractTemplate(name: string): Template {
+    this.templates[name] = new Template(name);
 
-    return this.prototypes[name];
+    return this.templates[name];
   }
 
   /**
-   * Create contract deployment for contract with `prototypeName` that you previously defined.
+   * Create contract deployment for contract with `templateName` that you previously defined.
    *
    * @param name Unique "friendly" contract name
-   * @param prototypeName Solidity contract name provided in .protytpe function
+   * @param templateName Solidity contract name provided in .contractTemplate() function
    * @param args Constructor arguments.
    */
-  bindPrototype(name: string, prototypeName: string, ...args: Arguments): ContractBinding {
+  bindTemplate(name: string, templateName: string, ...args: Arguments): ContractBinding {
     if (checkIfExist(this.bindings[name])) {
       throw new BindingsConflict(`Contract already bind to the module - ${name}`);
     }
 
-    if (!checkIfExist(this.prototypes[prototypeName])) {
-      throw new PrototypeNotFound(`Prototype with name ${prototypeName} is not found in this module`);
+    if (!checkIfExist(this.templates[templateName])) {
+      throw new TemplateNotFound(`Template with name ${templateName} is not found in this module`);
     }
 
     const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
-    this.bindings[name] = new ContractBinding(name, this.prototypes[prototypeName].contractName, args, moduleName);
+    this.bindings[name] = new ContractBinding(name, this.templates[templateName].contractName, args, moduleName);
     this[name] = this.bindings[name];
 
     return this.bindings[name];
@@ -1486,7 +1364,7 @@ export class ModuleBuilder {
    *
    * @returns Module builder data from sub-module.
    */
-  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder> {
+  async useModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
@@ -1528,7 +1406,7 @@ export class ModuleBuilder {
       this.bindings[bindingName] = binding;
     }
 
-    this.prototypes = m.getAllPrototypes();
+    this.templates = m.getAllTemplates();
 
     return moduleBuilder;
   }
@@ -1589,8 +1467,8 @@ export class ModuleBuilder {
     return this.registry;
   }
 
-  getAllPrototypes(): { [name: string]: Prototype } {
-    return this.prototypes;
+  getAllTemplates(): { [name: string]: Template } {
+    return this.templates;
   }
 
   getAllOpts(): ModuleOptions {
@@ -1654,7 +1532,7 @@ export class ModuleBuilder {
   }
 }
 
-export class Prototype {
+export class Template {
   public contractName: string;
 
   constructor(contractName: string) {
@@ -1675,7 +1553,7 @@ export class Module {
   private moduleEvents: ModuleEvents;
   private actions: { [name: string]: Action };
   private moduleConfig: ModuleConfig | undefined;
-  private prototypes: { [name: string]: Prototype };
+  private templates: { [name: string]: Template };
 
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
@@ -1725,7 +1603,7 @@ export class Module {
     this.gasPriceProvider = moduleBuilder.getCustomGasPriceProvider();
     this.nonceManager = moduleBuilder.getCustomNonceManager();
     this.transactionSigner = moduleBuilder.getCustomTransactionSigner();
-    this.prototypes = moduleBuilder.getAllPrototypes();
+    this.templates = moduleBuilder.getAllTemplates();
     this.opts = moduleBuilder.getAllOpts();
 
     this.initialized = true;
@@ -1777,8 +1655,8 @@ export class Module {
     return this.moduleConfig;
   }
 
-  getAllPrototypes(): { [name: string]: Prototype } {
-    return this.prototypes;
+  getAllTemplates(): { [name: string]: Template } {
+    return this.templates;
   }
 
   getCustomGasPriceProvider(): IGasPriceCalculator {

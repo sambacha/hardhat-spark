@@ -45,10 +45,8 @@ export class Batcher {
       case EventType.BeforeCompileEvent:
       case EventType.AfterCompileEvent:
       case EventType.BeforeDeployEvent:
-      case EventType.BeforeDeploymentEvent:
         this.handleBeforeDeployEvents(event, element, batches, elementsBatches);
         break;
-      case EventType.AfterDeploymentEvent:
       case EventType.OnChangeEvent:
       case EventType.AfterDeployEvent:
         this.handleAfterDeployEvents(event, element, batches, elementsBatches);

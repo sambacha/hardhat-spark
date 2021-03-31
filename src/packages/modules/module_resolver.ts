@@ -353,19 +353,11 @@ State file: ${stateFileElement.event.eventType}`);
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
 
-    for (const eventName of bindingEventDeps.beforeDeployment) {
-      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
-    }
-
     for (const eventName of bindingEventDeps.beforeDeploy) {
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
 
     for (const eventName of bindingEventDeps.afterDeploy) {
-      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
-    }
-
-    for (const eventName of bindingEventDeps.afterDeployment) {
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
   }
@@ -419,14 +411,14 @@ State file: ${stateFileElement.event.eventType}`);
       this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events);
     }
 
-    // resolving before deploy events for this contract (beforeCompile, afterCompile, beforeDeploy, beforeDeployment)
+    // resolving before deploy events for this contract (beforeCompile, afterCompile, beforeDeploy)
     this.resolveBeforeDeployEvents(moduleState, binding, bindings, events);
 
     // this is necessary in order to surface tx data to user
     bindings[binding.name] = binding;
     moduleState[binding.name] = bindings[binding.name];
 
-    // resolving after deploy events for this contract (afterDeploy, afterDeployment, onChange)
+    // resolving after deploy events for this contract (afterDeploy, onChange)
     this.resolveAfterDeployEvents(moduleState, binding, bindings, events);
 
     // this.resolveAllElementsInSubModule() //@TODO think if this is needed
@@ -492,12 +484,6 @@ State file: ${stateFileElement.event.eventType}`);
       addEvent(eventName);
     }
 
-    for (const eventIndex in binding.eventsDeps.beforeDeployment) {
-      const eventName = binding.eventsDeps.beforeDeployment[eventIndex];
-
-      addEvent(eventName);
-    }
-
     for (const eventIndex in binding.eventsDeps.beforeDeploy) {
       const eventName = binding.eventsDeps.beforeDeploy[eventIndex];
 
@@ -517,10 +503,6 @@ State file: ${stateFileElement.event.eventType}`);
 
     for (const eventIndex in binding.eventsDeps.onChange) {
       this.addEvent(binding.eventsDeps.onChange[eventIndex], moduleState, binding, bindings, events);
-    }
-
-    for (const eventIndex in binding.eventsDeps.afterDeployment) {
-      this.addEvent(binding.eventsDeps.afterDeployment[eventIndex], moduleState, binding, bindings, events);
     }
   }
 

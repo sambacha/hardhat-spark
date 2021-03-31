@@ -3,7 +3,7 @@ import {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '@tenderly/ignition';
+} from '@tenderly/hardhat-ignition';
 
 export declare class SecondModuleBuilder extends ModuleBuilder {
   Example: ContractBinding;

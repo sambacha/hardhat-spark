@@ -16,7 +16,6 @@ import { IPrompter, Prompters } from '../packages/utils/promter';
 import { IConfigService, HardhatIgnitionConfig } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
 import { Namespace } from 'cls-hooked';
-import { Config } from '../packages/types/config';
 import '../packages/hardhat_plugin/type_extentions';
 import * as command from '../index';
 import { Migration } from '../packages/types/migration';
@@ -35,10 +34,7 @@ import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 
-export type HardhatPluginIgnitionConfig = {
-  config: Config,
-  ignitionConfig: HardhatIgnitionConfig
-};
+export type HardhatPluginIgnitionConfig = HardhatIgnitionConfig;
 
 export type Args = {
   modulePath?: string;
@@ -73,12 +69,6 @@ export class IgnitionHardhatActions {
     const fullPath = path.resolve(process.cwd(), args.moduleFilePath);
 
     await ignitionHardhat.genTypes(fullPath, args);
-  }
-
-  static async init(config: HardhatPluginIgnitionConfig, args: InitArgs): Promise<void> {
-    const ignitionHardhat = new HardhatIgnition(config);
-
-    await ignitionHardhat.init(args);
   }
 
   static async migration(config: HardhatPluginIgnitionConfig, args: MigrationArgs): Promise<void> {
@@ -130,11 +120,11 @@ export class HardhatIgnition implements IIgnition {
   }
 
   async deploy(fullPath: string, args: DeployArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
+    await this.setupServicesAndEnvironment(this.conf, args);
 
     await command.deploy(
       fullPath,
-      this.conf.ignitionConfig,
+      this.conf,
       this.states,
       this.moduleStateRepo,
       this.moduleResolver,
@@ -147,11 +137,11 @@ export class HardhatIgnition implements IIgnition {
   }
 
   async diff(fullPath: string, args: DiffArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
+    await this.setupServicesAndEnvironment(this.conf, args);
 
     await command.diff(
       fullPath,
-      this.conf.ignitionConfig,
+      this.conf,
       this.states,
       this.moduleResolver,
       this.moduleStateRepo,
@@ -160,28 +150,19 @@ export class HardhatIgnition implements IIgnition {
   }
 
   async genTypes(fullPath: string, args: GenTypesArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
+    await this.setupServicesAndEnvironment(this.conf, args);
 
     await command.genTypes(
       fullPath,
-      this.conf.ignitionConfig,
+      this.conf,
       this.moduleTyping,
       this.configService,
       this.prompter,
     );
   }
 
-  async init(args: InitArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
-
-    await command.init(
-      args,
-      this.configService,
-    );
-  }
-
   async migration(args: MigrationArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
+    await this.setupServicesAndEnvironment(this.conf, args);
 
     await command.migrate(
       this.stateMigrationService,
@@ -191,7 +172,7 @@ export class HardhatIgnition implements IIgnition {
   }
 
   async tutorial(args: TutorialArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
+    await this.setupServicesAndEnvironment(this.conf, args);
 
     await command.tutorial(
       this.tutorialService
@@ -199,11 +180,11 @@ export class HardhatIgnition implements IIgnition {
   }
 
   async usage(fullPath: string, args: UsageArgs): Promise<void> {
-    await this.setupServicesAndEnvironment(this.conf.config, args);
+    await this.setupServicesAndEnvironment(this.conf, args);
     this.moduleUsage = new ModuleUsage(fullPath, this.moduleStateRepo);
 
     await command.usage(
-      this.conf.ignitionConfig,
+      this.conf,
       fullPath,
       args.state.split(','),
       this.configService,
@@ -215,7 +196,7 @@ export class HardhatIgnition implements IIgnition {
     );
   }
 
-  private async setupServicesAndEnvironment(configFile: Config, args: Args): Promise<void> {
+  private async setupServicesAndEnvironment(configFile: HardhatIgnitionConfig, args: Args): Promise<void> {
     // @TODO singleton and partial reinit if needed.
     const currentPath = process.cwd();
 

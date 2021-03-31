@@ -19,8 +19,8 @@ export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilde
     return 'hello';
   });
 
-  const firstAfterDeployment = m.group(Example, SecondExample).afterDeployment(m, 'firstAfterDeployment', async function (): Promise<void> {
-    const example = Example.instance();
+  const firstAfterDeploy = m.group(Example, SecondExample).afterDeploy(m, 'firstAfterDeploy', async function (): Promise<void> {
+    const example = Example.deployed();
 
     await example.setExample(100);
     let value = await example.getExample();
@@ -28,15 +28,15 @@ export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilde
     await example.setExample(120);
     value = await example.getExample();
 
-    await SecondExample.instance().setExample(Example);
+    await SecondExample.deployed().setExample(Example);
 
     m.registerAction('getName', (): any => {
       return value;
     });
   }, Example, SecondExample);
 
-  m.group(Example, firstAfterDeployment).afterDeployment(m, 'secondAfterDeployment', async () => {
-    const example = Example.instance();
+  m.group(Example, firstAfterDeploy).afterDeploy(m, 'secondAfterDeploy', async () => {
+    const example = Example.deployed();
 
     await example.setExample(100);
     await example.setExample(130);
@@ -48,7 +48,7 @@ export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilde
   ThirdExample.beforeCompile(m, 'firstBeforeCompile', async () => {
   }, Example);
 
-  ThirdExample.beforeDeployment(m, 'firstBeforeDeployment', async () => {
+  ThirdExample.beforeDeploy(m, 'firstBeforeDeploy', async () => {
   }, Example);
 
   ThirdExample.onChange(m, 'firstOnChange', async () => {

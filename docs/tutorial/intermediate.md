@@ -11,25 +11,18 @@ to explain how all of those contracts are functioning but rather just their inne
 
 ## Init
 
-So lets start first by running `hardhat-ignition init` in empty project.
+Let's create file `hardhat-ignition.config.ts`.
 
-```
-hardhat-ignition init \
-  --privateKeys=<private_key> \
-  --mnemonic="test test test test test test test test test test test junk" \
-  --hdPath="m/44'/60'/0'/0"
-```
+```typescript
+import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
 
-This would generate an hardhat-ignition config file that looks something like this:
-
-```json
-{
-  "privateKeys": [
+export const config: HardhatIgnitionConfig = {
+  privateKeys: [
     "<private_key>"
   ],
-  "mnemonic": "test test test test test test test test test test test junk",
-  "hdPath": "m/44'/60'/0'/0"
-}
+  mnemonic: "test test test test test test test test test test test junk",
+  hdPath: "m/44'/60'/0'/0"
+};
 ```
 
 ## Module overview
@@ -40,7 +33,7 @@ This image is a visual representation of the module
 provided [here](../../example/intermediate/deployment/root.module.ts). We'll go thought step by step and explain every
 part in details.
 
-**Square** - Contract Prototype<br>
+**Square** - Contract Template<br>
 **Circle** - Smart-contract<br>
 **Ellipse** - Event hook
 
@@ -52,33 +45,33 @@ Secondly, image above would be resolved in next order:
 3. Execute - event afterDeployMintTokens
 4. Deploy - contract ERC20Two
 5. Deploy - Proxy
-6. Execute - event mutator - changeFromToSecondToken
+6. Execute - event sendAfterDeploy - changeFromToSecondToken
 7. Execute - event afterDeployAndChange
 ```
 
-## Library and prototypes
+## Library and templates
 
 ```typescript
 m.library('Address');
-m.prototype('TransparentUpgradeableProxy');
-m.prototype('ERC20');
+m.contractTemplate('TransparentUpgradeableProxy');
+m.contractTemplate('ERC20');
 ```
 
 `m.library()` - is an easy way to specify if contract is library and that it should be deployed first before any other
 contract. Along the way hardhat-ignition will automatically replace library contract address whenever library usage occurs.
 
-`m.prototype()` - is a contract abstraction for later use, most common use is if you need to deploy single contract
+`m.contractTemplate()` - is a contract abstraction for later use, most common use is if you need to deploy single contract
 multiple times, we will see later how to do that.
 
-## Prototype usage
+## Contract template usage
 
 ```typescript
-const ERC20 = m.bindPrototype('ERC20One', 'ERC20', 'ExampleToken', 'EXMPL');
-const ERC20Two = m.bindPrototype('ERC20Two', 'ERC20', 'ExampleTokenTwo', 'EXMPLTWO');
-const Proxy = m.bindPrototype('Proxy', 'TransparentUpgradeableProxy', ERC20, wallets[0].address, []);
+const ERC20 = m.bindTemplate('ERC20One', 'ERC20', 'ExampleToken', 'EXMPL');
+const ERC20Two = m.bindTemplate('ERC20Two', 'ERC20', 'ExampleTokenTwo', 'EXMPLTWO');
+const Proxy = m.bindTemplate('Proxy', 'TransparentUpgradeableProxy', ERC20, wallets[0].address, []);
 ```
 
-In this part you can see usage of the prototype. First argument is `customContractName`, second one is `contractName`
+In this part you can see usage of the template. First argument is `customContractName`, second one is `contractName`
 and rest are constructor arguments of our contract.
 
 ## After deploy - mint ERC20One
@@ -86,9 +79,9 @@ and rest are constructor arguments of our contract.
 ```typescript
 ERC20.afterDeploy(m, 'afterDeployMintTokens', async () => {
   const totalSupply = ethers.BigNumber.from(10).pow(18);
-  await ERC20.instance().mint(wallets[0].address, totalSupply);
+  await ERC20.deployed().mint(wallets[0].address, totalSupply);
 
-  await expectFuncRead(totalSupply.toString(), ERC20.instance().totalSupply);
+  await expectFuncRead(totalSupply.toString(), ERC20.deployed().totalSupply);
 });
 ```
 
@@ -100,7 +93,7 @@ under `./.hardhat-ignition/<module_name>` for more information about deployment.
 ## Mutator
 
 ```typescript
-const mutatorEvent = mutator(
+const mutatorEvent = sendAfterDeploy(
   m,
   Proxy,
   'upgradeTo',
@@ -125,9 +118,9 @@ To put it to simple words, it's upgrading proxy implementation and checking if u
 ```typescript
 m.group(ERC20Two, mutatorEvent).afterDeploy(m, 'afterDeployAndChange', async () => {
   const totalSupply = ethers.BigNumber.from(10).pow(17);
-  await ERC20Two.instance().mint(wallets[1].address, totalSupply);
+  await ERC20Two.deployed().mint(wallets[1].address, totalSupply);
 
-  await expectFuncRead(totalSupply.toString(), ERC20Two.instance().totalSupply);
+  await expectFuncRead(totalSupply.toString(), ERC20Two.deployed().totalSupply);
 });
 ```
 

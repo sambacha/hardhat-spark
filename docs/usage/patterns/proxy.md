@@ -18,7 +18,7 @@ export const ProxyModuleInterface = buildModule('ProxyModuleInterface', async (m
 ## Mutator
 
 ```typescript
-const mutatorEvent = mutator(
+const mutatorEvent = sendAfterDeploy(
   m,
   Proxy,
   'upgradeTo',

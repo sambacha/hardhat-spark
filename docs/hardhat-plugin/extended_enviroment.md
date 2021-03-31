@@ -26,9 +26,7 @@ export interface IIgnition {
   diff(moduleFilePath: string, args: DiffArgs): Promise<void>;
 
   genTypes(moduleFilePath: string, args: GenTypesArgs): Promise<void>;
-
-  init(args: InitArgs): Promise<void>;
-
+  
   migration(args: MigrationArgs): Promise<void>;
 
   tutorial(args: TutorialArgs): Promise<void>;

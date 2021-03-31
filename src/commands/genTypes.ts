@@ -49,8 +49,8 @@ export default class GenTypes extends Command {
     const resolvedPath = path.resolve(currentPath, filePath);
     const typings = new ModuleTypings();
 
-    const configService = new ConfigService(currentPath);
-    const hardhatIgnitionConfig = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
+    const configService = new ConfigService();
+    const hardhatIgnitionConfig = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
 
     await command.genTypes(resolvedPath, hardhatIgnitionConfig, typings, configService, this.prompter);
   }

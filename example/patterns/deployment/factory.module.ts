@@ -8,9 +8,9 @@ export const FactoryModule = buildModule('FactoryModule', async (m: ModuleBuilde
   const factory = m.contract('Factory');
   const child = m.contract('Child');
   child.deployFn(async (): Promise<DeployReturn> => {
-    const tx = await factory.instance().createChild(123);
+    const tx = await factory.deployed().createChild(123);
 
-    const children = await factory.instance().getChildren();
+    const children = await factory.deployed().getChildren();
 
     return {
       transaction: tx,

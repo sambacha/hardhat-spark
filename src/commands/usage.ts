@@ -69,7 +69,8 @@ export default class Usage extends Command {
     process.env.IGNITION_NETWORK_ID = String(flags.networkId);
     this.prompter = new StreamlinedPrompter();
 
-    const configService = new ConfigService(process.cwd());
+    const configService = new ConfigService(String(flags.networkId));
+    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
     const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath, this.mutex, flags.testEnv);
     const moduleResolver = new ModuleResolver(
       undefined,
@@ -90,7 +91,6 @@ export default class Usage extends Command {
       undefined
     );
 
-    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
     const deploymentFilePath = path.resolve(currentPath, filePath);
     const states: string[] = flags.state?.split(',') || [];
     const moduleUsage = new ModuleUsage(deploymentFilePath, moduleStateRepo);

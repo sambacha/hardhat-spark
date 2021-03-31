@@ -27,7 +27,7 @@ export const SynthetixIssuerSetup = buildModule('SynthetixIssuerSetup', async (m
   }
   for (const Synth of synthsToAdd) {
     m.group(Issuer, Synth.synth).afterDeploy(m, `afterDeployIssuerForSynth${Synth.synth.name}`, async (): Promise<void> => {
-      if (!await gracefulExpectFuncRead(Synth.synth, Issuer.instance().synths, Synth.currencyKeyInBytes)) {
+      if (!await gracefulExpectFuncRead(Synth.synth, Issuer.deployed().synths, Synth.currencyKeyInBytes)) {
         filteredSynths.push(Synth);
       }
     });
@@ -40,8 +40,8 @@ export const SynthetixIssuerSetup = buildModule('SynthetixIssuerSetup', async (m
     const chunkBindings = chunk.map(synth => synth.synth);
 
     m.group(Issuer, ...chunkBindings).afterDeploy(m, `afterDeployIssuerWithSynth${(i + synthChunkSize) / synthChunkSize}`, async (): Promise<void> => {
-      await Issuer.instance().addSynths([chunkBindings.map(synth => synth)]);
-      await expectFuncRead(chunkBindings, Issuer.instance().getSynths, [chunk.map(synth => synth.currencyKeyInBytes)]);
+      await Issuer.deployed().addSynths([chunkBindings.map(synth => synth)]);
+      await expectFuncRead(chunkBindings, Issuer.deployed().getSynths, [chunk.map(synth => synth.currencyKeyInBytes)]);
     });
   }
 });

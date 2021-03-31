@@ -8,7 +8,7 @@ import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { ModuleResolver } from '../packages/modules/module_resolver';
 import { EventHandler } from '../packages/modules/events/handler';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
-import { Config } from '../packages/types/config';
+import { HardhatIgnitionConfig } from '../packages/types/config';
 import MemoryConfigService from '../packages/config/memory_service';
 import { IConfigService } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
@@ -24,7 +24,7 @@ import { IPrompter } from '../packages/utils/promter';
 
 export class IgnitionTests implements IIgnitionUsage {
   public configFlags: ConfigFlags;
-  public configFile: Config;
+  public configFile: HardhatIgnitionConfig;
 
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
@@ -41,7 +41,7 @@ export class IgnitionTests implements IIgnitionUsage {
   public eventSession: Namespace;
   public walletWrapper: WalletWrapper;
 
-  constructor(configFlags: ConfigFlags, configFile: Config) {
+  constructor(configFlags: ConfigFlags, configFile: HardhatIgnitionConfig) {
     process.env.IGNITION_NETWORK_ID = String(configFlags.networkId);
     this.states = configFlags.stateFileNames;
 
@@ -87,7 +87,7 @@ export class IgnitionTests implements IIgnitionUsage {
   async deploy(deploymentFilePath: string): Promise<void> {
     await command.deploy(
       deploymentFilePath,
-      {},
+      this.configFile,
       this.states,
       this.moduleStateRepo,
       this.moduleResolver,
@@ -103,7 +103,7 @@ export class IgnitionTests implements IIgnitionUsage {
   async diff(deploymentFilePath: string): Promise<void> {
     await command.diff(
       deploymentFilePath,
-      {},
+      this.configFile,
       this.states,
       this.moduleResolver,
       this.moduleStateRepo,

@@ -2,7 +2,7 @@ import {
   buildModule,
   ModuleConfig
 } from '../../../src';
-import { SynthetixLibraries, SynthetixPrototypes } from './modules/helper.module';
+import { SynthetixLibraries, SynthetixTemplates } from './modules/helper.module';
 import { SynthetixCore } from './modules/core.module';
 import { BinaryOptionsModule } from './modules/binary_options.module';
 import { DappUtilities } from './modules/dapp_utilities.module';
@@ -18,20 +18,20 @@ import { SynthetixModuleBuilder } from './SynthetixModule';
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
 export const SynthetixModule = buildModule('SynthetixModule', async (m: SynthetixModuleBuilder) => {
-  await m.module(SynthetixLibraries);
-  await m.module(SynthetixPrototypes);
+  await m.useModule(SynthetixLibraries);
+  await m.useModule(SynthetixTemplates);
 
-  await m.module(SynthetixCore);
+  await m.useModule(SynthetixCore);
 
-  await m.module(SynthetixSynths);
-  await m.module(BinaryOptionsModule);
-  await m.module(DappUtilities);
-  await m.module(SynthetixAncillary);
-  await m.module(SynthetixInverseSynths);
-  await m.module(SynthetixRebuildCache);
-  await m.module(SystemSettingsModule);
-  await m.module(SynthetixIssuerSetup);
-  await m.module(SynthetixDebtCacheSetup);
+  await m.useModule(SynthetixSynths);
+  await m.useModule(BinaryOptionsModule);
+  await m.useModule(DappUtilities);
+  await m.useModule(SynthetixAncillary);
+  await m.useModule(SynthetixInverseSynths);
+  await m.useModule(SynthetixRebuildCache);
+  await m.useModule(SystemSettingsModule);
+  await m.useModule(SynthetixIssuerSetup);
+  await m.useModule(SynthetixDebtCacheSetup);
 
   // @TODO validate once again if some synthetix functionality is missing
 }, moduleConfig);

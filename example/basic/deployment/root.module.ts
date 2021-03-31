@@ -1,11 +1,10 @@
-import { buildModule } from '../../../src';
-import { FirstModuleBuilder } from './FirstModule';
+import { ModuleBuilder, buildModule } from '../../../src';
 
-export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
+export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
   m.contract('B', A);
 
   A.afterDeploy(m, 'afterDeployBandC', async () => {
-    await A.instance().setExample(11);
+    await A.deployed().setExample(11);
   });
 });

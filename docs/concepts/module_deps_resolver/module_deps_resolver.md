@@ -37,7 +37,7 @@ Upon execution of "last" needed dependencies of our event will be resolved.
 {
   "A": {
     "name": "A",
-    // binding name (in case of prototype can be diffrent from contract name)
+    // binding name (in case of template can be diffrent from contract name)
     "library": false,
     // this is true if this contract binding is library
     "args": [],
@@ -52,8 +52,6 @@ Upon execution of "last" needed dependencies of our event will be resolved.
     "eventsDeps": {
       "beforeCompile": [],
       "afterCompile": [],
-      "beforeDeployment": [],
-      "afterDeployment": [],
       "beforeDeploy": [],
       "afterDeploy": [],
       "onChange": []
@@ -89,8 +87,6 @@ Upon execution of "last" needed dependencies of our event will be resolved.
     "eventsDeps": {
       "beforeCompile": [],
       "afterCompile": [],
-      "beforeDeployment": [],
-      "afterDeployment": [],
       "beforeDeploy": [],
       "afterDeploy": [
         "afterDeployBandC"
@@ -124,8 +120,6 @@ Upon execution of "last" needed dependencies of our event will be resolved.
     "eventsDeps": {
       "beforeCompile": [],
       "afterCompile": [],
-      "beforeDeployment": [],
-      "afterDeployment": [],
       "beforeDeploy": [],
       "afterDeploy": [
         "afterDeployBandC"

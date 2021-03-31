@@ -73,7 +73,8 @@ export default class Diff extends Command {
     const resolvedPath = path.resolve(currentPath, filePath);
 
     const provider = new ethers.providers.JsonRpcProvider();
-    const configService = new ConfigService(currentPath);
+    const configService = new ConfigService(String(flags.networkId));
+    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
 
     const gasCalculator = new GasPriceCalculator(provider);
     const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
@@ -86,8 +87,6 @@ export default class Diff extends Command {
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
     const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession);
-
-    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
 
     await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService);
   }

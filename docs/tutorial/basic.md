@@ -56,33 +56,19 @@ contract A {
 
 ### Ignition initialization
 
-Firstly we will need to run next command in root of your project
+Firstly we would need to create our config script. 
 
-```
-hardhat-ignition init --privateKeys=<private_key>
-```
-
-You can put hardhat generated `<private_key>` for testing.
-
-This command will generate `hardhat-ignition-config.json` and `hardhat-ignition.config.ts` files.
-
-`hardhat-ignition-config.json` should look something like this.
-
-```json
-{
-  "privateKeys": [
-    "<private_key>"
-  ]
-}
-```
-
-`hardhat-ignition.config.ts` should look something like this.
-
+Copy this into `hardhat-ignition.config.ts`.
 ```typescript
 import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
 
-export const config: HardhatIgnitionConfig = {}
+export const config: HardhatIgnitionConfig = {
+  privateKeys: [
+    '<private_key>'
+  ]
+};
 ```
+Here we just created a simple config if you want to see more configuration go [here](../concepts/config.md)
 
 ### Deployment module
 
@@ -106,7 +92,7 @@ want to deploy/execute.
 const A = m.contract('A');
 ```
 
-This function is "binding" our solidity contract named `A` to our `ModuleBuilder` object, and it will return instance of
+This function is "binding" our solidity contract named `A` to our `ModuleBuilder` object, and it will return deployed of
 ContractBinding.
 
 ### Event definition
@@ -125,11 +111,11 @@ Let's try now to execute some contract function.
 
 ```typescript
 A.afterDeploy(m, 'afterDeployA', async () => {
-  const txReceipt = await A.instance().setExample();
+  const txReceipt = await A.deployed().setExample();
 })
 ```
 
-You can see, that we need to run `instance()` first in order to be able to call `setExample()`. When ethereum
+You can see, that we need to run `deployed()` first in order to be able to call `setExample()`. When ethereum
 transaction gets confirmed you will get `TransactionReceipt` object as return.
 
 You should end up with something like this:
@@ -141,7 +127,7 @@ export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) =
   const A = m.contract('A');
 
   A.afterDeploy(m, 'afterDeployA', async () => {
-    await A.instance().setExample(11);
+    await A.deployed().setExample(11);
   });
 });
 ```
@@ -184,8 +170,8 @@ After command is successfully run, you should see in your logs something like th
 
 ![log image](../images/basic_usage_log.png)
 
-Also, you should check `./.hardhat-ignition/FirstModule/31337_deployed_module_state.json` file to confirm execution and check if
-everything is correctly deployed.
+Also, you should check `./.hardhat-ignition/FirstModule/31337_deployed_module_state.json` file to confirm execution and
+check if everything is correctly deployed.
 
 ### Additional contract binding
 
@@ -221,7 +207,7 @@ export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) =
   const B = m.contract('B', A);
 
   A.afterDeploy(m, 'afterDeployA', async () => {
-    await A.instance().setExample(11);
+    await A.deployed().setExample(11);
   });
 });
 ```
@@ -314,7 +300,7 @@ export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuild
   const B = m.contract('B', A);
 
   A.afterDeploy(m, 'afterDeployA', async () => {
-    await A.instance().setExample(11);
+    await A.deployed().setExample(11);
   });
 });
 ```

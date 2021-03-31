@@ -117,12 +117,17 @@ export default class Deploy extends Command {
     process.env.IGNITION_NETWORK_ID = String(flags.networkId);
     const states: string[] = flags.state?.split(',') || [];
 
+    const configService = new ConfigService(String(flags.networkId));
+    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
     let provider = new ethers.providers.JsonRpcProvider();
-    if (checkIfExist(flags.rpcProvider)) {
-      provider = new ethers.providers.JsonRpcProvider(flags.rpcProvider);
+    if (checkIfExist(flags.rpcProvider) || checkIfExist(config.networks[String(flags.networkId)].rpc_provider)) {
+      provider = new ethers.providers.JsonRpcProvider(
+        flags?.rpcProvider ||
+        config.networks[String(flags.networkId)].rpc_provider
+      );
     }
 
-    process.env.IGNITION_RPC_PROVIDER = String(flags.rpcProvider || 'http://localhost:8545');
+    process.env.IGNITION_RPC_PROVIDER = String(flags?.rpcProvider || config?.networks[String(flags.networkId)]?.rpc_provider || 'http://localhost:8545');
 
     // choosing right prompter from user desires
     let prompter;
@@ -144,7 +149,6 @@ export default class Deploy extends Command {
 
     // initializing all service's and repos
     this.prompter = prompter;
-    const configService = new ConfigService(currentPath);
 
     const gasCalculator = new GasPriceCalculator(provider);
     const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
@@ -162,7 +166,6 @@ export default class Deploy extends Command {
 
     const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
 
-    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
     await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);

@@ -154,7 +154,7 @@ export function generateModuleFile(moduleName: string, moduleStateBindings: Modu
 
 export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuilder) => {`;
 
-  file += genPrototypes(moduleStateBindings);
+  file += genTemplates(moduleStateBindings);
 
   file += '\n';
 
@@ -173,7 +173,7 @@ export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuild
   return file;
 }
 
-function genPrototypes(moduleStateBindings: ModuleStateBindings): string {
+function genTemplates(moduleStateBindings: ModuleStateBindings): string {
   const contractMap: { [name: string]: number } = {};
 
   for (const [, element] of Object.entries(moduleStateBindings)) {
@@ -185,13 +185,13 @@ function genPrototypes(moduleStateBindings: ModuleStateBindings): string {
     contractMap[element.contractName] = 1;
   }
 
-  let prototypesInitialization = ``;
+  let templatesInitialization = ``;
   Object.entries(contractMap).map((value: [string, number]) => {
-    prototypesInitialization += `
-  m.prototype('${value[0]}');`;
+    templatesInitialization += `
+  m.contractTemplate('${value[0]}');`;
   });
 
-  return prototypesInitialization;
+  return templatesInitialization;
 }
 
 function genLibrary(element: ContractBindingMetaData): string {
@@ -199,10 +199,10 @@ function genLibrary(element: ContractBindingMetaData): string {
   const ${element.contractName} = m.library('${element.contractName}');`;
 }
 
-function genContract(element: ContractBindingMetaData, isPrototype: boolean): string {
-  if (isPrototype) {
+function genContract(element: ContractBindingMetaData, isTemplate: boolean): string {
+  if (isTemplate) {
     return `
-  const ${element.name} = m.bindPrototype('${element.name}', '${element.contractName}');`;
+  const ${element.name} = m.bindTemplates('${element.name}', '${element.contractName}');`;
   }
 
   return `

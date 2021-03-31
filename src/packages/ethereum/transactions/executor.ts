@@ -1,10 +1,8 @@
 import {
   AfterCompileEvent,
   AfterDeployEvent,
-  AfterDeploymentEvent,
   BeforeCompileEvent,
   BeforeDeployEvent,
-  BeforeDeploymentEvent,
   ContractBinding,
   ContractEvent,
   Deployed,
@@ -317,8 +315,7 @@ export class TxExecutor {
 
   private static async handleEvent(event: Event, element: StatefulEvent, currentBatch: number, batches: any[], moduleState: ModuleState, elementsBatches: any) {
     switch (event.eventType) {
-      case EventType.AfterDeployEvent:
-      case EventType.AfterDeploymentEvent: {
+      case EventType.AfterDeployEvent: {
         await Batcher.handleAfterDeployEvent(event as AfterDeployEvent, element, batches, elementsBatches);
         break;
       }
@@ -331,7 +328,6 @@ export class TxExecutor {
         break;
       }
       case EventType.BeforeDeployEvent:
-      case EventType.BeforeDeploymentEvent:
       case EventType.AfterCompileEvent: {
         await Batcher.handleCompiledEvent(event as BeforeDeployEvent, element, batches, elementsBatches);
         break;
@@ -367,14 +363,6 @@ export class TxExecutor {
             }
             case EventType.AfterDeployEvent: {
               await this.eventHandler.executeAfterDeployEventHook(moduleName, event.event as AfterDeployEvent, moduleState);
-              break;
-            }
-            case EventType.AfterDeploymentEvent: {
-              await this.eventHandler.executeAfterDeploymentEventHook(moduleName, event.event as AfterDeploymentEvent, moduleState);
-              break;
-            }
-            case EventType.BeforeDeploymentEvent: {
-              await this.eventHandler.executeBeforeDeploymentEventHook(moduleName, event.event as BeforeDeploymentEvent, moduleState);
               break;
             }
             case EventType.BeforeCompileEvent: {

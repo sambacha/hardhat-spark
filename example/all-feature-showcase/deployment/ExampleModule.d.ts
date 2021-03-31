@@ -3,17 +3,17 @@ import {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '@tenderly/ignition';
+} from '@tenderly/hardhat-ignition';
 
 export declare class ExampleModuleBuilder extends ModuleBuilder {
   Example: ContractBinding;
   SecondExample: ContractBinding;
   ThirdExample: ContractBinding;
-  firstAfterDeployment: StatefulEvent;
-  secondAfterDeployment: StatefulEvent;
+  firstAfterDeploy: StatefulEvent;
+  secondAfterDeploy: StatefulEvent;
   firstAfterCompile: StatefulEvent;
   firstBeforeCompile: StatefulEvent;
-  firstBeforeDeployment: StatefulEvent;
+  firstBeforeDeploy: StatefulEvent;
   firstOnChange: StatefulEvent;
   getName: Action;
 }

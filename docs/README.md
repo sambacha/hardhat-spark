@@ -12,7 +12,7 @@ exercise for the reader:
 - Keeping track of deployed contracts over time.
 - Providing hooks throughout the deployment process for running arbitrary maintenance/admin commands.
 - Ensuring the deployments remain reproducible across environments (local, testnets, mainnet).
-- Executing long-running deployments.
+- Error prone and continuable execution of long-running contract deployment pipeline.
 
 With the rapid success of DeFi, we're seeing more and more advanced deployment patterns, raising the bar for a what a
 deployment system must be, effectively eliminating the possibility of leveraging existing tooling.

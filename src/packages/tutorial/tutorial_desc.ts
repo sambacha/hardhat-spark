@@ -11,7 +11,7 @@ your use case.
 export const MODULE_NAME_DESC = `Module is encapsulation for smart contract infrastructure, that includes smart contract deployment,
 their interaction and event's execution.`;
 
-export const PROTOTYPE_DESC = `Prototype is smart contract definition for contract reuse. This is used to deploy same contract with different configuration.`;
+export const TEMPLATE_DESC = `Contract template is smart contract definition for contract reuse. This is used to deploy same contract with different configuration.`;
 
 export const CONTRACT_NAME_DESC = `This is your smart contract name, you can check what it is in your .sol file.`;
 

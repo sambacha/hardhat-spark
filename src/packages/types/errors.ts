@@ -58,7 +58,7 @@ export class BindingsConflict extends UserError {
   }
 }
 
-export class PrototypeNotFound extends UserError {
+export class TemplateNotFound extends UserError {
   constructor(message: string) {
     super(message);
   }
@@ -77,6 +77,12 @@ export class ContractTypeMismatch extends UserError {
 }
 
 export class PrivateKeyNotValid extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class PrivateKeyIsMissing extends UserError {
   constructor(message: string) {
     super(message);
   }

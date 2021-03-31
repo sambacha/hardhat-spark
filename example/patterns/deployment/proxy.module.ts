@@ -8,7 +8,7 @@ export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) =
   });
 
   m.group(m.LogicOne, m.Registry).afterDeploy(m, 'setLogicContractOnSecond', async () => {
-    await m.Registry.instance().setLogicContract(m.LogicOne);
+    await m.Registry.deployed().setLogicContract(m.LogicOne);
   });
 });
 

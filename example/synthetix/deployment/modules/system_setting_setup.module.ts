@@ -34,7 +34,7 @@ export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m
 
     const synthRates: any = [];
     for (const binding of bindings) {
-      const feeRate = await SystemSettings.instance().exchangeFeeRate(toBytes32(binding.name));
+      const feeRate = await SystemSettings.deployed().exchangeFeeRate(toBytes32(binding.name));
 
       synthRates.push(feeRate.toString());
     }
@@ -63,58 +63,58 @@ export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m
       .filter(({currentRate}) => currentRate);
 
     if (synthsRatesToUpdate.length) {
-      await SystemSettings.instance().setExchangeFeeRateForSynths(
+      await SystemSettings.deployed().setExchangeFeeRateForSynths(
         synthsRatesToUpdate.map(({name}) => toBytes32(name)),
         synthsRatesToUpdate.map(({targetRate}) => targetRate),
       );
     }
 
-    await SystemSettings.instance().setWaitingPeriodSecs(constants['WAITING_PERIOD_SECS']);
-    await expectFuncRead(constants['WAITING_PERIOD_SECS'], SystemSettings.instance().waitingPeriodSecs);
+    await SystemSettings.deployed().setWaitingPeriodSecs(constants['WAITING_PERIOD_SECS']);
+    await expectFuncRead(constants['WAITING_PERIOD_SECS'], SystemSettings.deployed().waitingPeriodSecs);
 
-    await SystemSettings.instance().setPriceDeviationThresholdFactor(constants['PRICE_DEVIATION_THRESHOLD_FACTOR']);
-    await expectFuncRead(constants['PRICE_DEVIATION_THRESHOLD_FACTOR'], SystemSettings.instance().priceDeviationThresholdFactor);
+    await SystemSettings.deployed().setPriceDeviationThresholdFactor(constants['PRICE_DEVIATION_THRESHOLD_FACTOR']);
+    await expectFuncRead(constants['PRICE_DEVIATION_THRESHOLD_FACTOR'], SystemSettings.deployed().priceDeviationThresholdFactor);
 
-    await SystemSettings.instance().setTradingRewardsEnabled(constants['TRADING_REWARDS_ENABLED']);
-    await expectFuncRead(constants['TRADING_REWARDS_ENABLED'], SystemSettings.instance().tradingRewardsEnabled);
+    await SystemSettings.deployed().setTradingRewardsEnabled(constants['TRADING_REWARDS_ENABLED']);
+    await expectFuncRead(constants['TRADING_REWARDS_ENABLED'], SystemSettings.deployed().tradingRewardsEnabled);
 
-    await SystemSettings.instance().setIssuanceRatio(constants['ISSUANCE_RATIO']);
-    await expectFuncRead(constants['ISSUANCE_RATIO'], SystemSettings.instance().issuanceRatio);
+    await SystemSettings.deployed().setIssuanceRatio(constants['ISSUANCE_RATIO']);
+    await expectFuncRead(constants['ISSUANCE_RATIO'], SystemSettings.deployed().issuanceRatio);
 
-    await SystemSettings.instance().setFeePeriodDuration(constants['FEE_PERIOD_DURATION']);
-    await expectFuncRead(constants['FEE_PERIOD_DURATION'], SystemSettings.instance().feePeriodDuration);
+    await SystemSettings.deployed().setFeePeriodDuration(constants['FEE_PERIOD_DURATION']);
+    await expectFuncRead(constants['FEE_PERIOD_DURATION'], SystemSettings.deployed().feePeriodDuration);
 
-    await SystemSettings.instance().setTargetThreshold(constants['TARGET_THRESHOLD']);
+    await SystemSettings.deployed().setTargetThreshold(constants['TARGET_THRESHOLD']);
     await expectFuncRead(
       ethers.BigNumber.from(constants['TARGET_THRESHOLD']).mul('10000000000000000').toString()
-      , SystemSettings.instance().targetThreshold);
+      , SystemSettings.deployed().targetThreshold);
 
-    await SystemSettings.instance().setLiquidationDelay(constants['LIQUIDATION_DELAY']);
-    await expectFuncRead(constants['LIQUIDATION_DELAY'], SystemSettings.instance().liquidationDelay);
+    await SystemSettings.deployed().setLiquidationDelay(constants['LIQUIDATION_DELAY']);
+    await expectFuncRead(constants['LIQUIDATION_DELAY'], SystemSettings.deployed().liquidationDelay);
 
-    await SystemSettings.instance().setLiquidationRatio(constants['LIQUIDATION_RATIO']);
-    await expectFuncRead(constants['LIQUIDATION_RATIO'], SystemSettings.instance().liquidationRatio);
+    await SystemSettings.deployed().setLiquidationRatio(constants['LIQUIDATION_RATIO']);
+    await expectFuncRead(constants['LIQUIDATION_RATIO'], SystemSettings.deployed().liquidationRatio);
 
-    await SystemSettings.instance().setLiquidationPenalty(constants['LIQUIDATION_PENALTY']);
-    await expectFuncRead(constants['LIQUIDATION_PENALTY'], SystemSettings.instance().liquidationPenalty);
+    await SystemSettings.deployed().setLiquidationPenalty(constants['LIQUIDATION_PENALTY']);
+    await expectFuncRead(constants['LIQUIDATION_PENALTY'], SystemSettings.deployed().liquidationPenalty);
 
-    await SystemSettings.instance().setRateStalePeriod(constants['RATE_STALE_PERIOD']);
-    await expectFuncRead(constants['RATE_STALE_PERIOD'], SystemSettings.instance().rateStalePeriod);
+    await SystemSettings.deployed().setRateStalePeriod(constants['RATE_STALE_PERIOD']);
+    await expectFuncRead(constants['RATE_STALE_PERIOD'], SystemSettings.deployed().rateStalePeriod);
 
-    await SystemSettings.instance().setMinimumStakeTime(constants['MINIMUM_STAKE_TIME']);
-    await expectFuncRead(constants['MINIMUM_STAKE_TIME'], SystemSettings.instance().minimumStakeTime);
+    await SystemSettings.deployed().setMinimumStakeTime(constants['MINIMUM_STAKE_TIME']);
+    await expectFuncRead(constants['MINIMUM_STAKE_TIME'], SystemSettings.deployed().minimumStakeTime);
 
-    await SystemSettings.instance().setDebtSnapshotStaleTime(constants['DEBT_SNAPSHOT_STALE_TIME']);
-    await expectFuncRead(constants['DEBT_SNAPSHOT_STALE_TIME'], SystemSettings.instance().debtSnapshotStaleTime);
+    await SystemSettings.deployed().setDebtSnapshotStaleTime(constants['DEBT_SNAPSHOT_STALE_TIME']);
+    await expectFuncRead(constants['DEBT_SNAPSHOT_STALE_TIME'], SystemSettings.deployed().debtSnapshotStaleTime);
 
-    await SystemSettings.instance().setCrossDomainMessageGasLimit(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT']);
-    await expectFuncRead(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT'], SystemSettings.instance().crossDomainMessageGasLimit);
+    await SystemSettings.deployed().setCrossDomainMessageGasLimit(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT']);
+    await expectFuncRead(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT'], SystemSettings.deployed().crossDomainMessageGasLimit);
 
     // @ts-ignore
     if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]])) {
       // @ts-ignore
-      await SystemSettings.instance().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]]);
-      await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]], SystemSettings.instance().aggregatorWarningFlags);
+      await SystemSettings.deployed().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]]);
+      await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]], SystemSettings.deployed().aggregatorWarningFlags);
     }
   });
 });

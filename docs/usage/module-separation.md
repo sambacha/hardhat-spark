@@ -23,7 +23,7 @@ Here is example of the function that is used for sub-modules
 
 And this is how it is used inside deployment function:
 ```
-await m.module(INTERNAL_MODULE);
+await m.useModule(INTERNAL_MODULE);
 ```
 
 ### Context sharing

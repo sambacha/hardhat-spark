@@ -1,10 +1,8 @@
 import {
   AfterCompileEvent,
   AfterDeployEvent,
-  AfterDeploymentEvent,
   BeforeCompileEvent,
   BeforeDeployEvent,
-  BeforeDeploymentEvent,
   ContractBinding,
   EventFnCompiled,
   EventFnDeployed, EventType,
@@ -63,14 +61,6 @@ export class EventHandler {
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
     await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
-  }
-
-  async executeBeforeDeploymentEventHook(moduleName: string, event: BeforeDeploymentEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
-  }
-
-  async executeAfterDeploymentEventHook(moduleName: string, event: AfterDeploymentEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleDeployedBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeBeforeDeployEventHook(moduleName: string, event: BeforeDeployEvent, moduleState: ModuleState): Promise<void> {
