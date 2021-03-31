@@ -18,7 +18,7 @@ Here is example of the function that is used for sub-modules
    *
    * @returns Module builder data from sub-module.
    */
-  async module(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder>
+  async useModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder>
 ```
 
 And this is how it is used inside deployment function:

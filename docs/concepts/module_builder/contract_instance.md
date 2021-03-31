@@ -1,4 +1,4 @@
-# Contract deployed
+# Deployed contract
 
 If you want to call some contract function or read any contract property you will need to call `.deployed()` function
 first in order to get `ethers.Contract` like object to interact with.

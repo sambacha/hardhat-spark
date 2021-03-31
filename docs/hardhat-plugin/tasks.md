@@ -8,22 +8,6 @@ Usage: hardhat [GLOBAL OPTIONS] ignition:tutorial
 ignition:tutorial: Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.
 ```
 
-## Init
-
-```
-Usage: hardhat [GLOBAL OPTIONS] ignition:init --config-script-path <STRING> --hd-path <STRING> --mnemonic <STRING> --private-keys <STRING> [--reinit]
-
-OPTIONS:
-
-  --config-script-path  Path to the hardhat-ignition.config.js script, default is same as current path. 
-  --hd-path             Associated with mnemonic - The HD parent of all the derived keys. Default value: "m/44'/60'/0'/0" 
-  --mnemonic            Mnemonic of the deployer accounts 
-  --private-keys        Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123 
-  --reinit              Provide this flag if you would like to overwrite `hardhat-ignition.config.ts`, otherwise if exists, it would error. 
-
-ignition:init: Initialize hardhat-ignition configuration file and configuration script.
-```
-
 ## Diff
 
 ```

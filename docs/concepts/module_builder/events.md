@@ -3,8 +3,8 @@
 Events can be bounded to single contract, multiple contracts or to group of contract and events. In case of a single
 contract.
 
-**On Start** -> **Before Compile** -> **After Compile** -> **Before Deployment** -> **Before Deploy** -> **On Change(
-conditional)** -> **After Deploy** -> **After Deployment** -> **On Completion** -> **On Success (if succeeded)** -> **On
+**On Start** -> **Before Compile** -> **After Compile** -> **Before Deploy** -> **On Change(
+conditional)** -> **After Deploy** -> **On Completion** -> **On Success (if succeeded)** -> **On
 Error(if failed)**
 
 ## Contract Event hook
@@ -20,25 +20,15 @@ code in case of any dynamic data.
 
 Just after all contract compilation. This is ideal for deletion or addition of some ABI functions or any metadata.
 
-### Before Deployment
-
-This event will be executed every time when hardhat-ignition arrives to deployment of contract's that event is bound to. This
-means that if hardhat-ignition decides that this contract shouldn't be deployed (e.g. it already did deploy) this event will be
-triggered.
-
 ### Before Deploy
 
-Similar to <b>Before Deployment</b> just this event is going to be executed only if contract is actually being deployed
+This event will be executed every time, just before, contract is scheduled for deployment. This means that if hardhat-ignition
+decides that this contract shouldn't be deployed (e.g. it already did deploy) this event will not be triggered.
 
 ### After Deploy
 
-Similar to <b>After Deployment</b> just this event is going to be executed only if contract is actually being deployed
-
-### After Deployment
-
-This event will be executed every time when hardhat-ignition finish contract deployment of the contract that event is bounded to.
-This means that if hardhat-ignition has decided that that contract shouldn't be deployed (e.g. it already did deploy) this event
-will be triggered.
+This event will be executed every time, just after, contract is scheduled for deployment. This means that if hardhat-ignition
+decides that this contract shouldn't be deployed (e.g. it already did deploy) this event will not be triggered.
 
 ### On change
 

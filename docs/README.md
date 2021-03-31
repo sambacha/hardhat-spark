@@ -12,7 +12,7 @@ exercise for the reader:
 - Keeping track of deployed contracts over time.
 - Providing hooks throughout the deployment process for running arbitrary maintenance/admin commands.
 - Ensuring the deployments remain reproducible across environments (local, testnets, mainnet).
-- Error prone and continuable execution of long-running contract deployment pipeline.
+- Error prone and continuable execution for long-running contract deployment pipeline.
 
 With the rapid success of DeFi, we're seeing more and more advanced deployment patterns, raising the bar for a what a
 deployment system must be, effectively eliminating the possibility of leveraging existing tooling.
@@ -92,7 +92,6 @@ how to use ignition. Not too much theory, just practical application to get you 
 
 | Commands                      | Glossary                                                              | Link                                        |
 | ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
-| Ignition Init                   | Initialize ignition config file and script.                             | [ignition init](./commands/init.md)           |
 | Ignition Diff                   | Show difference between current and already deployed module.          | [ignition diff](./commands/diff.md)           |
 | Ignition Deploy                 | Run/Continue deployment of the module.                                | [ignition deploy](./commands/deploy.md)       |
 | Ignition GenTypes               | Generate custom module types on top of current module.                | [ignition genTypes](./commands/genTypes.md)   |

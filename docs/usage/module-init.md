@@ -1,22 +1,39 @@
-# Module initialization
+# Hardhat ignition config
 
-Here is the command that you would use in order to init hardhat-ignition
-```
-hardhat-ignition init \
-  --privateKeys=<private_key>,<other_private_key> \
-  --mnemonic="test test test test test test test test test test test junk" \
-  --hdPath="m/44'/60'/0'/0"
-```
+Let's create file `hardhat-ignition.config.ts`.
 
-This command would generate a hardhat-ignition config file that looks something like this:
+```typescript
+import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
 
-```json
-{
-  "privateKeys": [
-    "<private_key>",
-    "<other_private_key>"
+export const config: HardhatIgnitionConfig = {
+  privateKeys: [
+    "<private_key>"
   ],
-  "mnemonic": "test test test test test test test test test test test junk",
-  "hdPath": "m/44'/60'/0'/0"
-}
+  mnemonic: "test test test test test test test test test test test junk",
+  hdPath: "m/44'/60'/0'/0"
+};
+```
+
+All available options:
+
+```typescript
+export type HardhatIgnitionConfig = {
+  privateKeys: string[];
+  mnemonic?: string;
+  hdPath?: string;
+  networks?: {
+    [network_id: string]: {
+      rpc_provider?: string;
+      privateKeys?: string[];
+      mnemonic?: string;
+      hdPath?: string;
+    }
+  }
+  registry?: IModuleRegistryResolver;
+  resolver?: IModuleRegistryResolver;
+  gasPriceProvider?: IGasPriceCalculator,
+  nonceManager?: INonceManager,
+  transactionSigner?: ITransactionSigner
+  params?: { [name: string]: any },
+};
 ```

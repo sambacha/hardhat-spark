@@ -1,4 +1,5 @@
 import { buildModule, ModuleBuilder } from '../../../src';
+// @ts-ignore
 import { ExampleModule } from './module';
 import { ethers } from 'ethers';
 
