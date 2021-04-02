@@ -14,6 +14,7 @@ import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
 import { EventTxExecutor } from '../ethereum/transactions/event_executor';
 import { Namespace } from 'cls-hooked';
+import { EthClient } from '../ethereum/client';
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
@@ -22,14 +23,25 @@ export class ModuleResolver {
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
   private readonly eventSession: Namespace;
+  private readonly ethClient: EthClient;
 
-  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: IPrompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo, eventTxExecutor: EventTxExecutor, eventSession: Namespace) {
+  constructor(
+    provider: ethers.providers.JsonRpcProvider,
+    privateKey: string,
+    prompter: IPrompter,
+    txGenerator: EthTxGenerator,
+    moduleStateRepo: ModuleStateRepo,
+    eventTxExecutor: EventTxExecutor,
+    eventSession: Namespace,
+    ethereumClient: EthClient,
+  ) {
     this.signer = new ethers.Wallet(privateKey, provider);
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
     this.eventSession = eventSession;
+    this.ethClient = ethereumClient;
   }
 
   checkIfDiff(oldModuleState: ModuleStateFile, newModuleStates: ModuleState): boolean {
@@ -170,12 +182,13 @@ export class ModuleResolver {
     return;
   }
 
-  resolve(
+  async resolve(
     currentBindings: { [p: string]: ContractBinding },
     currentEvents: Events,
     moduleEvents: ModuleEvents,
     moduleStateFile: ModuleStateFile,
-  ): ModuleState {
+  ): Promise<ModuleState> {
+    let userAlwaysedeploy = false;
     let resolvedModuleElements: ModuleState = {};
 
     // onStart module event resolving
@@ -213,7 +226,18 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
         }
 
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
+        // check if network has code at specific address
+        if (!userAlwaysedeploy && checkIfExist(stateFileElement.deployMetaData.contractAddress)) {
+          const code = await this.ethClient.getCode(stateFileElement.deployMetaData.contractAddress);
+          if (
+            !checkIfExist(code) ||
+            code == '0x'
+          ) {
+            userAlwaysedeploy = await this.prompter.wrongNetwork();
+          }
+        }
         if (
+          userAlwaysedeploy &&
           resolvedModuleStateElement.forceFlag == true ||
           (
             !compareBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
@@ -263,6 +287,7 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
 
       stateFileElement = stateFileElement as unknown as StatefulEvent;
       if (
+        !userAlwaysedeploy &&
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {

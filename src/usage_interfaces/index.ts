@@ -1,7 +1,7 @@
 import { Prompters } from '../packages/utils/promter';
 
 export type ConfigFlags = {
-  networkId: number,
+  networkId: string,
   stateFileNames: string[],
   rpcProvider?: string,
 };

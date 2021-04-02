@@ -41,4 +41,5 @@ export interface IPrompter {
   startingModuleUsageGeneration(moduleName: string);
   finishedModuleUsageGeneration(moduleName: string);
   parallelizationExperimental();
+  wrongNetwork();
 }

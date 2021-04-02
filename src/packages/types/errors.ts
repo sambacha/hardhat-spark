@@ -16,6 +16,12 @@ export class CliError extends Error {
   }
 }
 
+export class WrongNetwork extends CliError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class ValueMismatch extends UserError {
   constructor(message: string) {
     super(message);

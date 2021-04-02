@@ -32,7 +32,7 @@ export class StreamlinedPrompter implements IPrompter {
   }
 
   alreadyDeployed(elementName: string): void {
-    cli.info(`${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`);
+    cli.info(this.whitespaces + `${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`);
   }
 
   async promptContinueDeployment(): Promise<void> {
@@ -147,5 +147,12 @@ export class StreamlinedPrompter implements IPrompter {
     if (!yes) {
       throw new DeniedConfirmation('Confirmation has been declined.');
     }
+  }
+
+  async wrongNetwork(): Promise<boolean> {
+    const con = await cli.prompt('Contracts are missing on the network, do you wish to redeploy whole module? (Y/n)', {
+      required: false
+    });
+    return con != 'n';
   }
 }

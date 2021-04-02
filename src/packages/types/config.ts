@@ -7,11 +7,15 @@ export type HardhatIgnitionConfig = {
   mnemonic?: string;
   hdPath?: string;
   networks?: {
-    [network_id: string]: {
-      rpc_provider?: string;
+    [networkName: string]: {
+      networkId?: string;
+      rpcProvider?: string;
       privateKeys?: string[];
       mnemonic?: string;
       hdPath?: string;
+      localDeployment?: boolean;
+      deploymentFilePath?: string;
+      blockConfirmation?: number;
     }
   }
   registry?: IModuleRegistryResolver;

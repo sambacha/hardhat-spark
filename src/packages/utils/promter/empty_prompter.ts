@@ -1,5 +1,6 @@
 import { IPrompter } from './index';
 import { ModuleState } from '../../modules/states/module';
+import { CliError, WrongNetwork } from '../../types/errors';
 
 export class EmptyPrompter implements IPrompter {
   alreadyDeployed(elementName: string): void {
@@ -77,5 +78,9 @@ export class EmptyPrompter implements IPrompter {
   }
 
   parallelizationExperimental() {
+  }
+
+  async wrongNetwork(): Promise<boolean> {
+    throw new WrongNetwork('Deploying to wrong network!');
   }
 }

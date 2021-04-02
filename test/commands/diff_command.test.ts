@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { assert } from 'chai';
 
-const NETWORK_ID = 31337;
+const NETWORK_ID = '31337';
 
 describe('ignition diff - integration', () => {
   it('should be able to show difference in modules - single new binding', ctx => {

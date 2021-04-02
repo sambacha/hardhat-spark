@@ -9,6 +9,8 @@ import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
 import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 
+const ARTIFACTS_FOLDER = 'artifacts';
+
 export default class Tutorial extends Command {
   static description = 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.';
   private prompter: StreamlinedPrompter;
@@ -33,7 +35,7 @@ export default class Tutorial extends Command {
     this.prompter = new StreamlinedPrompter();
     const deploymentFileRepo = new DeploymentFileRepo();
     const deploymentFileGenerator = new DeploymentFileGenerator(deploymentFileRepo);
-    const systemCrawlingService = new SystemCrawlingService(process.cwd());
+    const systemCrawlingService = new SystemCrawlingService(process.cwd(), ARTIFACTS_FOLDER);
     const tutorialService = new TutorialService(deploymentFileGenerator, systemCrawlingService);
 
     await command.tutorial(tutorialService);

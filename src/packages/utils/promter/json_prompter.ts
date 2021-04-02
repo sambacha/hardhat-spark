@@ -1,6 +1,7 @@
 import { IPrompter } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { cli } from 'cli-ux';
+import { WrongNetwork } from '../../types/errors';
 
 export class JsonPrompter implements IPrompter {
   private currentModuleName: string;
@@ -192,5 +193,9 @@ export class JsonPrompter implements IPrompter {
   }
 
   async parallelizationExperimental() {
+  }
+
+  wrongNetwork(): Promise<boolean> {
+    throw new WrongNetwork('Deploying to wrong network!');
   }
 }

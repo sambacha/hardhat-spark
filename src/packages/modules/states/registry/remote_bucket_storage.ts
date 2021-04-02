@@ -27,7 +27,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
   }
 
 
-  async resolveContract(networkId: number, moduleName: string, bindingName: string): Promise<string> {
+  async resolveContract(networkId: string, moduleName: string, bindingName: string): Promise<string> {
     try {
       if (!checkIfExist(this.registryFile[this.version])) {
         this.registryFile = await this.getRemoteRegistry(moduleName, networkId);
@@ -43,7 +43,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     }
   }
 
-  async setAddress(networkId: number, moduleName: string, bindingName: string, contractAddress: string): Promise<boolean> {
+  async setAddress(networkId: string, moduleName: string, bindingName: string, contractAddress: string): Promise<boolean> {
     if (contractAddress == '') {
       return true;
     }
@@ -73,7 +73,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     return true;
   }
 
-  private async getRemoteRegistry(moduleName: string, networkId: number): Promise<ModuleRegistryResolver> {
+  private async getRemoteRegistry(moduleName: string, networkId: string): Promise<ModuleRegistryResolver> {
     const req = this.s3.getObject({
       Bucket: this.bucketName,
       Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,

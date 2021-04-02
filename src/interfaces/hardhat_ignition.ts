@@ -14,7 +14,6 @@ import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { IPrompter } from '../packages/utils/promter';
-import { BLOCK_CONFIRMATION_NUMBER } from '../packages/ethereum/transactions/executor';
 import { BindingsConflict, CliError, TemplateNotFound, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
@@ -957,9 +956,10 @@ export class ContractInstance {
 
         this.prompter.waitTransactionConfirmation();
         if (!this.eventSession.get(clsNamespaces.PARALLELIZE)) {
-          const txReceipt = await tx.wait(BLOCK_CONFIRMATION_NUMBER);
+          const blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
+          const txReceipt = await tx.wait(blockConfirmation);
           await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
-          this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, sessionEventName, fragment.name);
+          this.prompter.transactionConfirmation(blockConfirmation, sessionEventName, fragment.name);
         }
 
         this.contractBinding.contractTxProgress = ++contractTxIterator;
@@ -1067,8 +1067,9 @@ export class IgnitionWallet extends ethers.Wallet {
 
       if (!this.sessionNamespace.get(clsNamespaces.PARALLELIZE)) {
         this.prompter.waitTransactionConfirmation();
-        const txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
-        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, currentEventName, 'raw wallet transaction');
+        const blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
+        await txResp.wait(blockConfirmation);
+        this.prompter.transactionConfirmation(blockConfirmation, currentEventName, 'raw wallet transaction');
       }
 
       await this.moduleStateRepo.storeEventTransactionData(this.address, ignitionTransaction, txResp, currentEventName);
@@ -1401,7 +1402,7 @@ export class ModuleBuilder {
         continue;
       }
 
-      binding.deployMetaData.contractAddress = await resolver?.resolveContract(+networkId, m.name, bindingName);
+      binding.deployMetaData.contractAddress = await resolver?.resolveContract(networkId, m.name, bindingName);
       this[bindingName] = binding;
       this.bindings[bindingName] = binding;
     }

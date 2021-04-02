@@ -13,11 +13,11 @@ import { CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './ind
 import { loadScript } from '../utils/typescript-checker';
 
 export default class ConfigService implements IConfigService {
-  private readonly networkId: string;
+  private readonly networkName: string;
   private config: HardhatIgnitionConfig;
 
-  constructor(networkId?: string) {
-    this.networkId = networkId;
+  constructor(networkName?: string) {
+    this.networkName = networkName;
   }
 
   async initializeIgnitionConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<HardhatIgnitionConfig> {
@@ -57,7 +57,7 @@ export default class ConfigService implements IConfigService {
     const wallets = [];
 
     const config = this.config;
-    if (!checkIfExist(this.networkId)) {
+    if (!checkIfExist(this.networkName)) {
       return [];
     }
 
@@ -66,16 +66,16 @@ export default class ConfigService implements IConfigService {
     let hdPath = config?.hdPath;
     if (
       checkIfExist(config?.networks) &&
-      checkIfExist(config?.networks[this.networkId])
+      checkIfExist(config?.networks[this.networkName])
     ) {
-      if (checkIfExist(config.networks[this.networkId]?.privateKeys)) {
-        privateKeys = config.networks[this.networkId]?.privateKeys;
+      if (checkIfExist(config.networks[this.networkName]?.privateKeys)) {
+        privateKeys = config.networks[this.networkName]?.privateKeys;
       }
-      if (checkIfExist(config.networks[this.networkId]?.mnemonic)) {
-        mnemonic = config.networks[this.networkId]?.mnemonic;
+      if (checkIfExist(config.networks[this.networkName]?.mnemonic)) {
+        mnemonic = config.networks[this.networkName]?.mnemonic;
       }
-      if (checkIfExist(config.networks[this.networkId]?.hdPath)) {
-        hdPath = config.networks[this.networkId]?.hdPath;
+      if (checkIfExist(config.networks[this.networkName]?.hdPath)) {
+        hdPath = config.networks[this.networkName]?.hdPath;
       }
     }
 
@@ -109,10 +109,10 @@ export default class ConfigService implements IConfigService {
     }
     if (
       checkIfExist(this.config.networks) &&
-      checkIfExist(this.config.networks[this.networkId]) &&
-      checkIfExist(this.config.networks[this.networkId]?.privateKeys)
+      checkIfExist(this.config.networks[this.networkName]) &&
+      checkIfExist(this.config.networks[this.networkName]?.privateKeys)
     ) {
-      privateKeys = this.config.networks[this.networkId]?.privateKeys;
+      privateKeys = this.config.networks[this.networkName]?.privateKeys;
     }
     if (privateKeys.length < 1) {
       throw new PrivateKeyIsMissing('Private keys are missing. Please provide them inside hardhat-ignition config file.');

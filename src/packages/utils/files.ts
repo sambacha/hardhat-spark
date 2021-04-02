@@ -75,6 +75,23 @@ export function parseFiles(sourcePath: string, contractNames: string[], result: 
   return result;
 }
 
+export function searchModuleFilesName(currentPath: string, results: any[]): string[] {
+  const filenames = fs.readdirSync(currentPath);
+
+  filenames.forEach((fileName: string) => {
+    if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
+      return searchModuleFilesName(path.resolve(currentPath, fileName), results);
+    }
+    if (!path.parse(fileName).base.includes('module')) {
+      return;
+    }
+
+    results.push(path.parse(fileName).base);
+  });
+
+  return results;
+}
+
 export function searchBuilds(currentPath: string, results: any[]): object[] {
   const filenames = fs.readdirSync(currentPath);
 

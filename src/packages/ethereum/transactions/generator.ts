@@ -19,7 +19,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   private gasCalculator: IGasCalculator;
   private readonly ethers: providers.JsonRpcProvider;
   private readonly wallet: Wallet;
-  private readonly networkId: number;
+  private readonly networkId: string;
   private nonceMap: { [address: string]: number };
   private nonceManager: INonceManager;
   private transactionSigner: ITransactionSigner;
@@ -28,7 +28,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     configService: IConfigService,
     gasPriceCalculator: IGasPriceCalculator,
     gasCalculator: IGasCalculator,
-    networkId: number,
+    networkId: string,
     ethers: providers.JsonRpcProvider,
     nonceManager: INonceManager,
     transactionSigner: ITransactionSigner

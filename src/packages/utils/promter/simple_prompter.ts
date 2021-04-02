@@ -208,4 +208,11 @@ export class SimpleOverviewPrompter implements IPrompter {
 
   startingModuleUsageGeneration(moduleName: string) {
   }
+
+  async wrongNetwork(): Promise<boolean> {
+    const con = await cli.prompt('Contracts are missing on the network, do you wish to redeploy whole module? (Y/n)', {
+      required: false
+    });
+    return con != 'n';
+  }
 }

@@ -89,7 +89,7 @@ export async function deploy(
     }
 
     // resolving contract and events dependencies and determining execution order
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+    const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
 
     // setting up custom functionality
     if (module.getCustomGasPriceProvider()) {
@@ -153,7 +153,7 @@ export async function diff(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+    const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
     if (!checkIfExist(moduleState)) {
       cli.info('Current module state is empty, add something and try again.');
       process.exit(0);

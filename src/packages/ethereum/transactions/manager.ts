@@ -11,12 +11,12 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   private gasCalculator: IGasCalculator;
   private gasPriceCalculator: IGasPriceCalculator;
   private wallet: ethers.Wallet;
-  private readonly networkId: number;
+  private readonly networkId: string;
 
   constructor(
     provider: providers.JsonRpcProvider,
     wallet: ethers.Wallet,
-    networkId: number,
+    networkId: string,
     gasCalculator: IGasCalculator,
     gasPriceCalculator: IGasPriceCalculator,
   ) {
@@ -54,7 +54,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
       gasLimit: gas,
       data: data,
-      chainId: this.networkId
+      chainId: +this.networkId
     };
 
     if (wallet) {

@@ -19,15 +19,15 @@ export class ModuleStateRepo {
   // @ts-ignore
   private mutex: boolean;
 
-  private readonly networkId: number;
+  private readonly networkName: string;
   private stateRepo: IModuleState;
   private currentModuleName: string;
   private currentEventName: string;
   private readonly test: boolean;
 
-  constructor(networkId: number, currentPath: string, mutex: boolean = false, testEnv: boolean = false) {
+  constructor(networkName: string, currentPath: string, mutex: boolean = false, testEnv: boolean = false) {
     this.mutex = mutex;
-    this.networkId = networkId;
+    this.networkName = networkName;
     this.stateRepo = testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath);
     this.currentModuleName = '';
     this.currentEventName = '';
@@ -48,11 +48,11 @@ export class ModuleStateRepo {
 
   async getStateIfExist(moduleName: string): Promise<ModuleStateFile> {
     // implement cashing and merging functionality
-    return this.stateRepo.getModuleState(this.networkId, moduleName);
+    return this.stateRepo.getModuleState(this.networkName, moduleName);
   }
 
   async storeNewState(moduleName: string, moduleState: ModuleState | ModuleStateFile | null): Promise<void> {
-    await this.stateRepo.storeStates(this.networkId, moduleName, moduleState);
+    await this.stateRepo.storeStates(this.networkName, moduleName, moduleState);
   }
 
   setSingleEventName(currentEventName: string): void {

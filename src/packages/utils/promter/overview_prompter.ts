@@ -3,7 +3,7 @@ import { ModuleState } from '../../modules/states/module';
 import { MultiBar, SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
-import { CliError } from '../../types/errors';
+import { CliError, WrongNetwork } from '../../types/errors';
 import { checkIfExist } from '../util';
 
 export class OverviewPrompter implements IPrompter {
@@ -193,5 +193,12 @@ export class OverviewPrompter implements IPrompter {
   parallelizationExperimental() {
     cli.warn(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
     cli.confirm('Confirm you are willing to continue');
+  }
+
+  async wrongNetwork(): Promise<boolean> {
+    const con = await cli.prompt('Contracts are missing on the network, do you wish to redeploy whole module? (Y/n)', {
+      required: false
+    });
+    return con != 'n';
   }
 }

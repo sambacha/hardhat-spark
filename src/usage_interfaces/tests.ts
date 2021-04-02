@@ -20,6 +20,7 @@ import * as cls from 'cls-hooked';
 import { Namespace } from 'cls-hooked';
 import { EmptyPrompter } from '../packages/utils/promter/empty_prompter';
 import { IPrompter } from '../packages/utils/promter';
+import { EthClient } from '../packages/ethereum/client';
 
 
 export class IgnitionTests implements IIgnitionUsage {
@@ -64,7 +65,8 @@ export class IgnitionTests implements IIgnitionUsage {
 
     this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
     this.eventTxExecutor = new EventTxExecutor(this.eventSession);
-    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession);
+    const ethClient = new EthClient(this.provider);
+    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession, ethClient);
 
     this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
     this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);

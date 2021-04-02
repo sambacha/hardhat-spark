@@ -22,6 +22,14 @@ import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import { JsonPrompter } from '../packages/utils/promter/json_prompter';
+import * as inquirer from 'inquirer';
+import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
+import * as fs from 'fs';
+import { EthClient } from '../packages/ethereum/client';
+
+const DEFAULT_NETWORK_ID = '31337';
+const DEFAULT_NETWORK_NAME = 'local';
+const DEFAULT_DEPLOYMENT_FOLDER = './deployment';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -29,11 +37,11 @@ export default class Deploy extends Command {
   private prompter: IPrompter | undefined;
 
   static flags = {
-    networkId: flags.integer(
+    network: flags.string(
       {
-        name: 'network_id',
-        description: 'Network ID of the network you are willing to deploy your contracts.',
-        required: true
+        name: 'network',
+        description: 'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+        required: false
       }
     ),
     rpcProvider: flags.string(
@@ -106,30 +114,66 @@ export default class Deploy extends Command {
     }
 
     const currentPath = process.cwd();
-    const filePath = args.module_file_path as string;
-    if (filePath == '') {
-      cli.info('Their is no hardhat-ignition config, please run init first.\n   Use --help for more information.');
-    }
-    if (!checkIfExist(flags.networkId)) {
-      cli.info('Network id flag not provided, please use --help');
-      cli.exit(1);
-    }
-    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
-    const states: string[] = flags.state?.split(',') || [];
+    const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
+    const deploymentModules = systemCrawlingService.crawlDeploymentModule();
 
-    const configService = new ConfigService(String(flags.networkId));
+    let filePath = args.module_file_path as string;
+    let networkName = flags.network;
+    if (!checkIfExist(networkName)) {
+      networkName = DEFAULT_NETWORK_NAME;
+    }
+    const configService = new ConfigService(networkName);
     const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
+
+    let networkId = config.networks[networkName].networkId;
+    if (!checkIfExist(networkId)) {
+      networkId = DEFAULT_NETWORK_ID;
+    }
+    process.env.IGNITION_NETWORK_ID = String(networkId);
+    const states: string[] = flags.state?.split(',') || [];
     let provider = new ethers.providers.JsonRpcProvider();
     process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
     if (
       checkIfExist(config.networks) &&
-      checkIfExist(config.networks[String(flags.networkId)]) &&
-      checkIfExist(config.networks[String(flags.networkId)].rpc_provider)
+      checkIfExist(config.networks[networkName])
     ) {
-      provider = new ethers.providers.JsonRpcProvider(
-        String(config?.networks[String(flags.networkId)]?.rpc_provider)
-      );
-      process.env.IGNITION_RPC_PROVIDER = String(config?.networks[String(flags.networkId)]?.rpc_provider);
+      if (checkIfExist(config.networks[networkName].rpcProvider)) {
+        provider = new ethers.providers.JsonRpcProvider(
+          String(config?.networks[networkName]?.rpcProvider)
+        );
+        process.env.IGNITION_RPC_PROVIDER = String(config?.networks[networkName]?.rpcProvider);
+      }
+
+      if (checkIfExist(config.networks[networkName].blockConfirmation)) {
+        process.env.BLOCK_CONFIRMATION_NUMBER = String(config.networks[networkName].blockConfirmation);
+      }
+
+      if (
+        !checkIfExist(filePath) &&
+        checkIfExist(config.networks[networkName].deploymentFilePath)
+      ) {
+        filePath = config.networks[networkName].deploymentFilePath;
+        if (!fs.existsSync(filePath)) {
+          filePath = undefined;
+        }
+      }
+    }
+    if (!checkIfExist(filePath)) {
+      const deploymentFileName = (await inquirer.prompt([{
+        name: 'deploymentFileName',
+        message: 'Deployments file:',
+        type: 'list',
+        choices: deploymentModules.map((v) => {
+          return {
+            name: v
+          };
+        }),
+      }])).deploymentFileName;
+      try {
+        filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
+      } catch (e) {
+        throw new UserError('Their is not deployment module provided.\n   Use --help for more information.');
+      }
     }
     if (checkIfExist(flags.rpcProvider)) {
       provider = new ethers.providers.JsonRpcProvider(
@@ -160,18 +204,19 @@ export default class Deploy extends Command {
     this.prompter = prompter;
 
     const gasCalculator = new GasPriceCalculator(provider);
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
+    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasCalculator, gasCalculator);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, networkId, provider, transactionManager, transactionManager);
 
-    const moduleState = new ModuleStateRepo(flags.networkId, currentPath, this.mutex, flags.testEnv);
+    const moduleState = new ModuleStateRepo(networkName, currentPath, this.mutex, flags.testEnv);
 
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
 
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState, eventTxExecutor, eventSession);
+    const ethClient = new EthClient(provider);
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState, eventTxExecutor, eventSession, ethClient);
 
     const eventHandler = new EventHandler(moduleState, prompter);
-    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, flags.networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
+    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
 
     const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
 
@@ -190,8 +235,6 @@ export default class Deploy extends Command {
       cli.exit(1);
     }
 
-    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
-    cli.error(error);
+    cli.error(error.message);
   }
 }

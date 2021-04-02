@@ -33,6 +33,7 @@ import { JsonPrompter } from '../packages/utils/promter/json_prompter';
 import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
+import { EthClient } from '../packages/ethereum/client';
 
 export type HardhatPluginIgnitionConfig = HardhatIgnitionConfig;
 
@@ -234,13 +235,13 @@ export class HardhatIgnition implements IIgnition {
     if (checkIfExist(args.networkId)) {
       process.env.IGNITION_NETWORK_ID = String(args.networkId);
 
-      this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), +args.networkId, this.gasProvider, this.gasProvider);
-      this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, +args.networkId, this.provider, this.transactionManager, this.transactionManager);
+      this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), args.networkId, this.gasProvider, this.gasProvider);
+      this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, args.networkId, this.provider, this.transactionManager, this.transactionManager);
 
-      this.moduleStateRepo = new ModuleStateRepo(+args.networkId, currentPath, false);
+      this.moduleStateRepo = new ModuleStateRepo(args.networkId, currentPath, false);
 
       this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
-      this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, +args.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
+      this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, args.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
     }
 
     this.states = [];
@@ -248,14 +249,16 @@ export class HardhatIgnition implements IIgnition {
       this.states = args.state.split(',');
     }
 
-    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession);
+    const ethClient = new EthClient(this.provider);
+    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession, ethClient);
 
     this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
     this.moduleTyping = new ModuleTypings();
 
     const deploymentFileRepo = new DeploymentFileRepo();
     const deploymentFileGenerator = new DeploymentFileGenerator(deploymentFileRepo);
-    const systemCrawlingService = new SystemCrawlingService(currentPath);
+    const ARTIFACTS_FOLDER = 'artifacts';
+    const systemCrawlingService = new SystemCrawlingService(currentPath, ARTIFACTS_FOLDER);
     this.tutorialService = new TutorialService(
       deploymentFileGenerator,
       systemCrawlingService
