@@ -13,8 +13,8 @@ import { CallOverrides, ethers } from 'ethers';
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { IPrompter } from '../packages/utils/promter';
-import { BindingsConflict, CliError, TemplateNotFound, UserError } from '../packages/types/errors';
+import { IPrompter } from '../packages/utils/logging';
+import { BindingsConflict, CliError, TemplateNotFound, TransactionFailed, UserError } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
@@ -951,7 +951,12 @@ export class ContractInstance {
         };
 
         await this.prompter.sendingTx(sessionEventName, fragment.name);
-        const tx = await contractFunction(...args, overrides);
+        let tx;
+        try {
+          tx = await contractFunction(...args, overrides);
+        } catch (e) {
+          throw new TransactionFailed(e.error.message);
+        }
         await this.prompter.sentTx(sessionEventName, fragment.name);
 
         this.prompter.waitTransactionConfirmation();

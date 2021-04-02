@@ -16,7 +16,13 @@ export class CliError extends Error {
   }
 }
 
-export class WrongNetwork extends CliError {
+export class TransactionFailed extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class WrongNetwork extends UserError {
   constructor(message: string) {
     super(message);
   }

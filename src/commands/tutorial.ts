@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import { TutorialService } from '../packages/tutorial/tutorial_service';
 import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_gen';
 import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 
 const ARTIFACTS_FOLDER = 'artifacts';

@@ -1,5 +1,4 @@
 import { cli } from 'cli-ux';
-import { OutputFlags } from '@oclif/parser/lib/parse';
 import { Module, ModuleOptions } from './interfaces/hardhat_ignition';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
@@ -10,7 +9,7 @@ import { StateResolver } from './packages/modules/states/state_resolver';
 import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
 import { IConfigService } from './packages/config';
-import { IPrompter } from './packages/utils/promter';
+import { IPrompter } from './packages/utils/logging';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
 import { HardhatIgnitionConfig } from './packages/types/config';

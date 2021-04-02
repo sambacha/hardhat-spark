@@ -1,7 +1,7 @@
 import { extendEnvironment, task } from 'hardhat/config';
 import { lazyObject } from 'hardhat/plugins';
 import { ActionType } from 'hardhat/types';
-import { Prompters } from '../utils/promter';
+import { Logging } from '../utils/logging';
 import { Migration } from '../types/migration';
 import {
   DeployArgs,
@@ -125,10 +125,10 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
     undefined,
     false,
   )
-  .addParam<Prompters>(
+  .addParam<Logging>(
     'prompting',
     'Prompting type: streamlined, overview or json. default: overview',
-    Prompters.simple,
+    Logging.simple,
     undefined,
     true,
   )

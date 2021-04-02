@@ -1,29 +1,25 @@
-import { IPrompter } from './index';
+import { IPrompter, StateElementStatus } from './index';
 import { ModuleState } from '../../modules/states/module';
+import { MultiBar, SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
-import Listr from 'listr';
-import { Observable } from 'rxjs';
-import { UpdateRenderer } from './render/custom_renderer';
+import { CliError } from '../../types/errors';
+import { checkIfExist } from '../util';
 
-enum StateElementStatus {
-  'NOT_EXECUTED' = 'not executed',
-  'STARTED' = 'started',
-  'SUCCESSFUL' = 'successful',
-  'DEPLOYED' = 'already executed/deployed',
-  'FAILED' = 'failed',
-}
-
-export class OverviewPrompter2 implements IPrompter {
+export class OverviewPrompter implements IPrompter {
+  private multiBar: {
+    [moduleName: string]: MultiBar
+  };
   private currentElementsBar: {
     [moduleName: string]: {
-      [eventName: string]: any
+      [eventName: string]: SingleBar
     }
   };
 
   private currentModuleName: string = '';
 
   constructor() {
+    this.multiBar = {};
     this.currentElementsBar = {};
   }
 
@@ -39,64 +35,77 @@ export class OverviewPrompter2 implements IPrompter {
       }
     }
 
-    const tasks = new Listr([], {
-      concurrent: true,
-      exitOnError: true,
-      renderer: UpdateRenderer,
+    this.multiBar[moduleName] = new MultiBar({
+      clearOnComplete: false,
+      stopOnComplete: true,
+      fps: 100,
+      format: (options, params, payload: { status: StateElementStatus, name: string }) => {
+        const whitespaces = ' '.repeat(maxLength - payload.name.length);
+        switch (payload.status) {
+          case StateElementStatus.STARTED:
+          case StateElementStatus.NOT_EXECUTED:
+            return `# ${chalk.bold(payload.name)} ${whitespaces}-> Current status: ${chalk.yellow(payload.status)}`;
+          case StateElementStatus.FAILED:
+            return `# ${chalk.bold(payload.name)} ${whitespaces}-> Current status: ${chalk.red(payload.status)}`;
+          case StateElementStatus.SUCCESSFUL:
+          case StateElementStatus.DEPLOYED:
+            return `# ${chalk.bold(payload.name)} ${whitespaces}-> Current status: ${chalk.green(payload.status)}`;
+          default:
+            throw new CliError(`Not valid status - ${payload.status}`);
+        }
+      }
     });
 
     for (const [elementName, ] of Object.entries(moduleState)) {
-      tasks.add({
-        title: elementName,
-        task: () => {
-          return new Observable(observer => {
-            this.currentElementsBar[moduleName][elementName] = observer;
-          });
-        }
+      this.currentElementsBar[moduleName][elementName] = this.multiBar[moduleName].create(0, 0, {
+        name: elementName,
+        status: StateElementStatus.NOT_EXECUTED,
       });
     }
-
-    tasks.run().catch(err => {
-      throw new err;
-    });
   }
 
   alreadyDeployed(elementName: string): void {
-    this.currentElementsBar[this.currentModuleName][elementName].next(StateElementStatus.DEPLOYED);
-    this.currentElementsBar[this.currentModuleName][elementName].complete();
+    this.currentElementsBar[this.currentModuleName][elementName].update({
+      status: StateElementStatus.DEPLOYED,
+      name: elementName,
+    });
+    this.currentElementsBar[this.currentModuleName][elementName].stop();
 
     delete this.currentElementsBar[this.currentModuleName][elementName];
   }
 
   bindingExecution(bindingName: string): void {
-    this.currentElementsBar[this.currentModuleName][bindingName].next(StateElementStatus.STARTED);
-    this.currentElementsBar[this.currentModuleName][bindingName].complete();
-
-    delete this.currentElementsBar[this.currentModuleName][bindingName];
+    this.currentElementsBar[this.currentModuleName][bindingName].start(1, 0, {
+      status: StateElementStatus.STARTED,
+      name: bindingName,
+    });
   }
 
   errorPrompt(): void {
-    if (
-      !this.currentModuleName ||
-      !this.currentElementsBar ||
-      this.currentElementsBar[this.currentModuleName]
-    ) {
+    if (!checkIfExist(this.currentElementsBar[this.currentModuleName])) {
       return;
     }
 
     for (const [elementName, ] of Object.entries(this.currentElementsBar[this.currentModuleName])) {
-      this.currentElementsBar[this.currentModuleName][elementName].next(StateElementStatus.FAILED);
-      this.currentElementsBar[this.currentModuleName][elementName].complete();
+      this.currentElementsBar[this.currentModuleName][elementName].update({
+        status: StateElementStatus.FAILED,
+        name: elementName,
+      });
 
+      this.currentElementsBar[this.currentModuleName][elementName].stop();
       delete this.currentElementsBar[this.currentModuleName][elementName];
     }
   }
 
   eventExecution(eventName: string): void {
-    this.currentElementsBar[this.currentModuleName][eventName].next(StateElementStatus.STARTED);
+    this.currentElementsBar[this.currentModuleName][eventName].start(1, 0, {
+      status: StateElementStatus.STARTED,
+      name: eventName,
+    });
   }
 
   finishModuleDeploy(): void {
+    this.multiBar[this.currentModuleName].stop();
 
     cli.info(`${chalk.green('Successfully')} deployed module - ${chalk.green(this.currentModuleName)}`);
     this.currentModuleName = '';
@@ -115,9 +124,12 @@ export class OverviewPrompter2 implements IPrompter {
       return;
     }
 
-    this.currentElementsBar[this.currentModuleName][elementName].next(StateElementStatus.SUCCESSFUL);
+    this.currentElementsBar[this.currentModuleName][elementName].update({
+      status: StateElementStatus.SUCCESSFUL,
+      name: elementName,
+    });
 
-    this.currentElementsBar[this.currentModuleName][elementName].complete();
+    this.currentElementsBar[this.currentModuleName][elementName].stop();
     delete this.currentElementsBar[this.currentModuleName][elementName];
   }
 
@@ -181,5 +193,12 @@ export class OverviewPrompter2 implements IPrompter {
   parallelizationExperimental() {
     cli.warn(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
     cli.confirm('Confirm you are willing to continue');
+  }
+
+  async wrongNetwork(): Promise<boolean> {
+    const con = await cli.prompt('Contracts are missing on the network, do you wish to redeploy whole module? (Y/n)', {
+      required: false
+    });
+    return con != 'n';
   }
 }

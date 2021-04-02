@@ -1,4 +1,4 @@
-import { Prompters } from '../packages/utils/promter';
+import { Logging } from '../packages/utils/logging';
 
 export type ConfigFlags = {
   networkId: string,
@@ -35,7 +35,7 @@ export interface DeployArgs {
   networkId: string;
   rpcProvider?: string;
   parallelize?: boolean;
-  prompting?: Prompters;
+  prompting?: Logging;
   state?: string;
   configScriptPath?: string;
   testEnv?: boolean;

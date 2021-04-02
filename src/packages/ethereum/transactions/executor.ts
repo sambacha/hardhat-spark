@@ -14,7 +14,7 @@ import {
   StatefulEvent,
   TransactionData,
 } from '../../../interfaces/hardhat_ignition';
-import { IPrompter } from '../../utils/promter';
+import { IPrompter } from '../../utils/logging';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { checkIfExist } from '../../utils/util';
 import { EthTxGenerator } from './generator';
@@ -23,7 +23,13 @@ import { defaultAbiCoder as abiCoder } from '@ethersproject/abi';
 import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
 import { JsonFragment, JsonFragmentType } from '../../types/artifacts/abi';
 import { EventHandler } from '../../modules/events/handler';
-import { CliError, ContractTypeMismatch, ContractTypeUnsupported, UserError } from '../../types/errors';
+import {
+  CliError,
+  ContractTypeMismatch,
+  ContractTypeUnsupported,
+  TransactionFailed,
+  UserError
+} from '../../types/errors';
 import { ModuleState } from '../../modules/states/module';
 import { IModuleRegistryResolver } from '../../modules/states/registry';
 import { ModuleResolver } from '../../modules/module_resolver';
@@ -565,7 +571,12 @@ export class TxExecutor {
         binding.txData = binding.txData as TransactionData;
 
         this.prompter.sendingTx(elementName);
-        const txResp = await this.ethers.sendTransaction(signedTx);
+        let txResp;
+        try {
+          txResp = await this.ethers.sendTransaction(signedTx);
+        } catch (e) {
+          reject(new TransactionFailed(e.error.message));
+        }
         this.prompter.sentTx(elementName);
 
         resolve(txResp);
@@ -581,7 +592,12 @@ export class TxExecutor {
         binding.txData = binding.txData as TransactionData;
 
         this.prompter.sendingTx(elementName);
-        const txResp = await this.ethers.sendTransaction(signedTx);
+        let txResp;
+        try {
+          txResp = await this.ethers.sendTransaction(signedTx);
+        } catch (e) {
+          reject(new TransactionFailed(e.error.message));
+        }
         this.prompter.sentTx(elementName);
 
         let txReceipt = await txResp.wait(1);

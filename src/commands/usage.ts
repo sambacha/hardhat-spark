@@ -4,13 +4,15 @@ import { cli } from 'cli-ux';
 import * as command from '../index';
 import { UserError } from '../packages/types/errors';
 import chalk from 'chalk';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
-import { IPrompter } from '../packages/utils/promter';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
+import { IPrompter } from '../packages/utils/logging';
 import path from 'path';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { WalletWrapper } from '../index';
 import { ModuleResolver } from '../packages/modules/module_resolver';
 import { ModuleUsage } from '../packages/modules/module_usage';
+import { checkIfExist } from '../packages/utils/util';
+import { DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
 
 export default class Usage extends Command {
   private mutex = false;
@@ -19,11 +21,11 @@ export default class Usage extends Command {
 
   static flags = {
     help: flags.help({char: 'h'}),
-    networkId: flags.integer(
+    network: flags.string(
       {
-        name: 'network_id',
-        description: 'Network ID of the network you are willing to deploy your contracts.',
-        required: true
+        name: 'network',
+        description: 'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+        required: false
       }
     ),
     testEnv: flags.boolean(
@@ -66,18 +68,30 @@ export default class Usage extends Command {
       cli.info('Their is no hardhat-ignition config, please run init first.\n   Use --help for more information.');
     }
 
-    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
+    let networkName = flags.network;
+    if (!checkIfExist(networkName)) {
+      networkName = DEFAULT_NETWORK_NAME;
+    }
+
+    const configService = new ConfigService(networkName);
+    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
+
+    let networkId = config.networks[networkName].networkId;
+    if (!checkIfExist(networkId)) {
+      networkId = DEFAULT_NETWORK_ID;
+    }
+    process.env.IGNITION_NETWORK_ID = String(networkId);
+
     this.prompter = new StreamlinedPrompter();
 
-    const configService = new ConfigService(String(flags.networkId));
-    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
-    const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath, this.mutex, flags.testEnv);
+    const moduleStateRepo = new ModuleStateRepo(networkId, currentPath, this.mutex, flags.testEnv);
     const moduleResolver = new ModuleResolver(
       undefined,
       configService.getFirstPrivateKey(),
       this.prompter,
       undefined,
       moduleStateRepo,
+      undefined,
       undefined,
       undefined
     );

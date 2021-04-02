@@ -6,8 +6,8 @@ import { ModuleTypings } from '../packages/modules/typings';
 import * as command from '../index';
 import ConfigService from '../packages/config/service';
 import chalk from 'chalk';
-import { IPrompter } from '../packages/utils/promter';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { IPrompter } from '../packages/utils/logging';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 
 export default class GenTypes extends Command {
   static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';

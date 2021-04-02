@@ -55,7 +55,7 @@ export class SimpleOverviewPrompter implements IPrompter {
       clearOnComplete: false,
       synchronousUpdate: true,
       fps: 100,
-      format: `# ${chalk.bold('{module}')} progress [{bar}] {percentage}% | {value}/{total} | Current element: ${chalk.bold('{element}')} -> status: {status} | Action: {action}`,
+      format: `# ${chalk.bold('{module}')} | {percentage}% | {value}/{total} | Current element: ${chalk.bold('{element}')} -> status: {status} | Action: {action}`,
     });
     this.moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
       module: this.currentModuleName,

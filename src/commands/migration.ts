@@ -3,11 +3,11 @@ import { cli } from 'cli-ux';
 import * as command from '../index';
 import { UserError } from '../packages/types/errors';
 import chalk from 'chalk';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { Migration } from '../packages/types/migration';
 import { StateMigrationService } from '../packages/modules/states/state_migration_service';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
-import { IPrompter } from '../packages/utils/promter';
+import { IPrompter } from '../packages/utils/logging';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 
 export default class Tutorial extends Command {

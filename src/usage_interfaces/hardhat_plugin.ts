@@ -12,7 +12,7 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { EventHandler } from '../packages/modules/events/handler';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
-import { IPrompter, Prompters } from '../packages/utils/promter';
+import { IPrompter, Logging } from '../packages/utils/logging';
 import { IConfigService, HardhatIgnitionConfig } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
 import { Namespace } from 'cls-hooked';
@@ -28,10 +28,10 @@ import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_ge
 import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
 import * as path from 'path';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
-import { JsonPrompter } from '../packages/utils/promter/json_prompter';
-import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
-import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
+import { JsonPrompter } from '../packages/utils/logging/json_logging';
+import { OverviewPrompter } from '../packages/utils/logging/overview_prompter';
+import { SimpleOverviewPrompter } from '../packages/utils/logging/simple_logging';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 import { EthClient } from '../packages/ethereum/client';
 
@@ -42,7 +42,7 @@ export type Args = {
   networkId?: string;
   rpcProvider?: string;
   parallelize?: boolean;
-  prompting?: Prompters;
+  prompting?: Logging;
   state?: string;
   configScriptPath?: string;
   testEnv?: boolean;
@@ -203,16 +203,16 @@ export class HardhatIgnition implements IIgnition {
 
     let prompter;
     switch (args.prompting) {
-      case Prompters.streamlined:
+      case Logging.streamlined:
         prompter = new StreamlinedPrompter();
         break;
-      case Prompters.json:
+      case Logging.json:
         prompter = new JsonPrompter();
         break;
-      case Prompters.overview:
+      case Logging.overview:
         prompter = new OverviewPrompter();
         break;
-      case Prompters.simple:
+      case Logging.simple:
       default: {
         prompter = new SimpleOverviewPrompter();
       }

@@ -5,7 +5,7 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { checkIfExist, checkMutex } from '../packages/utils/util';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import ConfigService from '../packages/config/service';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ethers, Wallet } from 'ethers';
@@ -17,19 +17,16 @@ import chalk from 'chalk';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
-import { IPrompter, Prompters } from '../packages/utils/promter';
-import { OverviewPrompter } from '../packages/utils/promter/overview_prompter';
-import { SimpleOverviewPrompter } from '../packages/utils/promter/simple_prompter';
+import { IPrompter, Logging } from '../packages/utils/logging';
+import { OverviewPrompter } from '../packages/utils/logging/overview_prompter';
+import { SimpleOverviewPrompter } from '../packages/utils/logging/simple_logging';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
-import { JsonPrompter } from '../packages/utils/promter/json_prompter';
+import { JsonPrompter } from '../packages/utils/logging/json_logging';
 import * as inquirer from 'inquirer';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 import * as fs from 'fs';
 import { EthClient } from '../packages/ethereum/client';
-
-const DEFAULT_NETWORK_ID = '31337';
-const DEFAULT_NETWORK_NAME = 'local';
-const DEFAULT_DEPLOYMENT_FOLDER = './deployment';
+import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -64,17 +61,11 @@ export default class Deploy extends Command {
         required: false,
       }
     ),
-    yes: flags.boolean(
+    logging: flags.enum(
       {
-        name: 'yes',
-        description: 'Used to skip confirmation questions.'
-      }
-    ),
-    prompting: flags.enum(
-      {
-        name: 'prompting',
-        description: 'Prompting type: streamlined, overview or json. default: overview',
-        options: [Prompters.json, Prompters.streamlined, Prompters.simple],
+        name: 'logging',
+        description: 'Logging type: streamlined, overview or json. default: overview',
+        options: [Logging.json, Logging.streamlined, Logging.simple],
       }
     ),
     state: flags.string(
@@ -119,6 +110,7 @@ export default class Deploy extends Command {
 
     let filePath = args.module_file_path as string;
     let networkName = flags.network;
+    let isLocalDeployment = true;
     if (!checkIfExist(networkName)) {
       networkName = DEFAULT_NETWORK_NAME;
     }
@@ -146,6 +138,10 @@ export default class Deploy extends Command {
 
       if (checkIfExist(config.networks[networkName].blockConfirmation)) {
         process.env.BLOCK_CONFIRMATION_NUMBER = String(config.networks[networkName].blockConfirmation);
+      }
+
+      if (checkIfExist(config.networks[networkName].localDeployment)) {
+        isLocalDeployment = config.networks[networkName].localDeployment;
       }
 
       if (
@@ -184,17 +180,28 @@ export default class Deploy extends Command {
 
     // choosing right prompter from user desires
     let prompter;
-    switch (flags.prompting) {
-      case Prompters.streamlined:
-        prompter = new StreamlinedPrompter(flags.yes);
+    switch (flags.logging) {
+      case Logging.streamlined:
+        let yes = true;
+        if (
+          networkName != DEFAULT_NETWORK_NAME &&
+          !isLocalDeployment
+        ) {
+          const con = await cli.prompt('Would you like to be prompted at every single step? (Y/n)', {
+            required: false
+          });
+          yes = con == 'n';
+        }
+
+        prompter = new StreamlinedPrompter(yes);
         break;
-      case Prompters.json:
+      case Logging.json:
         prompter = new JsonPrompter();
         break;
-      case Prompters.overview:
+      case Logging.overview:
         prompter = new OverviewPrompter();
         break;
-      case Prompters.simple:
+      case Logging.simple:
       default: {
         prompter = new SimpleOverviewPrompter();
       }

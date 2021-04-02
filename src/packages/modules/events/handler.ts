@@ -14,7 +14,7 @@ import { checkIfExist } from '../../utils/util';
 import { ModuleStateRepo } from '../states/state_repo';
 import { ModuleState } from '../states/module';
 import { CliError } from '../../types/errors';
-import { IPrompter } from '../../utils/promter';
+import { IPrompter } from '../../utils/logging';
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo;

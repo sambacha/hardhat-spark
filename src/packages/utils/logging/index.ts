@@ -1,6 +1,6 @@
 import { ModuleState } from '../../modules/states/module';
 
-export enum Prompters {
+export enum Logging {
   'overview' = 'overview',
   'simple' = 'simple',
   'json' = 'json',

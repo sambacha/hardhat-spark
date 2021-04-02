@@ -4,7 +4,7 @@ import { IgnitionWallet } from '../../../interfaces/hardhat_ignition';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { INonceManager } from '../transactions';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
-import { IPrompter } from '../../utils/promter';
+import { IPrompter } from '../../utils/logging';
 import { EventTxExecutor } from '../transactions/event_executor';
 
 export class WalletWrapper {

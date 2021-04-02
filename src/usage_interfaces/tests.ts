@@ -18,8 +18,8 @@ import { EventTxExecutor } from '../packages/ethereum/transactions/event_executo
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import * as cls from 'cls-hooked';
 import { Namespace } from 'cls-hooked';
-import { EmptyPrompter } from '../packages/utils/promter/empty_prompter';
-import { IPrompter } from '../packages/utils/promter';
+import { EmptyPrompter } from '../packages/utils/logging/empty_logging';
+import { IPrompter } from '../packages/utils/logging';
 import { EthClient } from '../packages/ethereum/client';
 
 

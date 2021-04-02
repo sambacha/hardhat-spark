@@ -6,16 +6,21 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { checkIfExist } from '../packages/utils/util';
 import { ethers, Wallet } from 'ethers';
 import ConfigService from '../packages/config/service';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { NetworkIdNotProvided, PathNotProvided, UserError } from '../packages/types/errors';
+import { UserError } from '../packages/types/errors';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
 import chalk from 'chalk';
-import { IPrompter } from '../packages/utils/promter';
+import { IPrompter } from '../packages/utils/logging';
+import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
+import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
+import fs from 'fs';
+import * as inquirer from 'inquirer';
+import { EthClient } from '../packages/ethereum/client';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current deployment.';
@@ -23,11 +28,11 @@ export default class Diff extends Command {
 
   static flags = {
     help: flags.help({char: 'h'}),
-    networkId: flags.integer(
+    network: flags.string(
       {
-        name: 'network_id',
-        description: 'Network ID of the network you are willing to deploy your contracts.',
-        required: true
+        name: 'network',
+        description: 'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+        required: false
       }
     ),
     debug: flags.boolean(
@@ -60,33 +65,78 @@ export default class Diff extends Command {
     }
 
     const currentPath = process.cwd();
-    const filePath = args.module_file_path as string;
-    if (filePath == '') {
-      throw new PathNotProvided('Path argument missing from command. \nPlease use --help to better understand usage of this command');
+    const systemCrawlingService = new SystemCrawlingService(currentPath, DEFAULT_DEPLOYMENT_FOLDER);
+    const deploymentModules = systemCrawlingService.crawlDeploymentModule();
+
+    let filePath = args.module_file_path as string;
+    let networkName = flags.network;
+    if (!checkIfExist(networkName)) {
+      networkName = DEFAULT_NETWORK_NAME;
     }
-    if (!checkIfExist(flags.networkId)) {
-      throw new NetworkIdNotProvided('Network id flag not provided, please use --help');
+    const configService = new ConfigService(networkName);
+    const config = await configService.initializeIgnitionConfig(currentPath, flags.configScriptPath);
+
+    let networkId = config.networks[networkName].networkId;
+    if (!checkIfExist(networkId)) {
+      networkId = DEFAULT_NETWORK_ID;
     }
-    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
+    process.env.IGNITION_NETWORK_ID = String(networkId);
     const states: string[] = flags.state?.split(',') || [];
+    let provider = new ethers.providers.JsonRpcProvider();
+    process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
+    if (
+      checkIfExist(config.networks) &&
+      checkIfExist(config.networks[networkName])
+    ) {
+      if (checkIfExist(config.networks[networkName].rpcProvider)) {
+        provider = new ethers.providers.JsonRpcProvider(
+          String(config?.networks[networkName]?.rpcProvider)
+        );
+        process.env.IGNITION_RPC_PROVIDER = String(config?.networks[networkName]?.rpcProvider);
+      }
+
+      if (
+        !checkIfExist(filePath) &&
+        checkIfExist(config.networks[networkName].deploymentFilePath)
+      ) {
+        filePath = config.networks[networkName].deploymentFilePath;
+        if (!fs.existsSync(filePath)) {
+          filePath = undefined;
+        }
+      }
+    }
+    if (!checkIfExist(filePath)) {
+      const deploymentFileName = (await inquirer.prompt([{
+        name: 'deploymentFileName',
+        message: 'Deployments file:',
+        type: 'list',
+        choices: deploymentModules.map((v) => {
+          return {
+            name: v
+          };
+        }),
+      }])).deploymentFileName;
+      try {
+        filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
+      } catch (e) {
+        throw new UserError('Their is not deployment module provided.\n   Use --help for more information.');
+      }
+    }
 
     const resolvedPath = path.resolve(currentPath, filePath);
 
-    const provider = new ethers.providers.JsonRpcProvider();
-    const configService = new ConfigService(String(flags.networkId));
-    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
-
     const gasCalculator = new GasPriceCalculator(provider);
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
+    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasCalculator, gasCalculator);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, networkId, provider, transactionManager, transactionManager);
 
     const prompter = new StreamlinedPrompter();
     this.prompter = prompter;
 
-    const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);
+    const moduleStateRepo = new ModuleStateRepo(networkId, currentPath);
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession);
+    const ethClient = new EthClient(provider);
+    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 
     await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService);
   }

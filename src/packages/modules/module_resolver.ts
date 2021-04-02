@@ -6,7 +6,7 @@ import {
 import { checkIfExist, compareBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { IPrompter } from '../utils/promter';
+import { IPrompter } from '../utils/logging';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
 import { CliError, UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
