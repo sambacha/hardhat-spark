@@ -10,7 +10,7 @@ import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { UserError } from '../packages/types/errors';
+import { CliError, UserError } from '../packages/types/errors';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
@@ -147,12 +147,30 @@ export default class Diff extends Command {
     }
 
     if ((error as UserError)._isUserError) {
+      cli.info('Something went wrong inside deployment script, check the message below and try again.');
+      if (cli.config.outputLevel == 'debug') {
+        cli.debug(error.stack);
+        return;
+      }
+
       cli.info(chalk.red.bold('ERROR'), error.message);
-      cli.exit(1);
+      return;
     }
 
-    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
-    cli.error(error);
+    if ((error as CliError)._isCliError) {
+      cli.info('Something went wrong inside ignition');
+      if (cli.config.outputLevel == 'debug') {
+        cli.debug(error.stack);
+        return;
+      }
+
+      cli.info(chalk.red.bold('ERROR'), error.message);
+      return;
+    }
+
+    cli.error(error.message);
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+    }
   }
 }

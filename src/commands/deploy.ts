@@ -12,7 +12,7 @@ import { ethers, Wallet } from 'ethers';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { EventHandler } from '../packages/modules/events/handler';
-import { UserError } from '../packages/types/errors';
+import { CliError, UserError } from '../packages/types/errors';
 import chalk from 'chalk';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
@@ -238,10 +238,30 @@ export default class Deploy extends Command {
     }
 
     if ((error as UserError)._isUserError) {
+      cli.info('Something went wrong inside deployment script, check the message below and try again.');
+      if (cli.config.outputLevel == 'debug') {
+        cli.debug(error.stack);
+        return;
+      }
+
       cli.info(chalk.red.bold('ERROR'), error.message);
-      cli.exit(1);
+      return;
+    }
+
+    if ((error as CliError)._isCliError) {
+      cli.info('Something went wrong inside ignition');
+      if (cli.config.outputLevel == 'debug') {
+        cli.debug(error.stack);
+        return;
+      }
+
+      cli.info(chalk.red.bold('ERROR'), error.message);
+      return;
     }
 
     cli.error(error.message);
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+    }
   }
 }

@@ -2,7 +2,7 @@ import { Command, flags } from '@oclif/command';
 import ConfigService from '../packages/config/service';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { UserError } from '../packages/types/errors';
+import { CliError, UserError } from '../packages/types/errors';
 import chalk from 'chalk';
 import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { IPrompter } from '../packages/utils/logging';
@@ -118,12 +118,30 @@ export default class Usage extends Command {
     }
 
     if ((error as UserError)._isUserError) {
+      cli.info('Something went wrong inside deployment script, check the message below and try again.');
+      if (cli.config.outputLevel == 'debug') {
+        cli.debug(error.stack);
+        return;
+      }
+
       cli.info(chalk.red.bold('ERROR'), error.message);
-      cli.exit(1);
+      return;
     }
 
-    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/nomiclabs/hardhat-ignition/issues/new');
-    cli.error(error);
+    if ((error as CliError)._isCliError) {
+      cli.info('Something went wrong inside ignition');
+      if (cli.config.outputLevel == 'debug') {
+        cli.debug(error.stack);
+        return;
+      }
+
+      cli.info(chalk.red.bold('ERROR'), error.message);
+      return;
+    }
+
+    cli.error(error.message);
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+    }
   }
 }
