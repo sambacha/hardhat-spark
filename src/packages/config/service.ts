@@ -40,6 +40,9 @@ export default class ConfigService implements IConfigService {
         for (const [, ignitionConfig] of Object.entries(configModules)) {
           config = ignitionConfig as HardhatIgnitionConfig;
         }
+        if (!checkIfExist(config)) {
+          throw new UserError('config object is missing.');
+        }
 
         if (!checkIfExist(config?.networks)) {
           throw new UserError('network field is missing in config file.');
