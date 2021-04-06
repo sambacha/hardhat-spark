@@ -36,11 +36,6 @@ export function isTypescriptSupported() {
 }
 
 export function loadTsNode(test?: boolean) {
-  const hostNode = Boolean(typeof process == 'object' && process.versions && process.versions.node && process.versions.v8);
-  if (hostNode) {
-    return;
-  }
-
   try {
     require.resolve('typescript');
   } catch (error) {
