@@ -1,5 +1,5 @@
 require('dotenv').config({path: '../.env'});
-import { buildModule, ModuleBuilder } from '../../../src';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 import { ethers } from 'ethers';
 
 const {
