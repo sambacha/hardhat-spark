@@ -112,6 +112,7 @@ export default class Deploy extends Command {
     let filePath = args.module_file_path as string;
     let networkName = flags.network;
     let isLocalDeployment = true;
+    let gasPriceBackoff;
     if (!checkIfExist(networkName)) {
       networkName = DEFAULT_NETWORK_NAME;
     }
@@ -153,6 +154,12 @@ export default class Deploy extends Command {
         if (!fs.existsSync(filePath)) {
           filePath = undefined;
         }
+      }
+
+      if (
+        checkIfExist(config.networks[networkName].gasPriceBackoff)
+      ) {
+        gasPriceBackoff = config.networks[networkName].gasPriceBackoff;
       }
     }
     if (!checkIfExist(filePath)) {
@@ -211,9 +218,13 @@ export default class Deploy extends Command {
     // initializing all service's and repos
     this.prompter = prompter;
 
-    const gasCalculator = new GasPriceCalculator(provider);
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasCalculator, gasCalculator);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, networkId, provider, transactionManager, transactionManager);
+    const gasProvider = new GasPriceCalculator(provider);
+    let gasCalculator = config.gasPriceProvider;
+    if (!checkIfExist(gasCalculator)) {
+      gasCalculator = gasProvider;
+    }
+    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasProvider, gasCalculator, gasPriceBackoff);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasProvider, networkId, provider, transactionManager, transactionManager, gasPriceBackoff);
 
     const moduleState = new ModuleStateRepo(networkName, currentPath, this.mutex, flags.testEnv);
 
@@ -226,7 +237,7 @@ export default class Deploy extends Command {
     const eventHandler = new EventHandler(moduleState, prompter);
     const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
 
-    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasProvider, moduleState, prompter, eventTxExecutor);
 
     const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(moduleState);
 

@@ -1,9 +1,11 @@
-import { checkIfExist } from '../../utils/util';
+import { checkIfExist, delay } from '../../utils/util';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { INonceManager, ITransactionSigner } from './index';
-import { providers } from 'ethers';
+import { BigNumber, providers } from 'ethers';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { ethers } from 'ethers';
+import { GasPriceBackoffError, TransactionFailed, UserError } from '../../types/errors';
+import { GasPriceBackoff } from '../../types/config';
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };
@@ -12,6 +14,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   private gasPriceCalculator: IGasPriceCalculator;
   private wallet: ethers.Wallet;
   private readonly networkId: string;
+  private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
     provider: providers.JsonRpcProvider,
@@ -19,6 +22,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     networkId: string,
     gasCalculator: IGasCalculator,
     gasPriceCalculator: IGasPriceCalculator,
+    gasPriceBackoff?: GasPriceBackoff,
   ) {
     this.provider = provider;
     this.nonceMap = {};
@@ -26,6 +30,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     this.networkId = networkId;
     this.gasCalculator = gasCalculator;
     this.gasPriceCalculator = gasPriceCalculator;
+    this.gasPriceBackoff = gasPriceBackoff;
   }
 
   async getAndIncrementTransactionCount(walletAddress: string): Promise<number> {
@@ -46,12 +51,21 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   }
 
   async generateSingedTx(value: number, data: string, wallet?: ethers.Wallet | undefined): Promise<string> {
-    const gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
+    let gas = BigNumber.from(0);
+    try {
+      gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
+    } catch (err) {
+      throw new TransactionFailed(err.error.message);
+    }
 
+    let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
+    if (checkIfExist(this.gasPriceBackoff)) {
+      gasPrice = await this.fetchBackoffGasPrice(this.gasPriceBackoff.numberOfRetries);
+    }
     const tx: TransactionRequest = {
       from: this.wallet.address,
       value: value,
-      gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
+      gasPrice: gasPrice,
       gasLimit: gas,
       data: data,
       chainId: +this.networkId
@@ -65,5 +79,25 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
 
     tx.nonce = await this.getAndIncrementTransactionCount(await this.wallet.getAddress());
     return this.wallet.signTransaction(tx);
+  }
+
+  async fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
+    let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
+    if (retries <= 0) {
+      throw new GasPriceBackoffError(
+        this.gasPriceBackoff.maxGasPrice.toString(),
+        gasPrice.toString(),
+        this.gasPriceBackoff.numberOfRetries,
+        this.gasPriceBackoff.backoffTime
+      );
+    }
+    if (checkIfExist(this.gasPriceBackoff)) {
+      if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
+        await delay(this.gasPriceBackoff.backoffTime);
+        gasPrice = await this.fetchBackoffGasPrice(retries - 1);
+      }
+    }
+
+    return gasPrice;
   }
 }

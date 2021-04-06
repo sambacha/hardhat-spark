@@ -62,6 +62,11 @@ export const config: HardhatIgnitionConfig = {
       ],
       localDeployment: false,
       blockConfirmation: 2,
+      gasPriceBackoff: {
+        maxGasPrice: ethers.utils.parseUnits('20', 'gwei'),
+        backoffTime: 1000 * 15,
+        numberOfRetries: 3,
+      }
     }
   },
   // registry: registryAndResolver,

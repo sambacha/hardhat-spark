@@ -1,12 +1,13 @@
 import { ContractBinding, TransactionData } from '../../../interfaces/hardhat_ignition';
-import { checkIfExist } from '../../utils/util';
+import { checkIfExist, delay } from '../../utils/util';
 import { Wallet, providers, BigNumber } from 'ethers';
 import { ModuleState } from '../../modules/states/module';
 import { SingleContractLinkReference } from '../../types/artifacts/libraries';
-import { CliError } from '../../types/errors';
+import { CliError, GasPriceBackoffError } from '../../types/errors';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { IConfigService } from '../../config';
 import { INonceManager, ITransactionSigner } from './index';
+import { GasPriceBackoff } from '../../types/config';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -23,6 +24,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   private nonceMap: { [address: string]: number };
   private nonceManager: INonceManager;
   private transactionSigner: ITransactionSigner;
+  private gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
     configService: IConfigService,
@@ -31,7 +33,8 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     networkId: string,
     ethers: providers.JsonRpcProvider,
     nonceManager: INonceManager,
-    transactionSigner: ITransactionSigner
+    transactionSigner: ITransactionSigner,
+    gasPriceBackoff?: GasPriceBackoff,
   ) {
     this.configService = configService;
     this.ethers = ethers;
@@ -43,6 +46,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     this.nonceMap = {};
     this.nonceManager = nonceManager;
     this.transactionSigner = transactionSigner;
+    this.gasPriceBackoff = gasPriceBackoff;
   }
 
   changeGasPriceCalculator(newGasPriceCalculator: IGasPriceCalculator) {
@@ -105,10 +109,35 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   }
 
   async fetchTxData(walletAddress: string): Promise<TxMetaData> {
+    let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
+    if (checkIfExist(this.gasPriceBackoff)) {
+      gasPrice = await this.fetchBackoffGasPrice(this.gasPriceBackoff.numberOfRetries);
+    }
+
     return {
-      gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
+      gasPrice: gasPrice,
       nonce: await this.nonceManager.getAndIncrementTransactionCount(walletAddress),
     };
+  }
+
+  private async fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
+    let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
+    if (retries <= 0) {
+      throw new GasPriceBackoffError(
+        this.gasPriceBackoff.maxGasPrice.toString(),
+        gasPrice.toString(),
+        this.gasPriceBackoff.numberOfRetries,
+        this.gasPriceBackoff.backoffTime
+      );
+    }
+    if (checkIfExist(this.gasPriceBackoff)) {
+      if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
+        await delay(this.gasPriceBackoff.backoffTime);
+        gasPrice = await this.fetchBackoffGasPrice(retries - 1);
+      }
+    }
+
+    return gasPrice;
   }
 
   generateSingedTx(value: number, data: string, wallet?: Wallet | undefined): Promise<string> {

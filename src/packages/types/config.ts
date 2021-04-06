@@ -1,6 +1,7 @@
 import { IModuleRegistryResolver } from '../modules/states/registry';
 import { IGasPriceCalculator } from '../ethereum/gas';
 import { INonceManager, ITransactionSigner } from '../ethereum/transactions';
+import { ethers } from 'ethers';
 
 export type HardhatIgnitionConfig = {
   privateKeys: string[];
@@ -16,6 +17,7 @@ export type HardhatIgnitionConfig = {
       localDeployment?: boolean;
       deploymentFilePath?: string;
       blockConfirmation?: number;
+      gasPriceBackoff?: GasPriceBackoff;
     }
   }
   registry?: IModuleRegistryResolver;
@@ -24,4 +26,10 @@ export type HardhatIgnitionConfig = {
   nonceManager?: INonceManager,
   transactionSigner?: ITransactionSigner
   params?: { [name: string]: any },
+};
+
+export type GasPriceBackoff = {
+  maxGasPrice: ethers.BigNumber;
+  backoffTime: number;
+  numberOfRetries: number;
 };

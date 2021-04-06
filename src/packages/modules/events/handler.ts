@@ -29,6 +29,8 @@ export class EventHandler {
     const eventElement = moduleState[event.name] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(event.name);
+      this.prompter.finishedEventExecution(event.name);
+
       return;
     }
 
@@ -105,6 +107,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
+      this.prompter.finishedEventExecution(eventName);
       return;
     }
 
@@ -124,6 +127,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
+      this.prompter.finishedEventExecution(eventName);
       return;
     }
 
@@ -160,6 +164,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
+      this.prompter.finishedEventExecution(eventName);
       return;
     }
 

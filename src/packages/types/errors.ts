@@ -20,6 +20,16 @@ export class CliError extends Error {
   }
 }
 
+export class GasPriceBackoffError extends UserError {
+  constructor(maxGasPrice: string, currentGasPrice: string, numberOfRetries: number, backoffTime: number) {
+    super(`Current network gas price is too large
+Max gas price: ${maxGasPrice} wei
+Current gas price: ${currentGasPrice} wei
+Total wait time: ${(numberOfRetries * backoffTime) / 1000} s
+`);
+  }
+}
+
 export class MissingDeploymentPath extends UserError {
   constructor() {
     super(`Deployment script path is missing.
