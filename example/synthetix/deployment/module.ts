@@ -1,7 +1,7 @@
 import {
   buildModule,
   ModuleConfig
-} from '../../../src';
+} from '@tenderly/hardhat-ignition';
 import { SynthetixLibraries, SynthetixTemplates } from './modules/helper.module';
 import { SynthetixCore } from './modules/core.module';
 import { BinaryOptionsModule } from './modules/binary_options.module';

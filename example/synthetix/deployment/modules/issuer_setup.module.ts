@@ -1,8 +1,9 @@
 import {
   ContractBinding,
   buildModule,
-} from '../../../../src';
-import { expectFuncRead, gracefulExpectFuncRead } from '../../../../src';
+  expectFuncRead,
+  gracefulExpectFuncRead
+} from '@tenderly/hardhat-ignition';
 import { toBytes32 } from '../../util/util';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 

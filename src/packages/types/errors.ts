@@ -1,6 +1,9 @@
+import chalk from 'chalk';
+
 export class UserError extends Error {
   public _isUserError: boolean = true;
   public message: string;
+
   constructor(message: string) {
     super();
     this.message = 'User error - ' + message;
@@ -10,9 +13,49 @@ export class UserError extends Error {
 export class CliError extends Error {
   public _isCliError: boolean = true;
   public message: string;
+
   constructor(message: string) {
     super();
     this.message = 'CLI error - ' + message;
+  }
+}
+
+export class MissingDeploymentPath extends UserError {
+  constructor() {
+    super(`Deployment script path is missing.
+Either add it to hardhat-ignition.config.ts or use --help`);
+  }
+}
+
+export class WrongDeploymentPathForNetwork extends UserError {
+  constructor(networkName: string) {
+    super(`Provided deployment script path is wrong for ${networkName}.
+Either add it to hardhat-ignition.config.ts or use --help`);
+  }
+}
+
+export class EventUsageIsNotDeployed extends UserError {
+  constructor(eventUsage: any) {
+    super(`Event usage is not yet deployed - ${eventUsage}`);
+  }
+}
+
+export class EventDependencyNotDeployedError extends UserError {
+  constructor(eventName: string, dep: any) {
+    super(`Dependency is not yet deployed \nEvent: ${eventName} \nDependency: ${dep}`);
+  }
+}
+
+export class ModuleStateMismatchError extends UserError {
+  constructor(eventName: string) {
+    super(`Module and module state file didn't match state element name:
+Module file: ${eventName}`);
+  }
+}
+
+export class MissingContractMetadata extends UserError {
+  constructor(contractName: string) {
+    super(`Contract metadata are missing for ${chalk.bold(contractName)}`);
   }
 }
 
@@ -29,8 +72,10 @@ export class WrongNetwork extends UserError {
 }
 
 export class ValueMismatch extends UserError {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, expected: any, actual: any) {
+    super(`${message}
+expected value: ${expected}
+actual value: ${actual}`);
   }
 }
 
@@ -41,7 +86,7 @@ export class IgnitionConfigAlreadyExist extends UserError {
 }
 
 export class AbiMismatch extends UserError {
-    constructor(message: string) {
+  constructor(message: string) {
     super(message);
   }
 }

@@ -1,7 +1,6 @@
-import { ContractBinding, buildModule } from '../../../../src';
+import { sendAfterDeploy, ContractBinding, buildModule } from '@tenderly/hardhat-ignition';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { sendAfterDeploy } from '../../../../src';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 const {

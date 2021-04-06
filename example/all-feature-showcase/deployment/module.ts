@@ -1,9 +1,8 @@
-import { ContractBinding, buildModule, ModuleBuilder } from '../../../src';
+import { ContractBinding, buildModule, ModuleBuilder, filler } from '@tenderly/hardhat-ignition';
 import { BigNumber, ethers } from 'ethers';
-import { filler } from '../../../src';
 
 export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
-  // filler(m, wallets[0], wallets.slice(1), ethers.utils.parseUnits('1', 'wei'));
+  filler(m, wallets[0], wallets.slice(1), ethers.utils.parseUnits('1', 'wei'));
 
   const Example = m.contract('Example', -1, '2', 3, '4', true, BigNumber.from(5), '0xdd2fd4581271e230360230f9337d5c0430bf44c0')
     .setDeployer(wallets[0])

@@ -1,4 +1,4 @@
-import { buildModule } from '../../../../src';
+import { buildModule } from '@tenderly/hardhat-ignition';
 import path from 'path';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 require('dotenv').config({path: path.resolve(__dirname + './../../.env')});

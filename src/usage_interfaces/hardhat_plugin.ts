@@ -34,6 +34,7 @@ import { OverviewPrompter } from '../packages/utils/logging/overview_prompter';
 import { SimpleOverviewPrompter } from '../packages/utils/logging/simple_logging';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 import { EthClient } from '../packages/ethereum/client';
+import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
 
 export type HardhatPluginIgnitionConfig = HardhatIgnitionConfig;
 
@@ -113,6 +114,8 @@ export class HardhatIgnition implements IIgnition {
   public stateMigrationService: StateMigrationService;
   public moduleUsage: ModuleUsage;
   public moduleMigrationService: ModuleMigrationService;
+  public moduleDeploymentSummaryService: ModuleDeploymentSummaryService;
+
 
   public conf: HardhatPluginIgnitionConfig;
 
@@ -134,6 +137,7 @@ export class HardhatIgnition implements IIgnition {
       this.txExecutor,
       this.configService,
       this.walletWrapper,
+      this.moduleDeploymentSummaryService,
     );
   }
 
@@ -267,5 +271,7 @@ export class HardhatIgnition implements IIgnition {
     const moduleState = new FileSystemModuleState(currentPath);
     this.stateMigrationService = new StateMigrationService(moduleState, args?.from as Migration);
     this.moduleMigrationService = new ModuleMigrationService(currentPath);
+
+    this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(this.moduleStateRepo);
   }
 }

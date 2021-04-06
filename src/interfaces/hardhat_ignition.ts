@@ -14,7 +14,14 @@ import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { IPrompter } from '../packages/utils/logging';
-import { BindingsConflict, CliError, TemplateNotFound, TransactionFailed, UserError } from '../packages/types/errors';
+import {
+  BindingsConflict,
+  CliError,
+  MissingContractMetadata,
+  TemplateNotFound,
+  TransactionFailed,
+  UserError
+} from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
 import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
@@ -246,7 +253,7 @@ export class GroupedDependencies {
       dependency = dependency as ContractBinding;
       if (dependency._isContractBinding) {
         if (dependency.deployMetaData.shouldRedeploy) {
-          throw new UserError('Should redeploy function is already set.');
+          throw new UserError('shouldRedeploy() function is already defined for this contract.');
         }
 
         dependency.deployMetaData.shouldRedeploy = fn;
@@ -469,7 +476,7 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      throw new UserError('Binding is not suitable to be instantiated, please deploy it first');
+      throw new UserError('Contract is not suitable to be instantiated, please deploy it first');
     }
 
     this.contractInstance = new ContractInstance(
@@ -815,7 +822,7 @@ export type TransactionData = {
 };
 
 export type EventTransactionData = {
-  contractInput: (ContractInput | TransactionRequest)[]
+  contractInput: (ContractInput | TransactionRequest | TransactionResponse)[]
   contractOutput: TransactionResponse[]
 };
 
@@ -895,11 +902,11 @@ export class ContractInstance {
       const func = async function (...args: Array<any>): Promise<TransactionResponse> {
         const sessionEventName = this.eventSession.get(clsNamespaces.EVENT_NAME);
         if (args.length > fragment.inputs.length + 1) {
-          throw new UserError(`Trying to call contract function with more arguments then in interface - ${fragment.name}`);
+          throw new UserError(`Trying to call contract function with more arguments - ${fragment.name}`);
         }
 
         if (args.length < fragment.inputs.length) {
-          throw new UserError(`Trying to call contract function with less arguments then in interface - ${fragment.name}`);
+          throw new UserError(`Trying to call contract function with less arguments - ${fragment.name}`);
         }
 
         let overrides: CallOverrides = {};
@@ -954,6 +961,7 @@ export class ContractInstance {
         let tx;
         try {
           tx = await contractFunction(...args, overrides);
+          currentEventTransactionData.contractInput[contractTxIterator] = tx;
         } catch (e) {
           throw new TransactionFailed(e.error.message);
         }
@@ -1070,14 +1078,15 @@ export class IgnitionWallet extends ethers.Wallet {
       const txResp = await super.sendTransaction(ignitionTransaction);
       await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
 
+      let txReceipt;
       if (!this.sessionNamespace.get(clsNamespaces.PARALLELIZE)) {
         this.prompter.waitTransactionConfirmation();
         const blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
-        await txResp.wait(blockConfirmation);
+        txReceipt = await txResp.wait(blockConfirmation);
         this.prompter.transactionConfirmation(blockConfirmation, currentEventName, 'raw wallet transaction');
       }
 
-      await this.moduleStateRepo.storeEventTransactionData(this.address, ignitionTransaction, txResp, currentEventName);
+      await this.moduleStateRepo.storeEventTransactionData(this.address, txResp, txReceipt, currentEventName);
 
       await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
 
@@ -1163,7 +1172,7 @@ export class ModuleBuilder {
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
   private readonly actions: { [name: string]: Action };
-  private templates: { [name: string]: Template};
+  private templates: { [name: string]: Template };
 
   private resolver: IModuleRegistryResolver | undefined;
   private registry: IModuleRegistryResolver | undefined;
@@ -1370,7 +1379,7 @@ export class ModuleBuilder {
    *
    * @returns Module builder data from sub-module.
    */
-  async useModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[]): Promise<ModuleBuilder> {
+  async useModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[] | any[]): Promise<ModuleBuilder> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
@@ -1725,6 +1734,13 @@ async function handleModule(moduleBuilder: ModuleBuilder, moduleName: string, is
   }
 
   for (const [bindingName, binding] of Object.entries(moduleBuilderBindings)) {
+    if (
+      !checkIfExist(bytecodes[binding.contractName]) ||
+      !checkIfExist(libraries[binding.contractName])
+    ) {
+      throw new MissingContractMetadata(`Contract metadata are missing for ${bindingName}`);
+    }
+
     moduleBuilderBindings[bindingName].bytecode = bytecodes[binding.contractName];
     moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
     moduleBuilderBindings[bindingName].libraries = libraries[binding.contractName];

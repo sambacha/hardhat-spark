@@ -1,7 +1,8 @@
 import { ContractBinding } from '../../interfaces/hardhat_ignition';
 import { JsonFragment } from '../types/artifacts/abi';
 import { handleTypes } from '../types/checker';
-import { AbiMismatch } from '../types/errors';
+import { AbiMismatch, MissingContractMetadata } from '../types/errors';
+import { checkIfExist } from '../utils/util';
 
 const CONSTRUCTOR_TYPE = 'constructor';
 
@@ -11,6 +12,10 @@ export class ModuleValidator {
 
   validate(bindings: { [name: string]: ContractBinding }, ABIs: { [name: string]: JsonFragment[] }): void {
     for (const [name, binding] of Object.entries(bindings)) {
+      if (!checkIfExist(ABIs[binding.contractName])) {
+        throw new MissingContractMetadata(name);
+      }
+
       const abis = ABIs[binding.contractName];
       let ABI = {} as JsonFragment;
       for (const abi of abis) {

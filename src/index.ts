@@ -23,6 +23,7 @@ import { INITIAL_MSG, MODULE_NAME_DESC } from './packages/tutorial/tutorial_desc
 import { TutorialService } from './packages/tutorial/tutorial_service';
 import { StateMigrationService } from './packages/modules/states/state_migration_service';
 import { ModuleMigrationService } from './packages/modules/module_migration';
+import { ModuleDeploymentSummaryService } from './packages/modules/module_deployment_summary';
 
 export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
@@ -39,6 +40,7 @@ export * from './packages/modules/states/module';
 export * from './packages/modules/states/registry';
 export * from './packages/modules/states/registry/remote_bucket_storage';
 export * from './packages/modules/typings';
+export * from './packages/utils/util';
 
 export async function deploy(
   deploymentFilePath: string,
@@ -51,6 +53,7 @@ export async function deploy(
   executor: TxExecutor,
   configService: IConfigService,
   walletWrapper: WalletWrapper,
+  moduleDeploymentSummaryService: ModuleDeploymentSummaryService,
   test: boolean = false
 ) {
   // this is needed in order to support both js and ts
@@ -115,6 +118,7 @@ export async function deploy(
     }
 
     prompter.finishModuleDeploy(moduleName);
+    await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
   }
 }
 
@@ -237,7 +241,7 @@ export async function usage(
       const contractAddress = element.deployMetaData.contractAddress;
 
       if (!checkIfExist(contractAddress)) {
-        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for binding: ${elementName}`);
+        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for contract: ${elementName}`);
       }
     }
 

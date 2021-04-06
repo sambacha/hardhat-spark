@@ -27,6 +27,7 @@ import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 import * as fs from 'fs';
 import { EthClient } from '../packages/ethereum/client';
 import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
+import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
 
 export default class Deploy extends Command {
   private mutex = false;
@@ -117,7 +118,7 @@ export default class Deploy extends Command {
     const configService = new ConfigService(networkName);
     const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
 
-    let networkId = config.networks[networkName].networkId;
+    let networkId = config.networks[networkName]?.networkId || undefined;
     if (!checkIfExist(networkId)) {
       networkId = DEFAULT_NETWORK_ID;
     }
@@ -227,9 +228,10 @@ export default class Deploy extends Command {
 
     const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasCalculator, moduleState, prompter, eventTxExecutor);
 
-    const deploymentFilePath = path.resolve(currentPath, filePath);
+    const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(moduleState);
 
-    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper);
+    const deploymentFilePath = path.resolve(currentPath, filePath);
+    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService);
   }
 
   async catch(error: Error) {
@@ -260,8 +262,5 @@ export default class Deploy extends Command {
     }
 
     cli.error(error.message);
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-    }
   }
 }

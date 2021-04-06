@@ -1,9 +1,8 @@
-import { ContractBinding, ContractEvent, buildModule } from '../../../../src';
-import { expectFuncRead } from '../../../../src';
+import { checkIfExist, expectFuncRead, ContractBinding, ContractEvent, buildModule } from '@tenderly/hardhat-ignition';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
-import { checkIfExist } from '../../../../src/packages/utils/util';
+
 // @ts-ignore
-import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
   const ReadProxyAddressResolver = m.ReadProxyAddressResolver;

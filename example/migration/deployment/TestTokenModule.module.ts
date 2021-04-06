@@ -1,9 +1,5 @@
-import { buildModule, ModuleBuilder } from '../../../src';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const TestTokenModule = buildModule('TestTokenModule', async (m: ModuleBuilder) => {
-  m.contractTemplate('Migrations');
-  m.contractTemplate('TestToken');
 
-  const Migrations = m.contract('Migrations');
-  const TestToken = m.contract('TestToken');
 });

@@ -1,11 +1,8 @@
 import path from 'path';
-import { STATE_DIR_NAME } from '../states/module';
 import fs from 'fs';
 import { Module } from '../../../interfaces/hardhat_ignition';
 
 export class ModuleTypings {
-  private readonly statePath: string;
-
   constructor() {
   }
 

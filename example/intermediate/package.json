@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
-    "@tenderly/ignition": "^0.1.0",
+    "@tenderly/hardhat-ignition": "file:../..",
     "hardhat": "^2.0.10"
   },
   "dependencies": {

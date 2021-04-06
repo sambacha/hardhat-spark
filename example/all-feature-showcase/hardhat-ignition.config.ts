@@ -1,11 +1,10 @@
-import { RemoteBucketStorage } from '../../src';
-import { HardhatIgnitionConfig } from '../../src';
+import { RemoteBucketStorage, HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
 // @ts-ignore
 import { EthGasStationProvider, GasPriceType } from './deployment/custom_providers/eth_gas_station_provider';
 // @ts-ignore
 import { TransactionManager } from './deployment/custom_providers/transaction_manager';
 import { ethers, providers } from 'ethers';
-import { GasPriceCalculator } from '../../src/packages/ethereum/gas/calculator';
+import { GasPriceCalculator } from '@tenderly/hardhat-ignition/src/packages/ethereum/gas/calculator';
 import * as path from 'path';
 // @ts-ignore
 import { ConstantGasPrice } from './deployment/custom_providers/constant_gas_price';
@@ -52,7 +51,7 @@ export const config: HardhatIgnitionConfig = {
       mnemonic: 'test test test test test test test test test test test junk',
       hdPath: "m/44'/60'/0'/0",
       localDeployment: true,
-      deploymentFilePath: './deployments/module.ts',
+      deploymentFilePath: './deployment/module.ts',
       blockConfirmation: 1,
     },
     'kovan': {
@@ -62,7 +61,7 @@ export const config: HardhatIgnitionConfig = {
         PRIVATE_KEY,
       ],
       localDeployment: false,
-      blockConfirmation: 2, // this is not reflecting
+      blockConfirmation: 2,
     }
   },
   // registry: registryAndResolver,

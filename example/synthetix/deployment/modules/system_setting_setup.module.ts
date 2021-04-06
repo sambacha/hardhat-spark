@@ -2,12 +2,12 @@ import {
   ContractBinding,
   ContractEvent,
   buildModule,
-} from '../../../../src';
-import { expectFuncRead } from '../../../../src';
+  checkIfExist,
+  expectFuncRead,
+} from '@tenderly/hardhat-ignition';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';
-import { checkIfExist } from '../../../../src/packages/utils/util';
 import { ethers } from 'ethers';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 

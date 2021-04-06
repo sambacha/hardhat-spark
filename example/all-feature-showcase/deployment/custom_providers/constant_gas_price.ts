@@ -1,6 +1,5 @@
-import { IGasPriceCalculator } from '../../../../src';
+import { IGasPriceCalculator } from '@tenderly/hardhat-ignition';
 import { BigNumber } from '@ethersproject/bignumber';
-import axios from 'axios';
 import { ethers } from 'ethers';
 
 export enum GasPriceType {

@@ -9,7 +9,11 @@ import {
   StatefulEvent
 } from '../../../interfaces/hardhat_ignition';
 import { checkIfExist } from '../../utils/util';
-import { CliError } from '../../types/errors';
+import {
+  CliError,
+  EventDependencyNotDeployedError,
+  EventUsageIsNotDeployed
+} from '../../types/errors';
 
 export class Batcher {
   static async handleAfterDeployEvent(event: AfterDeployEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
@@ -123,7 +127,7 @@ export class Batcher {
 
     for (const usage of event.usage) {
       if (!checkIfExist(elementsBatches[usage])) {
-        throw new CliError(`Usage is not yet deployed - ${usage}`);
+        throw new EventUsageIsNotDeployed(usage);
       }
 
       if (elementsBatches[usage] > deepestDepNumber) {
@@ -133,7 +137,7 @@ export class Batcher {
 
     for (const dep of event.deps) {
       if (!checkIfExist(elementsBatches[dep])) {
-        throw new CliError(`Dependency is not yet deployed \nEvent: ${event.name} \nDependency: ${dep}`);
+        throw new EventDependencyNotDeployedError(event.name, dep);
       }
 
       if (elementsBatches[dep] > deepestDepNumber) {
@@ -143,7 +147,7 @@ export class Batcher {
 
     for (const eventDep of event.eventDeps) {
       if (!checkIfExist(elementsBatches[eventDep])) {
-        throw new CliError(`Event Dependency is not yet deployed - ${event.name} - ${eventDep}`);
+        throw new EventDependencyNotDeployedError(event.name, eventDep);
       }
 
       if (elementsBatches[eventDep] > deepestDepNumber) {
@@ -153,7 +157,7 @@ export class Batcher {
 
     for (const eventUsage of event.eventUsage) {
       if (!checkIfExist(elementsBatches[eventUsage])) {
-        throw new CliError(`Event usage is not yet deployed - ${eventUsage}`);
+        throw new EventUsageIsNotDeployed(eventUsage);
       }
 
       if (elementsBatches[eventUsage] > deepestDepNumber) {

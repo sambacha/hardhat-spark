@@ -1,7 +1,6 @@
-import { buildModule } from '../../../../src';
+import { buildModule, sendAfterDeploy } from '@tenderly/hardhat-ignition';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { sendAfterDeploy } from '../../../../src';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixModuleBuilder) => {

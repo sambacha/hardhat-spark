@@ -1,4 +1,4 @@
-import { buildModule } from '../../../../src';
+import { buildModule } from '@tenderly/hardhat-ignition';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: SynthetixModuleBuilder) => {

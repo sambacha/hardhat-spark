@@ -8,7 +8,7 @@ import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { IPrompter } from '../utils/logging';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { CliError, UsageEventNotFound, UserError } from '../types/errors';
+import { CliError, ModuleStateMismatchError, UsageEventNotFound, UserError } from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
@@ -188,7 +188,7 @@ export class ModuleResolver {
     moduleEvents: ModuleEvents,
     moduleStateFile: ModuleStateFile,
   ): Promise<ModuleState> {
-    let userAlwaysedeploy = false;
+    let userAlwaysDeploy = undefined;
     let resolvedModuleElements: ModuleState = {};
 
     // onStart module event resolving
@@ -221,23 +221,25 @@ export class ModuleResolver {
       stateFileElement = stateFileElement as ContractBindingMetaData;
       if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
         if (!((resolvedModuleStateElement as ContractBinding)._isContractBinding)) {
-          throw new UserError(`Module and module state file didn't match state element name:
-Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
+          throw new ModuleStateMismatchError((resolvedModuleStateElement as StatefulEvent).event.name);
         }
 
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
         // check if network has code at specific address
-        if (!userAlwaysedeploy && checkIfExist(stateFileElement.deployMetaData.contractAddress)) {
+        if (userAlwaysDeploy == undefined && checkIfExist(stateFileElement.deployMetaData.contractAddress)) {
           const code = await this.ethClient.getCode(stateFileElement.deployMetaData.contractAddress);
           if (
             !checkIfExist(code) ||
             code == '0x'
           ) {
-            userAlwaysedeploy = await this.prompter.wrongNetwork();
+            userAlwaysDeploy = await this.prompter.wrongNetwork();
+            if (!userAlwaysDeploy) {
+              moduleStateFile = {};
+            }
           }
         }
         if (
-          userAlwaysedeploy &&
+          userAlwaysDeploy ||
           resolvedModuleStateElement.forceFlag == true ||
           (
             !compareBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
@@ -287,7 +289,7 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
 
       stateFileElement = stateFileElement as unknown as StatefulEvent;
       if (
-        !userAlwaysedeploy &&
+        !userAlwaysDeploy &&
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {

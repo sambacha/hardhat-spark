@@ -600,6 +600,9 @@ export class TxExecutor {
         }
         this.prompter.sentTx(elementName);
 
+        binding.txData.input = txResp;
+        await this.moduleState.storeSingleBinding(binding);
+
         let txReceipt = await txResp.wait(1);
         binding.txData.output = txReceipt;
         await this.moduleState.storeSingleBinding(binding);

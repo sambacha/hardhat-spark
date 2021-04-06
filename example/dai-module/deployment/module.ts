@@ -1,8 +1,6 @@
-import { buildModule } from '../../../src';
 // @ts-ignore
 import { DaiModule } from './dai_module';
-// @ts-ignore
-import { ModuleBuilder } from '../../../src';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const DaiExampleModule = buildModule('DaiExampleModule', async (m: ModuleBuilder) => {
   await m.useModule(DaiModule);

@@ -3,7 +3,7 @@ import {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '../../../src';
+} from '@tenderly/hardhat-ignition';
 
 export declare class SynthetixModuleBuilder extends ModuleBuilder {
   SafeDecimalMath: ContractBinding;

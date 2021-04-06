@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '../../../src';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 /*
 Module is encapsulation for smart contract infrastructure, that includes smart contract deployment,
