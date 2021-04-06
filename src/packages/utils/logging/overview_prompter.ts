@@ -201,4 +201,7 @@ export class OverviewPrompter implements IPrompter {
     });
     return con != 'n';
   }
+
+  gasPriceIsLarge(backoffTime: number) {
+  }
 }

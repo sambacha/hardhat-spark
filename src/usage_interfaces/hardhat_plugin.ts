@@ -239,8 +239,8 @@ export class HardhatIgnition implements IIgnition {
     if (checkIfExist(args.networkId)) {
       process.env.IGNITION_NETWORK_ID = String(args.networkId);
 
-      this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), args.networkId, this.gasProvider, this.gasProvider);
-      this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, args.networkId, this.provider, this.transactionManager, this.transactionManager);
+      this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), args.networkId, this.gasProvider, this.gasProvider, this.prompter);
+      this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, args.networkId, this.provider, this.transactionManager, this.transactionManager, this.prompter);
 
       this.moduleStateRepo = new ModuleStateRepo(args.networkId, currentPath, false);
 

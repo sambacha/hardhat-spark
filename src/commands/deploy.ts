@@ -189,7 +189,17 @@ export default class Deploy extends Command {
     // choosing right prompter from user desires
     let prompter;
     switch (flags.logging) {
+      case Logging.simple:
+        prompter = new SimpleOverviewPrompter();
+        break;
+      case Logging.json:
+        prompter = new JsonPrompter();
+        break;
+      case Logging.overview:
+        prompter = new OverviewPrompter();
+        break;
       case Logging.streamlined:
+      default: {
         let yes = true;
         if (
           networkName != DEFAULT_NETWORK_NAME &&
@@ -203,15 +213,6 @@ export default class Deploy extends Command {
 
         prompter = new StreamlinedPrompter(yes);
         break;
-      case Logging.json:
-        prompter = new JsonPrompter();
-        break;
-      case Logging.overview:
-        prompter = new OverviewPrompter();
-        break;
-      case Logging.simple:
-      default: {
-        prompter = new SimpleOverviewPrompter();
       }
     }
 
@@ -223,8 +224,8 @@ export default class Deploy extends Command {
     if (!checkIfExist(gasCalculator)) {
       gasCalculator = gasProvider;
     }
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasProvider, gasCalculator, gasPriceBackoff);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasProvider, networkId, provider, transactionManager, transactionManager, gasPriceBackoff);
+    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasProvider, gasCalculator, prompter, gasPriceBackoff);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasProvider, networkId, provider, transactionManager, transactionManager, prompter, gasPriceBackoff);
 
     const moduleState = new ModuleStateRepo(networkName, currentPath, this.mutex, flags.testEnv);
 

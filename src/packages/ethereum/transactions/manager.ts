@@ -6,6 +6,7 @@ import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { ethers } from 'ethers';
 import { GasPriceBackoffError, TransactionFailed, UserError } from '../../types/errors';
 import { GasPriceBackoff } from '../../types/config';
+import { IPrompter } from '../../utils/logging';
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };
@@ -14,6 +15,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   private gasPriceCalculator: IGasPriceCalculator;
   private wallet: ethers.Wallet;
   private readonly networkId: string;
+  private readonly prompter: IPrompter;
   private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
@@ -22,6 +24,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     networkId: string,
     gasCalculator: IGasCalculator,
     gasPriceCalculator: IGasPriceCalculator,
+    prompter: IPrompter,
     gasPriceBackoff?: GasPriceBackoff,
   ) {
     this.provider = provider;
@@ -31,6 +34,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     this.gasCalculator = gasCalculator;
     this.gasPriceCalculator = gasPriceCalculator;
     this.gasPriceBackoff = gasPriceBackoff;
+    this.prompter = prompter;
   }
 
   async getAndIncrementTransactionCount(walletAddress: string): Promise<number> {
@@ -93,6 +97,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     }
     if (checkIfExist(this.gasPriceBackoff)) {
       if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
+        this.prompter.gasPriceIsLarge(this.gasPriceBackoff.backoffTime);
         await delay(this.gasPriceBackoff.backoffTime);
         gasPrice = await this.fetchBackoffGasPrice(retries - 1);
       }

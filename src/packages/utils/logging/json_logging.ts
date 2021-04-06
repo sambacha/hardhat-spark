@@ -198,4 +198,11 @@ export class JsonPrompter implements IPrompter {
   wrongNetwork(): Promise<boolean> {
     throw new WrongNetwork('Deploying to wrong network!');
   }
+
+  gasPriceIsLarge(backoffTime: number) {
+    cli.info(JSON.stringify({
+      name: 'Gas price is too large, waiting to gets lower.',
+      fields: backoffTime
+    }));
+  }
 }

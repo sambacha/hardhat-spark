@@ -42,4 +42,5 @@ export interface IPrompter {
   finishedModuleUsageGeneration(moduleName: string);
   parallelizationExperimental();
   wrongNetwork();
+  gasPriceIsLarge(backoffTime: number);
 }

@@ -155,4 +155,8 @@ export class StreamlinedPrompter implements IPrompter {
     });
     return con != 'n';
   }
+
+  gasPriceIsLarge(backoffTime: number) {
+    cli.info(this.whitespaces + `Gas price is too large, waiting for ${backoffTime}ms before continuing`);
+  }
 }

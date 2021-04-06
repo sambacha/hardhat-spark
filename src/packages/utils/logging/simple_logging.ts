@@ -18,6 +18,7 @@ enum DescActionList {
   'SKIPPED' = 'skipped',
   'SUCCESSFUL' = 'SUCCESSFUL',
   'CREATE' = 'create',
+  'LOWER_GAS_PRICE' = 'waiting for lower gas price'
 }
 
 export class SimpleOverviewPrompter implements IPrompter {
@@ -29,6 +30,12 @@ export class SimpleOverviewPrompter implements IPrompter {
 
   constructor() {
     this.moduleBars = {};
+  }
+
+  gasPriceIsLarge(backoffTime: number) {
+    this.moduleBars[this.currentModuleName].update({
+      action: DescActionList.LOWER_GAS_PRICE,
+    });
   }
 
   async parallelizationExperimental() {

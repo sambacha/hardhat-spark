@@ -8,6 +8,7 @@ import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { IConfigService } from '../../config';
 import { INonceManager, ITransactionSigner } from './index';
 import { GasPriceBackoff } from '../../types/config';
+import { IPrompter } from '../../utils/logging';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -24,7 +25,8 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   private nonceMap: { [address: string]: number };
   private nonceManager: INonceManager;
   private transactionSigner: ITransactionSigner;
-  private gasPriceBackoff: GasPriceBackoff | undefined;
+  private readonly prompter: IPrompter;
+  private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
     configService: IConfigService,
@@ -34,6 +36,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     ethers: providers.JsonRpcProvider,
     nonceManager: INonceManager,
     transactionSigner: ITransactionSigner,
+    prompter: IPrompter,
     gasPriceBackoff?: GasPriceBackoff,
   ) {
     this.configService = configService;
@@ -46,6 +49,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     this.nonceMap = {};
     this.nonceManager = nonceManager;
     this.transactionSigner = transactionSigner;
+    this.prompter = prompter;
     this.gasPriceBackoff = gasPriceBackoff;
   }
 
@@ -132,6 +136,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     }
     if (checkIfExist(this.gasPriceBackoff)) {
       if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
+        this.prompter.gasPriceIsLarge(this.gasPriceBackoff.backoffTime);
         await delay(this.gasPriceBackoff.backoffTime);
         gasPrice = await this.fetchBackoffGasPrice(retries - 1);
       }
