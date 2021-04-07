@@ -137,6 +137,12 @@ export class StateIsBiggerThanModule extends UserError {
   }
 }
 
+export class ContractParameterIsMissing extends UserError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class ContractTypeMismatch extends UserError {
   constructor(message: string) {
     super(message);

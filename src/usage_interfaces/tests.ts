@@ -45,7 +45,7 @@ export class IgnitionTests implements IIgnitionUsage {
   public moduleDeploymentSummaryService: ModuleDeploymentSummaryService;
 
   constructor(configFlags: ConfigFlags, configFile: HardhatIgnitionConfig) {
-    process.env.IGNITION_NETWORK_ID = String(configFlags.networkId);
+    process.env.IGNITION_NETWORK_ID = String(configFlags.networkId || '31337');
     this.states = configFlags.stateFileNames;
 
     this.provider = new ethers.providers.JsonRpcProvider();
@@ -65,13 +65,13 @@ export class IgnitionTests implements IIgnitionUsage {
 
     this.eventSession = cls.createNamespace('event');
 
-    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
+    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkName, 'test', false, true);
     this.eventTxExecutor = new EventTxExecutor(this.eventSession);
     const ethClient = new EthClient(this.provider);
     this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession, ethClient);
 
     this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
-    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
+    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkName, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
 
     this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
     this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(this.moduleStateRepo);

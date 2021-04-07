@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { ContractTypeMismatch } from './errors';
+import { ContractParameterIsMissing, ContractTypeMismatch } from './errors';
 
 export function handleTypes(bindingName: string, value: any, type: string, internalType: string | undefined): void {
   switch (typeof value) {
@@ -47,8 +47,11 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
       }
       break;
     }
+    case 'undefined': {
+      throw new ContractParameterIsMissing(`Parameter in ${bindingName} is undefined, please check contract definition.`);
+    }
     default: {
-      throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} ${value}`);
+      throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: ${(typeof value)}`);
     }
   }
 }

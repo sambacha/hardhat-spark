@@ -150,10 +150,11 @@ export class StreamlinedPrompter implements IPrompter {
   }
 
   async wrongNetwork(): Promise<boolean> {
-    const con = await cli.prompt('Contracts are missing on the network, do you wish to redeploy whole module? (Y/n)', {
-      required: false
-    });
-    return con != 'n';
+    if (this.skipConfirmation) {
+      return true;
+    }
+
+    return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
   }
 
   gasPriceIsLarge(backoffTime: number) {

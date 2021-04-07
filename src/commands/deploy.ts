@@ -106,8 +106,6 @@ export default class Deploy extends Command {
     }
 
     const currentPath = process.cwd();
-    const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
-    const deploymentModules = systemCrawlingService.crawlDeploymentModule();
 
     let filePath = args.module_file_path as string;
     let networkName = flags.network;
@@ -119,7 +117,10 @@ export default class Deploy extends Command {
     const configService = new ConfigService(networkName);
     const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
 
-    let networkId = config.networks[networkName]?.networkId || undefined;
+    let networkId;
+    if (checkIfExist(config?.networks) && checkIfExist(config?.networks[networkName])) {
+      networkId = config?.networks[networkName]?.networkId;
+    }
     if (!checkIfExist(networkId)) {
       networkId = DEFAULT_NETWORK_ID;
     }
@@ -163,6 +164,8 @@ export default class Deploy extends Command {
       }
     }
     if (!checkIfExist(filePath)) {
+      const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
+      const deploymentModules = systemCrawlingService.crawlDeploymentModule();
       const deploymentFileName = (await inquirer.prompt([{
         name: 'deploymentFileName',
         message: 'Deployments file:',

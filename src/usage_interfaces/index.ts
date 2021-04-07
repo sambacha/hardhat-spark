@@ -2,6 +2,7 @@ import { Logging } from '../packages/utils/logging';
 
 export type ConfigFlags = {
   networkId: string,
+  networkName: string,
   stateFileNames: string[],
   rpcProvider?: string,
 };

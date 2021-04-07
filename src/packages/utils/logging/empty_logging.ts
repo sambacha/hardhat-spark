@@ -81,7 +81,7 @@ export class EmptyPrompter implements IPrompter {
   }
 
   async wrongNetwork(): Promise<boolean> {
-    throw new WrongNetwork('Deploying to wrong network!');
+    return false;
   }
 
   gasPriceIsLarge(backoffTime: number) {

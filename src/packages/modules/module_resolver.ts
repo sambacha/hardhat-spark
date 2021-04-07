@@ -76,7 +76,7 @@ export class ModuleResolver {
           return true;
         }
 
-        if (!checkIfExist(newModuleElement.deployMetaData.contractAddress)) {
+        if (!checkIfExist(oldModuleElement.deployMetaData.contractAddress)) {
           return true;
         }
 

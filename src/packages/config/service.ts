@@ -43,10 +43,6 @@ export default class ConfigService implements IConfigService {
         if (!checkIfExist(config)) {
           throw new UserError('config object is missing.');
         }
-
-        if (!checkIfExist(config?.networks)) {
-          throw new UserError('network field is missing in config file.');
-        }
       } catch (err) {
         if (err._isUserError) {
           throw err;

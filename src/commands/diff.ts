@@ -53,6 +53,13 @@ export default class Diff extends Command {
         description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
+    noPrompt: flags.boolean(
+      {
+        name: 'noPrompt',
+        description: "If this flag is provided all prompts would default to 'Yes'.",
+        required: false,
+      }
+    )
   };
 
   static args = [{name: 'module_file_path'}];
@@ -65,8 +72,6 @@ export default class Diff extends Command {
     }
 
     const currentPath = process.cwd();
-    const systemCrawlingService = new SystemCrawlingService(currentPath, DEFAULT_DEPLOYMENT_FOLDER);
-    const deploymentModules = systemCrawlingService.crawlDeploymentModule();
 
     let filePath = args.module_file_path as string;
     let networkName = flags.network;
@@ -76,7 +81,10 @@ export default class Diff extends Command {
     const configService = new ConfigService(networkName);
     const config = await configService.initializeIgnitionConfig(currentPath, flags.configScriptPath);
 
-    let networkId = config.networks[networkName].networkId;
+    let networkId;
+    if (checkIfExist(config?.networks) && checkIfExist(config?.networks[networkName])) {
+      networkId = config?.networks[networkName]?.networkId;
+    }
     if (!checkIfExist(networkId)) {
       networkId = DEFAULT_NETWORK_ID;
     }
@@ -106,6 +114,8 @@ export default class Diff extends Command {
       }
     }
     if (!checkIfExist(filePath)) {
+      const systemCrawlingService = new SystemCrawlingService(currentPath, DEFAULT_DEPLOYMENT_FOLDER);
+      const deploymentModules = systemCrawlingService.crawlDeploymentModule();
       const deploymentFileName = (await inquirer.prompt([{
         name: 'deploymentFileName',
         message: 'Deployments file:',
@@ -125,14 +135,14 @@ export default class Diff extends Command {
 
     const resolvedPath = path.resolve(currentPath, filePath);
 
-    const gasCalculator = new GasPriceCalculator(provider);
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasCalculator, gasCalculator);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, networkId, provider, transactionManager, transactionManager);
-
-    const prompter = new StreamlinedPrompter();
+    const prompter = new StreamlinedPrompter(flags.noPrompt);
     this.prompter = prompter;
 
-    const moduleStateRepo = new ModuleStateRepo(networkId, currentPath);
+    const gasCalculator = new GasPriceCalculator(provider);
+    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasCalculator, gasCalculator, prompter);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, networkId, provider, transactionManager, transactionManager, prompter);
+
+    const moduleStateRepo = new ModuleStateRepo(networkName, currentPath);
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
     const ethClient = new EthClient(provider);

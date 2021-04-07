@@ -6,6 +6,7 @@ import * as path from 'path';
 import { ContractBindingMetaData } from '../../src';
 
 const networkId = '31337'; // hardhat localhost chainId
+const networkName = 'local'; // hardhat localhost chainId
 const testPrivateKey = '0xde9be858da4a475276426320d5e9262ecfc3ba460bfac56360bfa6c4c28b4ee0';
 const moduleName = 'ExampleModule';
 const rootDir = process.cwd();
@@ -15,6 +16,7 @@ describe('ignition deploy', () => {
     const ignition = new IgnitionTests(
       {
         networkId: networkId,
+        networkName: networkName,
         stateFileNames: [],
       }, {
         privateKeys: [testPrivateKey],
@@ -62,7 +64,6 @@ describe('ignition deploy', () => {
 
       const output = await runDeployCommand(ignition, projectFileName);
       const moduleStateFileAfter = await ignition.getStateFile(moduleName);
-
 
       const contractBindingBefore = moduleStateFileBefore['Example'] as unknown as ContractBindingMetaData;
       const contractBindingAfter = moduleStateFileAfter['Example'] as unknown as ContractBindingMetaData;
@@ -146,7 +147,7 @@ describe('ignition deploy', () => {
 });
 
 async function loadStateFile(ignition: IgnitionTests, projectFileName: string) {
-  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/${STATE_DIR_NAME}/ExampleModule/${networkId}_deployed_module_state.json`);
+  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/${STATE_DIR_NAME}/ExampleModule/${networkName}_deployed_module_state.json`);
   let stateFile;
   try {
     stateFile = require(stateFilePath);
