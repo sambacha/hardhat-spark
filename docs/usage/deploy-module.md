@@ -10,7 +10,7 @@ There are multiple ways that you can execute this action:
 Command:
 
 ```
-hardhat-ignition <MODULE_FILE_PATH> --networkId=<NETWORK_ID>
+hardhat-ignition deploy <MODULE_FILE_PATH> --networkId=<NETWORK_ID>
 ```
 
 Hardhat plugin action:

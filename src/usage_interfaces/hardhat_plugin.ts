@@ -1,4 +1,4 @@
-import { DeployArgs, DiffArgs, GenTypesArgs, IIgnition, InitArgs, MigrationArgs, TutorialArgs, UsageArgs } from './index';
+import { DeployArgs, DiffArgs, GenTypesArgs, IIgnition, MigrationArgs, TutorialArgs, UsageArgs } from './index';
 import { ethers, Wallet } from 'ethers';
 import { checkIfExist } from '../packages/utils/util';
 import MemoryConfigService from '../packages/config/memory_service';
@@ -35,12 +35,13 @@ import { SimpleOverviewPrompter } from '../packages/utils/logging/simple_logging
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 import { EthClient } from '../packages/ethereum/client';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
+import { DEFAULT_NETWORK_ID } from '../packages/utils/constants';
 
 export type HardhatPluginIgnitionConfig = HardhatIgnitionConfig;
 
 export type Args = {
   modulePath?: string;
-  networkId?: string;
+  networkName?: string;
   rpcProvider?: string;
   parallelize?: boolean;
   prompting?: Logging;
@@ -204,6 +205,8 @@ export class HardhatIgnition implements IIgnition {
   private async setupServicesAndEnvironment(configFile: HardhatIgnitionConfig, args: Args): Promise<void> {
     // @TODO singleton and partial reinit if needed.
     const currentPath = process.cwd();
+    const networkName = args.networkName;
+    let gasPriceBackoff;
 
     let prompter;
     switch (args.prompting) {
@@ -223,30 +226,59 @@ export class HardhatIgnition implements IIgnition {
     }
     this.prompter = prompter;
 
-    this.provider = new ethers.providers.JsonRpcProvider();
+    this.configService = new MemoryConfigService(configFile);
+    const config = await this.configService.initializeIgnitionConfig(currentPath, args.configScriptPath);
+    let networkId;
+    if (checkIfExist(config?.networks) && checkIfExist(config?.networks[networkName])) {
+      networkId = config?.networks[networkName]?.networkId;
+    }
+    if (!checkIfExist(networkId)) {
+      networkId = DEFAULT_NETWORK_ID;
+    }
+    process.env.IGNITION_NETWORK_ID = String(networkId);
+    const states: string[] = args.state?.split(',') || [];
+    process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
+    if (
+      checkIfExist(config.networks) &&
+      checkIfExist(config.networks[networkName])
+    ) {
+      if (checkIfExist(config.networks[networkName].rpcProvider)) {
+        this.provider = new ethers.providers.JsonRpcProvider(
+          String(config?.networks[networkName]?.rpcProvider)
+        );
+        process.env.IGNITION_RPC_PROVIDER = String(config?.networks[networkName]?.rpcProvider);
+      }
+
+      if (checkIfExist(config.networks[networkName].blockConfirmation)) {
+        process.env.BLOCK_CONFIRMATION_NUMBER = String(config.networks[networkName].blockConfirmation);
+      }
+
+      if (
+        checkIfExist(config.networks[networkName].gasPriceBackoff)
+      ) {
+        gasPriceBackoff = config.networks[networkName].gasPriceBackoff;
+      }
+    }
     if (checkIfExist(args.rpcProvider)) {
-      this.provider = new ethers.providers.JsonRpcProvider(args.rpcProvider);
+      this.provider = new ethers.providers.JsonRpcProvider(
+        args?.rpcProvider
+      );
+      process.env.IGNITION_RPC_PROVIDER = String(args?.rpcProvider);
     }
 
-    process.env.IGNITION_RPC_PROVIDER = String(args?.rpcProvider || 'http://localhost:8545');
-
     this.gasProvider = new GasPriceCalculator(this.provider);
-    this.configService = new MemoryConfigService(configFile);
-
     this.eventSession = cls.createNamespace('event');
     this.eventTxExecutor = new EventTxExecutor(this.eventSession);
 
-    if (checkIfExist(args.networkId)) {
-      process.env.IGNITION_NETWORK_ID = String(args.networkId);
+    process.env.IGNITION_NETWORK_ID = String(networkId);
 
-      this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), args.networkId, this.gasProvider, this.gasProvider, this.prompter);
-      this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, args.networkId, this.provider, this.transactionManager, this.transactionManager, this.prompter);
+    this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), networkId, this.gasProvider, this.gasProvider, this.prompter, gasPriceBackoff);
+    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, networkId, this.provider, this.transactionManager, this.transactionManager, this.prompter, gasPriceBackoff);
 
-      this.moduleStateRepo = new ModuleStateRepo(args.networkId, currentPath, false);
+    this.moduleStateRepo = new ModuleStateRepo(networkName, currentPath, false);
 
-      this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
-      this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, args.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
-    }
+    this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
+    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
 
     this.states = [];
     if (checkIfExist(args.state)) {

@@ -24,7 +24,7 @@ export type HardhatIgnitionConfig = {
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,
   nonceManager?: INonceManager,
-  transactionSigner?: ITransactionSigner
+  transactionSigner?: ITransactionSigner,
   params?: { [name: string]: any },
 };
 

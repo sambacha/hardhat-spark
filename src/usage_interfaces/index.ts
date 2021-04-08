@@ -26,14 +26,14 @@ export interface TutorialArgs {
 
 export interface DiffArgs {
   moduleFilePath: string;
-  networkId: string;
+  networkName: string;
   state?: string;
   configScriptPath?: string;
 }
 
 export interface DeployArgs {
   moduleFilePath: string;
-  networkId: string;
+  networkName: string;
   rpcProvider?: string;
   parallelize?: boolean;
   prompting?: Logging;
@@ -47,14 +47,6 @@ export interface GenTypesArgs {
   configScriptPath?: string;
 }
 
-export interface InitArgs {
-  privateKeys: string;
-  mnemonic?: string;
-  configScriptPath?: string;
-  hdPath?: string;
-  reinit?: string;
-}
-
 export interface MigrationArgs {
   from?: string;
   moduleName: string;
@@ -62,7 +54,7 @@ export interface MigrationArgs {
 
 export interface UsageArgs {
   moduleFilePath: string;
-  networkId: string;
+  networkName: string;
   testEnv?: boolean;
   state?: string;
   configScriptPath?: string;

@@ -14,26 +14,4 @@ export const config: HardhatIgnitionConfig = {
 };
 ```
 
-All available options:
-
-```typescript
-export type HardhatIgnitionConfig = {
-  privateKeys: string[];
-  mnemonic?: string;
-  hdPath?: string;
-  networks?: {
-    [network_id: string]: {
-      rpc_provider?: string;
-      privateKeys?: string[];
-      mnemonic?: string;
-      hdPath?: string;
-    }
-  }
-  registry?: IModuleRegistryResolver;
-  resolver?: IModuleRegistryResolver;
-  gasPriceProvider?: IGasPriceCalculator,
-  nonceManager?: INonceManager,
-  transactionSigner?: ITransactionSigner
-  params?: { [name: string]: any },
-};
-```
+Look [here](../concepts/config.md) for more info.

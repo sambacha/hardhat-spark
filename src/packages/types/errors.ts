@@ -69,6 +69,12 @@ export class MissingContractMetadata extends UserError {
   }
 }
 
+export class NoNetworkError extends UserError {
+  constructor() {
+    super(`Ignition could detect network.`);
+  }
+}
+
 export class TransactionFailed extends UserError {
   constructor(message: string) {
     super(message);

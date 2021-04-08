@@ -10,7 +10,7 @@ Next command is resolving contract and events dependencies and generating "usage
 bindings without any private deployment data.
 
 ```
-hardhat-ignition usage ./deployment/MODULE_NAME.module.ts --networkId=<NETWORK_ID>
+hardhat-ignition usage ./deployment/MODULE_NAME.module.ts --network=<NETWORK_NAME>
 ```
 
 After running command you can check if that next file is generated: `module_name.usage.ts`.

@@ -7,7 +7,6 @@ import {
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
-  InitArgs,
   MigrationArgs,
   TutorialArgs,
   UsageArgs
@@ -96,11 +95,11 @@ task('ignition:diff', 'Difference between deployed and current deployment.')
     'Path to module deployment file.'
   )
   .addParam<string>(
-    'networkId',
-    'Network ID of the network you are willing to deploy your contracts.',
+    'networkName',
+    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'local',
     undefined,
-    undefined,
-    false,
+    true,
   )
   .addOptionalParam<string>(
     'state',
@@ -119,11 +118,11 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
     'Path to module deployment file.'
   )
   .addParam<string>(
-    'networkId',
-    'Network ID of the network you are willing to deploy your contracts.',
+    'networkName',
+    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'local',
     undefined,
-    undefined,
-    false,
+    true,
   )
   .addParam<Logging>(
     'prompting',
@@ -191,11 +190,11 @@ task('ignition:usage', 'Generate public usage module from standard module.')
     'Path to module deployment file.'
   )
   .addParam<string>(
-    'networkId',
-    'Network ID of the network you are willing to deploy your contracts.',
+    'networkName',
+    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'local',
     undefined,
-    undefined,
-    false,
+    true,
   )
   .addOptionalParam<string>(
     'configScriptPath',

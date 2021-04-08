@@ -24,8 +24,8 @@ npx hardhat node
 Also make sure you have `ts-node` and `typescript` installed.
 
 ```
-npm i ts-node
-npm i typescript
+npm i ts-node --save
+npm i typescript --save
 ```
 
 ## Workflow
@@ -139,7 +139,7 @@ Let's see what will be deployed if we stop here.
 Run next command:
 
 ```
-hardhat-ignition diff ./deployment/first.module.ts --networkId=31337
+hardhat-ignition diff
 ```
 
 This should be output in the console.
@@ -163,14 +163,14 @@ npx hardhat node
 Run `hardhat-ignition deploy` command.
 
 ```
-hardhat-ignition deploy ./deployment/first.module.ts --networkId=31337
+hardhat-ignition deploy
 ```
 
 After command is successfully run, you should see in your logs something like this
 
 ![log image](../images/basic_usage_log.png)
 
-Also, you should check `./.hardhat-ignition/FirstModule/31337_deployed_module_state.json` file to confirm execution and
+Also, you should check `./.hardhat-ignition/FirstModule/local_deployed_module_state.json` file to confirm execution and
 check if everything is correctly deployed.
 
 ### Additional contract binding
@@ -259,7 +259,7 @@ Module: FirstModule
 We now want to execute our changes in `FirstModule` so let's run next command:
 
 ```
-hardhat-ignition deploy ./deployment/first.module.ts --network_id=31337
+hardhat-ignition deploy ./deployment/first.module.ts
 ```
 
 This should be execution logs:

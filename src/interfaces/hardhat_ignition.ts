@@ -18,6 +18,7 @@ import {
   BindingsConflict,
   CliError,
   MissingContractMetadata,
+  NoNetworkError,
   TemplateNotFound,
   TransactionFailed,
   UserError
@@ -962,8 +963,11 @@ export class ContractInstance {
         try {
           tx = await contractFunction(...args, overrides);
           currentEventTransactionData.contractInput[contractTxIterator] = tx;
-        } catch (e) {
-          throw new TransactionFailed(e.error.message);
+        } catch (err) {
+          if ((err.reason).includes('could not detect network')) {
+            throw new NoNetworkError();
+          }
+          throw new TransactionFailed(err.error.message);
         }
         await this.prompter.sentTx(sessionEventName, fragment.name);
 

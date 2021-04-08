@@ -4,7 +4,7 @@ import { INonceManager, ITransactionSigner } from './index';
 import { BigNumber, providers } from 'ethers';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { ethers } from 'ethers';
-import { GasPriceBackoffError, TransactionFailed, UserError } from '../../types/errors';
+import { GasPriceBackoffError, NoNetworkError, TransactionFailed } from '../../types/errors';
 import { GasPriceBackoff } from '../../types/config';
 import { IPrompter } from '../../utils/logging';
 
@@ -59,6 +59,9 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     try {
       gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
     } catch (err) {
+      if ((err.reason).includes('could not detect network')) {
+        throw new NoNetworkError();
+      }
       throw new TransactionFailed(err.error.message);
     }
 
