@@ -1,6 +1,8 @@
 import { CliError } from '../types/errors';
 import * as path from 'path';
 
+require('dotenv').config({path: path.resolve(__dirname + '../../../../.env.local')});
+
 let cachedIsTypescriptSupported: boolean | undefined;
 
 export function resolveConfigPath(configPath: string) {
@@ -36,7 +38,9 @@ export function isTypescriptSupported() {
 }
 
 export function loadTsNode(test?: boolean) {
-  return;
+  if (process.env.IGNITION_ENV == 'development') {
+    return;
+  }
 
   try {
     require.resolve('typescript');
