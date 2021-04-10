@@ -17,10 +17,13 @@ import fs from 'fs';
 import * as inquirer from 'inquirer';
 import { DEFAULT_DEPLOYMENT_FOLDER } from '../packages/utils/constants';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
+import { GlobalConfigService } from '../packages/config/global_config_service';
+import { ErrorReporting } from '../packages/utils/error_reporting';
 
 export default class GenTypes extends Command {
   static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';
   private prompter: IPrompter | undefined;
+  private errorReporting: ErrorReporting;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -46,6 +49,10 @@ export default class GenTypes extends Command {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }
+
+    const globalConfigService = new GlobalConfigService();
+    await globalConfigService.mustConfirmConsent();
+    this.errorReporting = new ErrorReporting(globalConfigService);
 
     const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
     const deploymentModules = systemCrawlingService.crawlDeploymentModule();
@@ -140,5 +147,6 @@ export default class GenTypes extends Command {
     if (cli.config.outputLevel == 'debug') {
       cli.debug(error.stack);
     }
+    this.errorReporting.reportError(error);
   }
 }

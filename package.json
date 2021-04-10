@@ -13,6 +13,7 @@
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/plugin-help": "^3",
+    "@sentry/node": "^6.2.5",
     "@types/commander": "^2.12.2",
     "@types/inquirer": "^7.3.1",
     "@types/listr": "^0.14.2",

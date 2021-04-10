@@ -28,11 +28,14 @@ import * as fs from 'fs';
 import { EthClient } from '../packages/ethereum/client';
 import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
+import { ErrorReporting } from '../packages/utils/error_reporting';
+import { GlobalConfigService } from '../packages/config/global_config_service';
 
 export default class Deploy extends Command {
   private mutex = false;
   static description = 'Deploy new module, difference between current module and already deployed one.';
   private prompter: IPrompter | undefined;
+  private errorReporting: ErrorReporting;
 
   static flags = {
     network: flags.string(
@@ -98,6 +101,10 @@ export default class Deploy extends Command {
 
       process.exit(1);
     });
+
+    const globalConfigService = new GlobalConfigService();
+    await globalConfigService.mustConfirmConsent();
+    this.errorReporting = new ErrorReporting(globalConfigService);
 
     const {args, flags} = this.parse(Deploy);
     if (flags.debug) {
@@ -277,5 +284,9 @@ export default class Deploy extends Command {
     }
 
     cli.error(error.message);
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+    }
+    this.errorReporting.reportError(error);
   }
 }

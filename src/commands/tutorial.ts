@@ -8,12 +8,15 @@ import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_ge
 import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
 import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
+import { GlobalConfigService } from '../packages/config/global_config_service';
+import { ErrorReporting } from '../packages/utils/error_reporting';
 
 const ARTIFACTS_FOLDER = 'artifacts';
 
 export default class Tutorial extends Command {
   static description = 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.';
   private prompter: StreamlinedPrompter;
+  private errorReporting: ErrorReporting;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -31,6 +34,10 @@ export default class Tutorial extends Command {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }
+
+    const globalConfigService = new GlobalConfigService();
+    await globalConfigService.mustConfirmConsent();
+    this.errorReporting = new ErrorReporting(globalConfigService);
 
     this.prompter = new StreamlinedPrompter();
     const deploymentFileRepo = new DeploymentFileRepo();
@@ -72,5 +79,7 @@ export default class Tutorial extends Command {
     if (cli.config.outputLevel == 'debug') {
       cli.debug(error.stack);
     }
+
+    this.errorReporting.reportError(error);
   }
 }

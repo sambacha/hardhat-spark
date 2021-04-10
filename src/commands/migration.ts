@@ -9,10 +9,13 @@ import { StateMigrationService } from '../packages/modules/states/state_migratio
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
 import { IPrompter } from '../packages/utils/logging';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
+import { ErrorReporting } from '../packages/utils/error_reporting';
+import { GlobalConfigService } from '../packages/config/global_config_service';
 
 export default class Tutorial extends Command {
   static description = 'Migrate deployment meta data from other deployers to hardhat-ignition state file.';
   private prompter: IPrompter;
+  private errorReporting: ErrorReporting;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -41,6 +44,10 @@ export default class Tutorial extends Command {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }
+
+    const globalConfigService = new GlobalConfigService();
+    await globalConfigService.mustConfirmConsent();
+    this.errorReporting = new ErrorReporting(globalConfigService);
 
     let moduleName = flags.moduleName;
     if (!moduleName) {
@@ -88,5 +95,6 @@ export default class Tutorial extends Command {
     if (cli.config.outputLevel == 'debug') {
       cli.debug(error.stack);
     }
+    this.errorReporting.reportError(error);
   }
 }

@@ -13,7 +13,7 @@ import { IPrompter } from './packages/utils/logging';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
 import { HardhatIgnitionConfig } from './packages/types/config';
-import { loadScript } from './packages/utils/typescript-checker';
+import { loadScript } from './packages/utils/typescript_checker';
 import { ModuleUsage } from './packages/modules/module_usage';
 import { MissingContractAddressInStateFile } from './packages/types/errors';
 import * as cls from 'cls-hooked';

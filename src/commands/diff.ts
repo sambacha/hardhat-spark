@@ -21,10 +21,13 @@ import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } f
 import fs from 'fs';
 import * as inquirer from 'inquirer';
 import { EthClient } from '../packages/ethereum/client';
+import { ErrorReporting } from '../packages/utils/error_reporting';
+import { GlobalConfigService } from '../packages/config/global_config_service';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current deployment.';
   private prompter: IPrompter | undefined;
+  private errorReporting: ErrorReporting;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -70,6 +73,10 @@ export default class Diff extends Command {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }
+
+    const globalConfigService = new GlobalConfigService();
+    await globalConfigService.mustConfirmConsent();
+    this.errorReporting = new ErrorReporting(globalConfigService);
 
     const currentPath = process.cwd();
 
@@ -182,5 +189,6 @@ export default class Diff extends Command {
     if (cli.config.outputLevel == 'debug') {
       cli.debug(error.stack);
     }
+    this.errorReporting.reportError(error);
   }
 }

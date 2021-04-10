@@ -13,11 +13,14 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { ModuleUsage } from '../packages/modules/module_usage';
 import { checkIfExist } from '../packages/utils/util';
 import { DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
+import { ErrorReporting } from '../packages/utils/error_reporting';
+import { GlobalConfigService } from '../packages/config/global_config_service';
 
 export default class Usage extends Command {
   private mutex = false;
   static description = 'Generate public usage module from standard module.';
   private prompter: IPrompter | undefined;
+  private errorReporting: ErrorReporting;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -62,6 +65,11 @@ export default class Usage extends Command {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }
+
+    const globalConfigService = new GlobalConfigService();
+    await globalConfigService.mustConfirmConsent();
+    this.errorReporting = new ErrorReporting(globalConfigService);
+
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;
     if (filePath == '') {
@@ -143,5 +151,7 @@ export default class Usage extends Command {
     if (cli.config.outputLevel == 'debug') {
       cli.debug(error.stack);
     }
+
+    this.errorReporting.reportError(error);
   }
 }

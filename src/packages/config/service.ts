@@ -10,7 +10,7 @@ import {
 } from '../types/errors';
 import { checkIfExist } from '../utils/util';
 import { CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
-import { loadScript } from '../utils/typescript-checker';
+import { loadScript } from '../utils/typescript_checker';
 
 export default class ConfigService implements IConfigService {
   private readonly networkName: string;
