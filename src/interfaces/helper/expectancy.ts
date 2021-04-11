@@ -1,6 +1,6 @@
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { checkIfExist } from '../../packages/utils/util';
-import { UserError, ValueMismatch } from '../../packages/types/errors';
+import { UnexpectedValueError, ValueMismatch } from '../../packages/types/errors';
 import { ethers } from 'ethers';
 import { ContractBinding } from '../hardhat_ignition';
 
@@ -62,7 +62,7 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
     return true;
   }
 
-  throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+  throw new UnexpectedValueError(expectedValue, value);
 }
 
 /**
@@ -133,7 +133,7 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
     return true;
   }
 
-  throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+  throw new UnexpectedValueError(expectedValue, value);
 }
 
 /**
@@ -210,7 +210,7 @@ export function expect(firstValue: any, secondValue: any): boolean {
     return true;
   }
 
-  throw new UserError(`Failed on expectFuncRead - couldn't match ${firstValue} with ${secondValue}`);
+  throw new UnexpectedValueError(firstValue, secondValue);
 }
 
 /**

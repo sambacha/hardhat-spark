@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { extractObjectInfo } from '../utils/util';
 
 export class UserError extends Error {
   public _isUserError: boolean = true;
@@ -17,6 +18,14 @@ export class CliError extends Error {
   constructor(message: string) {
     super();
     this.message = 'CLI error - ' + message;
+  }
+}
+
+export class UnexpectedValueError extends UserError {
+  constructor(expected: any, actual: any) {
+    super(`Failed on expectFuncRead - couldn't match
+expected value: ${extractObjectInfo(expected)}
+actual value: ${actual}`);
   }
 }
 

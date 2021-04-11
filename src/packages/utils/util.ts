@@ -72,3 +72,17 @@ export function moduleBuilderStatefulDiff(oldModuleBuilder: ModuleBuilder, newMo
 
   return [bindingsDiff, eventsDiff];
 }
+
+export function extractObjectInfo(obj: any): string {
+  if (obj._isBigNumber) {
+    return obj.toString();
+  }
+
+  if (obj._isContractBinding) {
+    return `${obj.name}(${obj.deployMetaData.contractAddress})`;
+  }
+
+  if (obj._isContractBindingMetaData) {
+    return obj.deployMetaData.contractAddress;
+  }
+}
