@@ -21,6 +21,100 @@ export class CliError extends Error {
   }
 }
 
+export class ContractNotCompiledError extends UserError {
+  constructor(contractBindingName: string) {
+    super(`Contract is not compiled correctly - ${contractBindingName}`);
+  }
+}
+
+export class WalletTransactionNotInEventError extends UserError {
+  constructor() {
+    super('Wallet sendTransaction() function is running outside of an event!');
+  }
+}
+
+export class EventDoesntExistError extends UserError {
+  constructor(eventName: string) {
+    super(`Event with this name doesn't exist - ${eventName}`);
+  }
+}
+
+export class ContractNotDeployedError extends UserError {
+  constructor(contractName: string) {
+    super(`Contract is not suitable to be instantiated, please deploy it first - ${contractName}`);
+  }
+}
+
+export class MissingAbiInContractError extends UserError {
+  constructor(contractBindingName: string) {
+    super(`Missing abi from binding - ${contractBindingName}`);
+  }
+}
+
+export class OneConfigAllowedError extends UserError {
+  constructor() {
+    super('You can only have one config object!');
+  }
+}
+
+export class ConfigMissingError extends UserError {
+  constructor() {
+    super('Config object is missing.');
+  }
+}
+
+export class ModuleAndModuleStateMismatchElementError extends UserError {
+  constructor() {
+    super("Module and module state file didn't match element.");
+  }
+}
+
+export class ModuleAndModuleStateMismatchElementNameError extends UserError {
+  constructor(moduleStateElementName: string, stateFileElementName: string) {
+    super(`Module and module state file didn't match state element name:
+Module file: ${moduleStateElementName}
+State file: ${stateFileElementName}`);
+  }
+}
+
+export class ModuleAndModuleStateEventTypeMismatchError extends UserError {
+  constructor(resolvedModuleStateElementEventType, stateFileElementEventType) {
+    super(`Module and module state file didn't match state element event type:
+Module file: ${resolvedModuleStateElementEventType}
+State file: ${stateFileElementEventType}`);
+  }
+}
+
+export class NoDeploymentModuleError extends UserError {
+  constructor() {
+    super('Their is not deployment module provided.\n   Use --help for more information.');
+  }
+}
+
+export class ShouldRedeployAlreadyDefinedError extends UserError {
+  constructor() {
+    super('shouldRedeploy() function is already defined for this contract.');
+  }
+}
+
+export class ArgumentLengthInvalid extends UserError {
+  constructor(functionName: string) {
+    super(`Trying to call contract function with more/less arguments - ${functionName}`);
+  }
+}
+
+export class EventNameExistsError extends UserError {
+  constructor(eventName: string) {
+    super(`Event with same name already initialized - ${eventName}`);
+  }
+}
+
+export class NoContractBindingDataInModuleState extends CliError {
+  constructor(name: string) {
+    super(`Their is no data of this contract binding in resolved module state - ${name}`);
+  }
+}
+
 export class UnexpectedValueError extends UserError {
   constructor(expected: any, actual: any) {
     super(`Failed on expectFuncRead - couldn't match

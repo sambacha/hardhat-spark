@@ -1,13 +1,13 @@
 import * as Sentry from '@sentry/node';
-import { GlobalConfigService } from '../config/global_config_service';
+import { GlobalConfigService } from '../../config/global_config_service';
 import path from 'path';
-import { getIgnitionVersion } from './package_info';
+import { getIgnitionVersion } from '../package_info';
 
-require('dotenv').config({path: path.resolve(__dirname + '../../../.env.local')});
+require('dotenv').config({path: path.resolve(__dirname + '../../../../.env.local')});
 
 const SENTRY_DSN = 'https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032';
 
-export class ErrorReporting {
+export class AnalyticsService {
   private readonly confirmedConsent: boolean = false;
 
   constructor(globalConfigService: GlobalConfigService) {

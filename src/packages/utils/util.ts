@@ -1,4 +1,7 @@
 import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/hardhat_ignition';
+import { CliError, UserError } from '../types/errors';
+import { cli } from 'cli-ux';
+import chalk from 'chalk';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -85,4 +88,38 @@ export function extractObjectInfo(obj: any): string {
   if (obj._isContractBindingMetaData) {
     return obj.deployMetaData.contractAddress;
   }
+}
+
+export async function errorHandling(error: Error) {
+  if (this.prompter) {
+    this.prompter.errorPrompt();
+  }
+
+  if ((error as UserError)._isUserError) {
+    cli.info('Something went wrong inside deployment script, check the message below and try again.');
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+      return;
+    }
+
+    cli.info(chalk.red.bold('ERROR'), error.message);
+    return;
+  }
+
+  if ((error as CliError)._isCliError) {
+    cli.info('Something went wrong inside ignition');
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+      return;
+    }
+
+    cli.info(chalk.red.bold('ERROR'), error.message);
+    return;
+  }
+
+  cli.error(error.message);
+  if (cli.config.outputLevel == 'debug') {
+    cli.debug(error.stack);
+  }
+  this.analyticsService.reportError(error);
 }

@@ -8,19 +8,19 @@ import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { IPrompter } from '../packages/utils/logging';
 import path from 'path';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { WalletWrapper } from '../index';
+import { errorHandling, WalletWrapper } from '../index';
 import { ModuleResolver } from '../packages/modules/module_resolver';
 import { ModuleUsage } from '../packages/modules/module_usage';
 import { checkIfExist } from '../packages/utils/util';
 import { DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
-import { ErrorReporting } from '../packages/utils/error_reporting';
+import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { GlobalConfigService } from '../packages/config/global_config_service';
 
 export default class Usage extends Command {
   private mutex = false;
   static description = 'Generate public usage module from standard module.';
   private prompter: IPrompter | undefined;
-  private errorReporting: ErrorReporting;
+  private analyticsService: AnalyticsService;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -68,7 +68,7 @@ export default class Usage extends Command {
 
     const globalConfigService = new GlobalConfigService();
     await globalConfigService.mustConfirmConsent();
-    this.errorReporting = new ErrorReporting(globalConfigService);
+    this.analyticsService = new AnalyticsService(globalConfigService);
 
     const currentPath = process.cwd();
     const filePath = args.module_file_path as string;
@@ -121,37 +121,6 @@ export default class Usage extends Command {
   }
 
   async catch(error: Error) {
-    if (this.prompter) {
-      this.prompter.errorPrompt();
-    }
-
-    if ((error as UserError)._isUserError) {
-      cli.info('Something went wrong inside deployment script, check the message below and try again.');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    if ((error as CliError)._isCliError) {
-      cli.info('Something went wrong inside ignition');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    cli.error(error.message);
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-    }
-
-    this.errorReporting.reportError(error);
+    await errorHandling.bind(this)(error);
   }
 }

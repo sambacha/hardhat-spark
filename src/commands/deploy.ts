@@ -2,40 +2,29 @@ import { Command, flags } from '@oclif/command';
 import * as path from 'path';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { ModuleResolver } from '../packages/modules/module_resolver';
-import { checkIfExist, checkMutex } from '../packages/utils/util';
+import { checkIfExist, checkMutex, errorHandling } from '../packages/utils/util';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import ConfigService from '../packages/config/service';
-import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
-import { ethers, Wallet } from 'ethers';
+import { Wallet } from 'ethers';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { EventHandler } from '../packages/modules/events/handler';
-import { CliError, UserError } from '../packages/types/errors';
-import chalk from 'chalk';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
 import { IPrompter, Logging } from '../packages/utils/logging';
-import { OverviewPrompter } from '../packages/utils/logging/overview_prompter';
-import { SimpleOverviewPrompter } from '../packages/utils/logging/simple_logging';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
-import { JsonPrompter } from '../packages/utils/logging/json_logging';
-import * as inquirer from 'inquirer';
-import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
-import * as fs from 'fs';
 import { EthClient } from '../packages/ethereum/client';
-import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
-import { ErrorReporting } from '../packages/utils/error_reporting';
-import { GlobalConfigService } from '../packages/config/global_config_service';
+import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { defaultInputParams } from '../index';
 
 export default class Deploy extends Command {
   private mutex = false;
   static description = 'Deploy new module, difference between current module and already deployed one.';
   private prompter: IPrompter | undefined;
-  private errorReporting: ErrorReporting;
+  private analyticsService: AnalyticsService;
 
   static flags = {
     network: flags.string(
@@ -102,191 +91,54 @@ export default class Deploy extends Command {
       process.exit(1);
     });
 
-    const globalConfigService = new GlobalConfigService();
-    await globalConfigService.mustConfirmConsent();
-    this.errorReporting = new ErrorReporting(globalConfigService);
-
     const {args, flags} = this.parse(Deploy);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }
 
-    const currentPath = process.cwd();
+    const {
+      networkName,
+      networkId,
+      gasPriceBackoff,
+      rpcProvider,
+      filePath,
+      states,
+      prompter,
+      config,
+      configService,
+    } = await defaultInputParams.bind(this)(args.module_file_path, flags.network, flags.state, flags.rpcProvider, flags.logging, flags.configScriptPath);
 
-    let filePath = args.module_file_path as string;
-    let networkName = flags.network;
-    let isLocalDeployment = true;
-    let gasPriceBackoff;
-    if (!checkIfExist(networkName)) {
-      networkName = DEFAULT_NETWORK_NAME;
-    }
-    const configService = new ConfigService(networkName);
-    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
-
-    let networkId;
-    if (checkIfExist(config?.networks) && checkIfExist(config?.networks[networkName])) {
-      networkId = config?.networks[networkName]?.networkId;
-    }
-    if (!checkIfExist(networkId)) {
-      networkId = DEFAULT_NETWORK_ID;
-    }
-    process.env.IGNITION_NETWORK_ID = String(networkId);
-    const states: string[] = flags.state?.split(',') || [];
-    let provider = new ethers.providers.JsonRpcProvider();
-    process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
-    if (
-      checkIfExist(config.networks) &&
-      checkIfExist(config.networks[networkName])
-    ) {
-      if (checkIfExist(config.networks[networkName].rpcProvider)) {
-        provider = new ethers.providers.JsonRpcProvider(
-          String(config?.networks[networkName]?.rpcProvider)
-        );
-        process.env.IGNITION_RPC_PROVIDER = String(config?.networks[networkName]?.rpcProvider);
-      }
-
-      if (checkIfExist(config.networks[networkName].blockConfirmation)) {
-        process.env.BLOCK_CONFIRMATION_NUMBER = String(config.networks[networkName].blockConfirmation);
-      }
-
-      if (checkIfExist(config.networks[networkName].localDeployment)) {
-        isLocalDeployment = config.networks[networkName].localDeployment;
-      }
-
-      if (
-        !checkIfExist(filePath) &&
-        checkIfExist(config.networks[networkName].deploymentFilePath)
-      ) {
-        filePath = config.networks[networkName].deploymentFilePath;
-        if (!fs.existsSync(filePath)) {
-          filePath = undefined;
-        }
-      }
-
-      if (
-        checkIfExist(config.networks[networkName].gasPriceBackoff)
-      ) {
-        gasPriceBackoff = config.networks[networkName].gasPriceBackoff;
-      }
-    }
-    if (!checkIfExist(filePath)) {
-      const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
-      const deploymentModules = systemCrawlingService.crawlDeploymentModule();
-      const deploymentFileName = (await inquirer.prompt([{
-        name: 'deploymentFileName',
-        message: 'Deployments file:',
-        type: 'list',
-        choices: deploymentModules.map((v) => {
-          return {
-            name: v
-          };
-        }),
-      }])).deploymentFileName;
-      try {
-        filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
-      } catch (e) {
-        throw new UserError('Their is not deployment module provided.\n   Use --help for more information.');
-      }
-    }
-    if (checkIfExist(flags.rpcProvider)) {
-      provider = new ethers.providers.JsonRpcProvider(
-        flags?.rpcProvider
-      );
-      process.env.IGNITION_RPC_PROVIDER = String(flags?.rpcProvider);
-    }
-
-    // choosing right prompter from user desires
-    let prompter;
-    switch (flags.logging) {
-      case Logging.simple:
-        prompter = new SimpleOverviewPrompter();
-        break;
-      case Logging.json:
-        prompter = new JsonPrompter();
-        break;
-      case Logging.overview:
-        prompter = new OverviewPrompter();
-        break;
-      case Logging.streamlined:
-      default: {
-        let yes = true;
-        if (
-          networkName != DEFAULT_NETWORK_NAME &&
-          !isLocalDeployment
-        ) {
-          const con = await cli.prompt('Would you like to be prompted at every single step? (Y/n)', {
-            required: false
-          });
-          yes = con == 'n';
-        }
-
-        prompter = new StreamlinedPrompter(yes);
-        break;
-      }
-    }
-
-    // initializing all service's and repos
     this.prompter = prompter;
-
-    const gasProvider = new GasPriceCalculator(provider);
+    const gasProvider = new GasPriceCalculator(rpcProvider);
     let gasCalculator = config.gasPriceProvider;
     if (!checkIfExist(gasCalculator)) {
       gasCalculator = gasProvider;
     }
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), networkId, gasProvider, gasCalculator, prompter, gasPriceBackoff);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasProvider, networkId, provider, transactionManager, transactionManager, prompter, gasPriceBackoff);
+    const transactionManager = new TransactionManager(rpcProvider, new Wallet(configService.getFirstPrivateKey(), rpcProvider), networkId, gasProvider, gasCalculator, this.prompter, gasPriceBackoff);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasProvider, networkId, rpcProvider, transactionManager, transactionManager, this.prompter, gasPriceBackoff);
 
+    const currentPath = process.cwd();
     const moduleState = new ModuleStateRepo(networkName, currentPath, this.mutex, flags.testEnv);
 
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
 
-    const ethClient = new EthClient(provider);
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleState, eventTxExecutor, eventSession, ethClient);
+    const ethClient = new EthClient(rpcProvider);
+    const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), this.prompter, txGenerator, moduleState, eventTxExecutor, eventSession, ethClient);
 
-    const eventHandler = new EventHandler(moduleState, prompter);
-    const txExecutor = new TxExecutor(prompter, moduleState, txGenerator, networkId, provider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
+    const eventHandler = new EventHandler(moduleState, this.prompter);
+    const txExecutor = new TxExecutor(this.prompter, moduleState, txGenerator, networkId, rpcProvider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
 
-    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasProvider, moduleState, prompter, eventTxExecutor);
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasProvider, moduleState, this.prompter, eventTxExecutor);
 
     const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(moduleState);
 
     const deploymentFilePath = path.resolve(currentPath, filePath);
-    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService);
+    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService);
   }
 
   async catch(error: Error) {
-    if (this.prompter) {
-      this.prompter.errorPrompt();
-    }
-
-    if ((error as UserError)._isUserError) {
-      cli.info('Something went wrong inside deployment script, check the message below and try again.');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    if ((error as CliError)._isCliError) {
-      cli.info('Something went wrong inside ignition');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    cli.error(error.message);
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-    }
-    this.errorReporting.reportError(error);
+    await errorHandling.bind(this)(error);
   }
 }

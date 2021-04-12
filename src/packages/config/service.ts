@@ -4,9 +4,10 @@ import * as path from 'path';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import {
+  ConfigMissingError,
+  OneConfigAllowedError,
   PrivateKeyIsMissing,
-  PrivateKeyNotValid,
-  UserError
+  PrivateKeyNotValid
 } from '../types/errors';
 import { checkIfExist } from '../utils/util';
 import { CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
@@ -34,14 +35,14 @@ export default class ConfigService implements IConfigService {
         const configModules = await loadScript(configFilePath);
 
         if (Object.entries(configModules).length > 1) {
-          throw new UserError('Sorry, but you can only have one config object!');
+          throw new OneConfigAllowedError();
         }
 
         for (const [, ignitionConfig] of Object.entries(configModules)) {
           config = ignitionConfig as HardhatIgnitionConfig;
         }
         if (!checkIfExist(config)) {
-          throw new UserError('config object is missing.');
+          throw new ConfigMissingError();
         }
       } catch (err) {
         if (err._isUserError) {

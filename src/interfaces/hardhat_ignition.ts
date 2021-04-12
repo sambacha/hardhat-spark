@@ -15,13 +15,14 @@ import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { IPrompter } from '../packages/utils/logging';
 import {
+  ArgumentLengthInvalid,
   BindingsConflict,
-  CliError,
+  CliError, ContractNotDeployedError, EventDoesntExistError, EventNameExistsError,
   MissingContractMetadata,
-  NoNetworkError,
+  NoNetworkError, ShouldRedeployAlreadyDefinedError,
   TemplateNotFound,
   TransactionFailed,
-  UserError
+  WalletTransactionNotInEventError
 } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
 import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
@@ -254,7 +255,7 @@ export class GroupedDependencies {
       dependency = dependency as ContractBinding;
       if (dependency._isContractBinding) {
         if (dependency.deployMetaData.shouldRedeploy) {
-          throw new UserError('shouldRedeploy() function is already defined for this contract.');
+          throw new ShouldRedeployAlreadyDefinedError();
         }
 
         dependency.deployMetaData.shouldRedeploy = fn;
@@ -477,7 +478,7 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      throw new UserError('Contract is not suitable to be instantiated, please deploy it first');
+      throw new ContractNotDeployedError(this.name);
     }
 
     this.contractInstance = new ContractInstance(
@@ -623,7 +624,7 @@ export class ContractBinding extends Binding {
    */
   beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeDeploy.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
+      throw new EventNameExistsError(eventName);
     }
     this.eventsDeps.beforeDeploy.push(eventName);
 
@@ -652,7 +653,7 @@ export class ContractBinding extends Binding {
    */
   afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.afterDeploy.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
+      throw new EventNameExistsError(eventName);
     }
     this.eventsDeps.afterDeploy.push(eventName);
 
@@ -692,7 +693,7 @@ export class ContractBinding extends Binding {
    */
   beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.beforeCompile.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
+      throw new EventNameExistsError(eventName);
     }
     this.eventsDeps.beforeCompile.push(eventName);
 
@@ -720,7 +721,7 @@ export class ContractBinding extends Binding {
    */
   afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.afterCompile.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
+      throw new EventNameExistsError(eventName);
     }
     this.eventsDeps.afterCompile.push(eventName);
 
@@ -748,7 +749,7 @@ export class ContractBinding extends Binding {
    */
   onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
     if (this.eventsDeps.onChange.includes(eventName)) {
-      throw new UserError(`Event with same name already initialized - ${eventName}`);
+      throw new EventNameExistsError(eventName);
     }
     this.eventsDeps.onChange.push(eventName);
 
@@ -902,12 +903,12 @@ export class ContractInstance {
     return async (...args: Array<any>): Promise<TransactionResponse> => {
       const func = async function (...args: Array<any>): Promise<TransactionResponse> {
         const sessionEventName = this.eventSession.get(clsNamespaces.EVENT_NAME);
-        if (args.length > fragment.inputs.length + 1) {
-          throw new UserError(`Trying to call contract function with more arguments - ${fragment.name}`);
-        }
 
-        if (args.length < fragment.inputs.length) {
-          throw new UserError(`Trying to call contract function with less arguments - ${fragment.name}`);
+        if ( // optional overrides
+          args.length > fragment.inputs.length + 1 ||
+          args.length < fragment.inputs.length
+        ) {
+          throw new ArgumentLengthInvalid(fragment.name);
         }
 
         let overrides: CallOverrides = {};
@@ -1014,7 +1015,7 @@ export class ContractInstance {
     let i = 0;
     for (let arg of args) {
       if (checkIfExist(arg?.contractName) && !checkIfExist(arg?.deployMetaData.contractAddress)) {
-        throw new UserError(`You are trying to use contract that is not deployed ${arg.name}`);
+        throw new ContractNotDeployedError(arg.name);
       }
 
       if (checkIfExist(arg?.deployMetaData?.contractAddress)) {
@@ -1072,7 +1073,7 @@ export class IgnitionWallet extends ethers.Wallet {
       await this.prompter.executeWalletTransfer(this.address, toAddr);
       const currentEventName = this.sessionNamespace.get(clsNamespaces.EVENT_NAME);
       if (!checkIfExist(currentEventName)) {
-        throw new UserError('Wallet function is running outside event!');
+        throw new WalletTransactionNotInEventError();
       }
 
       await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
@@ -1332,7 +1333,7 @@ export class ModuleBuilder {
 
   addEvent(eventName: string, event: Event): void {
     if (checkIfExist(this.contractEvents[eventName])) {
-      throw new UserError(`Event with same name is already initialized in module - ${eventName}`);
+      throw new EventNameExistsError(eventName);
     }
 
     this.contractEvents[eventName] = new StatefulEvent(
@@ -1345,7 +1346,7 @@ export class ModuleBuilder {
 
   getEvent(eventName: string): StatefulEvent {
     if (!checkIfExist(this.contractEvents[eventName])) {
-      throw new UserError(`Event with this name ${eventName} doesn't exist.`);
+      throw new EventDoesntExistError(eventName);
     }
 
     return this.contractEvents[eventName];

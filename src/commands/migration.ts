@@ -9,13 +9,14 @@ import { StateMigrationService } from '../packages/modules/states/state_migratio
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
 import { IPrompter } from '../packages/utils/logging';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
-import { ErrorReporting } from '../packages/utils/error_reporting';
+import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { GlobalConfigService } from '../packages/config/global_config_service';
+import { errorHandling } from '../index';
 
 export default class Tutorial extends Command {
   static description = 'Migrate deployment meta data from other deployers to hardhat-ignition state file.';
   private prompter: IPrompter;
-  private errorReporting: ErrorReporting;
+  private analyticsService: AnalyticsService;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -47,7 +48,7 @@ export default class Tutorial extends Command {
 
     const globalConfigService = new GlobalConfigService();
     await globalConfigService.mustConfirmConsent();
-    this.errorReporting = new ErrorReporting(globalConfigService);
+    this.analyticsService = new AnalyticsService(globalConfigService);
 
     let moduleName = flags.moduleName;
     if (!moduleName) {
@@ -65,36 +66,6 @@ export default class Tutorial extends Command {
   }
 
   async catch(error: Error) {
-    if (this.prompter) {
-      this.prompter.errorPrompt();
-    }
-
-    if ((error as UserError)._isUserError) {
-      cli.info('Something went wrong inside deployment script, check the message below and try again.');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    if ((error as CliError)._isCliError) {
-      cli.info('Something went wrong inside ignition');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    cli.error(error.message);
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-    }
-    this.errorReporting.reportError(error);
+    await errorHandling.bind(this)(error);
   }
 }

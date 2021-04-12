@@ -1,22 +1,21 @@
 import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { CliError, UserError } from '../packages/types/errors';
-import chalk from 'chalk';
 import { TutorialService } from '../packages/tutorial/tutorial_service';
 import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_gen';
 import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
 import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 import { GlobalConfigService } from '../packages/config/global_config_service';
-import { ErrorReporting } from '../packages/utils/error_reporting';
+import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { errorHandling } from '../index';
 
 const ARTIFACTS_FOLDER = 'artifacts';
 
 export default class Tutorial extends Command {
   static description = 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.';
   private prompter: StreamlinedPrompter;
-  private errorReporting: ErrorReporting;
+  private analyticsService: AnalyticsService;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -37,7 +36,7 @@ export default class Tutorial extends Command {
 
     const globalConfigService = new GlobalConfigService();
     await globalConfigService.mustConfirmConsent();
-    this.errorReporting = new ErrorReporting(globalConfigService);
+    this.analyticsService = new AnalyticsService(globalConfigService);
 
     this.prompter = new StreamlinedPrompter();
     const deploymentFileRepo = new DeploymentFileRepo();
@@ -49,37 +48,6 @@ export default class Tutorial extends Command {
   }
 
   async catch(error: Error) {
-    if (this.prompter) {
-      this.prompter.errorPrompt();
-    }
-
-    if ((error as UserError)._isUserError) {
-      cli.info('Something went wrong inside deployment script, check the message below and try again.');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    if ((error as CliError)._isCliError) {
-      cli.info('Something went wrong inside ignition');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    cli.error(error.message);
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-    }
-
-    this.errorReporting.reportError(error);
+    await errorHandling.bind(this)(error);
   }
 }

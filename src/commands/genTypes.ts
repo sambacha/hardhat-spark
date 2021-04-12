@@ -1,9 +1,9 @@
 import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import {
-  CliError,
+  NoDeploymentModuleError,
   PathNotProvided,
-  UserError, WrongDeploymentPathForNetwork
+  WrongDeploymentPathForNetwork
 } from '../packages/types/errors';
 import path from 'path';
 import { ModuleTypings } from '../packages/modules/typings';
@@ -18,12 +18,13 @@ import * as inquirer from 'inquirer';
 import { DEFAULT_DEPLOYMENT_FOLDER } from '../packages/utils/constants';
 import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 import { GlobalConfigService } from '../packages/config/global_config_service';
-import { ErrorReporting } from '../packages/utils/error_reporting';
+import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { errorHandling } from '../index';
 
 export default class GenTypes extends Command {
   static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';
   private prompter: IPrompter | undefined;
-  private errorReporting: ErrorReporting;
+  private analyticsService: AnalyticsService;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -52,7 +53,7 @@ export default class GenTypes extends Command {
 
     const globalConfigService = new GlobalConfigService();
     await globalConfigService.mustConfirmConsent();
-    this.errorReporting = new ErrorReporting(globalConfigService);
+    this.analyticsService = new AnalyticsService(globalConfigService);
 
     const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
     const deploymentModules = systemCrawlingService.crawlDeploymentModule();
@@ -87,7 +88,7 @@ export default class GenTypes extends Command {
       try {
         filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
       } catch (e) {
-        throw new UserError('Their is not deployment module provided.\n   Use --help for more information.');
+        throw new NoDeploymentModuleError();
       }
 
       const resolvedPath = path.resolve(currentPath, filePath);
@@ -117,36 +118,6 @@ export default class GenTypes extends Command {
   }
 
   async catch(error: Error) {
-    if (this.prompter) {
-      this.prompter.errorPrompt();
-    }
-
-    if ((error as UserError)._isUserError) {
-      cli.info('Something went wrong inside deployment script, check the message below and try again.');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    if ((error as CliError)._isCliError) {
-      cli.info('Something went wrong inside ignition');
-      if (cli.config.outputLevel == 'debug') {
-        cli.debug(error.stack);
-        return;
-      }
-
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      return;
-    }
-
-    cli.error(error.message);
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-    }
-    this.errorReporting.reportError(error);
+    await errorHandling.bind(this)(error);
   }
 }

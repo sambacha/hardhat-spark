@@ -8,7 +8,13 @@ import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { IPrompter } from '../utils/logging';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { CliError, ModuleStateMismatchError, UsageEventNotFound, UserError } from '../types/errors';
+import {
+  CliError, ContractNotCompiledError, ModuleAndModuleStateEventTypeMismatchError,
+  ModuleAndModuleStateMismatchElementError,
+  ModuleAndModuleStateMismatchElementNameError,
+  ModuleStateMismatchError,
+  UsageEventNotFound,
+} from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
@@ -295,19 +301,21 @@ export class ModuleResolver {
       ) {
         resolvedModuleStateElement = resolvedModuleStateElement as StatefulEvent;
         if (!(resolvedModuleStateElement._isStatefulEvent)) {
-          throw new UserError("Module and module state file didn't match element.");
+          throw new ModuleAndModuleStateMismatchElementError();
         }
 
         if (stateFileElement.event.name !== resolvedModuleStateElement.event.name) {
-          throw new UserError(`Module and module state file didn't match state element name:
-Module file: ${resolvedModuleStateElement.event.name}
-State file: ${stateFileElement.event.name}`);
+          throw new ModuleAndModuleStateMismatchElementNameError(
+            stateFileElement.event.name,
+            resolvedModuleStateElement.event.name
+          );
         }
 
         if (stateFileElement.event.eventType !== resolvedModuleStateElement.event.eventType) {
-          throw new UserError(`Module and module state file didn't match state element event type:
-Module file: ${resolvedModuleStateElement.event.eventType}
-State file: ${stateFileElement.event.eventType}`);
+          throw new ModuleAndModuleStateEventTypeMismatchError(
+            resolvedModuleStateElement.event.eventType,
+            stateFileElement.event.eventType
+          );
         }
 
         stateFileElement.event = resolvedModuleStateElement.event;
@@ -414,7 +422,7 @@ State file: ${stateFileElement.event.eventType}`);
     }
 
     if (!checkIfExist(binding?.libraries)) {
-      throw new UserError(`Contract is not compiled correctly - ${binding.name}`);
+      throw new ContractNotCompiledError(binding.name);
     }
 
     // resolve all libraries usage

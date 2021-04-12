@@ -26,9 +26,8 @@ import { EventHandler } from '../../modules/events/handler';
 import {
   CliError,
   ContractTypeMismatch,
-  ContractTypeUnsupported,
+  ContractTypeUnsupported, MissingAbiInContractError, NoContractBindingDataInModuleState,
   TransactionFailed,
-  UserError
 } from '../../types/errors';
 import { ModuleState } from '../../modules/states/module';
 import { IModuleRegistryResolver } from '../../modules/states/registry';
@@ -291,7 +290,7 @@ export class TxExecutor {
 
         const argBinding = moduleState[arg.name];
         if (!checkIfExist(argBinding)) {
-          throw new CliError(`Their is no data of this minding in resolved module state - ${arg.name}`);
+          throw new NoContractBindingDataInModuleState(arg.name);
         }
 
         if (checkIfExist(elementsBatches[arg.name])) {
@@ -425,7 +424,7 @@ export class TxExecutor {
     let constructorFragmentInputs = [] as JsonFragmentType[];
 
     if (!checkIfExist(binding?.abi)) {
-      throw new UserError(`Missing abi from binding - ${binding.name}`);
+      throw new MissingAbiInContractError(binding.name);
     }
 
     binding.abi = binding.abi as JsonFragment[];

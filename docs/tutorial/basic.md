@@ -292,7 +292,7 @@ If you change from `m: ModuleBuilder` to `m: FirstModuleBuilder` you will be abl
 Your module function should look like this in order to have typehints:
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/ignition';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 import { FirstModuleBuilder } from './FirstModule';
 
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
