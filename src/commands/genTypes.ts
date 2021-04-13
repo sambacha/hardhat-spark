@@ -115,6 +115,8 @@ export default class GenTypes extends Command {
         cli.info(`Deployment script path is missing for network ${networkName}`);
       }
     }
+
+    await this.analyticsService.sendCommandHit('genTypes');
   }
 
   async catch(error: Error) {

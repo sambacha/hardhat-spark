@@ -118,6 +118,7 @@ export default class Usage extends Command {
     const moduleUsage = new ModuleUsage(deploymentFilePath, moduleStateRepo);
 
     await command.usage(config, deploymentFilePath, states, configService, walletWrapper, moduleStateRepo, moduleResolver, moduleUsage, this.prompter);
+    await this.analyticsService.sendCommandHit('genTypes');
   }
 
   async catch(error: Error) {

@@ -2,6 +2,7 @@ import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '..
 import { CliError, UserError } from '../types/errors';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
+import * as os from 'os';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -61,6 +62,27 @@ export async function checkMutex(mutex: boolean, delayTime: number, retries: num
   }
 
   return;
+}
+
+function getOperatingSystem(): string {
+  switch (os.type()) {
+    case 'Windows_NT':
+      return '(Windows NT 6.1; Win64; x64)';
+    case 'Darwin':
+      return '(Macintosh; Intel Mac OS X 10_13_6)';
+    case 'Linux':
+      return '(X11; Linux x86_64)';
+    default:
+      return '(Unknown)';
+  }
+}
+
+export function getUserType(): string {
+  return 'Developer'; // @TODO add CI here after we add integration
+}
+
+export function getUserAgent(): string {
+  return `Node/${process.version} ${getOperatingSystem()}`;
 }
 
 export function moduleBuilderStatefulDiff(oldModuleBuilder: ModuleBuilder, newModuleBuilder: ModuleBuilder): ([string, ContractBinding][] | [string, StatefulEvent][])[] {

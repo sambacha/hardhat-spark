@@ -40,7 +40,7 @@ export class ModuleStateRepo {
 
   clear() {
     if (!this.test) {
-      throw new CliError('Module state repo is not sutable for memory clear');
+      throw new CliError('Module state repo is not suitable for memory clear');
     }
 
     (this.stateRepo as MemoryModuleState).clear();

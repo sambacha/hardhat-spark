@@ -45,6 +45,7 @@ export default class Tutorial extends Command {
     const tutorialService = new TutorialService(deploymentFileGenerator, systemCrawlingService);
 
     await command.tutorial(tutorialService);
+    await this.analyticsService.sendCommandHit('genTypes');
   }
 
   async catch(error: Error) {

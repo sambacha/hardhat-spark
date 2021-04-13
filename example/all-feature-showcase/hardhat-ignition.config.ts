@@ -71,7 +71,7 @@ export const config: HardhatIgnitionConfig = {
   },
   // registry: registryAndResolver,
   // resolver: registryAndResolver,
-  gasPriceProvider: constantGasPriceProvider,
+  // gasPriceProvider: constantGasPriceProvider,
   // nonceManager: txManager,
   // transactionSigner: txManager
 };

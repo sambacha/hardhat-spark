@@ -1404,7 +1404,7 @@ export class ModuleBuilder {
 
     for (const [eventName, event] of Object.entries(events)) {
       if (
-        checkIfExist(this.contractEvents[eventName]) // @TODO add error logic here instead of skipping
+        checkIfExist(this.contractEvents[eventName])
       ) {
         continue;
       }

@@ -59,7 +59,7 @@ export class OneConfigAllowedError extends UserError {
 
 export class ConfigMissingError extends UserError {
   constructor() {
-    super('Config object is missing.');
+    super('Config object is missing. This can be caused either if hardhat-ignition.config.ts file is missing or it didnt compile correctly');
   }
 }
 

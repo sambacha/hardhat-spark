@@ -1,7 +1,6 @@
 import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { CliError, UserError } from '../packages/types/errors';
 import chalk from 'chalk';
 import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { Migration } from '../packages/types/migration';
@@ -13,7 +12,7 @@ import { AnalyticsService } from '../packages/utils/analytics/analytics_service'
 import { GlobalConfigService } from '../packages/config/global_config_service';
 import { errorHandling } from '../index';
 
-export default class Tutorial extends Command {
+export default class Migrate extends Command {
   static description = 'Migrate deployment meta data from other deployers to hardhat-ignition state file.';
   private prompter: IPrompter;
   private analyticsService: AnalyticsService;
@@ -40,7 +39,7 @@ export default class Tutorial extends Command {
 
 
   async run() {
-    const {args, flags} = this.parse(Tutorial);
+    const {args, flags} = this.parse(Migrate);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
@@ -63,6 +62,7 @@ export default class Tutorial extends Command {
     const moduleMigrationService = new ModuleMigrationService(currentPath);
 
     await command.migrate(stateMigrationService, moduleMigrationService, moduleName);
+    await this.analyticsService.sendCommandHit('migration');
   }
 
   async catch(error: Error) {
