@@ -7,8 +7,8 @@ This will help you to understand a basic workflow and process of setting up simp
 You will need to have hardhat and hardhat-ignition installed in our project.
 
 ```
-yarn add hardhat --dev
-yarn add @tenderly/hardhat-ignition --dev
+npm i hardhat --save
+npm i @tenderly/hardhat-ignition --save
 ```
 
 Init hardhat and run hardhat node as a test environment.

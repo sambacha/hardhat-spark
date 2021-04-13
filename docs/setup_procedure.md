@@ -8,8 +8,8 @@ npm i @tenderly/hardhat-ignition -g
 
 You will need to have hardhat and hardhat-ignition installed in some project.
 ```
-npm i hardhat --dev
-npm i @tenderly/hardhat-ignition --dev
+npm i hardhat --save
+npm i @tenderly/hardhat-ignition --save
 ```
 
 Init hardhat and run hardhat node as a test environment in order to test deployment.
