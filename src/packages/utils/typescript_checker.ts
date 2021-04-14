@@ -81,7 +81,6 @@ export async function loadScript(configScriptPath: string, test: boolean = false
     const imported = require(configScriptPath);
     module = imported.default !== undefined ? imported.default : imported;
   } catch (e) {
-    console.log(e);
     module = {};
   }
 
