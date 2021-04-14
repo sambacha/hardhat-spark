@@ -25,7 +25,6 @@ import { ModuleDeploymentSummaryService } from '../packages/modules/module_deplo
 import { IAnalyticsService } from '../packages/utils/analytics';
 import { EmptyAnalyticsService } from '../packages/utils/analytics/empty_analytics_service';
 
-
 export class IgnitionTests implements IIgnitionUsage {
   public configFlags: ConfigFlags;
   public configFile: HardhatIgnitionConfig;

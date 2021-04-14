@@ -18,7 +18,7 @@ require('dotenv').config({path: path.resolve(__dirname + '../../../../.env.local
 
 const SENTRY_DSN = 'https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032';
 
-const GOOGLE_ANALYTICS_URL = 'http://www.google-analytics.com/debug/collect';
+const GOOGLE_ANALYTICS_URL = 'https://www.google-analytics.com/collect';
 const GA_TRACKING_ID = 'UA-125013494-5';
 
 interface RawAnalytics {
@@ -94,41 +94,17 @@ export class AnalyticsService implements IAnalyticsService {
     }
 
     return {
-      // Measurement protocol version.
       v: '1',
       t: 'pageview',
-
-      // Hardhat's tracking Id.
       tid: GA_TRACKING_ID,
-
-      // Client Id.
       cid: this.clientId,
-
-      // Document path, must start with a '/'.
       dp: `/task/${taskName}`,
       dh: 'cli.ignition.hardhat.org',
       ua: getUserAgent(),
-
-      // We're using the following values (Campaign source, Campaign medium) to track
-      // whether the user is a Developer or CI, as Custom Dimensions are not working for us atm.
       cs: this.userType,
       cm: 'User Type',
-
-      // We're using custom dimensions for tracking different user projects, and user types (Developer/CI).
-      //
-      // See the following link for docs on these parameters:
-      // https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#pr_cd_
-      //
-      // See the following link for setting up our custom dimensions in the Google Analytics dashboard
-      // https://support.google.com/tagmanager/answer/6164990
-      //
-      // Custom dimension 1: Project Id
       cd1: 'hardhat-ignition',
-      // Custom dimension 2: User type
-      //   Possible values: "CI", "Developer".
       cd2: this.userType,
-      // Custom dimension 3: Hardhat Version
-      //   Example: "Hardhat 1.0.0".
       cd3: await getIgnitionVersion(),
     };
   }
@@ -136,12 +112,10 @@ export class AnalyticsService implements IAnalyticsService {
   private static async _sendHit(hit: RawAnalytics): Promise<void> {
     const hitPayload = qs.stringify(hit);
 
-    const resp = await fetch(GOOGLE_ANALYTICS_URL, {
+    await fetch(GOOGLE_ANALYTICS_URL, {
       body: hitPayload,
       method: 'POST',
     });
-
-    return;
   }
 
   private static async getClientId(): Promise<string> {
