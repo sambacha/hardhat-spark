@@ -1,7 +1,7 @@
 {
   "name": "@tenderly/hardhat-ignition",
   "description": "Solidity IaC deployment tool",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "author": "Tenderly",
   "bin": {
     "hardhat-ignition": "bin/run"
