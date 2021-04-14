@@ -1,4 +1,8 @@
-import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/ignition';
+import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/hardhat_ignition';
+import { CliError, UserError } from '../types/errors';
+import { cli } from 'cli-ux';
+import chalk from 'chalk';
+import * as os from 'os';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -60,6 +64,27 @@ export async function checkMutex(mutex: boolean, delayTime: number, retries: num
   return;
 }
 
+function getOperatingSystem(): string {
+  switch (os.type()) {
+    case 'Windows_NT':
+      return '(Windows NT 6.1; Win64; x64)';
+    case 'Darwin':
+      return '(Macintosh; Intel Mac OS X 10_13_6)';
+    case 'Linux':
+      return '(X11; Linux x86_64)';
+    default:
+      return '(Unknown)';
+  }
+}
+
+export function getUserType(): string {
+  return 'Developer'; // @TODO add CI here after we add integration
+}
+
+export function getUserAgent(): string {
+  return `Node/${process.version} ${getOperatingSystem()}`;
+}
+
 export function moduleBuilderStatefulDiff(oldModuleBuilder: ModuleBuilder, newModuleBuilder: ModuleBuilder): ([string, ContractBinding][] | [string, StatefulEvent][])[] {
   const oldBindings = oldModuleBuilder.getAllBindings();
   const oldEvents = oldModuleBuilder.getAllEvents();
@@ -71,4 +96,52 @@ export function moduleBuilderStatefulDiff(oldModuleBuilder: ModuleBuilder, newMo
   const eventsDiff = Object.entries(newEvents).splice(0, Object.entries(oldEvents).length);
 
   return [bindingsDiff, eventsDiff];
+}
+
+export function extractObjectInfo(obj: any): string {
+  if (obj._isBigNumber) {
+    return obj.toString();
+  }
+
+  if (obj._isContractBinding) {
+    return `${obj.name}(${obj.deployMetaData.contractAddress})`;
+  }
+
+  if (obj._isContractBindingMetaData) {
+    return obj.deployMetaData.contractAddress;
+  }
+}
+
+export async function errorHandling(error: Error) {
+  if (this.prompter) {
+    this.prompter.errorPrompt();
+  }
+
+  if ((error as UserError)._isUserError) {
+    cli.info('Something went wrong inside deployment script, check the message below and try again.');
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+      return;
+    }
+
+    cli.info(chalk.red.bold('ERROR'), error.message);
+    return;
+  }
+
+  if ((error as CliError)._isCliError) {
+    cli.info('Something went wrong inside ignition');
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+      return;
+    }
+
+    cli.info(chalk.red.bold('ERROR'), error.message);
+    return;
+  }
+
+  cli.error(error.message);
+  if (cli.config.outputLevel == 'debug') {
+    cli.debug(error.stack);
+  }
+  this.analyticsService.reportError(error);
 }

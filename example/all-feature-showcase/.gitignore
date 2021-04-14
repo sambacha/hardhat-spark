@@ -5,6 +5,6 @@ node_modules
 cache
 artifacts
 
-#ignition files
-.ignition
-ignition-config.json
+#hardhat-ignition files
+.hardhat-ignition
+hardhat-ignition.config.ts

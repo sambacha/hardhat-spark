@@ -1,27 +1,28 @@
-import { buildModule, ModuleBuilder } from '../../../../src';
+import { buildModule } from '@tenderly/hardhat-ignition';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
-export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: ModuleBuilder) => {
+export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: SynthetixModuleBuilder) => {
   m.library('SafeDecimalMath');
   m.library('Math');
 });
 
-export const SynthetixPrototypes = buildModule('SynthetixPrototypes', async (m: ModuleBuilder) => {
-  m.prototype('ReadProxy');
-  m.prototype('Proxy');
-  m.prototype('EternalStorage');
-  m.prototype('ProxyERC20');
-  m.prototype('TokenState');
-  m.prototype('MintableSynthetix');
-  m.prototype('Synthetix');
-  m.prototype('RealtimeDebtCache');
-  m.prototype('DebtCache');
-  m.prototype('Exchanger');
-  m.prototype('ExchangerWithVirtualSynth');
-  m.prototype('IssuerWithoutLiquidations');
-  m.prototype('Issuer');
-  m.prototype('FixedSupplySchedule');
-  m.prototype('Synth');
-  m.prototype('PurgeableSynth');
-  m.prototype('MultiCollateralSynth');
-  m.prototype('EmptyEtherCollateral');
+export const SynthetixTemplates = buildModule('SynthetixTemplates', async (m: SynthetixModuleBuilder) => {
+  m.contractTemplate('ReadProxy');
+  m.contractTemplate('Proxy');
+  m.contractTemplate('EternalStorage');
+  m.contractTemplate('ProxyERC20');
+  m.contractTemplate('TokenState');
+  m.contractTemplate('MintableSynthetix');
+  m.contractTemplate('Synthetix');
+  m.contractTemplate('RealtimeDebtCache');
+  m.contractTemplate('DebtCache');
+  m.contractTemplate('Exchanger');
+  m.contractTemplate('ExchangerWithVirtualSynth');
+  m.contractTemplate('IssuerWithoutLiquidations');
+  m.contractTemplate('Issuer');
+  m.contractTemplate('FixedSupplySchedule');
+  m.contractTemplate('Synth');
+  m.contractTemplate('PurgeableSynth');
+  m.contractTemplate('MultiCollateralSynth');
+  m.contractTemplate('EmptyEtherCollateral');
 });

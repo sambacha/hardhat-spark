@@ -1,9 +1,9 @@
 import { Build, HardhatBuild, Migration, TruffleBuild } from '../../types/migration';
 import { checkIfExist } from '../../utils/util';
 import { IModuleState, ModuleStateFile } from './module';
-import { ContractBindingMetaData, Deployed } from '../../../interfaces/ignition';
+import { ContractBindingMetaData, Deployed } from '../../../interfaces/hardhat_ignition';
 import { searchBuilds, searchBuildsAndNetworks } from '../../utils/files';
-import { CliError, UserError } from '../../types/errors';
+import { CliError } from '../../types/errors';
 import path from 'path';
 
 const TRUFFLE_BUILD_DIR_NAME = 'build';
@@ -154,7 +154,7 @@ export class StateMigrationService {
 
   async storeNewStateFiles(moduleName: string, stateFiles: { [networkId: string]: ModuleStateFile }) {
     for (const [networkId, stateFile] of Object.entries(stateFiles)) {
-      await this.moduleState.storeStates(+networkId, moduleName, stateFile);
+      await this.moduleState.storeStates(networkId, moduleName, stateFile);
     }
   }
 }

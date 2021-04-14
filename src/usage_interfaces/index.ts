@@ -1,7 +1,8 @@
-import { Prompters } from '../packages/utils/promter';
+import { Logging } from '../packages/utils/logging';
 
 export type ConfigFlags = {
-  networkId: number,
+  networkId: string,
+  networkName: string,
   stateFileNames: string[],
   rpcProvider?: string,
 };
@@ -12,47 +13,38 @@ export interface IIgnitionUsage {
 }
 
 export interface IIgnition {
-  deploy(moduleFilePath: string, args: DeployArgs): Promise<void>;
-  diff(moduleFilePath: string, args: DiffArgs): Promise<void>;
-  genTypes(moduleFilePath: string, args: GenTypesArgs): Promise<void>;
-  init(args: InitArgs): Promise<void>;
+  deploy(args: DeployArgs): Promise<void>;
+  diff(args: DiffArgs): Promise<void>;
+  genTypes(args: GenTypesArgs): Promise<void>;
   migration(args: MigrationArgs): Promise<void>;
   tutorial(args: TutorialArgs): Promise<void>;
-  usage(moduleFilePath: string, args: UsageArgs): Promise<void>;
+  usage(args: UsageArgs): Promise<void>;
 }
 
 export interface TutorialArgs {
 }
 
 export interface DiffArgs {
-  moduleFilePath: string;
-  networkId: string;
+  moduleFilePath?: string;
+  networkName?: string;
   state?: string;
   configScriptPath?: string;
 }
 
 export interface DeployArgs {
-  moduleFilePath: string;
-  networkId: string;
+  moduleFilePath?: string;
+  networkName?: string;
   rpcProvider?: string;
   parallelize?: boolean;
-  prompting?: Prompters;
+  logging?: Logging;
   state?: string;
   configScriptPath?: string;
   testEnv?: boolean;
 }
 
 export interface GenTypesArgs {
-  moduleFilePath: string;
+  moduleFilePath?: string;
   configScriptPath?: string;
-}
-
-export interface InitArgs {
-  privateKeys: string;
-  mnemonic?: string;
-  configScriptPath?: string;
-  hdPath?: string;
-  reinit?: string;
 }
 
 export interface MigrationArgs {
@@ -61,8 +53,8 @@ export interface MigrationArgs {
 }
 
 export interface UsageArgs {
-  moduleFilePath: string;
-  networkId: string;
+  moduleFilePath?: string;
+  networkName?: string;
   testEnv?: boolean;
   state?: string;
   configScriptPath?: string;

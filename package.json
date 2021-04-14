@@ -1,18 +1,19 @@
 {
-  "name": "@tenderly/ignition",
+  "name": "@tenderly/hardhat-ignition",
   "description": "Solidity IaC deployment tool",
   "version": "0.1.0",
   "author": "Tenderly",
   "bin": {
-    "ignition": "bin/run"
+    "hardhat-ignition": "bin/run"
   },
   "bugs": {
-    "url": "https://github.com/Tenderly/ignition/issues"
+    "url": "https://github.com/nomiclabs/hardhat-ignition/issues"
   },
   "dependencies": {
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/plugin-help": "^3",
+    "@sentry/node": "^6.2.5",
     "@types/commander": "^2.12.2",
     "@types/inquirer": "^7.3.1",
     "@types/listr": "^0.14.2",
@@ -21,6 +22,7 @@
     "cli-truncate": "^2.1.0",
     "cli-ux": "^5.5.1",
     "cls-hooked": "^4.2.2",
+    "dotenv": "^8.2.0",
     "elegant-spinner": "^2.0.0",
     "ethers": "^5.0.22",
     "figures": "^3.2.0",
@@ -67,19 +69,19 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/Tenderly/ignition",
+  "homepage": "https://github.com/nomiclabs/hardhat-ignition",
   "license": "MIT",
   "main": "lib/index.js",
   "oclif": {
     "commands": "./lib/commands",
-    "bin": "ignition",
+    "bin": "hardhat-ignition",
     "plugins": [
       "@oclif/plugin-help"
     ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tenderly/ignition.git"
+    "url": "git+https://github.com/nomiclabs/hardhat-ignition.git"
   },
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",

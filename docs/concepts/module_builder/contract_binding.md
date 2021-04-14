@@ -2,7 +2,7 @@
 
 Contract binding is way to specify contract deployment and his constructor arguments. In case if any of constructor
 parameters are other contracts, then deployment would only occur when dependencies contract is deployed. You can look
-under [here](../module_deps_resovler/module_deps_resolver.md) to better understand module dependency resolving.
+under [here](../module_deps_resolver/module_deps_resolver.md) to better understand module dependency resolving.
 
 ```typescript
 const contractBinding = m.contract('CONTRACT_NAME', 'FIRST', 'SECOND');
@@ -11,7 +11,7 @@ const contractBinding = m.contract('CONTRACT_NAME', 'FIRST', 'SECOND');
 Below function is instantiating `ether.Contract` object, look [here](./contract_instance.md) for more detail.
 
 ```
-instance(): ethers.Contract;
+deployed(): ethers.Contract;
 ```
 
 Changes from default contract deployer to the custom one.
@@ -31,10 +31,6 @@ setLibrary();
 Specify module events. See [event lifecycle](./events.md) for more details.
 
 ```  
-beforeDeployment(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent
-
-afterDeployment(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent
-
 beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent
 
 afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent
@@ -85,13 +81,13 @@ contract function. You can look [here](../../../example/patterns/deployment/fact
 deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding;
 ```
 
-## Prototypes
+## Contract templates
 
-With prototypes, you can define multiple contract bindings with same contract code.
+With contract templates, you can define multiple contract bindings with same contract code.
 
 ```typescript
 export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) => {
-  const ImplOne = m.bindPrototype('ImplOne', 'Proxy');
-  const ImplTwo = m.bindPrototype('ImplTwo', 'Proxy');
+  const ImplOne = m.bindTemplate('ImplOne', 'Proxy');
+  const ImplTwo = m.bindTemplate('ImplTwo', 'Proxy');
 });
 ```

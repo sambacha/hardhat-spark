@@ -1,22 +1,15 @@
 import hre from 'hardhat';
-import '../../src/hardhat';
-import { HardhatIgnitionConfig, IgnitionHardhat } from '../../src/usage_interfaces/hardhat_plugin';
-import * as path from 'path';
+import '@tenderly/hardhat-ignition/src/hardhat';
 
-const modulePath = './deployment/module.ts';
-const networkId = '31337';
+const moduleFilePath = './deployment/module.ts';
+const networkName = 'local';
 
 async function main() {
-  // @ts-ignore
-  const ign = hre.ignition as IgnitionHardhat;
-
-  await ign.deploy(path.resolve(process.cwd(), modulePath), {
-    moduleFilePath: modulePath,
-    networkId: networkId
+  const ign = hre.ignition;
+  await ign.deploy({
+    moduleFilePath,
+    networkName,
   });
-
-  // @ts-ignore
-  console.log(hre.config.ignition as HardhatIgnitionConfig);
 }
 
 main()

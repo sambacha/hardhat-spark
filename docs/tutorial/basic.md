@@ -2,13 +2,13 @@
 
 This will help you to understand a basic workflow and process of setting up simple deployment and what you can expect.
 
+## Project setup
 
-## Project setup 
+You will need to have hardhat and hardhat-ignition installed in our project.
 
-You will need to have hardhat and ignition installed in some project.
 ```
-yarn add hardhat --dev
-yarn add @tenderly/ignition --dev
+npm i hardhat --save
+npm i @tenderly/hardhat-ignition --save
 ```
 
 Init hardhat and run hardhat node as a test environment.
@@ -24,8 +24,8 @@ npx hardhat node
 Also make sure you have `ts-node` and `typescript` installed.
 
 ```
-npm i ts-node
-npm i typescript
+npm i ts-node --save
+npm i typescript --save
 ```
 
 ## Workflow
@@ -56,46 +56,33 @@ contract A {
 
 ### Ignition initialization
 
-Firstly we will need to run next command in root of your project
+Firstly we would need to create our config script. 
 
-```
-ignition init --privateKeys=<private_key>
-```
-You can put hardhat generated `<private_key>` for testing.
-
-This command will generate `ignition-config.json` and `ignition.config.ts` files.
-
-`ignition-config.json` should look something like this.
-
-```json
-{
-  "privateKeys": [
-    "<private_key>"
-  ]
-}
-```
-
-`ignition.config.ts` should look something like this.
-
+Copy this into `hardhat-ignition.config.ts`.
 ```typescript
-import { IgnitionConfig } from '@tenderly/ignition';
+import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
 
-export const config: IgnitionConfig = {}
+export const config: HardhatIgnitionConfig = {
+  privateKeys: [
+    '<private_key>'
+  ]
+};
 ```
+Here we just created a simple config if you want to see more configuration go [here](../concepts/config.md)
 
 ### Deployment module
 
 Next thing is to set up your own deployment module. Let's create file under `./deployment/first.module.ts`.
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/ignition';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 });
 ```
 
-So here, we initialized our `FirstModule`. So we are using `buildModule()` from ignition interface, and we named
+So here, we initialized our `FirstModule`. So we are using `buildModule()` from hardhat-ignition interface, and we named
 it `FirstModule` alongside the function that has `m: ModuleBuilder`. `ModuleBuilder` is how you can specify what you
 want to deploy/execute.
 
@@ -105,7 +92,7 @@ want to deploy/execute.
 const A = m.contract('A');
 ```
 
-This function is "binding" our solidity contract named `A` to our `ModuleBuilder` object, and it will return instance of
+This function is "binding" our solidity contract named `A` to our `ModuleBuilder` object, and it will return deployed of
 ContractBinding.
 
 ### Event definition
@@ -124,23 +111,23 @@ Let's try now to execute some contract function.
 
 ```typescript
 A.afterDeploy(m, 'afterDeployA', async () => {
-  const txReceipt = await A.instance().setExample();
+  const txReceipt = await A.deployed().setExample();
 })
 ```
 
-You can see, that we need to run `instance()` first in order to be able to call `setExample()`. When ethereum
+You can see, that we need to run `deployed()` first in order to be able to call `setExample()`. When ethereum
 transaction gets confirmed you will get `TransactionReceipt` object as return.
 
 You should end up with something like this:
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/ignition';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
 
   A.afterDeploy(m, 'afterDeployA', async () => {
-    await A.instance().setExample(11);
+    await A.deployed().setExample(11);
   });
 });
 ```
@@ -152,7 +139,7 @@ Let's see what will be deployed if we stop here.
 Run next command:
 
 ```
-ignition diff ./deployment/first.module.ts --networkId=31337
+hardhat-ignition diff
 ```
 
 This should be output in the console.
@@ -173,18 +160,18 @@ First check if you have your local node running.
 npx hardhat node
 ```
 
-Run `ignition deploy` command.
+Run `hardhat-ignition deploy` command.
 
 ```
-ignition deploy ./deployment/first.module.ts --networkId=31337
+hardhat-ignition deploy
 ```
 
 After command is successfully run, you should see in your logs something like this
 
 ![log image](../images/basic_usage_log.png)
 
-Also, you should check `./.ignition/FirstModule/31337_deployed_module_state.json` file to confirm execution and check if
-everything is correctly deployed.
+Also, you should check `./.hardhat-ignition/FirstModule/local_deployed_module_state.json` file to confirm execution and
+check if everything is correctly deployed.
 
 ### Additional contract binding
 
@@ -213,14 +200,14 @@ const B = m.contract('B', A);
 Your `FirstModule` should look something like this.
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/ignition';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');
   const B = m.contract('B', A);
 
   A.afterDeploy(m, 'afterDeployA', async () => {
-    await A.instance().setExample(11);
+    await A.deployed().setExample(11);
   });
 });
 ```
@@ -232,7 +219,7 @@ Now lets see what is the difference between the already deployed module and new 
 Run next command:
 
 ```
-ignition diff ./deployment/first.module.ts --networkId=31337
+hardhat-ignition diff ./deployment/first.module.ts --networkId=31337
 ```
 
 Console output should be something like this.
@@ -248,12 +235,13 @@ new, so we have `+` prefix.
 
 ### Change current binding
 
-Let's change some part of the solidity code of `A.sol`, I'll just add more `oooo` to `hello` string in order to change bytecode.
+Let's change some part of the solidity code of `A.sol`, I'll just replace `hello` with `something` string in order to
+change the bytecode. Symbol that is suggesting that we changed this contract, `~` should the prefix.
 
 Now run command:
 
 ```
-ignition diff ./deployment/first.module.ts --networkId=31337
+hardhat-ignition diff ./deployment/first.module.ts --networkId=31337
 ```
 
 You should see this in your console logs:
@@ -261,7 +249,7 @@ You should see this in your console logs:
 ```
 Module: FirstModule
 ~ Contract:  A
-~ Event afterDeployBandC
+~ Event afterDeployA
 + Contract B
   └── Contract: A
 ```
@@ -271,7 +259,7 @@ Module: FirstModule
 We now want to execute our changes in `FirstModule` so let's run next command:
 
 ```
-ignition deploy ./deployment/first.module.ts --network_id=31337
+hardhat-ignition deploy ./deployment/first.module.ts
 ```
 
 This should be execution logs:
@@ -284,10 +272,10 @@ As a final step, lets generate typehints for your module for future development.
 Run next command:
 
 ```
-ignition genTypes ./deployment/first.module.ts
+hardhat-ignition genTypes ./deployment/first.module.ts
 ```
 
-You can now see that additional file is generated under `./.ignition/FirstModule` - `FirstModule.d.ts`
+You can now see that additional file is generated under `./deployments/FirstModule` - `FirstModule.d.ts`
 
 It should have class that is similar to this one:
 
@@ -299,20 +287,20 @@ export declare class FirstModuleBuilder extends ModuleBuilder {
 }
 ```
 
-So you can now have type hint in your module if you change from `m: ModuleBuilder` to `m: FirstModuleBuilder`.
+If you change from `m: ModuleBuilder` to `m: FirstModuleBuilder` you will be able to use typehint.
 
 Your module function should look like this in order to have typehints:
 
 ```typescript
-import { buildModule, ModuleBuilder } from '@tenderly/ignition';
-import { FirstModuleBuilder } from '../.ignition/FirstModule/FirstModule';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { FirstModuleBuilder } from './FirstModule';
 
 export const FirstModule = buildModule('FirstModule', async (m: FirstModuleBuilder) => {
   const A = m.contract('A');
   const B = m.contract('B', A);
 
-  A.afterDeploy(m, 'afterDeployBandC', async () => {
-    await A.instance().setExample(11);
+  A.afterDeploy(m, 'afterDeployA', async () => {
+    await A.deployed().setExample(11);
   });
 });
 ```

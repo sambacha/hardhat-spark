@@ -1,15 +1,15 @@
 # Installation
 
 ```
-npm i @tenderly/ignition -g
+npm i @tenderly/hardhat-ignition -g
 ```
 
 ## Initial project setup
 
-You will need to have hardhat and ignition installed in some project.
+You will need to have hardhat and hardhat-ignition installed in some project.
 ```
-yarn add hardhat --dev
-yarn add @tenderly/ignition --dev
+npm i hardhat --save
+npm i @tenderly/hardhat-ignition --save
 ```
 
 Init hardhat and run hardhat node as a test environment in order to test deployment.

@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '../../../src/interfaces/ignition';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) => {
   m.contract('Registry');
@@ -8,7 +8,7 @@ export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) =
   });
 
   m.group(m.LogicOne, m.Registry).afterDeploy(m, 'setLogicContractOnSecond', async () => {
-    await m.Registry.instance().setLogicContract(m.LogicOne);
+    await m.Registry.deployed().setLogicContract(m.LogicOne);
   });
 });
 

@@ -2,11 +2,11 @@
 
 ## Writing scripts
 
-Like any other hardhat plugin, ignition is surfacing its functionality though HardhatRuntimeEnvironment.
+Like any other hardhat plugin, hardhat-ignition is surfacing its functionality though HardhatRuntimeEnvironment.
 
 ```typescript
 const modulePath = '<relative_path_to_deployment_dir>'
-const ign = hre.ignition as IgnitionHardhat;
+const ign = hre.hardhatIgnition as HardhatIgnition;
 
 await ign.deploy(path.resolve(process.cwd(), modulePath), {
   moduleFilePath: modulePath,
@@ -26,9 +26,7 @@ export interface IIgnition {
   diff(moduleFilePath: string, args: DiffArgs): Promise<void>;
 
   genTypes(moduleFilePath: string, args: GenTypesArgs): Promise<void>;
-
-  init(args: InitArgs): Promise<void>;
-
+  
   migration(args: MigrationArgs): Promise<void>;
 
   tutorial(args: TutorialArgs): Promise<void>;
@@ -39,7 +37,7 @@ export interface IIgnition {
 
 ## Surfacing config file
 
-Inside hardhat script you can also access ignition config that you have provided inside `hardhat.config.ts`(or .js)
+Inside hardhat script you can also access hardhat-ignition config that you have provided inside `hardhat.config.ts`(or .js)
 file.
 
 

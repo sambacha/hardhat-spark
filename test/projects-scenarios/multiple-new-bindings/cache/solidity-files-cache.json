@@ -36,7 +36,7 @@
       ]
     },
     "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/multiple-new-bindings/contracts/SecondExample.sol": {
-      "lastModificationDate": 1606318931101,
+      "lastModificationDate": 1617280773891,
       "contentHash": "f90ce1738e6fb8c547411780fcf310de",
       "sourceName": "contracts/SecondExample.sol",
       "solcConfig": {

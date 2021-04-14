@@ -1,7 +1,6 @@
-import { buildModule, ModuleBuilder } from '../../../src';
-require('dotenv').config({path: '.env'});
+require('dotenv').config({path: '../.env'});
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 import { ethers } from 'ethers';
-import { LibrariesModule } from './libraries.module';
 
 const {
   MERKLE_TREE_HEIGHT,

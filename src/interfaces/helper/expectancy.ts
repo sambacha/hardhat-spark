@@ -1,8 +1,8 @@
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { checkIfExist } from '../../packages/utils/util';
-import { UserError, ValueMismatch } from '../../packages/types/errors';
+import { UnexpectedValueError, ValueMismatch } from '../../packages/types/errors';
 import { ethers } from 'ethers';
-import { ContractBinding } from '../ignition';
+import { ContractBinding } from '../hardhat_ignition';
 
 /**
  * This function is checking if `get_StorageAt` call for `slot` in `contract` is same as `expectedValue`.
@@ -19,7 +19,7 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
       return true;
     }
 
-    throw new ValueMismatch(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
+    throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
   }
 
   if (expectedValue._isContractBinding) {
@@ -34,12 +34,12 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
   if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
     && value.length != 0 && expectedValue.length != 0) {
     if (value.length != expectedValue.length) {
-      throw new ValueMismatch(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
+      throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
     }
 
     for (let i = 0; i < value.length; i++) {
       if (value[i] != expectedValue[i]) {
-        throw new ValueMismatch(`Failed on expectSlotRead - couldn't match ${expectedValue} with ${value}`);
+        throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
       }
     }
 
@@ -62,7 +62,7 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
     return true;
   }
 
-  throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+  throw new UnexpectedValueError(expectedValue, value);
 }
 
 /**
@@ -82,7 +82,7 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
       return true;
     }
 
-    throw new ValueMismatch(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+    throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
   }
 
   if (expectedValue._isContractBinding
@@ -93,12 +93,12 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
   if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
     && value.length != 0 && expectedValue.length != 0) {
     if (value.length != expectedValue.length) {
-      throw new ValueMismatch(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+      throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
     }
 
     for (let i = 0; i < value.length; i++) {
       if (value[i] != expectedValue[i]) {
-        throw new ValueMismatch(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+        throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
       }
     }
 
@@ -133,7 +133,7 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
     return true;
   }
 
-  throw new UserError(`Failed on expectFuncRead - couldn't match ${expectedValue} with ${value}`);
+  throw new UnexpectedValueError(expectedValue, value);
 }
 
 /**
@@ -210,7 +210,7 @@ export function expect(firstValue: any, secondValue: any): boolean {
     return true;
   }
 
-  throw new UserError(`Failed on expectFuncRead - couldn't match ${firstValue} with ${secondValue}`);
+  throw new UnexpectedValueError(firstValue, secondValue);
 }
 
 /**

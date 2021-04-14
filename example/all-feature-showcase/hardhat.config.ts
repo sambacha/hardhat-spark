@@ -1,16 +1,11 @@
-import '../../src/hardhat';
+import '@tenderly/hardhat-ignition/src/hardhat';
 // @ts-ignore
-import { config } from './ignition.config';
-
-const ignitionJsonConfig = require('./ignition-config.json');
+import { config } from './hardhat-ignition.config';
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
   solidity: '0.7.3',
-  ignition: {
-    ignitionConfig: config,
-    config: ignitionJsonConfig
-  }
+  ignition: config
 };

@@ -1,18 +1,35 @@
 import { IModuleRegistryResolver } from '../modules/states/registry';
 import { IGasPriceCalculator } from '../ethereum/gas';
 import { INonceManager, ITransactionSigner } from '../ethereum/transactions';
+import { ethers } from 'ethers';
 
-export type Config = {
+export type HardhatIgnitionConfig = {
   privateKeys: string[];
   mnemonic?: string;
   hdPath?: string;
-};
-
-export type IgnitionConfig = {
+  networks?: {
+    [networkName: string]: {
+      networkId?: string;
+      rpcProvider?: string;
+      privateKeys?: string[];
+      mnemonic?: string;
+      hdPath?: string;
+      localDeployment?: boolean;
+      deploymentFilePath?: string;
+      blockConfirmation?: number;
+      gasPriceBackoff?: GasPriceBackoff;
+    }
+  }
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,
   nonceManager?: INonceManager,
-  transactionSinger?: ITransactionSigner
-  params?: {[name: string]: any},
+  transactionSigner?: ITransactionSigner,
+  params?: { [name: string]: any },
+};
+
+export type GasPriceBackoff = {
+  maxGasPrice: ethers.BigNumber;
+  backoffTime: number;
+  numberOfRetries: number;
 };

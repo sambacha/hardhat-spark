@@ -2,18 +2,25 @@ import {
   Events,
   StatefulEvent,
   ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData, EventsDepRef,
-} from '../../interfaces/ignition';
+} from '../../interfaces/hardhat_ignition';
 import { checkIfExist, compareBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { IPrompter } from '../utils/promter';
+import { IPrompter } from '../utils/logging';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
-import { CliError, UsageEventNotFound, UserError } from '../types/errors';
+import {
+  CliError, ContractNotCompiledError, ModuleAndModuleStateEventTypeMismatchError,
+  ModuleAndModuleStateMismatchElementError,
+  ModuleAndModuleStateMismatchElementNameError,
+  ModuleStateMismatchError,
+  UsageEventNotFound,
+} from '../types/errors';
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
 import { EventTxExecutor } from '../ethereum/transactions/event_executor';
 import { Namespace } from 'cls-hooked';
+import { EthClient } from '../ethereum/client';
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
@@ -22,14 +29,25 @@ export class ModuleResolver {
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
   private readonly eventSession: Namespace;
+  private readonly ethClient: EthClient;
 
-  constructor(provider: ethers.providers.JsonRpcProvider, privateKey: string, prompter: IPrompter, txGenerator: EthTxGenerator, moduleStateRepo: ModuleStateRepo, eventTxExecutor: EventTxExecutor, eventSession: Namespace) {
+  constructor(
+    provider: ethers.providers.JsonRpcProvider,
+    privateKey: string,
+    prompter: IPrompter,
+    txGenerator: EthTxGenerator,
+    moduleStateRepo: ModuleStateRepo,
+    eventTxExecutor: EventTxExecutor,
+    eventSession: Namespace,
+    ethereumClient: EthClient,
+  ) {
     this.signer = new ethers.Wallet(privateKey, provider);
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
     this.eventSession = eventSession;
+    this.ethClient = ethereumClient;
   }
 
   checkIfDiff(oldModuleState: ModuleStateFile, newModuleStates: ModuleState): boolean {
@@ -64,7 +82,7 @@ export class ModuleResolver {
           return true;
         }
 
-        if (!checkIfExist(newModuleElement.deployMetaData.contractAddress)) {
+        if (!checkIfExist(oldModuleElement.deployMetaData.contractAddress)) {
           return true;
         }
 
@@ -170,12 +188,13 @@ export class ModuleResolver {
     return;
   }
 
-  resolve(
+  async resolve(
     currentBindings: { [p: string]: ContractBinding },
     currentEvents: Events,
     moduleEvents: ModuleEvents,
     moduleStateFile: ModuleStateFile,
-  ): ModuleState {
+  ): Promise<ModuleState> {
+    let userAlwaysDeploy = undefined;
     let resolvedModuleElements: ModuleState = {};
 
     // onStart module event resolving
@@ -208,12 +227,25 @@ export class ModuleResolver {
       stateFileElement = stateFileElement as ContractBindingMetaData;
       if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
         if (!((resolvedModuleStateElement as ContractBinding)._isContractBinding)) {
-          throw new UserError(`Module and module state file didn't match state element name:
-Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
+          throw new ModuleStateMismatchError((resolvedModuleStateElement as StatefulEvent).event.name);
         }
 
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
+        // check if network has code at specific address
+        if (userAlwaysDeploy == undefined && checkIfExist(stateFileElement.deployMetaData.contractAddress)) {
+          const code = await this.ethClient.getCode(stateFileElement.deployMetaData.contractAddress);
+          if (
+            !checkIfExist(code) ||
+            code == '0x'
+          ) {
+            userAlwaysDeploy = await this.prompter.wrongNetwork();
+            if (!userAlwaysDeploy) {
+              moduleStateFile = {};
+            }
+          }
+        }
         if (
+          userAlwaysDeploy ||
           resolvedModuleStateElement.forceFlag == true ||
           (
             !compareBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
@@ -263,24 +295,27 @@ Module file: ${(resolvedModuleStateElement as StatefulEvent).event.name}`);
 
       stateFileElement = stateFileElement as unknown as StatefulEvent;
       if (
+        !userAlwaysDeploy &&
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {
         resolvedModuleStateElement = resolvedModuleStateElement as StatefulEvent;
         if (!(resolvedModuleStateElement._isStatefulEvent)) {
-          throw new UserError("Module and module state file didn't match element.");
+          throw new ModuleAndModuleStateMismatchElementError();
         }
 
         if (stateFileElement.event.name !== resolvedModuleStateElement.event.name) {
-          throw new UserError(`Module and module state file didn't match state element name:
-Module file: ${resolvedModuleStateElement.event.name}
-State file: ${stateFileElement.event.name}`);
+          throw new ModuleAndModuleStateMismatchElementNameError(
+            stateFileElement.event.name,
+            resolvedModuleStateElement.event.name
+          );
         }
 
         if (stateFileElement.event.eventType !== resolvedModuleStateElement.event.eventType) {
-          throw new UserError(`Module and module state file didn't match state element event type:
-Module file: ${resolvedModuleStateElement.event.eventType}
-State file: ${stateFileElement.event.eventType}`);
+          throw new ModuleAndModuleStateEventTypeMismatchError(
+            resolvedModuleStateElement.event.eventType,
+            stateFileElement.event.eventType
+          );
         }
 
         stateFileElement.event = resolvedModuleStateElement.event;
@@ -353,19 +388,11 @@ State file: ${stateFileElement.event.eventType}`);
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
 
-    for (const eventName of bindingEventDeps.beforeDeployment) {
-      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
-    }
-
     for (const eventName of bindingEventDeps.beforeDeploy) {
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
 
     for (const eventName of bindingEventDeps.afterDeploy) {
-      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
-    }
-
-    for (const eventName of bindingEventDeps.afterDeployment) {
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
   }
@@ -395,7 +422,7 @@ State file: ${stateFileElement.event.eventType}`);
     }
 
     if (!checkIfExist(binding?.libraries)) {
-      throw new UserError(`Contract is not compiled correctly - ${binding.name}`);
+      throw new ContractNotCompiledError(binding.name);
     }
 
     // resolve all libraries usage
@@ -419,14 +446,14 @@ State file: ${stateFileElement.event.eventType}`);
       this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events);
     }
 
-    // resolving before deploy events for this contract (beforeCompile, afterCompile, beforeDeploy, beforeDeployment)
+    // resolving before deploy events for this contract (beforeCompile, afterCompile, beforeDeploy)
     this.resolveBeforeDeployEvents(moduleState, binding, bindings, events);
 
     // this is necessary in order to surface tx data to user
     bindings[binding.name] = binding;
     moduleState[binding.name] = bindings[binding.name];
 
-    // resolving after deploy events for this contract (afterDeploy, afterDeployment, onChange)
+    // resolving after deploy events for this contract (afterDeploy, onChange)
     this.resolveAfterDeployEvents(moduleState, binding, bindings, events);
 
     // this.resolveAllElementsInSubModule() //@TODO think if this is needed
@@ -492,12 +519,6 @@ State file: ${stateFileElement.event.eventType}`);
       addEvent(eventName);
     }
 
-    for (const eventIndex in binding.eventsDeps.beforeDeployment) {
-      const eventName = binding.eventsDeps.beforeDeployment[eventIndex];
-
-      addEvent(eventName);
-    }
-
     for (const eventIndex in binding.eventsDeps.beforeDeploy) {
       const eventName = binding.eventsDeps.beforeDeploy[eventIndex];
 
@@ -517,10 +538,6 @@ State file: ${stateFileElement.event.eventType}`);
 
     for (const eventIndex in binding.eventsDeps.onChange) {
       this.addEvent(binding.eventsDeps.onChange[eventIndex], moduleState, binding, bindings, events);
-    }
-
-    for (const eventIndex in binding.eventsDeps.afterDeployment) {
-      this.addEvent(binding.eventsDeps.afterDeployment[eventIndex], moduleState, binding, bindings, events);
     }
   }
 

@@ -3,31 +3,31 @@ import * as path from 'path';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { ModuleResolver } from '../packages/modules/module_resolver';
-import { checkIfExist } from '../packages/utils/util';
-import { ethers, Wallet } from 'ethers';
-import ConfigService from '../packages/config/service';
-import { StreamlinedPrompter } from '../packages/utils/promter/prompter';
+import { Wallet } from 'ethers';
+import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
 import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { NetworkIdNotProvided, PathNotProvided, UserError } from '../packages/types/errors';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
-import chalk from 'chalk';
-import { IPrompter } from '../packages/utils/promter';
+import { IPrompter } from '../packages/utils/logging';
+import { EthClient } from '../packages/ethereum/client';
+import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { defaultInputParams, errorHandling } from '../index';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current deployment.';
   private prompter: IPrompter | undefined;
+  private analyticsService: AnalyticsService;
 
   static flags = {
     help: flags.help({char: 'h'}),
-    networkId: flags.integer(
+    network: flags.string(
       {
-        name: 'network_id',
-        description: 'Network ID of the network you are willing to deploy your contracts.',
-        required: true
+        name: 'network',
+        description: 'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+        required: false
       }
     ),
     debug: flags.boolean(
@@ -45,9 +45,16 @@ export default class Diff extends Command {
     configScriptPath: flags.string(
       {
         name: 'configScriptPath',
-        description: 'Path to the ignition.config.js script, default is same as current path.',
+        description: 'Path to the hardhat-ignition.config.js script, default is same as current path.',
       }
     ),
+    noPrompt: flags.boolean(
+      {
+        name: 'noPrompt',
+        description: "If this flag is provided all prompts would default to 'Yes'.",
+        required: false,
+      }
+    )
   };
 
   static args = [{name: 'module_file_path'}];
@@ -56,53 +63,38 @@ export default class Diff extends Command {
     const {args, flags} = this.parse(Diff);
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
+      process.env.DEBUG = '*';
     }
+    const {
+      networkName,
+      networkId,
+      rpcProvider,
+      filePath,
+      states,
+      config,
+      configService,
+    } = await defaultInputParams.bind(this)(args.module_file_path, flags.network, flags.state, undefined, undefined, flags.configScriptPath);
 
     const currentPath = process.cwd();
-    const filePath = args.module_file_path as string;
-    if (filePath == '') {
-      throw new PathNotProvided('Path argument missing from command. \nPlease use --help to better understand usage of this command');
-    }
-    if (!checkIfExist(flags.networkId)) {
-      throw new NetworkIdNotProvided('Network id flag not provided, please use --help');
-    }
-    process.env.IGNITION_NETWORK_ID = String(flags.networkId);
-    const states: string[] = flags.state?.split(',') || [];
-
     const resolvedPath = path.resolve(currentPath, filePath);
 
-    const provider = new ethers.providers.JsonRpcProvider();
-    const configService = new ConfigService(currentPath);
-
-    const gasCalculator = new GasPriceCalculator(provider);
-    const transactionManager = new TransactionManager(provider, new Wallet(configService.getFirstPrivateKey(), provider), flags.networkId, gasCalculator, gasCalculator);
-    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, flags.networkId, provider, transactionManager, transactionManager);
-
-    const prompter = new StreamlinedPrompter();
+    const prompter = new StreamlinedPrompter(flags.noPrompt);
     this.prompter = prompter;
 
-    const moduleStateRepo = new ModuleStateRepo(flags.networkId, currentPath);
+    const gasCalculator = new GasPriceCalculator(rpcProvider);
+    const transactionManager = new TransactionManager(rpcProvider, new Wallet(configService.getFirstPrivateKey(), rpcProvider), networkId, gasCalculator, gasCalculator, prompter);
+    const txGenerator = new EthTxGenerator(configService, gasCalculator, gasCalculator, networkId, rpcProvider, transactionManager, transactionManager, prompter);
+
+    const moduleStateRepo = new ModuleStateRepo(networkName, currentPath);
     const eventSession = cls.createNamespace('event');
     const eventTxExecutor = new EventTxExecutor(eventSession);
-    const moduleResolver = new ModuleResolver(provider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession);
+    const ethClient = new EthClient(rpcProvider);
+    const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 
-    const config = await configService.getIgnitionConfig(process.cwd(), flags.configScriptPath);
-
-    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService);
+    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService, this.analyticsService);
   }
 
   async catch(error: Error) {
-    if (this.prompter) {
-      this.prompter.errorPrompt();
-    }
-
-    if ((error as UserError)._isUserError) {
-      cli.info(chalk.red.bold('ERROR'), error.message);
-      cli.exit(1);
-    }
-
-    cli.info('\nIf below error is not something that you expect, please open GitHub issue with detailed description what happened to you.');
-    cli.url('Github issue link', 'https://github.com/Tenderly/ignition/issues/new');
-    cli.error(error);
+    await errorHandling.bind(this)(error);
   }
 }

@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
 import { assert } from 'chai';
 
-const NETWORK_ID = 31337;
+const NETWORK_NAME = 'local';
 
 describe('ignition diff - integration', () => {
   it('should be able to show difference in modules - single new binding', ctx => {
-    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
+    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --network=${NETWORK_NAME} --noPrompt`, {
       cwd: './test/projects-scenarios/single-new-binding'
     });
 
@@ -15,7 +15,7 @@ describe('ignition diff - integration', () => {
   });
 
   it('should be able to show difference in modules - multiple new bindings', ctx => {
-    const output = execSync(` ../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
+    const output = execSync(` ../../../bin/run diff ./migrations/migration.ts --network=${NETWORK_NAME} --noPrompt`, {
       cwd: './test/projects-scenarios/multiple-new-bindings'
     });
 
@@ -29,7 +29,7 @@ Module: ExampleModule
   });
 
   it('should be able to show difference in modules - single modified binding', ctx => {
-    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
+    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --network=${NETWORK_NAME} --noPrompt`, {
       cwd: './test/projects-scenarios/single-modified-binding'
     });
 
@@ -39,7 +39,7 @@ Module: ExampleModule
   });
 
   it('should be able to show difference in modules - multiple modified binding', ctx => {
-    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
+    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --network=${NETWORK_NAME} --noPrompt`, {
       cwd: './test/projects-scenarios/multiple-modified-binding'
     });
 
@@ -53,7 +53,7 @@ Module: ExampleModule
   });
 
   it('should do nothing if their is no difference in module bindings', ctx => {
-    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
+    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --network=${NETWORK_NAME} --noPrompt`, {
       cwd: './test/projects-scenarios/no-difference-in-binding'
     });
 
@@ -62,7 +62,7 @@ Module: ExampleModule
   });
 
   it('should fail if their is less bindings in modules compared to deployed one', ctx => {
-    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --networkId=${NETWORK_ID}`, {
+    const output = execSync(`../../../bin/run diff ./migrations/migration.ts --network=${NETWORK_NAME} --noPrompt`, {
       cwd: './test/projects-scenarios/less-bindings'
     });
 

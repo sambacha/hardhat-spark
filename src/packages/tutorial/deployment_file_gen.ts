@@ -1,7 +1,7 @@
 import { DeploymentFileRepo } from './deployment_file_repo';
-import { CONTRACT_DESC, EVENT_DESC, MODULE_NAME_DESC, PROTOTYPE_DESC } from './tutorial_desc';
+import { CONTRACT_DESC, EVENT_DESC, MODULE_NAME_DESC, TEMPLATE_DESC } from './tutorial_desc';
 import { checkIfExist } from '../utils/util';
-import { EventType } from '../../interfaces/ignition';
+import { EventType } from '../../interfaces/hardhat_ignition';
 
 export class DeploymentFileGenerator {
   private deploymentFileRepo: DeploymentFileRepo;
@@ -12,7 +12,7 @@ export class DeploymentFileGenerator {
       constructorArgs: any[],
     }
   };
-  private readonly prototypes: {
+  private readonly templates: {
     [bindingName: string]: {
       contractName: string,
     }
@@ -29,7 +29,7 @@ export class DeploymentFileGenerator {
     this.deploymentFileRepo = deploymentFileRepo;
 
     this.contracts = {};
-    this.prototypes = {};
+    this.templates = {};
     this.events = {};
   }
 
@@ -47,7 +47,7 @@ export class DeploymentFileGenerator {
 
   newContract(contractName: string, bindingName: string, ...args: any[]) {
     if (contractName != bindingName) {
-      this.prototypes[bindingName] = {
+      this.templates[bindingName] = {
         contractName: contractName,
       };
     }
@@ -62,7 +62,7 @@ export class DeploymentFileGenerator {
   }
 
   newContractInvocation(contractName: string, bindingName: string, functionName: string, ...functionArgs: any[]) {
-    const eventName = `${EventType.AfterDeploymentEvent}${contractName}${functionName}`;
+    const eventName = `${EventType.AfterDeployEvent}${contractName}${functionName}`;
     this.events[eventName] = {
       bindingName: bindingName,
       contractFunction: functionName,
@@ -75,23 +75,23 @@ export class DeploymentFileGenerator {
   }
 
   private generateModuleFile() {
-    let fileContent = `import { buildModule, ModuleBuilder } from '@tenderly/ignition';
+    let fileContent = `import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 /*
 ${MODULE_NAME_DESC}
 */
 export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: ModuleBuilder) => {`;
 
-    if (Object.keys(this.prototypes).length > 0) {
+    if (Object.keys(this.templates).length > 0) {
       fileContent += `
   /*
-  ${PROTOTYPE_DESC}
+  ${TEMPLATE_DESC}
   */
 `;
     }
 
-    for (const proto of Object.keys(this.prototypes)) {
-      fileContent += `  m.prototype('${this.prototypes[proto].contractName}');
+    for (const proto of Object.keys(this.templates)) {
+      fileContent += `  m.contractTemplate('${this.templates[proto].contractName}');
 `;
     }
     fileContent += `
@@ -102,14 +102,14 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
 
     for (const contractBindingName of Object.keys(this.contracts)) {
       const args = this.contracts[contractBindingName]?.constructorArgs.join(', ');
-      if (checkIfExist(this.prototypes[contractBindingName])) {
+      if (checkIfExist(this.templates[contractBindingName])) {
         if (args) {
-          fileContent += `  const ${contractBindingName} = m.bindPrototype('${contractBindingName}', '${this.prototypes[contractBindingName].contractName}', ${args});
+          fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this.templates[contractBindingName].contractName}', ${args});
 `;
           continue;
         }
 
-        fileContent += `  const ${contractBindingName} = m.bindPrototype('${contractBindingName}', '${this.prototypes[contractBindingName].contractName}');
+        fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this.templates[contractBindingName].contractName}');
 `;
         continue;
       }
@@ -134,7 +134,7 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
   ${EVENT_DESC}
   */
   const ${eventName} = ${event.bindingName}.afterDeploy(m, '${eventName}', async () => {
-      await ${event.bindingName}.instance().${event.contractFunction}(${functionArgs});
+      await ${event.bindingName}.deployed().${event.contractFunction}(${functionArgs});
   });
 `;
     }

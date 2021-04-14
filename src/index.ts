@@ -1,6 +1,5 @@
 import { cli } from 'cli-ux';
-import { OutputFlags } from '@oclif/parser/lib/parse';
-import { Module, ModuleOptions } from './interfaces/ignition';
+import { Module, ModuleOptions } from './interfaces/hardhat_ignition';
 import { checkIfExist } from './packages/utils/util';
 import { ModuleStateRepo } from './packages/modules/states/state_repo';
 import { ModuleResolver } from './packages/modules/module_resolver';
@@ -10,13 +9,16 @@ import { StateResolver } from './packages/modules/states/state_resolver';
 import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
 import { IConfigService } from './packages/config';
-import { IPrompter } from './packages/utils/promter';
+import { IPrompter, Logging } from './packages/utils/logging';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
-import { IgnitionConfig } from './packages/types/config';
-import { loadScript } from './packages/utils/typescript-checker';
+import { GasPriceBackoff, HardhatIgnitionConfig } from './packages/types/config';
+import { loadScript } from './packages/utils/typescript_checker';
 import { ModuleUsage } from './packages/modules/module_usage';
-import { MissingContractAddressInStateFile } from './packages/types/errors';
+import {
+  MissingContractAddressInStateFile,
+  NoDeploymentModuleError,
+} from './packages/types/errors';
 import * as cls from 'cls-hooked';
 import * as path from 'path';
 import chalk from 'chalk';
@@ -24,8 +26,21 @@ import { INITIAL_MSG, MODULE_NAME_DESC } from './packages/tutorial/tutorial_desc
 import { TutorialService } from './packages/tutorial/tutorial_service';
 import { StateMigrationService } from './packages/modules/states/state_migration_service';
 import { ModuleMigrationService } from './packages/modules/module_migration';
+import { ModuleDeploymentSummaryService } from './packages/modules/module_deployment_summary';
+import { SimpleOverviewPrompter } from './packages/utils/logging/simple_logging';
+import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from './packages/utils/constants';
+import ConfigService from './packages/config/service';
+import fs from 'fs';
+import { SystemCrawlingService } from './packages/tutorial/system_crawler';
+import * as inquirer from 'inquirer';
+import { JsonPrompter } from './packages/utils/logging/json_logging';
+import { OverviewPrompter } from './packages/utils/logging/overview_prompter';
+import { StreamlinedPrompter } from './packages/utils/logging/prompter';
+import { GlobalConfigService } from './packages/config/global_config_service';
+import { AnalyticsService } from './packages/utils/analytics/analytics_service';
+import { IAnalyticsService } from './packages/utils/analytics';
 
-export * from './interfaces/ignition';
+export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
 export * from './interfaces/helper/macros';
 export * from './usage_interfaces/tests';
@@ -40,22 +55,11 @@ export * from './packages/modules/states/module';
 export * from './packages/modules/states/registry';
 export * from './packages/modules/states/registry/remote_bucket_storage';
 export * from './packages/modules/typings';
-
-export function init(flags: OutputFlags<any>, configService: IConfigService) {
-  const privateKeys = (flags.privateKeys as string).split(',');
-
-  const mnemonic = (flags.mnemonic as string);
-  const hdPath = (flags.hdPath as string);
-
-  configService.generateAndSaveConfig(privateKeys, mnemonic, hdPath);
-  configService.saveEmptyIgnitionConfig(process.cwd(), flags.configScriptPath, flags.reinit);
-
-  cli.info('You have successfully configured ignition.');
-}
+export * from './packages/utils/util';
 
 export async function deploy(
   deploymentFilePath: string,
-  config: IgnitionConfig,
+  config: HardhatIgnitionConfig,
   states: string[],
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
@@ -64,6 +68,8 @@ export async function deploy(
   executor: TxExecutor,
   configService: IConfigService,
   walletWrapper: WalletWrapper,
+  moduleDeploymentSummaryService: ModuleDeploymentSummaryService,
+  analyticsService: IAnalyticsService,
   test: boolean = false
 ) {
   // this is needed in order to support both js and ts
@@ -101,7 +107,7 @@ export async function deploy(
     }
 
     // resolving contract and events dependencies and determining execution order
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+    const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
 
     // setting up custom functionality
     if (module.getCustomGasPriceProvider()) {
@@ -112,8 +118,8 @@ export async function deploy(
       txGenerator.changeNonceManager(config.nonceManager);
     }
 
-    if (module.getCustomTransactionSinger()) {
-      txGenerator.changeTransactionSinger(config.transactionSinger);
+    if (module.getCustomTransactionSigner()) {
+      txGenerator.changeTransactionSigner(config.transactionSigner);
     }
 
     const initializedTxModuleState = txGenerator.initTx(moduleState);
@@ -128,16 +134,19 @@ export async function deploy(
     }
 
     prompter.finishModuleDeploy(moduleName);
+    await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
+    await analyticsService.sendCommandHit('deploy');
   }
 }
 
 export async function diff(
   resolvedPath: string,
-  config: IgnitionConfig,
+  config: HardhatIgnitionConfig,
   states: string[],
   moduleResolver: ModuleResolver,
   moduleStateRepo: ModuleStateRepo,
   configService: IConfigService,
+  analyticsService: IAnalyticsService,
   test: boolean = false
 ) {
   const modules = await loadScript(resolvedPath, test);
@@ -165,7 +174,7 @@ export async function diff(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
-    const moduleState: ModuleState | null = moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+    const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
     if (!checkIfExist(moduleState)) {
       cli.info('Current module state is empty, add something and try again.');
       process.exit(0);
@@ -177,15 +186,17 @@ export async function diff(
     } else {
       cli.info(`Nothing changed from last revision - ${moduleName}`);
     }
+    await analyticsService.sendCommandHit('diff');
   }
 }
 
 export async function genTypes(
   resolvedPath: string,
-  ignitionConfig: IgnitionConfig,
+  ignitionConfig: HardhatIgnitionConfig,
   moduleTypings: ModuleTypings,
   config: IConfigService,
   prompter: IPrompter,
+  analyticsService: IAnalyticsService,
 ) {
   const modules = await loadScript(resolvedPath);
   const wallets = config.getAllWallets();
@@ -202,10 +213,11 @@ export async function genTypes(
   }
 
   prompter.generatedTypes();
+  await analyticsService.sendCommandHit('genTypes');
 }
 
 export async function usage(
-  config: IgnitionConfig,
+  config: HardhatIgnitionConfig,
   deploymentFilePath: string,
   states: string[],
   configService: IConfigService,
@@ -214,6 +226,7 @@ export async function usage(
   moduleResolver: ModuleResolver,
   moduleUsage: ModuleUsage,
   prompter: IPrompter,
+  analyticsService: IAnalyticsService,
 ) {
   const modules = await loadScript(deploymentFilePath);
 
@@ -250,18 +263,20 @@ export async function usage(
       const contractAddress = element.deployMetaData.contractAddress;
 
       if (!checkIfExist(contractAddress)) {
-        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for binding: ${elementName}`);
+        throw new MissingContractAddressInStateFile(`Cannot find deployed contract address for contract: ${elementName}`);
       }
     }
 
     const file = await moduleUsage.generateUsageFile(rawUsage);
     await moduleUsage.storeUsageFile(file);
     prompter.finishedModuleUsageGeneration(moduleName);
+    await analyticsService.sendCommandHit('usage');
   }
 }
 
 export async function tutorial(
   tutorialService: TutorialService,
+  analyticsService: IAnalyticsService,
 ) {
   const scriptRoot = process.cwd();
 
@@ -278,12 +293,14 @@ export async function tutorial(
   tutorialService.setModuleName(moduleName);
 
   await tutorialService.start();
+  await analyticsService.sendCommandHit('genTypes');
 }
 
 export async function migrate(
   stateMigrationService: StateMigrationService,
   moduleMigrationService: ModuleMigrationService,
-  moduleName: string
+  moduleName: string,
+  analyticsService: IAnalyticsService,
 ) {
   // search for truffle build folder
   const builds = stateMigrationService.searchBuild();
@@ -300,6 +317,151 @@ export async function migrate(
   const moduleStateBindings = await moduleMigrationService.mapModuleStateFileToContractBindingsMetaData(ignitionStateFiles);
   const moduleFile = await moduleMigrationService.generateModuleFile(moduleName, moduleStateBindings);
   await moduleMigrationService.storeModuleFile(moduleFile, moduleName);
+  await analyticsService.sendCommandHit('migration');
 
   cli.info('Migration successfully completed!');
+}
+
+export async function defaultInputParams(moduleFilePath?: string, network?: string, state?: string, rpcProvider?: string, logging?: string, configScriptPath?: string): Promise<{
+  networkName: string,
+  networkId: string,
+  gasPriceBackoff: GasPriceBackoff,
+  rpcProvider: ethers.providers.JsonRpcProvider,
+  filePath: string,
+  states: string[],
+  prompter: IPrompter,
+  config: HardhatIgnitionConfig,
+  configService: IConfigService,
+}> {
+  const globalConfigService = new GlobalConfigService();
+  await globalConfigService.mustConfirmConsent();
+  this.analyticsService = new AnalyticsService(globalConfigService);
+
+  let networkName = network;
+  if (!checkIfExist(networkName)) {
+    networkName = DEFAULT_NETWORK_NAME;
+  }
+  const configService = new ConfigService(networkName);
+  const config = await configService.initializeIgnitionConfig(process.cwd(), configScriptPath);
+
+  let filePath = moduleFilePath;
+  let isLocalDeployment = true;
+  let gasPriceBackoff;
+  if (!checkIfExist(networkName)) {
+    networkName = DEFAULT_NETWORK_NAME;
+  }
+
+  let networkId;
+  if (checkIfExist(config?.networks) && checkIfExist(config?.networks[networkName])) {
+    networkId = config?.networks[networkName]?.networkId;
+  }
+  if (!checkIfExist(networkId)) {
+    networkId = DEFAULT_NETWORK_ID;
+  }
+  process.env.IGNITION_NETWORK_ID = String(networkId);
+  const states: string[] = state?.split(',') || [];
+  let provider = new ethers.providers.JsonRpcProvider();
+  process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
+  if (
+    checkIfExist(config.networks) &&
+    checkIfExist(config.networks[networkName])
+  ) {
+    if (checkIfExist(config.networks[networkName].rpcProvider)) {
+      provider = new ethers.providers.JsonRpcProvider(
+        String(config?.networks[networkName]?.rpcProvider)
+      );
+      process.env.IGNITION_RPC_PROVIDER = String(config?.networks[networkName]?.rpcProvider);
+    }
+
+    if (checkIfExist(config.networks[networkName].blockConfirmation)) {
+      process.env.BLOCK_CONFIRMATION_NUMBER = String(config.networks[networkName].blockConfirmation);
+    }
+
+    if (checkIfExist(config.networks[networkName].localDeployment)) {
+      isLocalDeployment = config.networks[networkName].localDeployment;
+    }
+
+    if (
+      !checkIfExist(filePath) &&
+      checkIfExist(config.networks[networkName].deploymentFilePath)
+    ) {
+      filePath = config.networks[networkName].deploymentFilePath;
+      if (!fs.existsSync(filePath)) {
+        filePath = undefined;
+      }
+    }
+
+    if (
+      checkIfExist(config.networks[networkName].gasPriceBackoff)
+    ) {
+      gasPriceBackoff = config.networks[networkName].gasPriceBackoff;
+    }
+  }
+  if (!checkIfExist(filePath)) {
+    const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
+    const deploymentModules = systemCrawlingService.crawlDeploymentModule();
+    const deploymentFileName = (await inquirer.prompt([{
+      name: 'deploymentFileName',
+      message: 'Deployments file:',
+      type: 'list',
+      choices: deploymentModules.map((v) => {
+        return {
+          name: v
+        };
+      }),
+    }])).deploymentFileName;
+    try {
+      filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
+    } catch (e) {
+      throw new NoDeploymentModuleError();
+    }
+  }
+  if (checkIfExist(rpcProvider)) {
+    provider = new ethers.providers.JsonRpcProvider(
+      rpcProvider
+    );
+    process.env.IGNITION_RPC_PROVIDER = String(rpcProvider);
+  }
+
+  // choosing right prompter from user desires
+  let prompter;
+  switch (logging) {
+    case Logging.simple:
+      prompter = new SimpleOverviewPrompter();
+      break;
+    case Logging.json:
+      prompter = new JsonPrompter();
+      break;
+    case Logging.overview:
+      prompter = new OverviewPrompter();
+      break;
+    case Logging.streamlined:
+    default: {
+      let yes = true;
+      if (
+        networkName != DEFAULT_NETWORK_NAME &&
+        !isLocalDeployment
+      ) {
+        const con = await cli.prompt('Would you like to be prompted at every single step? (Y/n)', {
+          required: false
+        });
+        yes = con == 'n';
+      }
+
+      prompter = new StreamlinedPrompter(yes);
+      break;
+    }
+  }
+
+  return {
+    networkName,
+    networkId,
+    rpcProvider: provider,
+    filePath,
+    states,
+    gasPriceBackoff,
+    prompter,
+    config,
+    configService,
+  };
 }

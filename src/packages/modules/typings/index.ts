@@ -1,11 +1,8 @@
 import path from 'path';
-import { STATE_DIR_NAME } from '../states/module';
 import fs from 'fs';
-import { Module } from '../../../interfaces/ignition';
+import { Module } from '../../../interfaces/hardhat_ignition';
 
 export class ModuleTypings {
-  private readonly statePath: string;
-
   constructor() {
   }
 
@@ -27,7 +24,7 @@ export class ModuleTypings {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '@tenderly/ignition';
+} from '@tenderly/hardhat-ignition';
 
 export declare class ${moduleName}Builder extends ModuleBuilder {`;
     for (const binding of Object.values(bindings)) {

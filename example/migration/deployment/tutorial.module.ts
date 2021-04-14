@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '../../../src';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 /*
 Module is encapsulation for smart contract infrastructure, that includes smart contract deployment,
@@ -11,6 +11,6 @@ export const TestTokenModule = buildModule('TestTokenModule', async (m: ModuleBu
   const Migrations = m.contract('Migrations');
   const TestToken = m.contract('TestToken');
 
-  m.prototype('TestToken');
-  m.bindPrototype('TestTokenSECOND', 'TestToken');
+  m.contractTemplate('TestToken');
+  m.bindTemplate('TestTokenSECOND', 'TestToken');
 });

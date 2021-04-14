@@ -1,26 +1,26 @@
-import { ContractBinding, ContractEvent, ModuleBuilder } from '../ignition';
+import { ContractBinding, ContractEvent, ModuleBuilder } from '../hardhat_ignition';
 import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
 import { checkIfExist } from '../../packages/utils/util';
 
 /**
- * Mutator or proxy setter is fastest way to "mutate"/set new value and validate if that actions is correctly set. It
+ * sendAfterDeploy is fastest way to set new value and validate if the same value is correctly set. It
  * "smartly" determines what shall be getter function and arguments from setterFunc and setterArgs. If want to overwrite
  * any of smartly determined parameters you can do that in `opts` object.
  *
- * @param m ModuleBuilder object
+ * @param m ModuleBuilder object or type extended moduleBuilder
  * @param setter Contract binding of contract on which "mutate"/set action shall be applied on.
  * @param setterFunc Name set function that need to be called.
  * @param setterArgs Arguments towards setterFunc
  * @param opts Params that you wish to overwrite with your desired data. name, getterFunc, getterArgs, expectedValue, deps, slot
  */
-export const mutator = (
-  m: ModuleBuilder,
+export const sendAfterDeploy = (
+  m: ModuleBuilder | any,
   setter: ContractBinding,
   setterFunc: string,
   setterArgs: any[],
   opts?: {
-    name?: string,
+    eventName?: string,
     getterFunc?: string,
     getterArgs?: any[],
     expectedValue?: any,
@@ -28,7 +28,7 @@ export const mutator = (
     slot?: string,
   },
 ): ContractEvent => {
-  const name = opts?.name ? opts.name : `mutator${setterFunc}${setter.name}`;
+  const eventName = opts?.eventName ? opts.eventName : `mutator${setterFunc}${setter.name}`;
   const getFunc = setterFunc.substring(3);
   const getterFunc = opts?.getterFunc ? opts.getterFunc : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
 
@@ -49,15 +49,15 @@ export const mutator = (
   const getterArgs = opts?.getterArgs ? opts.getterArgs : keys;
   const expectedValue = opts?.expectedValue ? opts.expectedValue : value;
 
-  return m.group(setter, ...deps).afterDeploy(m, name, async (): Promise<void> => {
-    await setter.instance()[`${setterFunc}`](...keys, value);
+  return m.group(setter, ...deps).afterDeploy(m, eventName, async (): Promise<void> => {
+    await setter.deployed()[`${setterFunc}`](...keys, value);
 
     if (opts?.slot) {
-      await expectSlotRead(expectedValue, setter.instance(), opts.slot);
+      await expectSlotRead(expectedValue, setter.deployed(), opts.slot);
       return;
     }
 
-    await expectFuncRead(expectedValue, setter.instance()[getterFunc], ...getterArgs);
+    await expectFuncRead(expectedValue, setter.deployed()[getterFunc], ...getterArgs);
   }, ...usages);
 };
 
@@ -68,18 +68,20 @@ export const mutator = (
  * @param m ModuleBuilder object provided in ModuleBuilderFn
  * @param rootWallet Sender of the funds
  * @param wallets Receivers of the funds
+ * @param value
  */
 export const filler = (
   m: ModuleBuilder,
   rootWallet: ethers.Wallet,
-  wallets: ethers.Wallet[]
+  wallets: ethers.Wallet[],
+  value: ethers.BigNumber = ethers.utils.parseUnits('1', 'ether'),
 ): void => {
   m.onStart('on start distribute ethers to all accounts', async () => {
     for (let i = 0; i < wallets.length; i++) {
       await rootWallet.sendTransaction({
         from: rootWallet.getAddress(),
         to: wallets[i].getAddress(),
-        value: ethers.utils.parseUnits('1', 'ether'),
+        value: value,
         gasLimit: 21000,
       });
     }

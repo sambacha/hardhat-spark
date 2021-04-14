@@ -1,41 +1,27 @@
-import { Config, IgnitionConfig } from '../types/config';
+import { HardhatIgnitionConfig } from '../types/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import {
-  FailedToWriteToFile,
-  MnemonicNotValid,
-  IgnitionConfigAlreadyExist,
-  PrivateKeyNotValid,
-  UserError
+  ConfigMissingError,
+  OneConfigAllowedError,
+  PrivateKeyIsMissing,
+  PrivateKeyNotValid
 } from '../types/errors';
 import { checkIfExist } from '../utils/util';
-import { CONFIG_FILENAME, CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
-import { loadScript } from '../utils/typescript-checker';
+import { CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
+import { loadScript } from '../utils/typescript_checker';
 
 export default class ConfigService implements IConfigService {
-  private readonly configPath: string;
-  private config: Config;
+  private readonly networkName: string;
+  private config: HardhatIgnitionConfig;
 
-  constructor(dirPath: string) {
-    this.configPath = path.resolve(dirPath, CONFIG_FILENAME);
-    let content = '';
-    try {
-      content = fs.readFileSync(this.configPath, {
-        encoding: 'UTF-8'
-      });
-      this.config = JSON.parse(content) as Config;
-    } catch (err) {
-      this.config = {
-        privateKeys: [],
-        mnemonic: '',
-        hdPath: '',
-      };
-    }
+  constructor(networkName?: string) {
+    this.networkName = networkName;
   }
 
-  async getIgnitionConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<IgnitionConfig> {
+  async initializeIgnitionConfig(currentPath: string, configScriptPath: string, test: boolean = false): Promise<HardhatIgnitionConfig> {
     let configFilePath;
     if (configScriptPath) {
       configFilePath = path.resolve(currentPath, configScriptPath);
@@ -43,17 +29,20 @@ export default class ConfigService implements IConfigService {
       configFilePath = path.resolve(currentPath, CONFIG_SCRIPT_NAME);
     }
 
-    let config: IgnitionConfig;
+    let config: HardhatIgnitionConfig;
     if (configFilePath) {
       try {
         const configModules = await loadScript(configFilePath);
 
         if (Object.entries(configModules).length > 1) {
-          throw new UserError('Sorry, but you can only have one config object!');
+          throw new OneConfigAllowedError();
         }
 
         for (const [, ignitionConfig] of Object.entries(configModules)) {
-          config = ignitionConfig as IgnitionConfig;
+          config = ignitionConfig as HardhatIgnitionConfig;
+        }
+        if (!checkIfExist(config)) {
+          throw new ConfigMissingError();
         }
       } catch (err) {
         if (err._isUserError) {
@@ -64,75 +53,35 @@ export default class ConfigService implements IConfigService {
       }
     }
 
+    this.config = config;
     return config;
-  }
-
-  generateAndSaveConfig(privateKeys: string[], mnemonic?: string, hdPath?: string): boolean {
-    this.config = {
-      privateKeys: privateKeys,
-      mnemonic: mnemonic,
-      hdPath: hdPath,
-    };
-
-    for (const privateKey of privateKeys) {
-      try {
-        new ethers.utils.SigningKey(privateKey);
-      } catch (error) {
-        cli.debug(error);
-
-        throw new PrivateKeyNotValid('You have provided string that is not private key.');
-      }
-    }
-
-    try {
-      ethers.Wallet.fromMnemonic(mnemonic, hdPath);
-    } catch (error) {
-      if (mnemonic && hdPath) {
-        throw new MnemonicNotValid('You have provided not valid mnemonic and/or hd path');
-      }
-    }
-
-    try {
-      fs.writeFileSync(this.configPath, JSON.stringify(this.config, undefined, 4));
-    } catch (e) {
-      throw new FailedToWriteToFile('Failed to write to file.');
-    }
-
-    return true;
-  }
-
-  saveEmptyIgnitionConfig(currentPath: string, configScriptPath: string, reinit: boolean = false): boolean {
-    const relativeIgnitionConfigPath = configScriptPath ? configScriptPath : CONFIG_SCRIPT_NAME;
-
-    const ignitionConfigPath = path.resolve(currentPath, relativeIgnitionConfigPath);
-    if (!reinit && fs.existsSync(ignitionConfigPath)) {
-      throw new IgnitionConfigAlreadyExist('You are trying to init empty ignition config but it already exist!');
-    }
-
-    const ignitionConfig = `import { IgnitionConfig } from '@tenderly/ignition';
-
-export const config: IgnitionConfig = {};
-`;
-
-    try {
-      fs.writeFileSync(ignitionConfigPath, ignitionConfig);
-    } catch (e) {
-      throw new FailedToWriteToFile('Failed to write to file.');
-    }
-
-    return false;
   }
 
   getAllWallets(rpcPath?: string): ethers.Wallet[] {
     const wallets = [];
 
-    const content = fs.readFileSync(this.configPath, {
-      encoding: 'UTF-8'
-    });
-    const config = (JSON.parse(content) as Config);
-    const privateKeys = config.privateKeys;
-    const mnemonic = config.mnemonic;
-    let hdPath = config.hdPath;
+    const config = this.config;
+    if (!checkIfExist(this.networkName)) {
+      return [];
+    }
+
+    let privateKeys = config?.privateKeys;
+    let mnemonic = config?.mnemonic;
+    let hdPath = config?.hdPath;
+    if (
+      checkIfExist(config?.networks) &&
+      checkIfExist(config?.networks[this.networkName])
+    ) {
+      if (checkIfExist(config.networks[this.networkName]?.privateKeys)) {
+        privateKeys = config.networks[this.networkName]?.privateKeys;
+      }
+      if (checkIfExist(config.networks[this.networkName]?.mnemonic)) {
+        mnemonic = config.networks[this.networkName]?.mnemonic;
+      }
+      if (checkIfExist(config.networks[this.networkName]?.hdPath)) {
+        hdPath = config.networks[this.networkName]?.hdPath;
+      }
+    }
 
     const provider = new ethers.providers.JsonRpcProvider(rpcPath);
 
@@ -158,11 +107,20 @@ export const config: IgnitionConfig = {};
   }
 
   getFirstPrivateKey(): string {
-    const content = fs.readFileSync(this.configPath, {
-      encoding: 'UTF-8'
-    });
-
-    const privateKeys = (JSON.parse(content) as Config).privateKeys;
+    let privateKeys = [];
+    if (checkIfExist(this.config?.privateKeys)) {
+      privateKeys = this.config?.privateKeys;
+    }
+    if (
+      checkIfExist(this.config.networks) &&
+      checkIfExist(this.config.networks[this.networkName]) &&
+      checkIfExist(this.config.networks[this.networkName]?.privateKeys)
+    ) {
+      privateKeys = this.config.networks[this.networkName]?.privateKeys;
+    }
+    if (privateKeys.length < 1) {
+      throw new PrivateKeyIsMissing('Private keys are missing. Please provide them inside hardhat-ignition config file.');
+    }
     try {
       new ethers.utils.SigningKey(privateKeys[0]);
     } catch (error) {

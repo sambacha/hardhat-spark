@@ -1,5 +1,5 @@
-import { buildModule } from '../../../../src';
-import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
+import { buildModule } from '@tenderly/hardhat-ignition';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const BinaryOptionsModule = buildModule('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {
   m.contract(

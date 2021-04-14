@@ -9,7 +9,7 @@ import { checkIfExist } from '../../utils/util';
 
 export class HardhatCompiler extends Compiler {
   compile(): void {
-    execSync('npx hardhat compile');
+    // execSync('npx hardhat compile');
   }
 
   extractBytecode(contractNames: string[]): { [name: string]: string } {

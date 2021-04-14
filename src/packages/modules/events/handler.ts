@@ -1,22 +1,20 @@
 import {
   AfterCompileEvent,
   AfterDeployEvent,
-  AfterDeploymentEvent,
   BeforeCompileEvent,
   BeforeDeployEvent,
-  BeforeDeploymentEvent,
   ContractBinding,
   EventFnCompiled,
   EventFnDeployed, EventType,
   ModuleEvent, ModuleEventFn,
   OnChangeEvent,
   StatefulEvent
-} from '../../../interfaces/ignition';
+} from '../../../interfaces/hardhat_ignition';
 import { checkIfExist } from '../../utils/util';
 import { ModuleStateRepo } from '../states/state_repo';
 import { ModuleState } from '../states/module';
 import { CliError } from '../../types/errors';
-import { IPrompter } from '../../utils/promter';
+import { IPrompter } from '../../utils/logging';
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo;
@@ -31,6 +29,8 @@ export class EventHandler {
     const eventElement = moduleState[event.name] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(event.name);
+      this.prompter.finishedEventExecution(event.name);
+
       return;
     }
 
@@ -63,14 +63,6 @@ export class EventHandler {
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
     await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
-  }
-
-  async executeBeforeDeploymentEventHook(moduleName: string, event: BeforeDeploymentEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleCompiledBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
-  }
-
-  async executeAfterDeploymentEventHook(moduleName: string, event: AfterDeploymentEvent, moduleState: ModuleState): Promise<void> {
-    await this.handleDeployedBindingsEvents(moduleName, event.name, event.fn, event.deps, moduleState);
   }
 
   async executeBeforeDeployEventHook(moduleName: string, event: BeforeDeployEvent, moduleState: ModuleState): Promise<void> {
@@ -115,6 +107,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
+      this.prompter.finishedEventExecution(eventName);
       return;
     }
 
@@ -134,6 +127,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
+      this.prompter.finishedEventExecution(eventName);
       return;
     }
 
@@ -170,6 +164,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
+      this.prompter.finishedEventExecution(eventName);
       return;
     }
 

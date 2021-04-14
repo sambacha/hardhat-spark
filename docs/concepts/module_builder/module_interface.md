@@ -14,13 +14,13 @@ class Module {
   private moduleEvents: ModuleEvents;
   private actions: { [name: string]: Action };
   private moduleConfig: ModuleConfig | undefined;
-  private prototypes: { [name: string]: Prototype };
+  private templates: { [name: string]: Template };
 
   private registry: IModuleRegistryResolver | undefined;
   private resolver: IModuleRegistryResolver | undefined;
   private gasPriceProvider: IGasPriceCalculator | undefined;
   private nonceManager: INonceManager | undefined;
-  private transactionSinger: ITransactionSigner | undefined;
+  private transactionSigner: ITransactionSigner | undefined;
 }
 ```
 
@@ -109,10 +109,10 @@ moduleConfig: ModuleConfig | undefined
 
 <hr>
 
-Map of all prototypes
+Map of all contract templates
 
 ```
-prototypes: { [name: string]: Prototype }
+templates: { [name: string]: Template }
 ```
 
 # Module services/repos
@@ -153,10 +153,10 @@ nonceManager: INonceManager | undefined
 
 <hr>
 
-Custom transaction singer
+Custom transaction signer
 
 ```
-transactionSinger: ITransactionSigner | undefined
+transactionSigner: ITransactionSigner | undefined
 ```
 
 # Full module interface
@@ -169,9 +169,9 @@ class Module {
 
   group(...dependencies: (ContractBinding | ContractEvent)[]): GroupedDependencies;
 
-  prototype(name: string): Prototype;
+  template(name: string): Template;
 
-  bindPrototype(name: string, prototypeName: string, ...args: Arguments): ContractBinding;
+  bindTemplate(name: string, templateName: string, ...args: Arguments): ContractBinding;
 
   param(name: string, value: any);
 
@@ -215,7 +215,7 @@ class Module {
 
   getCustomTransactionSigner(): ITransactionSigner;
 
-  getAllPrototypes(): { [name: string]: Prototype };
+  getAllTemplates(): { [name: string]: Template };
 
   getAllOpts(): ModuleOptions;
 
@@ -241,7 +241,7 @@ Bind contract with `name` and his constructor arguments `args`. It will validate
 
 <hr>
 
-This way you can tell ignition that you are using libraries, and it will deploy them first, and if any other binding is using them inside thier bytecode it will dynamically inject them so you don't need to worry about that.
+This way you can tell hardhat-ignition that you are using libraries, and it will deploy them first, and if any other binding is using them inside thier bytecode it will dynamically inject them so you don't need to worry about that.
 
 ```typescript
 library(name: string, ...args: Arguments): ContractBinding;
@@ -297,20 +297,20 @@ Run custom map function on bindings and events.
 map(fn: (value: ContractBinding, index: number, array: (ContractBinding | ContractEvent)[]) => any): (ContractBinding | ContractEvent)[];
 ```
 
-## Prototypes
+## Contract templates
 
-With prototypes, you can define multiple contract bindings with same contract code.
+With contract template, you can define multiple contract bindings with same contract code.
 
 <hr>
 
-Define single prototype with `name` as contract name.
+Define single contract template with `name` as contract name.
 ```typescript
-prototype(name: string): Prototype;
+template(name: string): Template;
 ```
 
-Similar to `contract()` function, just in this case `name` is actual name of the contract binding, `prototypeName` is name provided in `prototype()` function, most likely contract name, and `args` is constructor parameters.
+Similar to `contract()` function, just in this case `name` is actual name of the contract binding, `templateName` is name provided in `contractTemplate()` function, most likely contract name, and `args` is constructor parameters.
 ```typescript
-bindPrototype(name: string, prototypeName: string, ...args: Arguments): ContractBinding;
+bindTemplate(name: string, templateName: string, ...args: Arguments): ContractBinding;
 ```
 
 ## Module parametrization
@@ -408,19 +408,4 @@ Get custom module contract address registry.
 
 ```
   getRegistry(): IModuleRegistryResolver | undefined;
-```
-
-```
-  setCustomGasPriceProvider(provider: IGasPriceCalculator): void;
-```
-
-  getCustomGasPriceProvider(): IGasPriceCalculator;
-
-  setCustomNonceManager(nonceManager: INonceManager): void;
-
-  getCustomNonceManager(): INonceManager;
-
-  setCustomTransactionSigner(txSigner: ITransactionSigner): void;
-
-  getCustomTransactionSigner(): ITransactionSigner;
 ```

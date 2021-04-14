@@ -1,17 +1,15 @@
-import { buildModule } from '../../../src/interfaces/ignition';
 // @ts-ignore
 import { DaiModule } from './dai_module';
-// @ts-ignore
-import { ModuleBuilder } from '../../../src/interfaces/ignition';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const DaiExampleModule = buildModule('DaiExampleModule', async (m: ModuleBuilder) => {
-  await m.module(DaiModule);
+  await m.useModule(DaiModule);
 
   const Dai = m.Dai;
   const Example = m.contract('Example', Dai);
 
-  Example.afterDeployment(m, 'firstAfterDeployment', async (): Promise<void> => {
-    const example = Example.instance();
+  Example.afterDeploy(m, 'firstAfterDeploy', async (): Promise<void> => {
+    const example = Example.deployed();
 
     const daiAddress = await example.getDai();
 

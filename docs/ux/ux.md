@@ -11,7 +11,7 @@ async function expectFuncRead(expectedValue: ContractBinding | any | undefined, 
 ```typescript
 await expectFuncRead(
   ContractBinding(A), 
-  B.instance().getAddressA
+  B.deployed().getAddressA
 );
 ```
 
@@ -26,7 +26,7 @@ async function expectSlotRead(expectedValue: ContractBinding | any | undefined, 
 ```typescript
 await expectSlotRead(
   ContractBinding(A), 
-  B.instance(),
+  B.deployed(),
   '<slot_hash>'
 );
 ```
@@ -42,7 +42,7 @@ async function gracefulExpectFuncRead(expectedValue: ContractBinding | any, read
 ```typescript
 gracefulExpectFuncRead(
   ContractBinding(A),
-  B.instance().getAddressA
+  B.deployed().getAddressA
 )
 ```
 
@@ -65,18 +65,18 @@ gracefulExpect(firstValue: any, secondValue: any): boolean
 Mutator is the easies way to execute `set` function and immediately after call `get` function to check if desired value is set. If it doesn't it will throw `UserError`.
 
 ```typescript
-const mutator = (
+const sendAfterDeploy = (
   m: ModuleBuilder, // ModuleBuilder provided in module function as parameter
   setter: ContractBinding, // ContractBinding of contract upon which setter function will be called
   setterFunc: string, // name of setter function
   setterArgs: any[], // setter args
   opts?: {
-    name?: string, // ignition will dynamically generate name, you can overwrite it here
-    getterFunc?: string, // ignition will replace "set" with "get", you can overwrite name of getter function here
-    getterArgs?: any[], // ignition will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
-    expectedValue?: any, // ignition will expect last element of setterArgs to be equal to getterFunc return value
+    name?: string, // hardhat-ignition will dynamically generate name, you can overwrite it here
+    getterFunc?: string, // hardhat-ignition will replace "set" with "get", you can overwrite name of getter function here
+    getterArgs?: any[], // hardhat-ignition will remove last element in setterArgs array, and send that as getter args, you can overwrite that here
+    expectedValue?: any, // hardhat-ignition will expect last element of setterArgs to be equal to getterFunc return value
     deps?: (ContractBinding | Event)[] // define dependencies for setter/getter execution
-    slot?: string, // option if their is no function for read and you need to use `getStorateAt`
+    slot?: string, // option if their is no function for read and you need to use `eth_getStorageAt`
   }
 ): ContractEvent
 ```

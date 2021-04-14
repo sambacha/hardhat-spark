@@ -1,5 +1,5 @@
 {
-  "name": "test-token",
+  "name": "migration",
   "version": "1.0.0",
   "description": "",
   "main": "truffle-config.js",
@@ -12,8 +12,7 @@
     "deploy:ropsten": "truffle migrate --network ropsten",
     "deploy:private": "truffle migrate --network private",
     "deploy:development": "truffle migrate --network development",
-    "prebuild": "rimraf ./build/contracts/*",
-    "postinstall": "cpr .env.example .env"
+    "prebuild": "rimraf ./build/contracts/*"
   },
   "keywords": [],
   "private": true,
@@ -28,6 +27,7 @@
     "truffle-hdwallet-provider-privkey": "^1.0.3"
   },
   "devDependencies": {
+    "@tenderly/hardhat-ignition": "file:../..",
     "hardhat": "^2.0.11",
     "hardhat-deploy": "^0.7.0-beta.46"
   }

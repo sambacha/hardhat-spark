@@ -46,7 +46,7 @@ deployMetaData: Deployed;
 
 <hr>
 
-Name of last event that depends on this contract binding. So if their two events that are binded to this contract binding this field will be name of event that is deepest in resolved module array (see [module resolving](../module_deps_resovler/module_deps_resolver.md)).
+Name of last event that depends on this contract binding. So if their two events that are bound to this contract binding this field will be name of event that is deepest in resolved module array (see [module resolving](../module_deps_resolver/module_deps_resolver.md)).
 
 ```typescript
   lastEventName: string | undefined

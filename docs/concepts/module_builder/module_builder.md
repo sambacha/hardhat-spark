@@ -17,7 +17,7 @@ export const RootModule = buildModule('RootModule', async (m: ModuleBuilder) => 
   const C = m.contract('C', A);
 
   m.group(B, C).afterDeploy(m, 'afterDeployBandC', async () => {
-    await A.instance().setExample(1);
+    await A.deployed().setExample(1);
   });
 });
 ```
@@ -28,6 +28,6 @@ export const RootModule = buildModule('RootModule', async (m: ModuleBuilder) => 
 | ----------------- | ----------------------------------------------- | ---------------------------------------- |
 | Actions           | Dynamic data returning across multiple modules. | [actions](./actions.md)
 | Contract Bindings | Contract deployment specification.              | [contract_bindings](./contract_binding.md)
-| Contract Instance | Contract instance to call contract function.    | [contract_instance](./contract_instance.md)
+| Deployed contract | Deployed contract in order to call contract function.    | [deployed_contract](./contract_instance.md)
 | Events            | Contract event hooks.                           | [events](./events.md)
 | Module Interface  | Module interface reference.                     | [module_interface](./module_interface.md)

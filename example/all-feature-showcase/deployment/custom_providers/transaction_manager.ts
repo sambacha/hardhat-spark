@@ -1,9 +1,6 @@
 import { TransactionRequest } from '@ethersproject/abstract-provider';
-import { providers } from 'ethers';
-import { IGasCalculator, IGasPriceCalculator } from '../../../../src';
-import { ethers } from 'ethers';
-import { INonceManager, ITransactionSigner } from '../../../../src';
-import { checkIfExist } from '../../../../src/packages/utils/util';
+import { ethers, providers } from 'ethers';
+import { checkIfExist, IGasPriceCalculator, IGasCalculator, INonceManager, ITransactionSigner } from '@tenderly/hardhat-ignition';
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };
@@ -11,12 +8,12 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   private gasCalculator: IGasCalculator;
   private gasPriceCalculator: IGasPriceCalculator;
   private wallet: ethers.Wallet;
-  private readonly networkId: number;
+  private readonly networkId: string;
 
   constructor(
     provider: providers.JsonRpcProvider,
     wallet: ethers.Wallet,
-    networkId: number,
+    networkId: string,
     gasCalculator: IGasCalculator,
     gasPriceCalculator: IGasPriceCalculator,
   ) {
@@ -54,7 +51,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       gasPrice: await this.gasPriceCalculator.getCurrentPrice(),
       gasLimit: gas,
       data: data,
-      chainId: this.networkId
+      chainId: +this.networkId
     };
 
     if (wallet) {

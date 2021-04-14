@@ -1,24 +1,23 @@
 import { extendEnvironment, task } from 'hardhat/config';
 import { lazyObject } from 'hardhat/plugins';
 import { ActionType } from 'hardhat/types';
-import { Prompters } from '../utils/promter';
+import { Logging } from '../utils/logging';
 import { Migration } from '../types/migration';
 import {
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
-  InitArgs,
   MigrationArgs,
   TutorialArgs,
   UsageArgs
 } from '../../usage_interfaces';
-import { IgnitionHardhat, IgnitionHardhatActions } from '../../usage_interfaces/hardhat_plugin';
+import { HardhatIgnition, IgnitionHardhatActions } from '../../usage_interfaces/hardhat_plugin';
 import './type_extentions';
 
-export const PluginName = 'ignition';
+export const PluginName = 'hardhat-ignition';
 
 extendEnvironment(env => {
-  env.ignition = lazyObject(() => new IgnitionHardhat(env.config.ignition));
+  env.ignition = lazyObject(() => new HardhatIgnition());
 });
 
 const tutorial: ActionType<TutorialArgs> = async (
@@ -29,7 +28,7 @@ const tutorial: ActionType<TutorialArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.tutorial(config.ignition, tutorialArgs);
+  await IgnitionHardhatActions.tutorial(tutorialArgs);
 };
 
 const diff: ActionType<DiffArgs> = async (
@@ -40,7 +39,7 @@ const diff: ActionType<DiffArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.diff(config.ignition, diffArgs);
+  await IgnitionHardhatActions.diff(diffArgs);
 };
 
 const deploy: ActionType<DeployArgs> = async (
@@ -51,7 +50,7 @@ const deploy: ActionType<DeployArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.deploy(config.ignition, deployArgs);
+  await IgnitionHardhatActions.deploy(deployArgs);
 };
 
 const genTypes: ActionType<GenTypesArgs> = async (
@@ -62,18 +61,7 @@ const genTypes: ActionType<GenTypesArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.genTypes(config.ignition, genTypesArgs);
-};
-
-const init: ActionType<InitArgs> = async (
-  initArgs: InitArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
-) => {
-  await IgnitionHardhatActions.init(config.ignition, initArgs);
+  await IgnitionHardhatActions.genTypes(genTypesArgs);
 };
 
 const migration: ActionType<MigrationArgs> = async (
@@ -84,7 +72,7 @@ const migration: ActionType<MigrationArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.migration(config.ignition, migrationArgs);
+  await IgnitionHardhatActions.migration(migrationArgs);
 };
 
 const usage: ActionType<UsageArgs> = async (
@@ -95,23 +83,22 @@ const usage: ActionType<UsageArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.usage(config.ignition, usageArgs);
+  await IgnitionHardhatActions.usage(usageArgs);
 };
 
-task('ignition:tutorial', 'Easiest way to get started with ignition, create couple contracts and start deploying.')
+task('ignition:tutorial', 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.')
   .setAction(tutorial);
 
 task('ignition:diff', 'Difference between deployed and current deployment.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
      'moduleFilePath',
     'Path to module deployment file.'
   )
-  .addParam<string>(
-    'networkId',
-    'Network ID of the network you are willing to deploy your contracts.',
+  .addOptionalParam<string>(
+    'networkName',
+    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'local',
     undefined,
-    undefined,
-    false,
   )
   .addOptionalParam<string>(
     'state',
@@ -120,35 +107,32 @@ task('ignition:diff', 'Difference between deployed and current deployment.')
   )
   .addOptionalParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
   )
   .setAction(diff);
 
 task('ignition:deploy', 'Deploy new module, difference between current module and already deployed one.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
   )
-  .addParam<string>(
-    'networkId',
-    'Network ID of the network you are willing to deploy your contracts.',
+  .addOptionalParam<string>(
+    'networkName',
+    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'local',
     undefined,
-    undefined,
-    false,
   )
-  .addParam<Prompters>(
-    'prompting',
-    'Prompting type: streamlined, overview or json. default: overview',
-    Prompters.simple,
+  .addOptionalParam<Logging>(
+    'logging',
+    'Logging options: streamlined, simple or json. default: streamlined',
+    Logging.simple,
     undefined,
-    true,
   )
-  .addParam<string>(
+  .addOptionalParam<string>(
     'rpcProvider',
     'RPC Provider - URL of open RPC interface for your ethereum node.',
     undefined,
     undefined,
-    true,
   )
   .addOptionalParam<string>(
     'state',
@@ -157,7 +141,7 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
   )
   .addFlag(
     'parallelize',
-    'If this flag is provided ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
+    'If this flag is provided hardhat-ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.',
   )
   .addFlag(
     'testEnv',
@@ -166,54 +150,19 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
   .setAction(deploy);
 
 task('ignition:genTypes', 'It\'ll generate .d.ts file for written deployment modules for better type hinting.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
   )
-  .addPositionalParam<string>(
+  .addOptionalPositionalParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
-    true
   )
   .setAction(genTypes);
 
-task('ignition:init', 'Initialize ignition configuration file and configuration script.')
-  .addParam<string>(
-    'privateKeys',
-    'Private Keys of the deployer accounts e.g. 0x123...,0x123...,0x123',
-    undefined,
-    undefined,
-    false,
-  )
-  .addParam<string>(
-    'mnemonic',
-    'Mnemonic of the deployer accounts',
-    undefined,
-    undefined,
-    true,
-  )
-  .addParam<string>(
-    'hdPath',
-    'Associated with mnemonic - The HD parent of all the derived keys. Default value: "m/44\'/60\'/0\'/0"',
-    undefined,
-    undefined,
-    true,
-  )
-  .addParam<string>(
-    'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
-    undefined,
-    undefined,
-  )
-  .addFlag(
-    'reinit',
-    'Provide this flag if you would like to overwrite `ignition.config.ts`, otherwise if exists, it would error.'
-  )
-  .setAction(init);
-
-task('ignition:migration', 'Migrate deployment meta data from other deployers to ignition state file.')
+task('ignition:migration', 'Migrate deployment meta data from other deployers to hardhat-ignition state file.')
   .addParam<Migration>(
     'from',
     'Deployment package name (truffle, hardhatDeploy)',
@@ -231,20 +180,20 @@ task('ignition:migration', 'Migrate deployment meta data from other deployers to
   .setAction(migration);
 
 task('ignition:usage', 'Generate public usage module from standard module.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
   )
   .addParam<string>(
-    'networkId',
-    'Network ID of the network you are willing to deploy your contracts.',
+    'networkName',
+    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'local',
     undefined,
-    undefined,
-    false,
+    true,
   )
   .addOptionalParam<string>(
     'configScriptPath',
-    'Path to the ignition.config.js script, default is same as current path.',
+    'Path to the hardhat-ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
   )

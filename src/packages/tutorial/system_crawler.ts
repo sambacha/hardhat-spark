@@ -1,15 +1,17 @@
-import { searchBuilds } from '../utils/files';
+import { searchBuilds, searchModuleFilesName } from '../utils/files';
 import { Artifact } from 'hardhat/types';
 import * as path from 'path';
 import { JsonFragment, JsonFragmentType } from '../types/artifacts/abi';
 
-const ARTIFACTS_FOLDER = 'artifacts';
-
 export class SystemCrawlingService {
   private readonly currentPath: string;
 
-  constructor(currentPath: string) {
-    this.currentPath = path.resolve(currentPath, ARTIFACTS_FOLDER);
+  constructor(currentPath: string, folderName: string) {
+    this.currentPath = path.resolve(currentPath, folderName);
+  }
+
+  crawlDeploymentModule(): string[] {
+    return searchModuleFilesName(this.currentPath, []);
   }
 
   crawlSolidityContractsNames(): string[] {

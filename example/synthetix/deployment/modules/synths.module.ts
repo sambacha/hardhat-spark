@@ -1,8 +1,7 @@
-import { ContractBinding, buildModule } from '../../../../src';
+import { sendAfterDeploy, ContractBinding, buildModule } from '@tenderly/hardhat-ignition';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { mutator } from '../../../../src';
-import { SynthetixModuleBuilder } from '../../.ignition/SynthetixModule/SynthetixModule';
+import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 const {
   IGNITION_NETWORK_ID
@@ -11,12 +10,13 @@ const {
 export const SynthetixSynths = buildModule('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
+  // @ts-ignore
   for (const {name: currencyKey, subclass, asset} of m.synths) {
-    const TokenStateForSynth = m.bindPrototype(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
+    const TokenStateForSynth = m.bindTemplate(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 
     const synthProxyIsLegacy = currencyKey === 'sUSD' && IGNITION_NETWORK_ID === '1';
 
-    const ProxyForSynth = m.bindPrototype(
+    const ProxyForSynth = m.bindTemplate(
       `Proxy${currencyKey}`,
       synthProxyIsLegacy ? 'Proxy' : 'ProxyERC20',
       m.ETH_ADDRESS
@@ -24,7 +24,7 @@ export const SynthetixSynths = buildModule('SynthetixSynths', async (m: Syntheti
 
     let proxyERC20ForSynth: ContractBinding | undefined;
     if (currencyKey === 'sUSD') {
-      proxyERC20ForSynth = m.bindPrototype(`ProxyERC20${currencyKey}`, 'ProxyERC20', m.ETH_ADDRESS);
+      proxyERC20ForSynth = m.bindTemplate(`ProxyERC20${currencyKey}`, 'ProxyERC20', m.ETH_ADDRESS);
     }
 
     const currencyKeyInBytes = toBytes32(currencyKey);
@@ -38,7 +38,7 @@ export const SynthetixSynths = buildModule('SynthetixSynths', async (m: Syntheti
 
     const sourceContractName = subclass || 'Synth';
 
-    const Synth = m.bindPrototype(
+    const Synth = m.bindTemplate(
       `Synth${currencyKey}`,
       sourceContractName,
       proxyERC20ForSynth ? proxyERC20ForSynth : ProxyForSynth,
@@ -52,61 +52,61 @@ export const SynthetixSynths = buildModule('SynthetixSynths', async (m: Syntheti
       ...(additionalConstructorArgsMap[(sourceContractName + currencyKey)] || [])
     );
 
-    mutator(m,
+    sendAfterDeploy(m,
       TokenStateForSynth,
       'setAssociatedContract',
       [Synth],
       {
-        name: `afterDeploySynth${currencyKey}`,
+        eventName: `afterDeploySynth${currencyKey}`,
       }
     );
 
-    mutator(m,
+    sendAfterDeploy(m,
       ProxyForSynth,
       'setTarget',
       [Synth],
       {
-        name: `afterDeploySynthProxyForSynth${currencyKey}`,
+        eventName: `afterDeploySynthProxyForSynth${currencyKey}`,
       }
     );
 
     if (proxyERC20ForSynth) {
-      mutator(m,
+      sendAfterDeploy(m,
         Synth,
         'setProxy',
         [proxyERC20ForSynth],
         {
-          name: `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`
+          eventName: `afterDeploySynthProxyForSynthProxyErc20ForSynthFirst${currencyKey}`
         }
       );
 
-      mutator(m,
+      sendAfterDeploy(m,
         ProxyForSynth,
         'setTarget',
         [Synth],
         {
-          name: `afterDeployProxyERC20ForSynth${currencyKey}`,
+          eventName: `afterDeployProxyERC20ForSynth${currencyKey}`,
         }
       );
     } else {
-      mutator(m,
+      sendAfterDeploy(m,
         Synth,
         'setProxy',
         [ProxyForSynth],
         {
-          name: `afterDeployProxyERC20ForSynth${currencyKey}`,
+          eventName: `afterDeployProxyERC20ForSynth${currencyKey}`,
         }
       );
     }
 
     const {feed} = m.feeds[asset] || {};
     if (ethers.utils.isAddress(feed)) {
-      mutator(m,
+      sendAfterDeploy(m,
         ExchangeRates,
         'setProxy',
         [currencyKeyInBytes, feed],
         {
-          name: `afterDeployExchangeRatesFeed${currencyKey}`,
+          eventName: `afterDeployExchangeRatesFeed${currencyKey}`,
         }
       );
     }

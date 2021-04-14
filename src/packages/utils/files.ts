@@ -9,7 +9,7 @@ import {
   ModuleStateBindings,
   USAGE_FUNC
 } from '../types/migration';
-import { ContractBindingMetaData } from '../../interfaces/ignition';
+import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
 import { CliError } from '../types/errors';
 
 const HARDHAT_CHAIN_ID_FILENAME = '.chainId';
@@ -73,6 +73,23 @@ export function parseFiles(sourcePath: string, contractNames: string[], result: 
   );
 
   return result;
+}
+
+export function searchModuleFilesName(currentPath: string, results: any[]): string[] {
+  const filenames = fs.readdirSync(currentPath);
+
+  filenames.forEach((fileName: string) => {
+    if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
+      return searchModuleFilesName(path.resolve(currentPath, fileName), results);
+    }
+    if (!path.parse(fileName).base.includes('module')) {
+      return;
+    }
+
+    results.push(path.parse(fileName).base);
+  });
+
+  return results;
 }
 
 export function searchBuilds(currentPath: string, results: any[]): object[] {
@@ -150,11 +167,11 @@ export function generateModuleFile(moduleName: string, moduleStateBindings: Modu
       throw new CliError('File type generation is not valid.');
   }
 
-  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/ignition';
+  let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuilder) => {`;
 
-  file += genPrototypes(moduleStateBindings);
+  file += genTemplates(moduleStateBindings);
 
   file += '\n';
 
@@ -173,7 +190,7 @@ export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuild
   return file;
 }
 
-function genPrototypes(moduleStateBindings: ModuleStateBindings): string {
+function genTemplates(moduleStateBindings: ModuleStateBindings): string {
   const contractMap: { [name: string]: number } = {};
 
   for (const [, element] of Object.entries(moduleStateBindings)) {
@@ -185,13 +202,13 @@ function genPrototypes(moduleStateBindings: ModuleStateBindings): string {
     contractMap[element.contractName] = 1;
   }
 
-  let prototypesInitialization = ``;
+  let templatesInitialization = ``;
   Object.entries(contractMap).map((value: [string, number]) => {
-    prototypesInitialization += `
-  m.prototype('${value[0]}');`;
+    templatesInitialization += `
+  m.contractTemplate('${value[0]}');`;
   });
 
-  return prototypesInitialization;
+  return templatesInitialization;
 }
 
 function genLibrary(element: ContractBindingMetaData): string {
@@ -199,10 +216,10 @@ function genLibrary(element: ContractBindingMetaData): string {
   const ${element.contractName} = m.library('${element.contractName}');`;
 }
 
-function genContract(element: ContractBindingMetaData, isPrototype: boolean): string {
-  if (isPrototype) {
+function genContract(element: ContractBindingMetaData, isTemplate: boolean): string {
+  if (isTemplate) {
     return `
-  const ${element.name} = m.bindPrototype('${element.name}', '${element.contractName}');`;
+  const ${element.name} = m.bindTemplates('${element.name}', '${element.contractName}');`;
   }
 
   return `

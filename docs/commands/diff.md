@@ -1,26 +1,28 @@
-`ignition diff`
-=============
+`hardhat-ignition diff`
+=======================
 
-Difference between deployed and current migrations.
+Difference between deployed and current deployment.
 
-* [`ignition diff [MODULE_FILE_PATH]`](#ignition-diff-module_file_path)
+* [`hardhat-ignition diff [MODULE_FILE_PATH]`](#hardhat-ignition-diff-module_file_path)
 
-## `ignition diff [MODULE_FILE_PATH]`
+## `hardhat-ignition diff [MODULE_FILE_PATH]`
 
-Difference between deployed and current migrations.
+Difference between deployed and current deployment.
 
 ```
 USAGE
-  $ ignition diff [MODULE_FILE_PATH]
+  $ hardhat-ignition diff [MODULE_FILE_PATH]
 
 OPTIONS
   -h, --help                           show CLI help
-  --configScriptPath=configScriptPath  Path to the ignition.config.js script, default is same as current path.
+  --configScriptPath=configScriptPath  Path to the hardhat-ignition.config.js script, default is same as current path.
   --debug                              Flag used for debugging
-  --networkId=networkId                (required) Network ID of the network you are willing to deploy your contracts.
+
+  --network=network                    Network name is specified inside your config file and if their is none it will
+                                       default to local(http://localhost:8545)
+
+  --noPrompt                           If this flag is provided all prompts would default to 'Yes'.
 
   --state=state                        Provide name of module's that you would want to use as states. Most commonly used
                                        if you are deploying more than one module that are dependant on each other.
 ```
-
-_See code: [src/commands/diff.ts](https://github.com/Tenderly/ignition-tenderly/blob/main/src/commands/diff.ts)_

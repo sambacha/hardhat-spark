@@ -4,7 +4,7 @@ import { checkIfExist } from '../../../utils/util';
 
 export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
   private state: {
-    [networkId: string]: {
+    [networkName: string]: {
       [moduleName: string]: ModuleStateFile
     }
   };
@@ -17,35 +17,35 @@ export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
     this.state = {};
   }
 
-  async getModuleState(networkId: number, moduleName: string): Promise<ModuleStateFile> {
-    if (!this.state[networkId]) {
+  async getModuleState(networkName: string, moduleName: string): Promise<ModuleStateFile> {
+    if (!this.state[networkName]) {
       return {};
     }
-    if (!this.state[networkId][moduleName]) {
+    if (!this.state[networkName][moduleName]) {
       return {};
     }
 
-    return this.state[networkId][moduleName];
+    return this.state[networkName][moduleName];
   }
 
-  async storeStates(networkId: number, moduleName: string, moduleStates: ModuleState | null): Promise<boolean> {
+  async storeStates(networkName: string, moduleName: string, moduleStates: ModuleState | null): Promise<boolean> {
     if (moduleStates == undefined) {
       return true;
     }
 
-    if (!this.state[networkId]) {
-      this.state[networkId] = {};
+    if (!this.state[networkName]) {
+      this.state[networkName] = {};
     }
-    if (!this.state[networkId][moduleName]) {
-      this.state[networkId][moduleName] = {};
+    if (!this.state[networkName][moduleName]) {
+      this.state[networkName][moduleName] = {};
     }
 
-    this.state[networkId][moduleName] = ModuleStateRepo.convertStatesToMetaData(moduleStates);
+    this.state[networkName][moduleName] = ModuleStateRepo.convertStatesToMetaData(moduleStates);
 
     return true;
   }
 
-  checkIfSet(moduleName: string, networkId: number): boolean {
+  checkIfSet(moduleName: string, networkId: string): boolean {
     return checkIfExist(this.state[networkId][moduleName]);
   }
 }

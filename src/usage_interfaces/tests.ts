@@ -8,7 +8,7 @@ import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { ModuleResolver } from '../packages/modules/module_resolver';
 import { EventHandler } from '../packages/modules/events/handler';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
-import { Config } from '../packages/types/config';
+import { HardhatIgnitionConfig } from '../packages/types/config';
 import MemoryConfigService from '../packages/config/memory_service';
 import { IConfigService } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
@@ -18,13 +18,16 @@ import { EventTxExecutor } from '../packages/ethereum/transactions/event_executo
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import * as cls from 'cls-hooked';
 import { Namespace } from 'cls-hooked';
-import { EmptyPrompter } from '../packages/utils/promter/empty_prompter';
-import { IPrompter } from '../packages/utils/promter';
-
+import { EmptyPrompter } from '../packages/utils/logging/empty_logging';
+import { IPrompter } from '../packages/utils/logging';
+import { EthClient } from '../packages/ethereum/client';
+import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
+import { IAnalyticsService } from '../packages/utils/analytics';
+import { EmptyAnalyticsService } from '../packages/utils/analytics/empty_analytics_service';
 
 export class IgnitionTests implements IIgnitionUsage {
   public configFlags: ConfigFlags;
-  public configFile: Config;
+  public configFile: HardhatIgnitionConfig;
 
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
@@ -40,9 +43,11 @@ export class IgnitionTests implements IIgnitionUsage {
   public eventTxExecutor: EventTxExecutor;
   public eventSession: Namespace;
   public walletWrapper: WalletWrapper;
+  public moduleDeploymentSummaryService: ModuleDeploymentSummaryService;
+  public analyticsService: IAnalyticsService;
 
-  constructor(configFlags: ConfigFlags, configFile: Config) {
-    process.env.IGNITION_NETWORK_ID = String(configFlags.networkId);
+  constructor(configFlags: ConfigFlags, configFile: HardhatIgnitionConfig) {
+    process.env.IGNITION_NETWORK_ID = String(configFlags.networkId || '31337');
     this.states = configFlags.stateFileNames;
 
     this.provider = new ethers.providers.JsonRpcProvider();
@@ -57,19 +62,22 @@ export class IgnitionTests implements IIgnitionUsage {
 
     this.gasProvider = new GasPriceCalculator(this.provider);
 
-    this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), configFlags.networkId, this.gasProvider, this.gasProvider);
-    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider, this.transactionManager, this.transactionManager);
+    this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), configFlags.networkId, this.gasProvider, this.gasProvider, this.prompter);
+    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider, this.transactionManager, this.transactionManager, this.prompter);
 
     this.eventSession = cls.createNamespace('event');
 
-    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkId, 'test', false, true);
+    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkName, 'test', false, true);
     this.eventTxExecutor = new EventTxExecutor(this.eventSession);
-    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession);
+    const ethClient = new EthClient(this.provider);
+    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession, ethClient);
 
     this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
-    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
+    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkName, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
 
     this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
+    this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(this.moduleStateRepo);
+    this.analyticsService = new EmptyAnalyticsService();
   }
 
   cleanup() {
@@ -87,7 +95,7 @@ export class IgnitionTests implements IIgnitionUsage {
   async deploy(deploymentFilePath: string): Promise<void> {
     await command.deploy(
       deploymentFilePath,
-      {},
+      this.configFile,
       this.states,
       this.moduleStateRepo,
       this.moduleResolver,
@@ -96,6 +104,8 @@ export class IgnitionTests implements IIgnitionUsage {
       this.txExecutor,
       this.configService,
       this.walletWrapper,
+      this.moduleDeploymentSummaryService,
+      this.analyticsService,
       true
     );
   }
@@ -103,11 +113,12 @@ export class IgnitionTests implements IIgnitionUsage {
   async diff(deploymentFilePath: string): Promise<void> {
     await command.diff(
       deploymentFilePath,
-      {},
+      this.configFile,
       this.states,
       this.moduleResolver,
       this.moduleStateRepo,
       this.configService,
+      this.analyticsService,
       true
     );
   }

@@ -20,8 +20,6 @@ Upon execution of "last" needed dependencies of our event will be resolved.
 
 4. Execute `afterDeploy` event hook after `B` and `C` has been deployed
 
-For more complex example you can look at [this](../../usage/complex.md).
-
 ### Representation with an array of classes after resolving
 
 ```
@@ -39,7 +37,7 @@ For more complex example you can look at [this](../../usage/complex.md).
 {
   "A": {
     "name": "A",
-    // binding name (in case of prototype can be diffrent from contract name)
+    // binding name (in case of template can be diffrent from contract name)
     "library": false,
     // this is true if this contract binding is library
     "args": [],
@@ -54,8 +52,6 @@ For more complex example you can look at [this](../../usage/complex.md).
     "eventsDeps": {
       "beforeCompile": [],
       "afterCompile": [],
-      "beforeDeployment": [],
-      "afterDeployment": [],
       "beforeDeploy": [],
       "afterDeploy": [],
       "onChange": []
@@ -91,8 +87,6 @@ For more complex example you can look at [this](../../usage/complex.md).
     "eventsDeps": {
       "beforeCompile": [],
       "afterCompile": [],
-      "beforeDeployment": [],
-      "afterDeployment": [],
       "beforeDeploy": [],
       "afterDeploy": [
         "afterDeployBandC"
@@ -126,8 +120,6 @@ For more complex example you can look at [this](../../usage/complex.md).
     "eventsDeps": {
       "beforeCompile": [],
       "afterCompile": [],
-      "beforeDeployment": [],
-      "afterDeployment": [],
       "beforeDeploy": [],
       "afterDeploy": [
         "afterDeployBandC"

@@ -7,7 +7,7 @@ import {
   EventType,
   MetaDataEvent, ModuleEvent,
   StatefulEvent,
-} from '../../../interfaces/ignition';
+} from '../../../interfaces/hardhat_ignition';
 import { CliError } from '../../types/errors';
 import { TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { checkIfExist } from '../../utils/util';
@@ -19,15 +19,15 @@ export class ModuleStateRepo {
   // @ts-ignore
   private mutex: boolean;
 
-  private readonly networkId: number;
+  private readonly networkName: string;
   private stateRepo: IModuleState;
   private currentModuleName: string;
   private currentEventName: string;
   private readonly test: boolean;
 
-  constructor(networkId: number, currentPath: string, mutex: boolean = false, testEnv: boolean = false) {
+  constructor(networkName: string, currentPath: string, mutex: boolean = false, testEnv: boolean = false) {
     this.mutex = mutex;
-    this.networkId = networkId;
+    this.networkName = networkName;
     this.stateRepo = testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath);
     this.currentModuleName = '';
     this.currentEventName = '';
@@ -40,7 +40,7 @@ export class ModuleStateRepo {
 
   clear() {
     if (!this.test) {
-      throw new CliError('Module state repo is not sutable for memory clear');
+      throw new CliError('Module state repo is not suitable for memory clear');
     }
 
     (this.stateRepo as MemoryModuleState).clear();
@@ -48,11 +48,11 @@ export class ModuleStateRepo {
 
   async getStateIfExist(moduleName: string): Promise<ModuleStateFile> {
     // implement cashing and merging functionality
-    return this.stateRepo.getModuleState(this.networkId, moduleName);
+    return this.stateRepo.getModuleState(this.networkName, moduleName);
   }
 
   async storeNewState(moduleName: string, moduleState: ModuleState | ModuleStateFile | null): Promise<void> {
-    await this.stateRepo.storeStates(this.networkId, moduleName, moduleState);
+    await this.stateRepo.storeStates(this.networkName, moduleName, moduleState);
   }
 
   setSingleEventName(currentEventName: string): void {

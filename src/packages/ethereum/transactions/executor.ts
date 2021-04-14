@@ -1,10 +1,8 @@
 import {
   AfterCompileEvent,
   AfterDeployEvent,
-  AfterDeploymentEvent,
   BeforeCompileEvent,
   BeforeDeployEvent,
-  BeforeDeploymentEvent,
   ContractBinding,
   ContractEvent,
   Deployed,
@@ -15,8 +13,8 @@ import {
   OnChangeEvent,
   StatefulEvent,
   TransactionData,
-} from '../../../interfaces/ignition';
-import { IPrompter } from '../../utils/promter';
+} from '../../../interfaces/hardhat_ignition';
+import { IPrompter } from '../../utils/logging';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { checkIfExist } from '../../utils/util';
 import { EthTxGenerator } from './generator';
@@ -25,7 +23,12 @@ import { defaultAbiCoder as abiCoder } from '@ethersproject/abi';
 import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
 import { JsonFragment, JsonFragmentType } from '../../types/artifacts/abi';
 import { EventHandler } from '../../modules/events/handler';
-import { CliError, ContractTypeMismatch, ContractTypeUnsupported, UserError } from '../../types/errors';
+import {
+  CliError,
+  ContractTypeMismatch,
+  ContractTypeUnsupported, MissingAbiInContractError, NoContractBindingDataInModuleState,
+  TransactionFailed,
+} from '../../types/errors';
 import { ModuleState } from '../../modules/states/module';
 import { IModuleRegistryResolver } from '../../modules/states/registry';
 import { ModuleResolver } from '../../modules/module_resolver';
@@ -35,10 +38,9 @@ import { EventTxExecutor } from './event_executor';
 import { clsNamespaces } from '../../utils/continuation_local_storage';
 
 const CONSTRUCTOR_TYPE = 'constructor';
-export const BLOCK_CONFIRMATION_NUMBER = 1;
 
 export class TxExecutor {
-  private readonly networkId: number;
+  private readonly networkId: string;
   private readonly parallelize: boolean;
 
   private prompter: IPrompter;
@@ -48,8 +50,9 @@ export class TxExecutor {
   private eventHandler: EventHandler;
   private eventSession: Namespace;
   private eventTxExecutor: EventTxExecutor;
+  private blockConfirmation: number;
 
-  constructor(prompter: IPrompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: number, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
+  constructor(prompter: IPrompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: string, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
     this.prompter = prompter;
     this.moduleState = moduleState;
     this.txGenerator = txGenerator;
@@ -60,6 +63,8 @@ export class TxExecutor {
     this.parallelize = parallelize;
     this.eventSession = eventSession;
     this.eventTxExecutor = eventTxExecutor;
+
+    this.blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
   }
 
   async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined): Promise<void> {
@@ -82,6 +87,7 @@ export class TxExecutor {
     if (!checkIfExist(moduleState)) {
       this.prompter.nothingToDeploy();
     }
+
     await this.executeSync(moduleName, moduleState, registry, resolver, moduleConfig);
     return;
   }
@@ -205,7 +211,7 @@ export class TxExecutor {
 
         this.prompter.bindingExecution(batchElement.name);
         batchElement = await this.executeSingleBinding(moduleName, batchElement, moduleState, true);
-        promiseTxReceipt.push(batchElement.txData.input.wait(BLOCK_CONFIRMATION_NUMBER));
+        promiseTxReceipt.push(batchElement.txData.input.wait(this.blockConfirmation));
       }
 
       const txReceipt = {};
@@ -284,7 +290,7 @@ export class TxExecutor {
 
         const argBinding = moduleState[arg.name];
         if (!checkIfExist(argBinding)) {
-          throw new CliError(`Their is no data of this minding in resolved module state - ${arg.name}`);
+          throw new NoContractBindingDataInModuleState(arg.name);
         }
 
         if (checkIfExist(elementsBatches[arg.name])) {
@@ -316,8 +322,7 @@ export class TxExecutor {
 
   private static async handleEvent(event: Event, element: StatefulEvent, currentBatch: number, batches: any[], moduleState: ModuleState, elementsBatches: any) {
     switch (event.eventType) {
-      case EventType.AfterDeployEvent:
-      case EventType.AfterDeploymentEvent: {
+      case EventType.AfterDeployEvent: {
         await Batcher.handleAfterDeployEvent(event as AfterDeployEvent, element, batches, elementsBatches);
         break;
       }
@@ -330,7 +335,6 @@ export class TxExecutor {
         break;
       }
       case EventType.BeforeDeployEvent:
-      case EventType.BeforeDeploymentEvent:
       case EventType.AfterCompileEvent: {
         await Batcher.handleCompiledEvent(event as BeforeDeployEvent, element, batches, elementsBatches);
         break;
@@ -366,14 +370,6 @@ export class TxExecutor {
             }
             case EventType.AfterDeployEvent: {
               await this.eventHandler.executeAfterDeployEventHook(moduleName, event.event as AfterDeployEvent, moduleState);
-              break;
-            }
-            case EventType.AfterDeploymentEvent: {
-              await this.eventHandler.executeAfterDeploymentEventHook(moduleName, event.event as AfterDeploymentEvent, moduleState);
-              break;
-            }
-            case EventType.BeforeDeploymentEvent: {
-              await this.eventHandler.executeBeforeDeploymentEventHook(moduleName, event.event as BeforeDeploymentEvent, moduleState);
               break;
             }
             case EventType.BeforeCompileEvent: {
@@ -428,7 +424,7 @@ export class TxExecutor {
     let constructorFragmentInputs = [] as JsonFragmentType[];
 
     if (!checkIfExist(binding?.abi)) {
-      throw new UserError(`Missing abi from binding - ${binding.name}`);
+      throw new MissingAbiInContractError(binding.name);
     }
 
     binding.abi = binding.abi as JsonFragment[];
@@ -574,7 +570,12 @@ export class TxExecutor {
         binding.txData = binding.txData as TransactionData;
 
         this.prompter.sendingTx(elementName);
-        const txResp = await this.ethers.sendTransaction(signedTx);
+        let txResp;
+        try {
+          txResp = await this.ethers.sendTransaction(signedTx);
+        } catch (e) {
+          reject(new TransactionFailed(e.error.message));
+        }
         this.prompter.sentTx(elementName);
 
         resolve(txResp);
@@ -590,18 +591,27 @@ export class TxExecutor {
         binding.txData = binding.txData as TransactionData;
 
         this.prompter.sendingTx(elementName);
-        const txResp = await this.ethers.sendTransaction(signedTx);
+        let txResp;
+        try {
+          txResp = await this.ethers.sendTransaction(signedTx);
+        } catch (e) {
+          reject(new TransactionFailed(e.error.message));
+        }
         this.prompter.sentTx(elementName);
+
+        binding.txData.input = txResp;
+        await this.moduleState.storeSingleBinding(binding);
 
         let txReceipt = await txResp.wait(1);
         binding.txData.output = txReceipt;
         await this.moduleState.storeSingleBinding(binding);
 
         this.prompter.waitTransactionConfirmation();
-        txReceipt = await txResp.wait(BLOCK_CONFIRMATION_NUMBER);
+
+        txReceipt = await txResp.wait(this.blockConfirmation);
         binding.txData.output = txReceipt;
         await this.moduleState.storeSingleBinding(binding);
-        this.prompter.transactionConfirmation(BLOCK_CONFIRMATION_NUMBER, elementName);
+        this.prompter.transactionConfirmation(this.blockConfirmation, elementName);
 
         resolve(txReceipt);
       } catch (e) {
