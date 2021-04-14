@@ -61,8 +61,7 @@ export default class Migrate extends Command {
     const stateMigrationService = new StateMigrationService(moduleState, flags.from);
     const moduleMigrationService = new ModuleMigrationService(currentPath);
 
-    await command.migrate(stateMigrationService, moduleMigrationService, moduleName);
-    await this.analyticsService.sendCommandHit('migration');
+    await command.migrate(stateMigrationService, moduleMigrationService, moduleName, this.analyticsService);
   }
 
   async catch(error: Error) {

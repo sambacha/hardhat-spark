@@ -38,6 +38,7 @@ import { OverviewPrompter } from './packages/utils/logging/overview_prompter';
 import { StreamlinedPrompter } from './packages/utils/logging/prompter';
 import { GlobalConfigService } from './packages/config/global_config_service';
 import { AnalyticsService } from './packages/utils/analytics/analytics_service';
+import { IAnalyticsService } from './packages/utils/analytics';
 
 export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
@@ -68,6 +69,7 @@ export async function deploy(
   configService: IConfigService,
   walletWrapper: WalletWrapper,
   moduleDeploymentSummaryService: ModuleDeploymentSummaryService,
+  analyticsService: IAnalyticsService,
   test: boolean = false
 ) {
   // this is needed in order to support both js and ts
@@ -133,6 +135,7 @@ export async function deploy(
 
     prompter.finishModuleDeploy(moduleName);
     await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
+    await analyticsService.sendCommandHit('deploy');
   }
 }
 
@@ -143,6 +146,7 @@ export async function diff(
   moduleResolver: ModuleResolver,
   moduleStateRepo: ModuleStateRepo,
   configService: IConfigService,
+  analyticsService: IAnalyticsService,
   test: boolean = false
 ) {
   const modules = await loadScript(resolvedPath, test);
@@ -182,6 +186,7 @@ export async function diff(
     } else {
       cli.info(`Nothing changed from last revision - ${moduleName}`);
     }
+    await analyticsService.sendCommandHit('diff');
   }
 }
 
@@ -191,6 +196,7 @@ export async function genTypes(
   moduleTypings: ModuleTypings,
   config: IConfigService,
   prompter: IPrompter,
+  analyticsService: IAnalyticsService,
 ) {
   const modules = await loadScript(resolvedPath);
   const wallets = config.getAllWallets();
@@ -207,6 +213,7 @@ export async function genTypes(
   }
 
   prompter.generatedTypes();
+  await analyticsService.sendCommandHit('genTypes');
 }
 
 export async function usage(
@@ -219,6 +226,7 @@ export async function usage(
   moduleResolver: ModuleResolver,
   moduleUsage: ModuleUsage,
   prompter: IPrompter,
+  analyticsService: IAnalyticsService,
 ) {
   const modules = await loadScript(deploymentFilePath);
 
@@ -262,11 +270,13 @@ export async function usage(
     const file = await moduleUsage.generateUsageFile(rawUsage);
     await moduleUsage.storeUsageFile(file);
     prompter.finishedModuleUsageGeneration(moduleName);
+    await analyticsService.sendCommandHit('usage');
   }
 }
 
 export async function tutorial(
   tutorialService: TutorialService,
+  analyticsService: IAnalyticsService,
 ) {
   const scriptRoot = process.cwd();
 
@@ -283,12 +293,14 @@ export async function tutorial(
   tutorialService.setModuleName(moduleName);
 
   await tutorialService.start();
+  await analyticsService.sendCommandHit('genTypes');
 }
 
 export async function migrate(
   stateMigrationService: StateMigrationService,
   moduleMigrationService: ModuleMigrationService,
-  moduleName: string
+  moduleName: string,
+  analyticsService: IAnalyticsService,
 ) {
   // search for truffle build folder
   const builds = stateMigrationService.searchBuild();
@@ -305,6 +317,7 @@ export async function migrate(
   const moduleStateBindings = await moduleMigrationService.mapModuleStateFileToContractBindingsMetaData(ignitionStateFiles);
   const moduleFile = await moduleMigrationService.generateModuleFile(moduleName, moduleStateBindings);
   await moduleMigrationService.storeModuleFile(moduleFile, moduleName);
+  await analyticsService.sendCommandHit('migration');
 
   cli.info('Migration successfully completed!');
 }

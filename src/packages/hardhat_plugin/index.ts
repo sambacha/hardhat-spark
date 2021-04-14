@@ -17,7 +17,7 @@ import './type_extentions';
 export const PluginName = 'hardhat-ignition';
 
 extendEnvironment(env => {
-  env.ignition = lazyObject(() => new HardhatIgnition(env.config.ignition));
+  env.ignition = lazyObject(() => new HardhatIgnition());
 });
 
 const tutorial: ActionType<TutorialArgs> = async (
@@ -28,7 +28,7 @@ const tutorial: ActionType<TutorialArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.tutorial(config.ignition, tutorialArgs);
+  await IgnitionHardhatActions.tutorial(tutorialArgs);
 };
 
 const diff: ActionType<DiffArgs> = async (
@@ -39,7 +39,7 @@ const diff: ActionType<DiffArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.diff(config.ignition, diffArgs);
+  await IgnitionHardhatActions.diff(diffArgs);
 };
 
 const deploy: ActionType<DeployArgs> = async (
@@ -50,7 +50,7 @@ const deploy: ActionType<DeployArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.deploy(config.ignition, deployArgs);
+  await IgnitionHardhatActions.deploy(deployArgs);
 };
 
 const genTypes: ActionType<GenTypesArgs> = async (
@@ -61,7 +61,7 @@ const genTypes: ActionType<GenTypesArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.genTypes(config.ignition, genTypesArgs);
+  await IgnitionHardhatActions.genTypes(genTypesArgs);
 };
 
 const migration: ActionType<MigrationArgs> = async (
@@ -72,7 +72,7 @@ const migration: ActionType<MigrationArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.migration(config.ignition, migrationArgs);
+  await IgnitionHardhatActions.migration(migrationArgs);
 };
 
 const usage: ActionType<UsageArgs> = async (
@@ -83,23 +83,22 @@ const usage: ActionType<UsageArgs> = async (
     run
   }
 ) => {
-  await IgnitionHardhatActions.usage(config.ignition, usageArgs);
+  await IgnitionHardhatActions.usage(usageArgs);
 };
 
 task('ignition:tutorial', 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.')
   .setAction(tutorial);
 
 task('ignition:diff', 'Difference between deployed and current deployment.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
      'moduleFilePath',
     'Path to module deployment file.'
   )
-  .addParam<string>(
+  .addOptionalParam<string>(
     'networkName',
     'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
     'local',
     undefined,
-    true,
   )
   .addOptionalParam<string>(
     'state',
@@ -113,30 +112,27 @@ task('ignition:diff', 'Difference between deployed and current deployment.')
   .setAction(diff);
 
 task('ignition:deploy', 'Deploy new module, difference between current module and already deployed one.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
   )
-  .addParam<string>(
+  .addOptionalParam<string>(
     'networkName',
     'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
     'local',
     undefined,
-    true,
   )
-  .addParam<Logging>(
-    'prompting',
-    'Prompting type: streamlined, overview or json. default: overview',
+  .addOptionalParam<Logging>(
+    'logging',
+    'Logging options: streamlined, simple or json. default: streamlined',
     Logging.simple,
     undefined,
-    true,
   )
-  .addParam<string>(
+  .addOptionalParam<string>(
     'rpcProvider',
     'RPC Provider - URL of open RPC interface for your ethereum node.',
     undefined,
     undefined,
-    true,
   )
   .addOptionalParam<string>(
     'state',
@@ -154,16 +150,15 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
   .setAction(deploy);
 
 task('ignition:genTypes', 'It\'ll generate .d.ts file for written deployment modules for better type hinting.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
   )
-  .addPositionalParam<string>(
+  .addOptionalPositionalParam<string>(
     'configScriptPath',
     'Path to the hardhat-ignition.config.js script, default is same as current path.',
     undefined,
     undefined,
-    true
   )
   .setAction(genTypes);
 
@@ -185,7 +180,7 @@ task('ignition:migration', 'Migrate deployment meta data from other deployers to
   .setAction(migration);
 
 task('ignition:usage', 'Generate public usage module from standard module.')
-  .addPositionalParam(
+  .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
   )

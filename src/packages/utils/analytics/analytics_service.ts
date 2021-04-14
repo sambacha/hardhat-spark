@@ -12,13 +12,14 @@ import {
   readSecondLegacyAnalyticsId,
   writeAnalyticsId
 } from 'hardhat/internal/util/global-dir';
+import { IAnalyticsService } from './index';
 
 require('dotenv').config({path: path.resolve(__dirname + '../../../../.env.local')});
 
 const SENTRY_DSN = 'https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032';
 
 const GOOGLE_ANALYTICS_URL = 'http://www.google-analytics.com/debug/collect';
-const GA_TRACKING_ID = 'G-0R2029E88D';
+const GA_TRACKING_ID = 'UA-125013494-5';
 
 interface RawAnalytics {
   v: '1';
@@ -35,7 +36,7 @@ interface RawAnalytics {
   cd3: string;
 }
 
-export class AnalyticsService {
+export class AnalyticsService implements IAnalyticsService {
   private readonly confirmedConsent: boolean = false;
   private clientId: string;
   private readonly userType: string;

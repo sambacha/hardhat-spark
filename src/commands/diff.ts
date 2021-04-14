@@ -91,8 +91,7 @@ export default class Diff extends Command {
     const ethClient = new EthClient(rpcProvider);
     const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 
-    await this.analyticsService.sendCommandHit('diff');
-    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService);
+    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService, this.analyticsService);
   }
 
   async catch(error: Error) {

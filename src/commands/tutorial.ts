@@ -44,8 +44,7 @@ export default class Tutorial extends Command {
     const systemCrawlingService = new SystemCrawlingService(process.cwd(), ARTIFACTS_FOLDER);
     const tutorialService = new TutorialService(deploymentFileGenerator, systemCrawlingService);
 
-    await command.tutorial(tutorialService);
-    await this.analyticsService.sendCommandHit('genTypes');
+    await command.tutorial(tutorialService, this.analyticsService);
   }
 
   async catch(error: Error) {

@@ -2,8 +2,6 @@ import { Command, flags } from '@oclif/command';
 import ConfigService from '../packages/config/service';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { CliError, UserError } from '../packages/types/errors';
-import chalk from 'chalk';
 import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { IPrompter } from '../packages/utils/logging';
 import path from 'path';
@@ -117,8 +115,7 @@ export default class Usage extends Command {
     const states: string[] = flags.state?.split(',') || [];
     const moduleUsage = new ModuleUsage(deploymentFilePath, moduleStateRepo);
 
-    await command.usage(config, deploymentFilePath, states, configService, walletWrapper, moduleStateRepo, moduleResolver, moduleUsage, this.prompter);
-    await this.analyticsService.sendCommandHit('genTypes');
+    await command.usage(config, deploymentFilePath, states, configService, walletWrapper, moduleStateRepo, moduleResolver, moduleUsage, this.prompter, this.analyticsService);
   }
 
   async catch(error: Error) {

@@ -22,6 +22,8 @@ import { EmptyPrompter } from '../packages/utils/logging/empty_logging';
 import { IPrompter } from '../packages/utils/logging';
 import { EthClient } from '../packages/ethereum/client';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
+import { IAnalyticsService } from '../packages/utils/analytics';
+import { EmptyAnalyticsService } from '../packages/utils/analytics/empty_analytics_service';
 
 
 export class IgnitionTests implements IIgnitionUsage {
@@ -43,6 +45,7 @@ export class IgnitionTests implements IIgnitionUsage {
   public eventSession: Namespace;
   public walletWrapper: WalletWrapper;
   public moduleDeploymentSummaryService: ModuleDeploymentSummaryService;
+  public analyticsService: IAnalyticsService;
 
   constructor(configFlags: ConfigFlags, configFile: HardhatIgnitionConfig) {
     process.env.IGNITION_NETWORK_ID = String(configFlags.networkId || '31337');
@@ -75,7 +78,7 @@ export class IgnitionTests implements IIgnitionUsage {
 
     this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
     this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(this.moduleStateRepo);
-
+    this.analyticsService = new EmptyAnalyticsService();
   }
 
   cleanup() {
@@ -103,6 +106,7 @@ export class IgnitionTests implements IIgnitionUsage {
       this.configService,
       this.walletWrapper,
       this.moduleDeploymentSummaryService,
+      this.analyticsService,
       true
     );
   }
@@ -115,6 +119,7 @@ export class IgnitionTests implements IIgnitionUsage {
       this.moduleResolver,
       this.moduleStateRepo,
       this.configService,
+      this.analyticsService,
       true
     );
   }

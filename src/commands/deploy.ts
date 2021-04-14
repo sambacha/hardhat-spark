@@ -137,7 +137,7 @@ export default class Deploy extends Command {
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
     await this.analyticsService.sendCommandHit('deploy');
-    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService);
+    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService, this.analyticsService);
   }
 
   async catch(error: Error) {

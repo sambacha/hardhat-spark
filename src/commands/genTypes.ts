@@ -92,11 +92,11 @@ export default class GenTypes extends Command {
       }
 
       const resolvedPath = path.resolve(currentPath, filePath);
-      await command.genTypes(resolvedPath, config, typings, configService, this.prompter);
+      await command.genTypes(resolvedPath, config, typings, configService, this.prompter, this.analyticsService);
       return;
     } else if (!checkIfExist(config.networks)) {
       const resolvedPath = path.resolve(currentPath, filePath);
-      await command.genTypes(resolvedPath, config, typings, configService, this.prompter);
+      await command.genTypes(resolvedPath, config, typings, configService, this.prompter, this.analyticsService);
       return;
     }
 
@@ -110,13 +110,11 @@ export default class GenTypes extends Command {
         }
 
         const resolvedPath = path.resolve(currentPath, filePath);
-        await command.genTypes(resolvedPath, config, typings, configService, this.prompter);
+        await command.genTypes(resolvedPath, config, typings, configService, this.prompter, this.analyticsService);
       } else {
         cli.info(`Deployment script path is missing for network ${networkName}`);
       }
     }
-
-    await this.analyticsService.sendCommandHit('genTypes');
   }
 
   async catch(error: Error) {
