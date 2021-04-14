@@ -29,15 +29,18 @@ On a separate terminal, run:
 npx hardhat node
 ```
 
-## Known Hardhat-related artifacts bug
-
-If you get this error:
-```
-ERROR User error - contract creation without any data provided
-```
-Paste the contents from this gist https://gist.github.com/filippetroviccc/eae4c2bcea9490a3352f374451b7d074 into `artifacts/contracts/MerkleTreeWithHistory.sol/Hasher.json`.
-This is due to a Hardhat bug that will be resolved soon.
-
 ## Run ignition deploy
 
 Run `hardhat-ignition deploy` and choose `module.ts` in file picker.
+
+## Known Hardhat-related artifacts bug
+
+You're likely to get this error:
+
+```
+ERROR User error - contract creation without any data provided
+```
+If you do, paste the contents from this gist https://gist.github.com/filippetroviccc/eae4c2bcea9490a3352f374451b7d074 into `artifacts/contracts/MerkleTreeWithHistory.sol/Hasher.json`.
+This is due to a Hardhat bug that will be resolved soon.
+
+
