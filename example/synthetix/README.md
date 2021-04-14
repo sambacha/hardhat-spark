@@ -1,26 +1,18 @@
-# Startup tutorial
-
-Steps need to be tackled in order to successfully run ignition deployment. This project is also part of
-tutorial [here](../../docs/tutorial/basic.md)
+# Hardhat Ignition Synthetix deployment tutorial
 
 ## Installation and linking
 
-Run next command in root of ignition:
+In the root directory of ignition run:
 
 ```
 npm link
 ```
 
-Move to `example/synthetix` and run next command in order to install all dependencies and link to local
-implementation of ignition.
 
-```
-npm i
-```
+Cd to `example/synthetix` and run `npm i` to install all dependencies and link to local binary of ignition.
 
-## Setup env
-
-Here are some defaults:
+## Setup Synthetix env
+Paste the following into `.env`:
 ```
 ETH_ADDRESS=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 PRIVATE_KEY=0x192c62b8796614830ff208c9bb7ba283e79193c706182cc70f395964976057d2
@@ -28,7 +20,7 @@ PRIVATE_KEY=0x192c62b8796614830ff208c9bb7ba283e79193c706182cc70f395964976057d2
 
 ## Compilation
 
-Run next command:
+Compile the project before deploying:
 
 ```
 npx hardhat compile
@@ -36,22 +28,12 @@ npx hardhat compile
 
 ## Run Node
 
-Run next command:
+On a separate terminal, run:
 
 ```
 npx hardhat node
 ```
 
-## Run ignition diff and deploy
+## Run ignition deploy
 
-Run next command and choose `module.ts` in file picker.
-
-```
-hardhat-ignition diff
-```
-
-Run next command and choose `module.ts` in file picker.
-
-```
-hardhat-ignition deploy
-```
+Run `hardhat-ignition deploy` and choose `module.ts` in the file picker.
