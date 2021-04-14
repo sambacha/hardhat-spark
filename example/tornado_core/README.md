@@ -1,28 +1,21 @@
-# Startup tutorial
+# Hardhat Ignition Tornado deployment tutorial
 
 Actual tornado [readme](./READMEE.md).
 
-Steps need to be tackled in order to successfully run ignition deployment. This project is also part of
-tutorial [here](../../docs/tutorial/basic.md)
-
 ## Installation and linking
 
-Run next command in root of ignition:
+In the root directory of ignition run:
 
 ```
 npm link
 ```
 
-Move to `example/tornado_cash` and run next command in order to install all dependencies and link to local
-implementation of ignition.
-
-```
-npm i
-```
+Cd to `example/tornado_cash` and run `npm i` to install all dependencies and link to local
+binary of ignition.
 
 ## Compilation
 
-Run next command:
+Compile the project before deploying:
 
 ```
 npx hardhat compile
@@ -30,28 +23,21 @@ npx hardhat compile
 
 ## Run Node
 
-Run next command:
+On a separate terminal, run:
 
 ```
 npx hardhat node
 ```
 
-## Validate artifacts
+## Known Hardhat-related artifacts bug
 
-Check if all artifacts and builds are present, specifically
-if `artifacts/contracts/MerkleTreeWithHistory.sol/Hasher.json` is present and if bytecode is empty. If it is, copy and
-paste this file from gist: https://gist.github.com/filippetroviccc/eae4c2bcea9490a3352f374451b7d074
-
-## Run ignition diff and deploy
-
-Run next command and choose `module.ts` in file picker.
-
+If you get this error:
 ```
-hardhat-ignition diff
+ERROR User error - contract creation without any data provided
 ```
+Paste the contents from this gist https://gist.github.com/filippetroviccc/eae4c2bcea9490a3352f374451b7d074 into `artifacts/contracts/MerkleTreeWithHistory.sol/Hasher.json`.
+This is due to a Hardhat bug that will be resolved soon.
 
-Run next command and choose `module.ts` in file picker.
+## Run ignition deploy
 
-```
-hardhat-ignition deploy
-```
+Run `hardhat-ignition deploy` and choose `module.ts` in file picker.
