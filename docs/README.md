@@ -131,6 +131,8 @@ how to use ignition. Not too much theory, just practical application to get you 
 | Usage guides                      | Description  | Link |
 | --------------------------------- | --------------------------------------------------------- | ---- |
 | Initialize ignition               | How to init ignition for your own uses. | [initialization](./usage/module-init.md)|
+| Define contract                   | How to define a contract. | 
+| Define contract event hook        | How to define a contract event hook. | [contract_event_hook](./usage/event-hook-definition.md)|
 | Write deployment script           | How to write deployment script. | [deployment_script](./usage/deployment-script.md) |
 | How to deploy new module          | How to deploy module. | [module deploy](./usage/deploy-module.md)|
 | Generate module typehints         | How to generate module types for your module | [module typehints](./usage/module-typehints.md) |

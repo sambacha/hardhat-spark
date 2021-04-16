@@ -255,7 +255,7 @@ export class GroupedDependencies {
       dependency = dependency as ContractBinding;
       if (dependency._isContractBinding) {
         if (dependency.deployMetaData.shouldRedeploy) {
-          throw new ShouldRedeployAlreadyDefinedError();
+          throw new ShouldRedeployAlreadyDefinedError(dependency.name);
         }
 
         dependency.deployMetaData.shouldRedeploy = fn;
@@ -478,7 +478,7 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      throw new ContractNotDeployedError(this.name);
+      throw new ContractNotDeployedError(this.name, this.contractName, this.eventSession.get(clsNamespaces.EVENT_NAME));
     }
 
     this.contractInstance = new ContractInstance(
@@ -908,7 +908,7 @@ export class ContractInstance {
           args.length > fragment.inputs.length + 1 ||
           args.length < fragment.inputs.length
         ) {
-          throw new ArgumentLengthInvalid(fragment.name);
+          throw new ArgumentLengthInvalid(fragment.name, fragment.inputs);
         }
 
         let overrides: CallOverrides = {};
@@ -966,7 +966,7 @@ export class ContractInstance {
           currentEventTransactionData.contractInput[contractTxIterator] = tx;
         } catch (err) {
           if ((err.reason).includes('could not detect network')) {
-            throw new NoNetworkError();
+            throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
           }
           throw new TransactionFailed(err.error.message);
         }
@@ -1015,7 +1015,7 @@ export class ContractInstance {
     let i = 0;
     for (let arg of args) {
       if (checkIfExist(arg?.contractName) && !checkIfExist(arg?.deployMetaData.contractAddress)) {
-        throw new ContractNotDeployedError(arg.name);
+        throw new ContractNotDeployedError(arg.name, arg.contractName, arg.moduleName);
       }
 
       if (checkIfExist(arg?.deployMetaData?.contractAddress)) {
@@ -1078,9 +1078,26 @@ export class IgnitionWallet extends ethers.Wallet {
 
       await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
 
-      const ignitionTransaction = await this.populateTransactionWithIgnitionMetadata(transaction);
+      let ignitionTransaction;
+      try {
+        ignitionTransaction = await this.populateTransactionWithIgnitionMetadata(transaction);
+      } catch (err) {
+        if ((err.reason).includes('could not detect network')) {
+          throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
+        }
+        throw new TransactionFailed(err.error.message);
+      }
 
-      const txResp = await super.sendTransaction(ignitionTransaction);
+      let txResp;
+      try {
+        txResp = await super.sendTransaction(ignitionTransaction);
+      } catch (err) {
+        if ((err.reason).includes('could not detect network')) {
+          throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
+        }
+
+        throw new TransactionFailed(err.error.message);
+      }
       await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
 
       let txReceipt;

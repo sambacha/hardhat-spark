@@ -227,7 +227,7 @@ export class ModuleResolver {
       stateFileElement = stateFileElement as ContractBindingMetaData;
       if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
         if (!((resolvedModuleStateElement as ContractBinding)._isContractBinding)) {
-          throw new ModuleStateMismatchError((resolvedModuleStateElement as StatefulEvent).event.name);
+          throw new ModuleStateMismatchError(stateFileElement, resolvedModuleStateElement as StatefulEvent);
         }
 
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
@@ -301,7 +301,7 @@ export class ModuleResolver {
       ) {
         resolvedModuleStateElement = resolvedModuleStateElement as StatefulEvent;
         if (!(resolvedModuleStateElement._isStatefulEvent)) {
-          throw new ModuleAndModuleStateMismatchElementError();
+          throw new ModuleAndModuleStateMismatchElementError(resolvedModuleStateElement, stateFileElement as unknown as ContractBinding);
         }
 
         if (stateFileElement.event.name !== resolvedModuleStateElement.event.name) {
@@ -313,6 +313,7 @@ export class ModuleResolver {
 
         if (stateFileElement.event.eventType !== resolvedModuleStateElement.event.eventType) {
           throw new ModuleAndModuleStateEventTypeMismatchError(
+            resolvedModuleStateElement.event.name,
             resolvedModuleStateElement.event.eventType,
             stateFileElement.event.eventType
           );
@@ -422,7 +423,7 @@ export class ModuleResolver {
     }
 
     if (!checkIfExist(binding?.libraries)) {
-      throw new ContractNotCompiledError(binding.name);
+      throw new ContractNotCompiledError(binding.name, binding.contractName, binding.moduleName);
     }
 
     // resolve all libraries usage

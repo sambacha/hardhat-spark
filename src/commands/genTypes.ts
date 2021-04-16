@@ -60,10 +60,6 @@ export default class GenTypes extends Command {
 
     const currentPath = process.cwd();
     let filePath = args.module_file_path as string;
-    if (filePath == '') {
-      throw new PathNotProvided('Path argument missing from command. \nPlease use --help to better understand usage of this command');
-    }
-
     this.prompter = new StreamlinedPrompter();
 
     const typings = new ModuleTypings();
@@ -106,7 +102,7 @@ export default class GenTypes extends Command {
       ) {
         filePath = network.deploymentFilePath;
         if (!fs.existsSync(filePath)) {
-          throw new WrongDeploymentPathForNetwork(networkName);
+          throw new WrongDeploymentPathForNetwork(networkName, filePath);
         }
 
         const resolvedPath = path.resolve(currentPath, filePath);

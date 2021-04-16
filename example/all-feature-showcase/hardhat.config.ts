@@ -7,5 +7,5 @@ import { config } from './hardhat-ignition.config';
  */
 module.exports = {
   solidity: '0.7.3',
-  ignition: config
+  ignition: config,
 };

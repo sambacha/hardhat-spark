@@ -290,7 +290,7 @@ export class TxExecutor {
 
         const argBinding = moduleState[arg.name];
         if (!checkIfExist(argBinding)) {
-          throw new NoContractBindingDataInModuleState(arg.name);
+          throw new NoContractBindingDataInModuleState(element.name, arg.name);
         }
 
         if (checkIfExist(elementsBatches[arg.name])) {
@@ -424,7 +424,7 @@ export class TxExecutor {
     let constructorFragmentInputs = [] as JsonFragmentType[];
 
     if (!checkIfExist(binding?.abi)) {
-      throw new MissingAbiInContractError(binding.name);
+      throw new MissingAbiInContractError(binding.name, binding.contractName);
     }
 
     binding.abi = binding.abi as JsonFragment[];

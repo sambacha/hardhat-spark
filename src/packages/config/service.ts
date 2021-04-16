@@ -1,5 +1,4 @@
 import { HardhatIgnitionConfig } from '../types/config';
-import * as fs from 'fs';
 import * as path from 'path';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
@@ -35,14 +34,14 @@ export default class ConfigService implements IConfigService {
         const configModules = await loadScript(configFilePath);
 
         if (Object.entries(configModules).length > 1) {
-          throw new OneConfigAllowedError();
+          throw new OneConfigAllowedError(configFilePath);
         }
 
         for (const [, ignitionConfig] of Object.entries(configModules)) {
           config = ignitionConfig as HardhatIgnitionConfig;
         }
         if (!checkIfExist(config)) {
-          throw new ConfigMissingError();
+          throw new ConfigMissingError(configScriptPath);
         }
       } catch (err) {
         if (err._isUserError) {

@@ -118,13 +118,12 @@ export async function errorHandling(error: Error) {
   }
 
   if ((error as UserError)._isUserError) {
-    cli.info('Something went wrong inside deployment script, check the message below and try again.');
     if (cli.config.outputLevel == 'debug') {
       cli.debug(error.stack);
       return;
     }
 
-    cli.info(chalk.red.bold('ERROR'), error.message);
+    cli.info(chalk.red(error.message));
     return;
   }
 

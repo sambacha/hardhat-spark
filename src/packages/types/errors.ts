@@ -1,5 +1,19 @@
 import chalk from 'chalk';
 import { extractObjectInfo } from '../utils/util';
+import * as path from 'path';
+import { BaseEvent, ContractBinding, ContractBindingMetaData, StatefulEvent } from '../../interfaces/hardhat_ignition';
+import { ParamType } from '@ethersproject/abi/src.ts/fragments';
+
+const EVENT_HOOK_DEFINITION_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const EVENT_LIFECYCLE_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const CONTACT_DEFINITION_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const MODULE_GROUPING_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const CONFIG_SCRIPT_DOCS = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const DEPLOYMENT_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const MACRO_HELPER_DOCS = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+const EVENT_HOOK_DEPS_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+
 
 export class UserError extends Error {
   public _isUserError: boolean = true;
@@ -7,7 +21,7 @@ export class UserError extends Error {
 
   constructor(message: string) {
     super();
-    this.message = 'User error - ' + message;
+    this.message = message;
   }
 }
 
@@ -22,159 +36,237 @@ export class CliError extends Error {
 }
 
 export class ContractNotCompiledError extends UserError {
-  constructor(contractBindingName: string) {
-    super(`Contract is not compiled correctly - ${contractBindingName}`);
+  constructor(contractBindingName: string, contractName: string, moduleName: string) {
+    super(`Contract is not compiled correctly.
+${chalk.bold('Library')} data is missing for ${chalk.bold(contractName)} contract inside module ${chalk.bold(moduleName)}.
+
+Here is a more detailed explanation of a contract definition: ${CONTACT_DEFINITION_DOCS_LINK}`);
   }
 }
 
 export class WalletTransactionNotInEventError extends UserError {
   constructor() {
-    super('Wallet sendTransaction() function is running outside of an event!');
+    super(`Cannot use sendTransaction() outside of a contract lifecycle event!
+
+In order to execute a wallet transactions, you will need to use a contract lifecycle event. See the documentation for more information: ${EVENT_HOOK_DEFINITION_DOCS_LINK}`);
   }
 }
 
 export class EventDoesntExistError extends UserError {
   constructor(eventName: string) {
-    super(`Event with this name doesn't exist - ${eventName}`);
+    super(`The event hook ${chalk.bold(eventName)} has not been defined yet.
+
+This can occur if Ignition is using a contract event hook as a dependency before defining it in the module.
+In order to better understand module dependency resolving, you can see the documentation here: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}`);
   }
 }
 
 export class ContractNotDeployedError extends UserError {
-  constructor(contractName: string) {
-    super(`Contract is not suitable to be instantiated, please deploy it first - ${contractName}`);
+  constructor(bindingName: string, contractName: string, eventName: string) {
+    super(`Seems like the contract ${chalk.bold(contractName)} has not been deployed yet.
+
+If you want to use this contract inside of the event hook ${chalk.bold(eventName)}, you can utilize ${chalk.bold('m.group()')} to specify it as a dependency.
+Here is the link to the documentation: ${MODULE_GROUPING_DOCS_LINK}`);
   }
 }
 
 export class MissingAbiInContractError extends UserError {
-  constructor(contractBindingName: string) {
-    super(`Missing abi from binding - ${contractBindingName}`);
+  constructor(contractBindingName: string, contractName: string) {
+    super(`Missing ABI data from contract binding of ${contractName} contract.
+
+ABI data is missing from the compiled contract binding of ${chalk.bold(contractName)} contract.
+Please check if everything is compiled correctly and if the artifact folder at ${chalk.italic(path.join(`artifacts/contracts`))} exists.`);
   }
 }
 
 export class OneConfigAllowedError extends UserError {
-  constructor() {
-    super('You can only have one config object!');
+  constructor(configScriptPath: string) {
+    super(`Seems like you have multiple config objects in your config script at ${chalk.italic(path.join(configScriptPath))}, try to merge them into a single object.
+
+Here is the link to the documentation on how to define config script: ${CONFIG_SCRIPT_DOCS}`);
+  }
+}
+
+export class ConfigScriptNotCompiledCorrectly extends UserError {
+  constructor(error: Error, configScriptPath: string) {
+    console.log(error);
+    super(`Seems like there are compilation error for your script at ${chalk.italic(path.join(configScriptPath))}.
+
+If you are not sure how to write ignition config, here is detailed documentation: ${CONFIG_SCRIPT_DOCS}`);
   }
 }
 
 export class ConfigMissingError extends UserError {
-  constructor() {
-    super('Config object is missing. This can be caused either if hardhat-ignition.config.ts file is missing or it didnt compile correctly');
+  constructor(configScriptPath: string) {
+    super(`Ignition config object is missing inside config script at ${chalk.italic(path.join(configScriptPath))}.
+
+If you are not sure how to write ignition config, here is detailed documentation: ${CONFIG_SCRIPT_DOCS}`);
   }
 }
 
 export class ModuleAndModuleStateMismatchElementError extends UserError {
-  constructor() {
-    super("Module and module state file didn't match element.");
+  constructor(moduleElement: StatefulEvent, stateFileModuleElement: ContractBinding) {
+    super(`Seems like ${chalk.bold(moduleElement.event.name)} is not the same type as ${chalk.bold(stateFileModuleElement.name)}.
+
+This can be caused if you have added a contract or an event in the middle of module dependency resolving.
+Here is a link to the detailed description of the module resolving process: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}`);
   }
 }
 
 export class ModuleAndModuleStateMismatchElementNameError extends UserError {
   constructor(moduleStateElementName: string, stateFileElementName: string) {
-    super(`Module and module state file didn't match state element name:
-Module file: ${moduleStateElementName}
-State file: ${stateFileElementName}`);
+    super(`Module event hook name is different than one currently in state file for the same event hook.
+
+Module file event name: ${chalk.bold(moduleStateElementName)}
+State file event name: ${chalk.bold(stateFileElementName)}
+
+In order for Ignition to resolve module dependencies correctly, this names should be the same.
+Here is a link to the detailed description of the module resolving process, it can help you understand why this is the case: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}
+`);
   }
 }
 
 export class ModuleAndModuleStateEventTypeMismatchError extends UserError {
-  constructor(resolvedModuleStateElementEventType, stateFileElementEventType) {
-    super(`Module and module state file didn't match state element event type:
-Module file: ${resolvedModuleStateElementEventType}
-State file: ${stateFileElementEventType}`);
+  constructor(currentEventName: string, resolvedModuleStateElementEventType, stateFileElementEventType) {
+    super(`You have changed the event hook type for the ${chalk.bold(currentEventName)} event, compared to the same event hook in the current state file.
+
+Current event hook type: ${chalk.bold(resolvedModuleStateElementEventType)}
+State file event hook type: ${chalk.bold(stateFileElementEventType)}
+
+Learn more about defining and hooking events in ${EVENT_LIFECYCLE_DOCS_LINK}
+`);
   }
 }
 
 export class NoDeploymentModuleError extends UserError {
   constructor() {
-    super('Their is not deployment module provided.\n   Use --help for more information.');
+    super(`You will need to choose your deployment module in order to run Ignition.
+
+Use --help for more information or consult documentation at the link here: ${DEPLOYMENT_DOCS_LINK}`);
   }
 }
 
 export class ShouldRedeployAlreadyDefinedError extends UserError {
-  constructor() {
-    super('shouldRedeploy() function is already defined for this contract.');
+  constructor(elementName: string) {
+    super(`The contract ${elementName} already has the shouldRedeploy() functions defined.
+
+You are only allowed to have a single shouldRedeploy() per contract.`);
   }
 }
 
 export class ArgumentLengthInvalid extends UserError {
-  constructor(functionName: string) {
-    super(`Trying to call contract function with more/less arguments - ${functionName}`);
+  constructor(functionName: string, args: ParamType[]) {
+    super(`
+Trying to call a contract function with invalid number of arguments for the ${chalk.bold(functionName)}.
+
+The function interface is looking like this:
+${functionName}(${args.map((v: ParamType, index) => {
+      if (index == arguments.length - 1) {
+        return `${v.type}`;
+      }
+
+      return `${v.type}, `;
+    })})`);
   }
 }
 
 export class EventNameExistsError extends UserError {
   constructor(eventName: string) {
-    super(`Event with same name already initialized - ${eventName}`);
+    super(`The event hook ${chalk.bold(eventName)} is already defined.
+
+Event names, when defining event hooks must be unique, check documentation for creation of event hooks: ${EVENT_HOOK_DEFINITION_DOCS_LINK}`);
   }
 }
 
 export class NoContractBindingDataInModuleState extends CliError {
-  constructor(name: string) {
-    super(`Their is no data of this contract binding in resolved module state - ${name}`);
+  constructor(contractName: string, argName: string) {
+    super(`Failed to initialize ${chalk.bold(contractName)}. Constructor parameter ${chalk.bold(argName)} has not yet been resolved by Ignition in the module resolving process.
+
+Here is a link to the detailed description of the module resolving process: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}
+`);
   }
 }
 
 export class UnexpectedValueError extends UserError {
   constructor(expected: any, actual: any) {
-    super(`Failed on expectFuncRead - couldn't match
-expected value: ${extractObjectInfo(expected)}
-actual value: ${actual}`);
+    super(`The validation of contract execution failed when checking expected value.
+
+Expected value: ${chalk.bold(extractObjectInfo(expected))}
+Actual value: ${chalk.bold(actual)}
+
+Learn more about Ignition UX macro helpers here: ${MACRO_HELPER_DOCS}
+`);
   }
 }
 
 export class GasPriceBackoffError extends UserError {
   constructor(maxGasPrice: string, currentGasPrice: string, numberOfRetries: number, backoffTime: number) {
-    super(`Current network gas price is too large
-Max gas price: ${maxGasPrice} wei
-Current gas price: ${currentGasPrice} wei
-Total wait time: ${(numberOfRetries * backoffTime) / 1000} s
+    super(`The current network gas price is ${chalk.bold(currentGasPrice)} wei and it's larger than expected max gas price ${chalk.bold(maxGasPrice)} wei.
+
+Ignition will wait for ${chalk.bold((numberOfRetries * backoffTime) / 1000 + 's')} and check the network gas price again. Current total wait time is ${chalk.bold((numberOfRetries * backoffTime) / 1000 + 's')}.
 `);
   }
 }
 
-export class MissingDeploymentPath extends UserError {
-  constructor() {
-    super(`Deployment script path is missing.
-Either add it to hardhat-ignition.config.ts or use --help`);
-  }
-}
+// export class MissingDeploymentPath extends UserError {
+//   constructor() {
+//     super(`Deployment script path is missing.
+// Either add it to hardhat-ignition.config.ts or use --help`);
+//   }
+// }
 
 export class WrongDeploymentPathForNetwork extends UserError {
-  constructor(networkName: string) {
-    super(`Provided deployment script path is wrong for ${networkName}.
-Either add it to hardhat-ignition.config.ts or use --help`);
+  constructor(networkName: string, filePath: string) {
+    super(`Deployment file for ${chalk.bold(networkName)} is not present at ${chalk.italic(path.join(filePath))}.
+
+If you are not sure how to define deployment file location in config script you can find more info here: ${CONFIG_SCRIPT_DOCS}
+`);
   }
 }
 
 export class EventUsageIsNotDeployed extends UserError {
-  constructor(eventUsage: any) {
-    super(`Event usage is not yet deployed - ${eventUsage}`);
+  constructor(currentEvent: BaseEvent, eventUsage: string) {
+    super(`The event ${chalk.bold(currentEvent.name)} is using ${chalk(eventUsage)} event, but the ${eventUsage} event still has ${chalk.bold('not yet been executed')}.
+
+Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK}
+`);
   }
 }
 
 export class EventDependencyNotDeployedError extends UserError {
   constructor(eventName: string, dep: any) {
-    super(`Dependency is not yet deployed \nEvent: ${eventName} \nDependency: ${dep}`);
+    super(`The event ${chalk.bold(eventName)} is depending on ${chalk(dep)} event, but the ${dep} event still has ${chalk.bold('not yet been executed')}.
+
+Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK}
+`);
   }
 }
 
 export class ModuleStateMismatchError extends UserError {
-  constructor(eventName: string) {
-    super(`Module and module state file didn't match state element name:
-Module file: ${eventName}`);
+  constructor(stateFileElement: ContractBindingMetaData, event: StatefulEvent) {
+    super(`Seems like ${chalk.bold(event.event.name)} event is not the same type as the ${chalk.bold(stateFileElement.name)} contract binding.
+
+This can be caused if you have added a contract or an event in the middle of module dependency resolving.
+Here is a link to the detailed description of the module resolving process: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}
+`);
   }
 }
 
 export class MissingContractMetadata extends UserError {
   constructor(contractName: string) {
-    super(`Contract metadata are missing for ${chalk.bold(contractName)}`);
+    super(`Bytecode and libraries are mandatory to be specified inside artifacts file for ${chalk.bold(contractName)}.
+
+Currently they are ${chalk.bold('missing')}, try to recompile them or manually fix the issue.
+`);
   }
 }
 
 export class NoNetworkError extends UserError {
-  constructor() {
-    super(`Ignition could detect network.`);
+  constructor(error: Error, rpcProvider) {
+    super(`Ignition could ${chalk.bold('NOT DETECT')} a running node at ${chalk.bold(rpcProvider)}.
+
+Please check if node is running and if you have configured rpc correctly.
+`);
   }
 }
 

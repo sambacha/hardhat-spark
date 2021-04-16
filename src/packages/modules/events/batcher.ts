@@ -127,7 +127,7 @@ export class Batcher {
 
     for (const usage of event.usage) {
       if (!checkIfExist(elementsBatches[usage])) {
-        throw new EventUsageIsNotDeployed(usage);
+        throw new EventUsageIsNotDeployed(event, usage);
       }
 
       if (elementsBatches[usage] > deepestDepNumber) {
@@ -157,7 +157,7 @@ export class Batcher {
 
     for (const eventUsage of event.eventUsage) {
       if (!checkIfExist(elementsBatches[eventUsage])) {
-        throw new EventUsageIsNotDeployed(eventUsage);
+        throw new EventUsageIsNotDeployed(event, eventUsage);
       }
 
       if (elementsBatches[eventUsage] > deepestDepNumber) {

@@ -5,7 +5,9 @@ require('dotenv').config({path: path.resolve(__dirname + '/.env')});
 
 const {
   GOOGLE_ACCESS_KEY,
-  GOOGLE_SECRET_ACCESS_KEY
+  GOOGLE_SECRET_ACCESS_KEY,
+  KOVAN_PRIV_KEY,
+  INFURA_KEY,
 } = process.env;
 
 const registryAndResolver = new RemoteBucketStorage(
@@ -23,5 +25,21 @@ export const config: HardhatIgnitionConfig = {
   ],
   mnemonic: 'test test test test test test test test test test test junk',
   hdPath: "m/44'/60'/0'/0",
+  networks: {
+    'kovan': {
+      networkId: '42',
+      rpcProvider: `https://kovan.infura.io/v3/${INFURA_KEY}`,
+      privateKeys: [
+        KOVAN_PRIV_KEY,
+      ],
+      localDeployment: false,
+      blockConfirmation: 2,
+      // gasPriceBackoff: {
+      //   maxGasPrice: ethers.utils.parseUnits('20', 'gwei'),
+      //   backoffTime: 1000 * 15,
+      //   numberOfRetries: 3,
+      // }
+    }
+  },
   // resolver: registryAndResolver,
 };

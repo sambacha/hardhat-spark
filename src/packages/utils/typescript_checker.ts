@@ -1,4 +1,4 @@
-import { CliError } from '../types/errors';
+import { CliError, ConfigScriptNotCompiledCorrectly } from '../types/errors';
 import * as path from 'path';
 
 require('dotenv').config({path: path.resolve(__dirname + '../../../../.env.local')});
@@ -81,7 +81,7 @@ export async function loadScript(configScriptPath: string, test: boolean = false
     const imported = require(configScriptPath);
     module = imported.default !== undefined ? imported.default : imported;
   } catch (e) {
-    module = {};
+    throw new ConfigScriptNotCompiledCorrectly(e, configScriptPath);
   }
 
   return module;
