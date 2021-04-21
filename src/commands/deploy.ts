@@ -9,21 +9,21 @@ import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
 import { Wallet } from 'ethers';
 import { cli } from 'cli-ux';
 import * as command from '../index';
+import { defaultInputParams } from '../index';
 import { EventHandler } from '../packages/modules/events/handler';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
-import { IPrompter, Logging } from '../packages/utils/logging';
+import { ILogging, Logging } from '../packages/utils/logging';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import { EthClient } from '../packages/ethereum/client';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
-import { defaultInputParams } from '../index';
 
 export default class Deploy extends Command {
   private mutex = false;
   static description = 'Deploy new module, difference between current module and already deployed one.';
-  private prompter: IPrompter | undefined;
+  private prompter: ILogging | undefined;
   private analyticsService: AnalyticsService;
 
   static flags = {
@@ -58,7 +58,7 @@ export default class Deploy extends Command {
       {
         name: 'logging',
         description: 'Logging type: streamlined, overview or json. default: overview',
-        options: [Logging.json, Logging.streamlined, Logging.simple],
+        options: [Logging.json, Logging.streamlined, Logging.simple, Logging.overview],
       }
     ),
     state: flags.string(
@@ -137,7 +137,6 @@ export default class Deploy extends Command {
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
     await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService, this.analyticsService);
-    await this.analyticsService.sendCommandHit('deploy');
   }
 
   async catch(error: Error) {

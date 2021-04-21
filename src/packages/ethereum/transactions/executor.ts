@@ -14,7 +14,7 @@ import {
   StatefulEvent,
   TransactionData,
 } from '../../../interfaces/hardhat_ignition';
-import { IPrompter } from '../../utils/logging';
+import { ILogging } from '../../utils/logging';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { checkIfExist } from '../../utils/util';
 import { EthTxGenerator } from './generator';
@@ -43,7 +43,7 @@ export class TxExecutor {
   private readonly networkId: string;
   private readonly parallelize: boolean;
 
-  private prompter: IPrompter;
+  private prompter: ILogging;
   private moduleState: ModuleStateRepo;
   private txGenerator: EthTxGenerator;
   private ethers: providers.JsonRpcProvider;
@@ -52,7 +52,7 @@ export class TxExecutor {
   private eventTxExecutor: EventTxExecutor;
   private blockConfirmation: number;
 
-  constructor(prompter: IPrompter, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: string, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
+  constructor(prompter: ILogging, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: string, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
     this.prompter = prompter;
     this.moduleState = moduleState;
     this.txGenerator = txGenerator;
@@ -95,13 +95,15 @@ export class TxExecutor {
   private async executeSync(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined): Promise<void> {
     for (let [elementName, element] of Object.entries(moduleState)) {
       if (checkIfExist((element as ContractBinding)?.bytecode)) {
+        element = element as ContractBinding;
+
         const contractAddress = await resolver?.resolveContract(this.networkId, moduleName, elementName);
 
         // check if already deployed
-        element = element as ContractBinding;
         if (checkIfExist(element.deployMetaData?.contractAddress)) {
           this.prompter.alreadyDeployed(elementName);
           await this.prompter.promptContinueDeployment();
+          await this.prompter.finishedBindingExecution(elementName);
           continue;
         }
 
@@ -110,6 +112,7 @@ export class TxExecutor {
           element.deployMetaData.contractAddress = contractAddress as string;
           this.prompter.alreadyDeployed(elementName);
           await this.moduleState.storeSingleBinding(element as ContractBinding);
+          await this.prompter.finishedBindingExecution(elementName);
           continue;
         }
 
@@ -190,6 +193,7 @@ export class TxExecutor {
         batchElement = batchElement as ContractBinding;
         if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
           await this.prompter.alreadyDeployed(batchElement.name);
+          await this.prompter.finishedBindingExecution(batchElement.name);
           continue;
         }
 
@@ -352,7 +356,7 @@ export class TxExecutor {
   async executeModuleEvents(moduleName: string, moduleState: ModuleState, moduleEvents: { [name: string]: ModuleEvent }): Promise<void> {
     ModuleResolver.handleModuleEvents(moduleState, moduleEvents);
 
-    for (const [eventName] of Object.entries(moduleEvents)) {
+    for (const [eventName, event] of Object.entries(moduleEvents)) {
       await this.executeEvent(moduleName, moduleState[eventName] as StatefulEvent, moduleState);
     }
   }
@@ -602,11 +606,18 @@ export class TxExecutor {
         binding.txData.input = txResp;
         await this.moduleState.storeSingleBinding(binding);
 
+        this.prompter.waitTransactionConfirmation();
+        this.prompter.transactionConfirmation(1, elementName);
         let txReceipt = await txResp.wait(1);
         binding.txData.output = txReceipt;
         await this.moduleState.storeSingleBinding(binding);
 
-        this.prompter.waitTransactionConfirmation();
+        let currentConfirmation = 2;
+        while (currentConfirmation < this.blockConfirmation) {
+          this.prompter.transactionConfirmation(currentConfirmation, elementName);
+          await txResp.wait(currentConfirmation);
+          currentConfirmation++;
+        }
 
         txReceipt = await txResp.wait(this.blockConfirmation);
         binding.txData.output = txReceipt;

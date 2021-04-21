@@ -6,7 +6,7 @@ import {
 import { checkIfExist, compareBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
-import { IPrompter } from '../utils/logging';
+import { ILogging } from '../utils/logging';
 import { EthTxGenerator } from '../ethereum/transactions/generator';
 import {
   CliError, ContractNotCompiledError, ModuleAndModuleStateEventTypeMismatchError,
@@ -24,7 +24,7 @@ import { EthClient } from '../ethereum/client';
 
 export class ModuleResolver {
   private readonly signer: ethers.Wallet;
-  private readonly prompter: IPrompter;
+  private readonly prompter: ILogging;
   private readonly txGenerator: EthTxGenerator;
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
@@ -34,7 +34,7 @@ export class ModuleResolver {
   constructor(
     provider: ethers.providers.JsonRpcProvider,
     privateKey: string,
-    prompter: IPrompter,
+    prompter: ILogging,
     txGenerator: EthTxGenerator,
     moduleStateRepo: ModuleStateRepo,
     eventTxExecutor: EventTxExecutor,
@@ -382,10 +382,6 @@ export class ModuleResolver {
     }
 
     for (const eventName of bindingEventDeps.afterCompile) {
-      invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
-    }
-
-    for (const eventName of bindingEventDeps.beforeDeploy) {
       invalidateSingleEvent(moduleStateFile[eventName] as StatefulEvent);
     }
 

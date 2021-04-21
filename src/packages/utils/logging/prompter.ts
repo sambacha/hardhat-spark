@@ -1,10 +1,10 @@
 import cli from 'cli-ux';
 import { DeniedConfirmation } from '../../types/errors';
 import chalk from 'chalk';
-import { IPrompter } from './index';
+import { ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 
-export class StreamlinedPrompter implements IPrompter {
+export class StreamlinedPrompter implements ILogging {
   private whitespaces: string;
   private readonly skipConfirmation: boolean;
 
@@ -27,8 +27,9 @@ export class StreamlinedPrompter implements IPrompter {
     this.whitespaces += '  ';
   }
 
-  finishModuleDeploy(): void {
+  finishModuleDeploy(moduleName: string, summary: string): void {
     this.finishedElementExecution();
+    cli.info(summary);
   }
 
   alreadyDeployed(elementName: string): void {

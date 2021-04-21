@@ -4,6 +4,7 @@ node_modules
 #Hardhat files
 cache
 artifacts
+deployment/.log
 
 #hardhat-ignition files
 .hardhat-ignition

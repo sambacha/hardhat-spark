@@ -8,7 +8,7 @@ import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { IConfigService } from '../../config';
 import { INonceManager, ITransactionSigner } from './index';
 import { GasPriceBackoff } from '../../types/config';
-import { IPrompter } from '../../utils/logging';
+import { ILogging } from '../../utils/logging';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
@@ -25,7 +25,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   private nonceMap: { [address: string]: number };
   private nonceManager: INonceManager;
   private transactionSigner: ITransactionSigner;
-  private readonly prompter: IPrompter;
+  private readonly prompter: ILogging;
   private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
@@ -36,7 +36,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     ethers: providers.JsonRpcProvider,
     nonceManager: INonceManager,
     transactionSigner: ITransactionSigner,
-    prompter: IPrompter,
+    prompter: ILogging,
     gasPriceBackoff?: GasPriceBackoff,
   ) {
     this.configService = configService;

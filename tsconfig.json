@@ -7,6 +7,7 @@
     "rootDir": "src",
     "target": "es2017",
     "esModuleInterop": true,
+    "jsx": "react",
   },
   "exclude": [
     "node_modules",

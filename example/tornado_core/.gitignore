@@ -1,4 +1,5 @@
 .hardhat-ignition
+deployment/.log
 .vscode
 /index.js
 Tornado_flat.sol

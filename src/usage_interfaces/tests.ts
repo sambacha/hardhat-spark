@@ -19,7 +19,7 @@ import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import * as cls from 'cls-hooked';
 import { Namespace } from 'cls-hooked';
 import { EmptyPrompter } from '../packages/utils/logging/empty_logging';
-import { IPrompter } from '../packages/utils/logging';
+import { ILogging } from '../packages/utils/logging';
 import { EthClient } from '../packages/ethereum/client';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
 import { IAnalyticsService } from '../packages/utils/analytics';
@@ -31,7 +31,7 @@ export class IgnitionTests implements IIgnitionUsage {
 
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
-  public prompter: IPrompter;
+  public prompter: ILogging;
   public configService: IConfigService;
   public gasProvider: IGasProvider;
   public txGenerator: EthTxGenerator;

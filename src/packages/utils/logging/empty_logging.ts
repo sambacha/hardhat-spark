@@ -1,8 +1,7 @@
-import { IPrompter } from './index';
+import { ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
-import { WrongNetwork } from '../../types/errors';
 
-export class EmptyPrompter implements IPrompter {
+export class EmptyPrompter implements ILogging {
   alreadyDeployed(elementName: string): void {
   }
 

@@ -1,9 +1,9 @@
-import { IPrompter } from './index';
+import { ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { cli } from 'cli-ux';
 import { WrongNetwork } from '../../types/errors';
 
-export class JsonPrompter implements IPrompter {
+export class JsonPrompter implements ILogging {
   private currentModuleName: string;
 
   constructor() {
@@ -143,7 +143,7 @@ export class JsonPrompter implements IPrompter {
     }));
   }
 
-  sentTx(elementName: string, functionName?: string): void {
+  sentTx(elementName: string, functionName: string = 'CREATE'): void {
     cli.info(JSON.stringify({
       name: 'Sent transaction for contract',
       fields: {
@@ -163,7 +163,7 @@ export class JsonPrompter implements IPrompter {
     this.currentModuleName = moduleName;
   }
 
-  transactionConfirmation(confirmationNumber: number, elementName: string, functionName?: string): void {
+  transactionConfirmation(confirmationNumber: number, elementName: string, functionName: string = 'CREATE'): void {
     cli.info(JSON.stringify({
       name: 'Transaction confirmation',
       fields: {

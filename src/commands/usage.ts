@@ -3,7 +3,7 @@ import ConfigService from '../packages/config/service';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
-import { IPrompter } from '../packages/utils/logging';
+import { ILogging } from '../packages/utils/logging';
 import path from 'path';
 import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { errorHandling, WalletWrapper } from '../index';
@@ -17,7 +17,7 @@ import { GlobalConfigService } from '../packages/config/global_config_service';
 export default class Usage extends Command {
   private mutex = false;
   static description = 'Generate public usage module from standard module.';
-  private prompter: IPrompter | undefined;
+  private prompter: ILogging | undefined;
   private analyticsService: AnalyticsService;
 
   static flags = {

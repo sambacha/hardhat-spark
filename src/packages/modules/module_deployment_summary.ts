@@ -1,10 +1,11 @@
 import { ModuleStateRepo } from './states/state_repo';
 import { ModuleStateFile } from './states/module';
 import { ContractBindingMetaData, StatefulEvent } from '../../interfaces/hardhat_ignition';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { checkIfExist } from '../utils/util';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
+import { getIgnitionVersion } from '../utils/package_info';
 
 export enum SummaryType {
   'EMPTY' = 'EMPTY',
@@ -72,7 +73,7 @@ export class ModuleDeploymentSummaryService {
     return (endTime.getTime() - this.startTime.getTime()) / 1000;
   }
 
-  async showSummary(moduleName: string, oldModuleState: ModuleStateFile) {
+  async showSummary(moduleName: string, oldModuleState: ModuleStateFile): Promise<string> {
     const elapsedTime = this.endTimer();
     const currentModuleState = await this.moduleStateRepo.getStateIfExist(moduleName);
 
@@ -145,15 +146,13 @@ export class ModuleDeploymentSummaryService {
       averageGasPrice = totalGasPrice.div(numberOfTransactions);
     }
 
-    cli.info(`
-Deployment summary:
-  Deployment time: ${chalk.bold(elapsedTime.toString())} seconds
-  Total spent: ${chalk.bold(totalWeiSpent.toString())} wei
-  Total gas spent: ${chalk.bold(totalGasSpent.toString())} gas
-  Average gas price: ${chalk.bold(averageGasPrice.toString())} wei
-  Number of mined transactions: ${chalk.bold(numberOfTransactions.toString())}
-  Number of contract creation: ${chalk.bold(numberOfContracts.toString())}
-  Number of successfully executed events: ${chalk.bold(numberOfEvents.toString())}
-`);
+    return `
+${chalk.bold(moduleName)} deployed successfully 🚀
+
+${chalk.bold(numberOfTransactions.toString())} transactions used ${chalk.bold(totalGasSpent.toString())} gas (avg price ${chalk.bold(averageGasPrice.toString())} wei)
+Spent ${chalk.bold(ethers.utils.formatEther(totalWeiSpent.toString()))} ETH in ${chalk.bold(elapsedTime.toString())}s
+
+Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}.$timestamp.log
+`;
   }
 }

@@ -15,15 +15,22 @@ export enum StateElementStatus {
   'FAILED' = 'failed',
 }
 
-export interface IPrompter {
+export enum TransactionStatus {
+  'EMPTY' = 0,
+  'CONTRACT_TRANSACTION_SENT' = 1,
+  'WAITING_FOR_CONFIRMATION'= 2,
+  'TRANSACTION_CONFIRMED' = 3,
+}
+
+export interface ILogging {
   nothingToDeploy(): void;
   startModuleDeploy(moduleName: string,  moduleStates: ModuleState): void;
-  finishModuleDeploy(moduleName): void;
+  finishModuleDeploy(moduleName: string, summary: string): void;
   alreadyDeployed(elementName: string): void;
   promptContinueDeployment(): Promise<void>;
   promptExecuteTx(): Promise<void>;
   promptSignedTransaction(tx: string): void;
-  errorPrompt(): void;
+  errorPrompt(error: Error): void;
   sendingTx(elementName: string, functionName?: string): void;
   sentTx(elementName: string, functionName?: string): void;
   bindingExecution(bindingName: string): void;

@@ -6,7 +6,7 @@ import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
 import { Migration } from '../packages/types/migration';
 import { StateMigrationService } from '../packages/modules/states/state_migration_service';
 import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
-import { IPrompter } from '../packages/utils/logging';
+import { ILogging } from '../packages/utils/logging';
 import { ModuleMigrationService } from '../packages/modules/module_migration';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { GlobalConfigService } from '../packages/config/global_config_service';
@@ -14,7 +14,7 @@ import { errorHandling } from '../index';
 
 export default class Migrate extends Command {
   static description = 'Migrate deployment meta data from other deployers to hardhat-ignition state file.';
-  private prompter: IPrompter;
+  private prompter: ILogging;
   private analyticsService: AnalyticsService;
 
   static flags = {

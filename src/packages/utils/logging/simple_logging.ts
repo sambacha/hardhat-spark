@@ -1,12 +1,16 @@
-import { IPrompter } from './index';
+import { ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
 import { checkIfExist } from '../util';
 import { CliError, DeniedConfirmation } from '../../types/errors';
+import { FileLogging } from './file_logging';
+import { error } from 'util';
+import { eventNames } from 'cluster';
+import { single } from 'rxjs/operators';
 
-enum StateElementStatus {
+export enum StateElementStatus {
   'NOT_EXECUTED' = 'not executed',
   'RUNNING' = 'running',
   'SUCCESSFUL' = 'successful',
@@ -21,7 +25,7 @@ enum DescActionList {
   'LOWER_GAS_PRICE' = 'waiting for lower gas price'
 }
 
-export class SimpleOverviewPrompter implements IPrompter {
+export class SimpleOverviewPrompter extends FileLogging implements ILogging {
   private moduleBars: {
     [moduleName: string]: SingleBar
   };
@@ -29,10 +33,12 @@ export class SimpleOverviewPrompter implements IPrompter {
   private currentModuleName: string;
 
   constructor() {
+    super();
     this.moduleBars = {};
   }
 
   gasPriceIsLarge(backoffTime: number) {
+    super.gasPriceIsLarge(backoffTime);
     this.moduleBars[this.currentModuleName].update({
       action: DescActionList.LOWER_GAS_PRICE,
     });
@@ -49,12 +55,16 @@ export class SimpleOverviewPrompter implements IPrompter {
 
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
+    super.finishedExecutionOfWalletTransfer(from, to);
   }
 
   executeWalletTransfer(address: string, to: string): void {
+    super.finishedExecutionOfWalletTransfer(address, to);
   }
 
   startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
+    super.startModuleDeploy(moduleName, moduleState);
+
     this.currentModuleName = moduleName;
     cli.info(chalk.bold('\n\nDeploy module - ', chalk.green(moduleName)));
 
@@ -72,6 +82,8 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   alreadyDeployed(elementName: string): void {
+    super.alreadyDeployed(elementName);
+
     this.moduleBars[this.currentModuleName].increment({
       module: this.currentModuleName,
       element: elementName,
@@ -81,6 +93,8 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   bindingExecution(bindingName: string): void {
+    super.bindingExecution(bindingName);
+
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: bindingName,
@@ -89,7 +103,8 @@ export class SimpleOverviewPrompter implements IPrompter {
     });
   }
 
-  errorPrompt(): void {
+  errorPrompt(error: Error): void {
+    super.errorPrompt(error);
     if (!this.moduleBars[this.currentModuleName]) {
       return;
     }
@@ -98,6 +113,8 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   eventExecution(eventName: string): void {
+    super.eventExecution(eventName);
+
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,
@@ -106,7 +123,9 @@ export class SimpleOverviewPrompter implements IPrompter {
     });
   }
 
-  finishModuleDeploy(): void {
+  finishModuleDeploy(moduleName: string, summary: string): void {
+    super.finishModuleDeploy(moduleName, summary);
+
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: this.currentModuleName,
@@ -116,13 +135,19 @@ export class SimpleOverviewPrompter implements IPrompter {
     this.moduleBars[this.currentModuleName].stop();
 
     this.currentModuleName = '';
+
+    cli.info(summary);
   }
 
   finishedEventExecution(eventName: string): void {
+    super.finishedEventExecution(eventName);
+
     this.handleElementCompletion(eventName);
   }
 
   finishedBindingExecution(bindingName: string): void {
+    super.finishedBindingExecution(bindingName);
+
     this.handleElementCompletion(bindingName);
   }
 
@@ -136,9 +161,11 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   finishedExecutionOfContractFunction(functionName: string): void {
+    super.finishedExecutionOfContractFunction(functionName);
   }
 
   nothingToDeploy(): void {
+    super.nothingToDeploy();
     cli.info('State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.');
     cli.exit(0);
   }
@@ -154,11 +181,13 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   promptSignedTransaction(tx: string): void {
+    super.promptSignedTransaction(tx);
     // overview will not have metadata
     return;
   }
 
   sendingTx(eventName: string, functionName: string = 'CREATE'): void {
+    super.sendingTx(eventName, functionName);
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
       throw new CliError('Current module not found when trying to log transactions');
     }
@@ -172,6 +201,8 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   sentTx(eventName: string, functionName: string = 'CREATE'): void {
+    super.sentTx(eventName, functionName);
+
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
       throw new CliError('Current module not found when trying to log transactions');
     }
@@ -185,6 +216,8 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   transactionConfirmation(confirmationNumber: number, eventName: string, functionName: string = 'CREATE'): void {
+    super.transactionConfirmation(confirmationNumber, eventName, functionName);
+
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
       throw new CliError('Current module not found when trying to log transactions');
     }
@@ -198,25 +231,33 @@ export class SimpleOverviewPrompter implements IPrompter {
   }
 
   transactionReceipt(): void {
+    super.transactionReceipt();
+
   }
 
   waitTransactionConfirmation(): void {
+    super.waitTransactionConfirmation();
   }
 
-  executeContractFunction(): void {
+  executeContractFunction(contractFunction: string): void {
+    super.executeContractFunction(contractFunction);
   }
 
   generatedTypes(): void {
+    super.generatedTypes();
     cli.info('Successfully generated module types, look under your deployments folder for .d.ts file.');
   }
 
   finishedModuleUsageGeneration(moduleName: string) {
+    super.finishedModuleUsageGeneration(moduleName);
   }
 
   startingModuleUsageGeneration(moduleName: string) {
+    super.startingModuleUsageGeneration(moduleName);
   }
 
   async wrongNetwork(): Promise<boolean> {
+    super.wrongNetwork();
     return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@tenderly/hardhat-ignition",
   "description": "Solidity IaC deployment tool",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Tenderly",
   "bin": {
     "hardhat-ignition": "bin/run"
@@ -19,6 +19,7 @@
     "@types/listr": "^0.14.2",
     "aws-sdk": "^2.805.0",
     "chalk": "^4.1.0",
+    "cli-spinners": "^2.6.0",
     "cli-truncate": "^2.1.0",
     "cli-ux": "^5.5.1",
     "cls-hooked": "^4.2.2",
@@ -28,11 +29,14 @@
     "figures": "^3.2.0",
     "fs-extra": "^9.0.1",
     "indent-string": "^4.0.0",
+    "ink": "^3.0.8",
+    "ink-spinner": "^4.0.1",
     "inquirer": "^8.0.0",
     "listr": "^0.14.3",
     "log-symbols": "^4.0.0",
     "log-update": "^4.0.0",
     "path": "^0.12.7",
+    "react": "^16.14.0",
     "rxjs": "^6.6.3",
     "solc": "^0.7.5",
     "strip-ansi": "^6.0.0",

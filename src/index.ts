@@ -9,7 +9,7 @@ import { StateResolver } from './packages/modules/states/state_resolver';
 import { ModuleState } from './packages/modules/states/module';
 import { ModuleTypings } from './packages/modules/typings';
 import { IConfigService } from './packages/config';
-import { IPrompter, Logging } from './packages/utils/logging';
+import { ILogging, Logging } from './packages/utils/logging';
 import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
 import { GasPriceBackoff, HardhatIgnitionConfig } from './packages/types/config';
@@ -34,7 +34,7 @@ import fs from 'fs';
 import { SystemCrawlingService } from './packages/tutorial/system_crawler';
 import * as inquirer from 'inquirer';
 import { JsonPrompter } from './packages/utils/logging/json_logging';
-import { OverviewPrompter } from './packages/utils/logging/overview_prompter';
+import { OverviewPrompter } from './packages/utils/logging/react-terminal-ui';
 import { StreamlinedPrompter } from './packages/utils/logging/prompter';
 import { GlobalConfigService } from './packages/config/global_config_service';
 import { AnalyticsService } from './packages/utils/analytics/analytics_service';
@@ -64,7 +64,7 @@ export async function deploy(
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
-  prompter: IPrompter,
+  prompter: ILogging,
   executor: TxExecutor,
   configService: IConfigService,
   walletWrapper: WalletWrapper,
@@ -133,8 +133,8 @@ export async function deploy(
       throw error;
     }
 
-    prompter.finishModuleDeploy(moduleName);
-    await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
+    const summary = await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
+    prompter.finishModuleDeploy(moduleName, summary);
     await analyticsService.sendCommandHit('deploy');
   }
 }
@@ -195,7 +195,7 @@ export async function genTypes(
   ignitionConfig: HardhatIgnitionConfig,
   moduleTypings: ModuleTypings,
   config: IConfigService,
-  prompter: IPrompter,
+  prompter: ILogging,
   analyticsService: IAnalyticsService,
 ) {
   const modules = await loadScript(resolvedPath);
@@ -225,7 +225,7 @@ export async function usage(
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   moduleUsage: ModuleUsage,
-  prompter: IPrompter,
+  prompter: ILogging,
   analyticsService: IAnalyticsService,
 ) {
   const modules = await loadScript(deploymentFilePath);
@@ -329,7 +329,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
   rpcProvider: ethers.providers.JsonRpcProvider,
   filePath: string,
   states: string[],
-  prompter: IPrompter,
+  prompter: ILogging,
   config: HardhatIgnitionConfig,
   configService: IConfigService,
 }> {
