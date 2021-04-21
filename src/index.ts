@@ -432,11 +432,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
     case Logging.json:
       prompter = new JsonPrompter();
       break;
-    case Logging.overview:
-      prompter = new OverviewPrompter();
-      break;
-    case Logging.streamlined:
-    default: {
+    case Logging.streamlined: {
       let yes = true;
       if (
         networkName != DEFAULT_NETWORK_NAME &&
@@ -449,6 +445,11 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
       }
 
       prompter = new StreamlinedPrompter(yes);
+      break;
+    }
+    case Logging.overview:
+    default: {
+      prompter = new OverviewPrompter();
       break;
     }
   }
