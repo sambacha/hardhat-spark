@@ -10,7 +10,7 @@ import { ModuleResolver } from '../packages/modules/module_resolver';
 import { EventHandler } from '../packages/modules/events/handler';
 import { TxExecutor } from '../packages/ethereum/transactions/executor';
 import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
-import { IPrompter, Logging } from '../packages/utils/logging';
+import { ILogging, Logging } from '../packages/utils/logging';
 import { IConfigService, HardhatIgnitionConfig } from '../packages/config';
 import { IGasProvider } from '../packages/ethereum/gas';
 import { Namespace } from 'cls-hooked';
@@ -85,7 +85,7 @@ export class IgnitionHardhatActions {
 export class HardhatIgnition implements IIgnition {
   public states: string[];
   public provider: ethers.providers.JsonRpcProvider;
-  public prompter: IPrompter;
+  public prompter: ILogging;
   public configService: IConfigService;
   public gasProvider: IGasProvider;
   public txGenerator: EthTxGenerator;

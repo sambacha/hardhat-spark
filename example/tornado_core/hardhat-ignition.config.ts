@@ -41,7 +41,7 @@ export const config: HardhatIgnitionConfig = {
       ],
       localDeployment: false,
       deploymentFilePath: './deployment/module.ts',
-      blockConfirmation: 2,
+      blockConfirmation: 4,
     }
   },
   params: {

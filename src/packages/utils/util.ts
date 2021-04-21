@@ -38,7 +38,7 @@ export function checkIfSuitableForInstantiating(contractBinding: ContractBinding
     checkIfExist(contractBinding?.moduleStateRepo);
 }
 
-function arrayEquals(a: any[], b: any[]) {
+export function arrayEquals(a: any[], b: any[]) {
   return Array.isArray(a) &&
     Array.isArray(b) &&
     a.length === b.length &&
@@ -114,7 +114,7 @@ export function extractObjectInfo(obj: any): string {
 
 export async function errorHandling(error: Error) {
   if (this.prompter) {
-    this.prompter.errorPrompt();
+    this.prompter.errorPrompt(error);
   }
 
   if ((error as UserError)._isUserError) {

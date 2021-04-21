@@ -22,6 +22,7 @@ const {
 const gasPriceProvider = new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average);
 const constantGasPriceProvider = new ConstantGasPrice();
 const provider = new providers.JsonRpcProvider('http://localhost:8545');
+// @ts-ignore
 const gasCalculator = new GasPriceCalculator(provider);
 const wallet = new ethers.Wallet(PRIVATE_KEY);
 const txManager = new TransactionManager(provider, wallet, process.env.IGNITION_NETWORK_ID, gasCalculator, gasPriceProvider);

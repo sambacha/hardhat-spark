@@ -13,7 +13,7 @@ import { CallOverrides, ethers } from 'ethers';
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { IPrompter } from '../packages/utils/logging';
+import { ILogging } from '../packages/utils/logging';
 import {
   ArgumentLengthInvalid,
   BindingsConflict,
@@ -390,6 +390,8 @@ export class ContractBinding extends Binding {
   public deployMetaData: Deployed;
 
   public moduleName: string;
+  public subModuleNameDepth: string[];
+  public subModule: string;
 
   public bytecode: string | undefined;
   public abi: JsonFragment[] | undefined;
@@ -405,7 +407,7 @@ export class ContractBinding extends Binding {
   public forceFlag: boolean;
 
   public signer: ethers.Signer | undefined;
-  public prompter: IPrompter | undefined;
+  public prompter: ILogging | undefined;
   public txGenerator: EthTxGenerator | undefined;
   public moduleStateRepo: ModuleStateRepo | undefined;
   public eventTxExecutor: EventTxExecutor | undefined;
@@ -413,12 +415,12 @@ export class ContractBinding extends Binding {
 
   constructor(
     // metadata
-    name: string, contractName: string, args: Arguments, moduleName: string,
+    name: string, contractName: string, args: Arguments, moduleName: string, subModuleNameDepth: string[], subModule: string,
     bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, deployMetaData?: Deployed, txData?: TransactionData,
     // event hooks
     events?: EventsDepRef,
     signer?: ethers.Signer,
-    prompter?: IPrompter,
+    prompter?: ILogging,
     txGenerator?: EthTxGenerator,
     moduleStateRepo?: ModuleStateRepo,
     eventTxExecutor?: EventTxExecutor,
@@ -463,6 +465,8 @@ export class ContractBinding extends Binding {
 
     this.forceFlag = false;
     this.moduleName = moduleName;
+    this.subModuleNameDepth = subModuleNameDepth;
+    this.subModule = subModule;
   }
 
   /**
@@ -486,7 +490,7 @@ export class ContractBinding extends Binding {
       this.deployMetaData?.contractAddress as string,
       this.abi as JsonFragment[],
       this.signer as ethers.Signer,
-      this.prompter as IPrompter,
+      this.prompter as ILogging,
       this.txGenerator as EthTxGenerator,
       this.moduleStateRepo as ModuleStateRepo,
       this.eventTxExecutor as EventTxExecutor,
@@ -830,7 +834,7 @@ export type EventTransactionData = {
 
 export class ContractInstance {
   private readonly contractBinding: ContractBinding;
-  private readonly prompter: IPrompter;
+  private readonly prompter: ILogging;
   private readonly moduleStateRepo: ModuleStateRepo;
   private readonly eventTxExecutor: EventTxExecutor;
   private readonly eventSession: Namespace;
@@ -845,7 +849,7 @@ export class ContractInstance {
     contractAddress: string,
     abi: JsonFragment[],
     signer: ethers.Signer,
-    prompter: IPrompter,
+    prompter: ILogging,
     txGenerator: EthTxGenerator,
     moduleStateRepo: ModuleStateRepo,
     eventTxExecutor: EventTxExecutor,
@@ -1043,7 +1047,7 @@ export class IgnitionWallet extends ethers.Wallet {
   private nonceManager: INonceManager;
   private gasPriceCalculator: IGasPriceCalculator;
   private gasCalculator: IGasCalculator;
-  private prompter: IPrompter;
+  private prompter: ILogging;
   private eventTxExecutor: EventTxExecutor;
 
   constructor(
@@ -1053,7 +1057,7 @@ export class IgnitionWallet extends ethers.Wallet {
     gasPriceCalculator: IGasPriceCalculator,
     gasCalculator: IGasCalculator,
     moduleStateRepo: ModuleStateRepo,
-    prompter: IPrompter,
+    prompter: ILogging,
     eventTxExecutor: EventTxExecutor
   ) {
     super(wallet.privateKey, wallet.provider);
@@ -1238,12 +1242,14 @@ export class ModuleBuilder {
    */
   contract(name: string, ...args: Arguments): ContractBinding {
     if (checkIfExist(this.bindings[name])) {
-      cli.info('Contract already bind to the module - ', name);
+      cli.info('Contract already bind to the module - ', name); // @TODO add typed error
       cli.exit(0);
     }
 
     const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
-    this.bindings[name] = new ContractBinding(name, name, args, moduleName);
+    const subModuleNameDepth = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+    const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
+    this.bindings[name] = new ContractBinding(name, name, args, moduleName, subModuleNameDepth.slice(0), subModule);
     this[name] = this.bindings[name];
     return this.bindings[name];
   }
@@ -1302,7 +1308,9 @@ export class ModuleBuilder {
     }
 
     const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
-    this.bindings[name] = new ContractBinding(name, this.templates[templateName].contractName, args, moduleName);
+    const subModuleDepthName = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME);
+    const subModuleName = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
+    this.bindings[name] = new ContractBinding(name, this.templates[templateName].contractName, args, moduleName, subModuleDepthName, subModuleName);
     this[name] = this.bindings[name];
 
     return this.bindings[name];
@@ -1626,9 +1634,16 @@ export class Module {
     moduleBuilder.setParam(opts);
 
     // this is needed in order for ContractBindings to be aware of their originating module for later context changes
-    moduleSession.set(clsNamespaces.MODULE_NAME, this.name);
-    await this.fn(moduleBuilder, wallets);
+    if (!!m) {
+      const currentDepth = moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+      currentDepth.push(this.name);
 
+      moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, currentDepth);
+    } else {
+      moduleSession.set(clsNamespaces.MODULE_NAME, this.name);
+    }
+
+    await this.fn(moduleBuilder, wallets);
     moduleBuilder = await handleModule(moduleBuilder, this.name, this.isUsage, !!m);
 
     this.bindings = moduleBuilder.getAllBindings();
@@ -1644,6 +1659,12 @@ export class Module {
     this.opts = moduleBuilder.getAllOpts();
 
     this.initialized = true;
+
+    const oldDepth = moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+    if (oldDepth.length >= 1) {
+      oldDepth.pop();
+    }
+    moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
 
     return moduleBuilder;
   }

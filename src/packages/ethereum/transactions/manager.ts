@@ -6,7 +6,7 @@ import { IGasCalculator, IGasPriceCalculator } from '../gas';
 import { ethers } from 'ethers';
 import { GasPriceBackoffError, NoNetworkError, TransactionFailed } from '../../types/errors';
 import { GasPriceBackoff } from '../../types/config';
-import { IPrompter } from '../../utils/logging';
+import { ILogging } from '../../utils/logging';
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };
@@ -15,7 +15,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   private gasPriceCalculator: IGasPriceCalculator;
   private wallet: ethers.Wallet;
   private readonly networkId: string;
-  private readonly prompter: IPrompter;
+  private readonly prompter: ILogging;
   private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
@@ -24,7 +24,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     networkId: string,
     gasCalculator: IGasCalculator,
     gasPriceCalculator: IGasPriceCalculator,
-    prompter: IPrompter,
+    prompter: ILogging,
     gasPriceBackoff?: GasPriceBackoff,
   ) {
     this.provider = provider;

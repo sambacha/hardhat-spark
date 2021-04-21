@@ -14,13 +14,13 @@ import { checkIfExist } from '../../utils/util';
 import { ModuleStateRepo } from '../states/state_repo';
 import { ModuleState } from '../states/module';
 import { CliError } from '../../types/errors';
-import { IPrompter } from '../../utils/logging';
+import { ILogging } from '../../utils/logging';
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo;
-  private readonly prompter: IPrompter;
+  private readonly prompter: ILogging;
 
-  constructor(moduleState: ModuleStateRepo, prompter: IPrompter) {
+  constructor(moduleState: ModuleStateRepo, prompter: ILogging) {
     this.moduleState = moduleState;
     this.prompter = prompter;
   }

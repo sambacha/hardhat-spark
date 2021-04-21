@@ -11,14 +11,14 @@ import { ModuleStateRepo } from '../packages/modules/states/state_repo';
 import { TransactionManager } from '../packages/ethereum/transactions/manager';
 import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
-import { IPrompter } from '../packages/utils/logging';
+import { ILogging } from '../packages/utils/logging';
 import { EthClient } from '../packages/ethereum/client';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { defaultInputParams, errorHandling } from '../index';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current deployment.';
-  private prompter: IPrompter | undefined;
+  private prompter: ILogging | undefined;
   private analyticsService: AnalyticsService;
 
   static flags = {

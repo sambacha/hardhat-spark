@@ -15,7 +15,7 @@ export const ERC20TornadoModule = buildModule('ERC20TornadoModule', async (m: Mo
     mock = m.contract('ERC20Mock');
   }
 
-  m.contract(
+  const ERC20 = m.contract(
     'ERC20Tornado',
     m.Verifier,
     TOKEN_AMOUNT,
@@ -23,4 +23,7 @@ export const ERC20TornadoModule = buildModule('ERC20TornadoModule', async (m: Mo
     wallets[0].address,
     mock ? mock : token,
   );
+
+  ERC20.afterDeploy(m, 'ERC20AfterDeploy', async () => {
+  });
 });

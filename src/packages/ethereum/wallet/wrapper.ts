@@ -4,7 +4,7 @@ import { IgnitionWallet } from '../../../interfaces/hardhat_ignition';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { INonceManager } from '../transactions';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
-import { IPrompter } from '../../utils/logging';
+import { ILogging } from '../../utils/logging';
 import { EventTxExecutor } from '../transactions/event_executor';
 
 export class WalletWrapper {
@@ -13,7 +13,7 @@ export class WalletWrapper {
   private readonly nonceManager: INonceManager;
   private readonly gasPriceCalculator: IGasPriceCalculator;
   private readonly gasCalculator: IGasCalculator;
-  private readonly prompter: IPrompter;
+  private readonly prompter: ILogging;
   private readonly eventTxExecutor: EventTxExecutor;
 
   constructor(
@@ -22,7 +22,7 @@ export class WalletWrapper {
     gasPriceCalculator: IGasPriceCalculator,
     gasCalculator: IGasCalculator,
     moduleStateRepo: ModuleStateRepo,
-    prompter: IPrompter,
+    prompter: ILogging,
     eventTxExecutor: EventTxExecutor
   ) {
     this.eventSession = eventSession;
