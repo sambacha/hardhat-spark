@@ -219,7 +219,7 @@ Now lets see what is the difference between the already deployed module and new 
 Run next command:
 
 ```
-hardhat-ignition diff ./deployment/first.module.ts --networkId=31337
+hardhat-ignition diff ./deployment/first.module.ts
 ```
 
 Console output should be something like this.
@@ -241,7 +241,7 @@ change the bytecode. Symbol that is suggesting that we changed this contract, `~
 Now run command:
 
 ```
-hardhat-ignition diff ./deployment/first.module.ts --networkId=31337
+hardhat-ignition diff ./deployment/first.module.ts
 ```
 
 You should see this in your console logs:
