@@ -41,12 +41,7 @@ export const TerminalLayout = ({
         <></>
       )
       }
-      {(transactionStatus != '') ? (
-        <Text>Status: {transactionStatus}</Text>
-      ) : (
-        <></>
-      )
-      }
+      <Text>Status: {transactionStatus}</Text>
       {!checkIfEmptySummary(summary) ? (
         <Text>{summary}</Text>
       ) : (<></>)

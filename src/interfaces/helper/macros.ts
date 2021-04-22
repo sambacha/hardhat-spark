@@ -5,7 +5,7 @@ import { checkIfExist } from '../../packages/utils/util';
 
 /**
  * sendAfterDeploy is fastest way to set new value and validate if the same value is correctly set. It
- * "smartly" determines what shall be getter function and arguments from setterFunc and setterArgs. If want to overwrite
+ * "smartly" determines what shall be the getter function and arguments from setterFunc and setterArgs. If you want to overwrite
  * any of smartly determined parameters you can do that in `opts` object.
  *
  * @param m ModuleBuilder object or type extended moduleBuilder

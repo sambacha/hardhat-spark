@@ -3,185 +3,154 @@ import { ModuleState } from '../../modules/states/module';
 import * as path from 'path';
 import * as fs from 'fs';
 import { DEPLOYMENT_FOLDER } from '../../tutorial/tutorial_service';
+import { ILogObject, Logger } from 'tslog';
 
 const FOLDER_NAME = '.log';
-
 
 export class FileLogging implements ILogging {
   private fullLogPath: string;
   private moduleName: string;
+  private readonly errorLogger: Logger;
+  private readonly logger: { [moduleName: string]: Logger };
 
   constructor() {
+    this.logger = {};
+    const timestamp = Math.trunc((new Date()).getTime() / 1000);
+
+    const currentDir = process.cwd();
+    this.fullLogPath = path.join(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME, `/ignition.error.${timestamp}.log`);
+
+    const logToTransport = (logObject: ILogObject) => {
+      fs.appendFileSync(this.fullLogPath, `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${logObject.argumentsArray[0]} ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`);
+    };
+
+    const logger: Logger = new Logger({
+      type: 'hidden',
+    });
+    logger.attachTransport(
+      {
+        silly: logToTransport,
+        debug: logToTransport,
+        trace: logToTransport,
+        info: logToTransport,
+        warn: logToTransport,
+        error: logToTransport,
+        fatal: logToTransport,
+      },
+      'debug'
+    );
+    this.errorLogger = logger;
+
+    const dirPath = path.resolve(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath);
+    }
   }
 
   alreadyDeployed(elementName: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'Element has already been deployed',
-      fields: {
-        moduleName: this.moduleName,
-        elementName
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('Element has already been deployed', {
+      moduleName: this.moduleName,
+      elementName
+    });
   }
 
   bindingExecution(bindingName: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'Started contract binding execution',
-      fields: {
-        moduleName: this.moduleName,
-        bindingName
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('Started contract binding execution', {
+      moduleName: this.moduleName,
+      bindingName
+    });
   }
 
   errorPrompt(error: Error): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'Error',
-      fields: {
-        errorMessage: error.message,
-        errorName: error.name,
-        error
-      }
-    }) + '\n');
+    this.errorLogger.error('Error', {
+      errorMessage: error.message,
+      errorName: error.name,
+      error
+    });
   }
 
   eventExecution(eventName: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'Started event execution',
-      fields: {
-        moduleName: this.moduleName,
-        eventName
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('Started event execution', {
+      moduleName: this.moduleName,
+      eventName
+    });
   }
 
   executeContractFunction(contractFunction: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'Executing contract function',
-      fields: {
-        moduleName: this.moduleName,
-        contractFunction
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('Executing contract function', {
+      moduleName: this.moduleName,
+      contractFunction
+    });
   }
 
   executeWalletTransfer(address: string, to: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'Executing wallet transfer',
-      fields: {
-        moduleName: this.moduleName,
-        address,
-        to,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('Executing contract function', {
+      moduleName: this.moduleName,
+      address,
+      to,
+    });
   }
 
   finishModuleDeploy(moduleName: string, summary: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'finished module deployment',
-      fields: {
-        moduleName,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('finished module deployment', {
+      moduleName,
+    });
   }
 
   finishedBindingExecution(bindingName: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'finished contract binding deployment',
-      fields: {
-        moduleName: this.moduleName,
-        bindingName,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('finished contract binding deployment', {
+      moduleName: this.moduleName,
+      bindingName,
+    });
   }
 
   finishedEventExecution(eventName: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'finished event hook execution',
-      fields: {
-        moduleName: this.moduleName,
-        eventName,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('finished event hook execution', {
+      moduleName: this.moduleName,
+      eventName,
+    });
   }
 
   finishedExecutionOfContractFunction(functionName: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'finished execution of contract function',
-      fields: {
-        moduleName: this.moduleName,
-        functionName,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('finished execution of contract function', {
+      moduleName: this.moduleName,
+      functionName,
+    });
   }
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'finished execution of wallet transfer',
-      fields: {
-        moduleName: this.moduleName,
-        from,
-        to,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('finished execution of wallet transfer', {
+      moduleName: this.moduleName,
+      from,
+      to,
+    });
   }
 
   finishedModuleUsageGeneration(moduleName: string) {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'finished module usage generation',
-      fields: {
-        moduleName,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('finished module usage generation', {
+      moduleName,
+    });
   }
 
   gasPriceIsLarge(backoffTime: number) {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'gas price is to large',
-      fields: {
-        moduleName: this.moduleName,
-        backoffTime,
-      }
-    }) + '\n');
+    this.logger[this.moduleName].info('gas price is to large', {
+      moduleName: this.moduleName,
+      backoffTime,
+    });
   }
 
   generatedTypes(): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'generated types',
-      fields: {},
-    }) + '\n');
+    this.logger[this.moduleName].info('generated types');
   }
 
   nothingToDeploy(): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'nothing to deploy',
-      fields: {
-        moduleName: this.moduleName,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('nothing to deploy', {
+      moduleName: this.moduleName,
+    });
   }
 
   parallelizationExperimental() {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'running parallelization',
-      fields: {},
-    }) + '\n');
+    this.logger[this.moduleName].info('running parallelization');
   }
 
   promptContinueDeployment(): Promise<void> {
@@ -193,36 +162,24 @@ export class FileLogging implements ILogging {
   }
 
   promptSignedTransaction(tx: string): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'singed tx',
-      fields: {
-        moduleName: this.moduleName,
-        signedTransaction: tx,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('singed tx', {
+      moduleName: this.moduleName,
+      signedTransaction: tx,
+    });
   }
 
   sendingTx(elementName: string, functionName: string = 'CREATE'): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'sending transaction',
-      fields: {
-        elementName,
-        functionName: functionName,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('sending transaction', {
+      elementName,
+      functionName: functionName,
+    });
   }
 
   sentTx(elementName: string, functionName: string = 'CREATE'): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'sent transaction',
-      fields: {
-        elementName,
-        functionName: functionName,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('sent transaction', {
+      elementName,
+      functionName: functionName,
+    });
   }
 
   startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
@@ -231,65 +188,57 @@ export class FileLogging implements ILogging {
     const currentDir = process.cwd();
     this.fullLogPath = path.join(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME, `/ignition.${moduleName.toLowerCase()}.${timestamp}.log`);
 
+    const logToTransport = (logObject: ILogObject) => {
+      fs.appendFileSync(this.fullLogPath, `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${logObject.argumentsArray[0]} ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`);
+    };
+
+    const logger: Logger = new Logger({
+      type: 'hidden',
+    });
+    logger.attachTransport(
+      {
+        silly: logToTransport,
+        debug: logToTransport,
+        trace: logToTransport,
+        info: logToTransport,
+        warn: logToTransport,
+        error: logToTransport,
+        fatal: logToTransport,
+      },
+      'debug'
+    );
     this.moduleName = moduleName;
+    this.logger[this.moduleName] = logger;
 
     const dirPath = path.resolve(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME);
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath);
     }
 
-    fs.writeFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'started module deployment',
-      fields: {
-        moduleName,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('started module deployment', moduleName);
   }
 
   startingModuleUsageGeneration(moduleName: string) {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'started module usage generation',
-      fields: {
-        moduleName,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('started module usage generation', moduleName);
   }
 
   transactionConfirmation(confirmationNumber: number, elementName: string, functionName: string = 'CREATE'): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'started module usage generation',
-      fields: {
-        confirmationNumber,
-        elementName,
-        functionName,
-      },
-    }) + '\n');
+    this.logger[this.moduleName].info('transaction confirmation', {
+      confirmationNumber,
+      elementName,
+      functionName,
+    });
   }
 
   transactionReceipt(): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'received transaction receipt',
-      fields: {},
-    }) + '\n');
+    this.logger[this.moduleName].info('received transaction receipt');
   }
 
   waitTransactionConfirmation(): void {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'wait for transaction confirmation',
-      fields: {},
-    }) + '\n');
+    this.logger[this.moduleName].info('wait for transaction confirmation');
   }
 
   wrongNetwork() {
-    fs.appendFileSync(this.fullLogPath, JSON.stringify({
-      timestamp: new Date().getTime(),
-      message: 'wrong network',
-      fields: {},
-    }) + '\n');
+    this.errorLogger.error('contracts are missing on the network.');
   }
 }
