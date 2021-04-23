@@ -28,7 +28,12 @@ import { StateMigrationService } from './packages/modules/states/state_migration
 import { ModuleMigrationService } from './packages/modules/module_migration';
 import { ModuleDeploymentSummaryService } from './packages/modules/module_deployment_summary';
 import { SimpleOverviewPrompter } from './packages/utils/logging/simple_logging';
-import { DEFAULT_DEPLOYMENT_FOLDER, DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from './packages/utils/constants';
+import {
+  DEFAULT_DEPLOYMENT_FOLDER,
+  DEFAULT_NETWORK_ID,
+  DEFAULT_NETWORK_NAME,
+  DEFAULT_RPC_PROVIDER
+} from './packages/utils/constants';
 import ConfigService from './packages/config/service';
 import fs from 'fs';
 import { SystemCrawlingService } from './packages/tutorial/system_crawler';
@@ -361,7 +366,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
   process.env.IGNITION_NETWORK_ID = String(networkId);
   const states: string[] = state?.split(',') || [];
   let provider = new ethers.providers.JsonRpcProvider();
-  process.env.IGNITION_RPC_PROVIDER = 'http://localhost:8545';
+  process.env.IGNITION_RPC_PROVIDER = DEFAULT_RPC_PROVIDER;
   if (
     checkIfExist(config.networks) &&
     checkIfExist(config.networks[networkName])

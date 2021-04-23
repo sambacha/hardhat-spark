@@ -6,6 +6,7 @@ import Spinner from 'ink-spinner';
 import { Props } from 'ink/build/components/Box';
 import chalk from 'chalk';
 import { checkIfExist } from '../../../../util';
+import { cli } from 'cli-ux';
 
 export const TerminalLayout = ({
                                  showDeployment,
@@ -16,39 +17,53 @@ export const TerminalLayout = ({
                                  moduleElementsWithStatus,
                                  transactionStatus,
                                  summary,
+                                 errorMessage = '',
+                                 errorStack = ''
                                }) => {
+    useEffect(() => {
+    }, []);
 
-  useEffect(() => {
-  }, []);
-
-  return (
-    <>
-      <Text>
-        <Newline/>
-        Hardhat Ignition <Text>{ignitionVersion}</Text>
-        <Newline/>
-      </Text>
-      {showDeployment ? (
-        <>
-          <Text>Deploying {moduleName} <Text>{
-            Math.round(numberOfExecutedElements / totalNumberOfElements * 100)
-          }%</Text></Text>
-          <ModuleElements
-            moduleElementsWithStatus={moduleElementsWithStatus}
-          />
-        </>
-      ) : (
-        <></>
-      )
-      }
-      <Text>Status: {transactionStatus}</Text>
-      {!checkIfEmptySummary(summary) ? (
-        <Text>{summary}</Text>
-      ) : (<></>)
-      }
-    </>
-  );
-};
+    return (
+      <>
+        <Text>
+          <Newline/>
+          Hardhat Ignition <Text>{ignitionVersion}</Text>
+          <Newline/>
+        </Text>
+        {showDeployment ? (
+          <>
+            <Text>Deploying {moduleName} <Text>{
+              Math.round(numberOfExecutedElements / totalNumberOfElements * 100)
+            }%</Text></Text>
+            <ModuleElements
+              moduleElementsWithStatus={moduleElementsWithStatus}
+            />
+            <Text>Status: {transactionStatus}</Text>
+          </>
+        ) : (
+          <></>
+        )
+        }
+        {!checkIfEmpty(summary) ? (
+          <Text>{summary}</Text>
+        ) : (<></>)
+        }
+        {!checkIfEmpty(summary) ? (
+          <Text>{summary}</Text>
+        ) : (<></>)
+        }
+        {!checkIfEmpty(errorMessage) ? (
+          <Text>{errorMessage}</Text>
+        ) : (<></>)
+        }
+        {!(checkIfEmpty(errorStack) && cli.config.outputLevel == 'debug') ? (
+          <Text>{errorStack}</Text>
+        ) : (<></>)
+        }
+      </>
+    );
+  }
+;
 
 function ModuleElements({
                           moduleElementsWithStatus
@@ -131,8 +146,8 @@ function fetchName(element: (ContractBinding | StatefulEvent)) {
   return (element as StatefulEvent).event.name;
 }
 
-function checkIfEmptySummary(summary: string): boolean {
-  return summary == '';
+function checkIfEmpty(data: string): boolean {
+  return data == '';
 }
 
 function getStatus(elementStatus: ElementStatus): boolean | Props {

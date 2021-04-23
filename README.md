@@ -51,7 +51,7 @@ export const GreeterModule = buildModule('GreeterModule', async (m: ModuleBuilde
 });
 ```
 
-`$ npx hardhat-ignition node`
+`$ npx hardhat node`
 
 `$ npx hardhat-ignition deploy`
 

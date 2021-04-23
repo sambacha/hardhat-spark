@@ -114,35 +114,16 @@ export function extractObjectInfo(obj: any): string {
 
 export async function errorHandling(error: Error) {
   if (this.prompter) {
-    this.prompter.errorPrompt(error);
-  }
+    this.prompter.logError(error);
 
-  if ((error as UserError)._isUserError) {
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-      return;
-    }
-
-    cli.info(chalk.red(error.message));
-    return;
-  }
-
-  if ((error as CliError)._isCliError) {
-    cli.info('Something went wrong inside ignition');
-    if (cli.config.outputLevel == 'debug') {
-      cli.debug(error.stack);
-      return;
-    }
-
-    cli.info(chalk.red.bold('ERROR'), error.message);
     return;
   }
 
   // @ts-ignore
   if (checkIfExist(error?.code)) {
-    // @TODO (filip) map all codes with meaningful message
     // @ts-ignore
     handleMappedErrorCodes(error.code, error);
+    return;
   }
 
   cli.info(error.message);

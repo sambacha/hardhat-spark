@@ -1,4 +1,4 @@
-import { ILogging } from './index';
+import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { cli } from 'cli-ux';
 import { WrongNetwork } from '../../types/errors';
@@ -27,9 +27,18 @@ export class JsonPrompter implements ILogging {
     }));
   }
 
-  errorPrompt(): void {
+  logError(error: Error): void {
+    const {
+      message,
+      stack
+    } = generateErrorMessage(error);
+
     cli.error(JSON.stringify({
       name: 'Error',
+      fields: {
+        message,
+        stack,
+      }
     }));
   }
 

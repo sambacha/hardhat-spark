@@ -87,6 +87,7 @@ export default class Usage extends Command {
       networkId = DEFAULT_NETWORK_ID;
     }
     process.env.IGNITION_NETWORK_ID = String(networkId);
+    process.env.IGNITION_NETWORK_NAME = String(networkName);
 
     this.prompter = new StreamlinedPrompter();
 

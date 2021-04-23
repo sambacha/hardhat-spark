@@ -8,7 +8,7 @@ export class EmptyPrompter implements ILogging {
   bindingExecution(bindingName: string): void {
   }
 
-  errorPrompt(): void {
+  logError(): void {
   }
 
   eventExecution(eventName: string): void {
