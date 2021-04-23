@@ -9,7 +9,7 @@ project.
 All contract files are [here](../../example/intermediate/contracts), please copy them into your project. We aren't going
 to explain how all of those contracts are functioning but rather just their inner dependencies.
 
-## Init
+## Config
 
 Let's create file `hardhat-ignition.config.ts`.
 

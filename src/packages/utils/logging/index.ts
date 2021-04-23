@@ -1,4 +1,8 @@
 import { ModuleState } from '../../modules/states/module';
+import { CliError, handleMappedErrorCodes, UserError } from '../../types/errors';
+import { cli } from 'cli-ux';
+import chalk from 'chalk';
+import { checkIfExist } from '../util';
 
 export enum Logging {
   'overview' = 'overview',
@@ -30,7 +34,7 @@ export interface ILogging {
   promptContinueDeployment(): Promise<void>;
   promptExecuteTx(): Promise<void>;
   promptSignedTransaction(tx: string): void;
-  errorPrompt(error: Error): void;
+  logError(error: Error): void;
   sendingTx(elementName: string, functionName?: string): void;
   sentTx(elementName: string, functionName?: string): void;
   bindingExecution(bindingName: string): void;
@@ -50,4 +54,39 @@ export interface ILogging {
   parallelizationExperimental();
   wrongNetwork();
   gasPriceIsLarge(backoffTime: number);
+}
+
+export function generateErrorMessage(error: Error): {
+  message: string,
+  stack: any,
+} {
+  let stack;
+  if (cli.config.outputLevel == 'debug') {
+    stack = error.stack;
+  }
+
+  if (
+    (error as UserError)._isUserError ||
+    (error as CliError)._isCliError
+  ) {
+    return {
+      message: chalk.red(error.message),
+      stack,
+    };
+  }
+
+  // @ts-ignore
+  if (checkIfExist(error?.code)) {
+    // @TODO (filip) map all codes with meaningful message
+    return {
+      // @ts-ignore
+      message: handleMappedErrorCodes(error?.code, error),
+      stack,
+    };
+  }
+
+  return {
+    message: error.message,
+    stack,
+  };
 }

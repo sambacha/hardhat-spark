@@ -1,4 +1,4 @@
-import { ILogging } from './index';
+import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
@@ -103,13 +103,14 @@ export class SimpleOverviewPrompter extends FileLogging implements ILogging {
     });
   }
 
-  errorPrompt(error: Error): void {
-    super.errorPrompt(error);
+  logError(error: Error): void {
+    super.logError(error);
     if (!this.moduleBars[this.currentModuleName]) {
       return;
     }
 
     this.moduleBars[this.currentModuleName].stop();
+    generateErrorMessage(error);
   }
 
   eventExecution(eventName: string): void {

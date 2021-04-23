@@ -3,6 +3,7 @@ import { extractObjectInfo } from '../utils/util';
 import * as path from 'path';
 import { BaseEvent, ContractBinding, ContractBindingMetaData, StatefulEvent } from '../../interfaces/hardhat_ignition';
 import { ParamType } from '@ethersproject/abi/src.ts/fragments';
+import { ethers } from 'ethers';
 
 const EVENT_HOOK_DEFINITION_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
 const EVENT_LIFECYCLE_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
@@ -14,15 +15,45 @@ const DEPLOYMENT_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree
 const MACRO_HELPER_DOCS = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
 const EVENT_HOOK_DEPS_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
 
+
 export enum ERROR_CODES {
-  'NO_NETWORK' = 'NO_NETWORK'
+  NO_NETWORK = 'NO_NETWORK',
 }
 
-export function handleMappedErrorCodes(errorCode: string, error: Error) {
+export function handleMappedErrorCodes(errorCode: string, error: Error): string {
   switch (errorCode) {
     case ERROR_CODES.NO_NETWORK: {
+      const currentNetworkName = process.env.IGNITION_NETWORK_NAME;
+      const rpcProvider = process.env.IGINITION_RPC_PROVIDER;
+      return chalk.red(`No network running.
+Seems like rpc provider at ${rpcProvider} for ${chalk.bold(currentNetworkName)} is either down or unreachable.
 
-      break;
+If want to run local rpc node, execute $ npx hardhat node
+`);
+    }
+    case ethers.errors.UNKNOWN_ERROR: {
+      return error.message;
+    }
+    case ethers.errors.NOT_IMPLEMENTED:
+    case ethers.errors.UNSUPPORTED_OPERATION:
+    case ethers.errors.NETWORK_ERROR:
+    case ethers.errors.SERVER_ERROR:
+    case ethers.errors.TIMEOUT:
+    case ethers.errors.BUFFER_OVERRUN:
+    case ethers.errors.NUMERIC_FAULT:
+    case ethers.errors.MISSING_NEW:
+    case ethers.errors.INVALID_ARGUMENT:
+    case ethers.errors.MISSING_ARGUMENT:
+    case ethers.errors.UNEXPECTED_ARGUMENT:
+    case ethers.errors.CALL_EXCEPTION:
+    case ethers.errors.INSUFFICIENT_FUNDS:
+    case ethers.errors.NONCE_EXPIRED:
+    case ethers.errors.REPLACEMENT_UNDERPRICED:
+    case ethers.errors.UNPREDICTABLE_GAS_LIMIT: {
+      return chalk.red(error.message);
+    }
+    default: {
+      return chalk.red(error.message);
     }
   }
 }

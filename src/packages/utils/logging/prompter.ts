@@ -1,7 +1,7 @@
 import cli from 'cli-ux';
 import { DeniedConfirmation } from '../../types/errors';
 import chalk from 'chalk';
-import { ILogging } from './index';
+import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 
 export class StreamlinedPrompter implements ILogging {
@@ -66,7 +66,8 @@ export class StreamlinedPrompter implements ILogging {
     cli.debug(this.whitespaces + `Signed transaction: ${tx}`);
   }
 
-  errorPrompt(): void {
+  logError(error: Error): void {
+    generateErrorMessage(error);
   }
 
   sendingTx(): void {

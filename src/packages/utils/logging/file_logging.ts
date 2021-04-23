@@ -1,4 +1,4 @@
-import { ILogging } from './index';
+import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -61,11 +61,16 @@ export class FileLogging implements ILogging {
     });
   }
 
-  errorPrompt(error: Error): void {
+  logError(error: Error): void {
+    const {
+      message,
+      stack,
+    } = generateErrorMessage(error);
+
     this.errorLogger.error('Error', {
-      errorMessage: error.message,
+      message: message,
       errorName: error.name,
-      error
+      stack: stack
     });
   }
 

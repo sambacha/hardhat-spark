@@ -1,12 +1,14 @@
 import React, { FC } from 'react';
-import { render, Text } from 'ink';
+import { render } from 'ink';
 import { TerminalLayout } from './ui/layout/terminal';
 import { ModuleState } from '../../../modules/states/module';
-import { ILogging } from '../index';
+import { generateErrorMessage, ILogging } from '../index';
 import { getIgnitionVersion } from '../../package_info';
 import { ContractBinding, EventType, StatefulEvent } from '../../../../interfaces/hardhat_ignition';
 import { FileLogging } from '../file_logging';
 import { checkIfExist } from '../../util';
+import chalk from 'chalk';
+import { cli } from 'cli-ux';
 
 export enum ElementStatus {
   'EMPTY' = 'EMPTY',
@@ -23,6 +25,7 @@ export type ElementWithStatus = {
 export class OverviewPrompter extends FileLogging implements ILogging {
   private readonly rerender: { [moduleName: string]: FC };
   private readonly clear: { [moduleName: string]: FC };
+  private readonly cleanup: { [moduleName: string]: FC };
 
   private showDeployment: boolean = false;
   private moduleState: ModuleState;
@@ -39,6 +42,7 @@ export class OverviewPrompter extends FileLogging implements ILogging {
 
     this.rerender = {};
     this.clear = {};
+    this.cleanup = {};
   }
 
   alreadyDeployed(elementName: string): void {
@@ -75,11 +79,36 @@ export class OverviewPrompter extends FileLogging implements ILogging {
     />);
   }
 
-  errorPrompt(error: Error): void {
-    super.errorPrompt(error);
-    if (checkIfExist(this.moduleName)) {
-      this.clear[this.moduleName]();
+  logError(error: Error): void {
+    super.logError(error);
+
+    const {
+      message: errorMessage,
+      stack: errorStack,
+    } = generateErrorMessage(error);
+    this.showDeployment = false;
+
+    if (!checkIfExist(this.moduleName)) {
+      cli.info(chalk.red(errorMessage));
+      if (cli.config.outputLevel == 'debug') {
+        cli.info(errorStack);
+      }
+
+      return;
     }
+
+    this.rerender[this.moduleName](<TerminalLayout
+      showDeployment={this.showDeployment}
+      ignitionVersion={this.ignitionVersion}
+      moduleName={this.moduleName}
+      numberOfExecutedElements={this.numberOfExecutedElements}
+      totalNumberOfElements={this.totalNumberOfElements}
+      moduleElementsWithStatus={this.moduleElements}
+      transactionStatus={''}
+      summary={''}
+      errorMessage={errorMessage}
+      errorStack={errorStack}
+    />);
   }
 
   eventExecution(eventName: string): void {
@@ -265,6 +294,7 @@ export class OverviewPrompter extends FileLogging implements ILogging {
 
     this.rerender[moduleName] = rerender;
     this.clear[moduleName] = clear;
+    this.cleanup[this.moduleName] = cleanup;
   }
 
   startingModuleUsageGeneration(moduleName: string) {
