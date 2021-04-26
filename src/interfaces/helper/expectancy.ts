@@ -19,7 +19,7 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
       return true;
     }
 
-    throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
+    throw new ValueMismatch(expectedValue, value);
   }
 
   if (expectedValue._isContractBinding) {
@@ -34,12 +34,12 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
   if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
     && value.length != 0 && expectedValue.length != 0) {
     if (value.length != expectedValue.length) {
-      throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
+      throw new ValueMismatch(expectedValue, value);
     }
 
     for (let i = 0; i < value.length; i++) {
       if (value[i] != expectedValue[i]) {
-        throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
+        throw new ValueMismatch(expectedValue, value);
       }
     }
 
@@ -82,7 +82,7 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
       return true;
     }
 
-    throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
+    throw new ValueMismatch(expectedValue, value);
   }
 
   if (expectedValue._isContractBinding
@@ -93,12 +93,12 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
   if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
     && value.length != 0 && expectedValue.length != 0) {
     if (value.length != expectedValue.length) {
-      throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
+      throw new ValueMismatch(expectedValue, value);
     }
 
     for (let i = 0; i < value.length; i++) {
       if (value[i] != expectedValue[i]) {
-        throw new ValueMismatch('Failed on expectSlotRead() - could not match values:', expectedValue, value);
+        throw new ValueMismatch(expectedValue, value);
       }
     }
 

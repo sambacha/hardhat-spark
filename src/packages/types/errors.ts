@@ -320,39 +320,25 @@ Please check if node is running and if you have configured rpc correctly.
 
 export class TransactionFailed extends UserError {
   constructor(message: string) {
-    super(message);
-  }
-}
+    super(`Your transaction has reverted.
 
-export class WrongNetwork extends UserError {
-  constructor(message: string) {
-    super(message);
+Error reason: ${message}`);
   }
 }
 
 export class ValueMismatch extends UserError {
-  constructor(message: string, expected: any, actual: any) {
-    super(`${message}
+  constructor(expected: any, actual: any) {
+    super(`Failed on expectSlotRead() - could not match values:
+
 expected value: ${expected}
 actual value: ${actual}`);
   }
 }
 
-export class IgnitionConfigAlreadyExist extends UserError {
-  constructor(message: string) {
-    super(message);
-  }
-}
-
 export class AbiMismatch extends UserError {
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-export class BytecodeMismatch extends UserError {
-  constructor(message: string) {
-    super(message);
+  constructor(name: string, abiLength: string, bindingArgsLength: string) {
+    super(`Binding did not match number of arguments for contract - ${name}
+  Expected ${abiLength} and got ${bindingArgsLength} number of arguments.`);
   }
 }
 

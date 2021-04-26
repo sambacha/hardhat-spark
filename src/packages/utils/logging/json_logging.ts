@@ -1,7 +1,6 @@
 import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { cli } from 'cli-ux';
-import { WrongNetwork } from '../../types/errors';
 import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export class JsonPrompter implements ILogging {
@@ -206,8 +205,7 @@ export class JsonPrompter implements ILogging {
   async parallelizationExperimental() {
   }
 
-  wrongNetwork(): Promise<boolean> {
-    throw new WrongNetwork('Deploying to wrong network!');
+  wrongNetwork() {
   }
 
   gasPriceIsLarge(backoffTime: number) {
