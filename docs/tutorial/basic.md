@@ -219,7 +219,8 @@ Now lets see what is the difference between the already deployed module and new 
 Run next command:
 
 ```
-hardhat-ignition diff ./deployment/first.module.ts
+hardhat-ignition diff ./deployment/first.module.ts 
+
 ```
 
 Console output should be something like this.
