@@ -1,5 +1,5 @@
 import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/hardhat_ignition';
-import { CliError, UserError } from '../types/errors';
+import { CliError, handleMappedErrorCodes, UserError } from '../types/errors';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
 import * as os from 'os';
@@ -138,7 +138,14 @@ export async function errorHandling(error: Error) {
     return;
   }
 
-  cli.error(error.message);
+  // @ts-ignore
+  if (checkIfExist(error?.code)) {
+    // @TODO (filip) map all codes with meaningful message
+    // @ts-ignore
+    handleMappedErrorCodes(error.code, error);
+  }
+
+  cli.info(error.message);
   if (cli.config.outputLevel == 'debug') {
     cli.debug(error.stack);
   }

@@ -4,8 +4,9 @@ import { TerminalLayout } from './ui/layout/terminal';
 import { ModuleState } from '../../../modules/states/module';
 import { ILogging } from '../index';
 import { getIgnitionVersion } from '../../package_info';
-import { ContractBinding, StatefulEvent } from '../../../../interfaces/hardhat_ignition';
+import { ContractBinding, EventType, StatefulEvent } from '../../../../interfaces/hardhat_ignition';
 import { FileLogging } from '../file_logging';
+import { checkIfExist } from '../../util';
 
 export enum ElementStatus {
   'EMPTY' = 'EMPTY',
@@ -76,6 +77,9 @@ export class OverviewPrompter extends FileLogging implements ILogging {
 
   errorPrompt(error: Error): void {
     super.errorPrompt(error);
+    if (checkIfExist(this.moduleName)) {
+      this.clear[this.moduleName]();
+    }
   }
 
   eventExecution(eventName: string): void {
@@ -140,6 +144,9 @@ export class OverviewPrompter extends FileLogging implements ILogging {
 
   finishedEventExecution(eventName: string): void {
     super.finishedEventExecution(eventName);
+    if (eventName == EventType.OnFail) {
+      return;
+    }
 
     this.numberOfExecutedElements += 1;
     this.moduleElements[eventName].status = ElementStatus.SUCCESSFULLY;

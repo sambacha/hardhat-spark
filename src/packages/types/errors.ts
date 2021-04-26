@@ -14,6 +14,18 @@ const DEPLOYMENT_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree
 const MACRO_HELPER_DOCS = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
 const EVENT_HOOK_DEPS_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
 
+export enum ERROR_CODES {
+  'NO_NETWORK' = 'NO_NETWORK'
+}
+
+export function handleMappedErrorCodes(errorCode: string, error: Error) {
+  switch (errorCode) {
+    case ERROR_CODES.NO_NETWORK: {
+
+      break;
+    }
+  }
+}
 
 export class UserError extends Error {
   public _isUserError: boolean = true;
