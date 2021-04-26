@@ -43,6 +43,7 @@ export class FileLogging implements ILogging {
 
     const dirPath = path.resolve(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME);
     if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(path.resolve(currentDir, DEPLOYMENT_FOLDER));
       fs.mkdirSync(dirPath);
     }
   }

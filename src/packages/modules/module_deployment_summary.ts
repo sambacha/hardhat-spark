@@ -133,10 +133,24 @@ export class ModuleDeploymentSummaryService {
       transactionReceiptList.input.forEach((singleTxInput: any, index: number) => {
         const singleTxOutput = transactionReceiptList.output[index];
 
-        totalGasSpent = totalGasSpent.add(BigNumber.from(singleTxOutput.gasUsed.hex));
+        let inputGasPrice;
+        let outputGasUsed;
+        if (!checkIfExist(singleTxOutput.gasUsed.hex)) {
+          outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
+        } else {
+          outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
+        }
 
-        totalGasPrice = totalGasPrice.add(BigNumber.from(singleTxInput.gasPrice.hex));
-        const wei = BigNumber.from(singleTxOutput.gasUsed).mul(BigNumber.from(singleTxInput.gasPrice.hex));
+        if (!checkIfExist(singleTxInput.gasPrice.hex)) {
+          inputGasPrice = BigNumber.from(singleTxInput.gasPrice._hex);
+        } else {
+          inputGasPrice = BigNumber.from(singleTxInput.gasPrice.hex);
+        }
+
+        totalGasSpent = totalGasSpent.add(BigNumber.from(outputGasUsed));
+
+        totalGasPrice = totalGasPrice.add(inputGasPrice);
+        const wei = outputGasUsed.mul(inputGasPrice);
         totalWeiSpent = totalWeiSpent.add(wei);
       });
     }
