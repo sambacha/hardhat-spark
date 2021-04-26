@@ -158,6 +158,10 @@ export class StreamlinedPrompter implements ILogging {
   }
 
   async wrongNetwork(): Promise<boolean> {
+    if (this.skipConfirmation) {
+      return true;
+    }
+
     return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
   }
 
