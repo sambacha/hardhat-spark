@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Box, Newline, Text } from 'ink';
 import { ContractBinding, StatefulEvent } from '../../../../../../interfaces/hardhat_ignition';
 import { ElementStatus, ElementWithStatus } from '../../index';
@@ -18,7 +18,8 @@ export const TerminalLayout = ({
                                  transactionStatus,
                                  summary,
                                  errorMessage = '',
-                                 errorStack = ''
+                                 errorStack = '',
+                                 userPrompt = '',
                                }) => {
     useEffect(() => {
     }, []);
@@ -43,10 +44,6 @@ export const TerminalLayout = ({
         ) : (
           <></>
         )
-        }
-        {!checkIfEmpty(summary) ? (
-          <Text>{summary}</Text>
-        ) : (<></>)
         }
         {!checkIfEmpty(summary) ? (
           <Text>{summary}</Text>

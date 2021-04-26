@@ -111,8 +111,10 @@ export async function deploy(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
+    prompter.startModuleResolving(moduleName);
     // resolving contract and events dependencies and determining execution order
     const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+    prompter.finishModuleResolving(moduleName);
 
     // setting up custom functionality
     if (module.getCustomGasPriceProvider()) {

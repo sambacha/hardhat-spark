@@ -22,22 +22,27 @@ export enum ERROR_CODES {
 
 export function handleMappedErrorCodes(errorCode: string, error: Error): string {
   switch (errorCode) {
+    case ethers.errors.NETWORK_ERROR:
     case ERROR_CODES.NO_NETWORK: {
       const currentNetworkName = process.env.IGNITION_NETWORK_NAME;
       const rpcProvider = process.env.IGINITION_RPC_PROVIDER;
       return chalk.red(`No network running.
 Seems like rpc provider at ${rpcProvider} for ${chalk.bold(currentNetworkName)} is either down or unreachable.
 
-If want to run local rpc node, execute $ npx hardhat node
+In a case that want to run a local rpc node, execute $ npx hardhat node
 `);
+    }
+    case ethers.errors.SERVER_ERROR: {
+      // @ts-ignore
+      return chalk.red(`${error.error.message}
+
+If you are running a local rpc node you can check node logs for more error information`);
     }
     case ethers.errors.UNKNOWN_ERROR: {
       return error.message;
     }
     case ethers.errors.NOT_IMPLEMENTED:
     case ethers.errors.UNSUPPORTED_OPERATION:
-    case ethers.errors.NETWORK_ERROR:
-    case ethers.errors.SERVER_ERROR:
     case ethers.errors.TIMEOUT:
     case ethers.errors.BUFFER_OVERRUN:
     case ethers.errors.NUMERIC_FAULT:

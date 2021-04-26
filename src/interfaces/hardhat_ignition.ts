@@ -969,10 +969,7 @@ export class ContractInstance {
           tx = await contractFunction(...args, overrides);
           currentEventTransactionData.contractInput[contractTxIterator] = tx;
         } catch (err) {
-          if ((err.reason).includes('could not detect network')) {
-            throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
-          }
-          throw new TransactionFailed(err.error.message);
+          throw err;
         }
         await this.prompter.sentTx(sessionEventName, fragment.name);
 
@@ -1086,21 +1083,14 @@ export class IgnitionWallet extends ethers.Wallet {
       try {
         ignitionTransaction = await this.populateTransactionWithIgnitionMetadata(transaction);
       } catch (err) {
-        if ((err.reason).includes('could not detect network')) {
-          throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
-        }
-        throw new TransactionFailed(err.error.message);
+        throw err;
       }
 
       let txResp;
       try {
         txResp = await super.sendTransaction(ignitionTransaction);
       } catch (err) {
-        if ((err.reason).includes('could not detect network')) {
-          throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
-        }
-
-        throw new TransactionFailed(err.error.message);
+        throw err;
       }
       await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
 

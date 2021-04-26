@@ -6,9 +6,7 @@ import chalk from 'chalk';
 import { checkIfExist } from '../util';
 import { CliError, DeniedConfirmation } from '../../types/errors';
 import { FileLogging } from './file_logging';
-import { error } from 'util';
-import { eventNames } from 'cluster';
-import { single } from 'rxjs/operators';
+import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export enum StateElementStatus {
   'NOT_EXECUTED' = 'not executed',
@@ -110,7 +108,12 @@ export class SimpleOverviewPrompter extends FileLogging implements ILogging {
     }
 
     this.moduleBars[this.currentModuleName].stop();
-    generateErrorMessage(error);
+    const {
+      message,
+      stack
+    } = generateErrorMessage(error);
+
+    cli.info(message);
   }
 
   eventExecution(eventName: string): void {
@@ -140,8 +143,8 @@ export class SimpleOverviewPrompter extends FileLogging implements ILogging {
     cli.info(summary);
   }
 
-  finishedEventExecution(eventName: string): void {
-    super.finishedEventExecution(eventName);
+  finishedEventExecution(eventName: string, eventType: EventType): void {
+    super.finishedEventExecution(eventName, eventType);
 
     this.handleElementCompletion(eventName);
   }
@@ -260,5 +263,11 @@ export class SimpleOverviewPrompter extends FileLogging implements ILogging {
   async wrongNetwork(): Promise<boolean> {
     super.wrongNetwork();
     return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
+  }
+
+  startModuleResolving(): void {
+  }
+
+  finishModuleResolving(): void {
   }
 }

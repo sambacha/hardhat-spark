@@ -1,5 +1,6 @@
 import { ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
+import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export class EmptyPrompter implements ILogging {
   alreadyDeployed(elementName: string): void {
@@ -26,7 +27,7 @@ export class EmptyPrompter implements ILogging {
   finishedBindingExecution(bindingName: string): void {
   }
 
-  finishedEventExecution(eventName: string): void {
+  finishedEventExecution(eventName: string, eventType: EventType): void {
   }
 
   finishedExecutionOfContractFunction(functionName: string): void {
@@ -84,5 +85,11 @@ export class EmptyPrompter implements ILogging {
   }
 
   gasPriceIsLarge(backoffTime: number) {
+  }
+
+  finishModuleResolving(): void {
+  }
+
+  startModuleResolving(): void {
   }
 }

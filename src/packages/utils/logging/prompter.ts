@@ -3,6 +3,7 @@ import { DeniedConfirmation } from '../../types/errors';
 import chalk from 'chalk';
 import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
+import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export class StreamlinedPrompter implements ILogging {
   private whitespaces: string;
@@ -67,7 +68,12 @@ export class StreamlinedPrompter implements ILogging {
   }
 
   logError(error: Error): void {
-    generateErrorMessage(error);
+    const {
+      message,
+      stack,
+    } = generateErrorMessage(error);
+
+    cli.info(message);
   }
 
   sendingTx(): void {
@@ -97,7 +103,7 @@ export class StreamlinedPrompter implements ILogging {
     this.whitespaces += '  ';
   }
 
-  finishedEventExecution(eventName: string): void {
+  finishedEventExecution(eventName: string, eventType: EventType): void {
     this.finishedElementExecution();
     cli.info(`${this.whitespaces}${chalk.bold('Finished')} event execution - ${chalk.bold(eventName)}\n`);
   }
@@ -152,14 +158,18 @@ export class StreamlinedPrompter implements ILogging {
   }
 
   async wrongNetwork(): Promise<boolean> {
-    if (this.skipConfirmation) {
-      return true;
-    }
-
     return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
   }
 
   gasPriceIsLarge(backoffTime: number) {
     cli.info(this.whitespaces + `Gas price is too large, waiting for ${backoffTime}ms before continuing`);
+  }
+
+  startModuleResolving(): void {
+
+  }
+
+  finishModuleResolving(): void {
+
   }
 }

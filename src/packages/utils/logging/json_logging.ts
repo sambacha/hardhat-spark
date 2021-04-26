@@ -2,6 +2,7 @@ import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { cli } from 'cli-ux';
 import { WrongNetwork } from '../../types/errors';
+import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export class JsonPrompter implements ILogging {
   private currentModuleName: string;
@@ -88,11 +89,12 @@ export class JsonPrompter implements ILogging {
     }));
   }
 
-  finishedEventExecution(eventName: string): void {
+  finishedEventExecution(eventName: string, eventType: EventType): void {
     cli.info(JSON.stringify({
       name: 'Finished event execution',
       fields: {
-        eventName
+        eventName,
+        eventType,
       }
     }));
   }
@@ -213,5 +215,11 @@ export class JsonPrompter implements ILogging {
       name: 'Gas price is too large, waiting to gets lower.',
       fields: backoffTime
     }));
+  }
+
+  finishModuleResolving(): void {
+  }
+
+  startModuleResolving(): void {
   }
 }

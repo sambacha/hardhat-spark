@@ -29,7 +29,7 @@ export class EventHandler {
     const eventElement = moduleState[event.name] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(event.name);
-      this.prompter.finishedEventExecution(event.name);
+      this.prompter.finishedEventExecution(event.name, event.eventType);
 
       return;
     }
@@ -58,7 +58,7 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentEvent(moduleName, moduleState, eventName);
-    this.prompter.finishedEventExecution(eventName);
+    this.prompter.finishedEventExecution(eventName, event.eventType);
   }
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
@@ -107,14 +107,14 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
-      this.prompter.finishedEventExecution(eventName);
+      this.prompter.finishedEventExecution(eventName, eventType);
       return;
     }
 
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentModuleEvent(moduleName, moduleStates, eventType, eventName);
-    this.prompter.finishedEventExecution(eventName);
+    this.prompter.finishedEventExecution(eventName, eventType);
   }
 
   private async handleDeployedBindingsEvents(
@@ -127,7 +127,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
-      this.prompter.finishedEventExecution(eventName);
+      this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
       return;
     }
 
@@ -151,7 +151,7 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
-    this.prompter.finishedEventExecution(eventName);
+    this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
   }
 
   private async handleCompiledBindingsEvents(
@@ -164,7 +164,7 @@ export class EventHandler {
     const eventElement = moduleStates[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
-      this.prompter.finishedEventExecution(eventName);
+      this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
       return;
     }
 
@@ -188,6 +188,6 @@ export class EventHandler {
     await this.moduleState.setSingleEventName(eventName);
     await fn();
     await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
-    this.prompter.finishedEventExecution(eventName);
+    this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
   }
 }
