@@ -59,10 +59,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     try {
       gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
     } catch (err) {
-      if ((err.reason).includes('could not detect network')) {
-        throw new NoNetworkError(err, process.env.IGNITION_RPC_PROVIDER);
-      }
-      throw new TransactionFailed(err.error.message);
+      throw err;
     }
 
     let gasPrice = await this.gasPriceCalculator.getCurrentPrice();

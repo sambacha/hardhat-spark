@@ -9,6 +9,7 @@ import { FileLogging } from '../file_logging';
 import { checkIfExist } from '../../util';
 import chalk from 'chalk';
 import { cli } from 'cli-ux';
+import { ContractMissingOnNetworkQuestion } from './ui/layout/confirmation_question';
 
 export enum ElementStatus {
   'EMPTY' = 'EMPTY',
@@ -171,9 +172,9 @@ export class OverviewPrompter extends FileLogging implements ILogging {
     />);
   }
 
-  finishedEventExecution(eventName: string): void {
-    super.finishedEventExecution(eventName);
-    if (eventName == EventType.OnFail) {
+  finishedEventExecution(eventName: string, eventType: EventType): void {
+    super.finishedEventExecution(eventName, eventType);
+    if (eventType == EventType.OnFail) {
       return;
     }
 
@@ -338,8 +339,21 @@ export class OverviewPrompter extends FileLogging implements ILogging {
     />);
   }
 
-  wrongNetwork() {
-    super.wrongNetwork();
+  async wrongNetwork(): Promise<boolean> {
+    return new Promise(resolve => {
+      super.wrongNetwork();
+
+      render(<ContractMissingOnNetworkQuestion
+        userPrompt={'Contracts are missing on the network, do you wish to continue?'}
+        resolve={resolve}
+      />);
+    });
+  }
+
+  startModuleResolving(moduleName: string): void {
+  }
+
+  finishModuleResolving(moduleName: string): void {
   }
 }
 

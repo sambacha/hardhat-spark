@@ -31,6 +31,7 @@
     "indent-string": "^4.0.0",
     "ink": "^3.0.8",
     "ink-spinner": "^4.0.1",
+    "ink-text-input": "^4.0.1",
     "inquirer": "^8.0.0",
     "listr": "^0.14.3",
     "log-symbols": "^4.0.0",

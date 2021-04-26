@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { DEPLOYMENT_FOLDER } from '../../tutorial/tutorial_service';
 import { ILogObject, Logger } from 'tslog';
+import { EventType } from '../../../interfaces/hardhat_ignition';
 
 const FOLDER_NAME = '.log';
 
@@ -110,10 +111,11 @@ export class FileLogging implements ILogging {
     });
   }
 
-  finishedEventExecution(eventName: string): void {
+  finishedEventExecution(eventName: string, eventType: EventType): void {
     this.logger[this.moduleName].info('finished event hook execution', {
       moduleName: this.moduleName,
       eventName,
+      eventType,
     });
   }
 
@@ -245,6 +247,12 @@ export class FileLogging implements ILogging {
   }
 
   wrongNetwork() {
-    this.errorLogger.error('contracts are missing on the network.');
+    this.errorLogger.error('Contracts are missing on the network.');
+  }
+
+  finishModuleResolving(moduleName: string): void {
+  }
+
+  startModuleResolving(moduleName: string): void {
   }
 }

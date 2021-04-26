@@ -122,7 +122,10 @@ export async function errorHandling(error: Error) {
   // @ts-ignore
   if (checkIfExist(error?.code)) {
     // @ts-ignore
-    handleMappedErrorCodes(error.code, error);
+    cli.info(handleMappedErrorCodes(error.code, error));
+    if (cli.config.outputLevel == 'debug') {
+      cli.debug(error.stack);
+    }
     return;
   }
 

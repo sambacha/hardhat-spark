@@ -3,6 +3,7 @@ import { CliError, handleMappedErrorCodes, UserError } from '../../types/errors'
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
 import { checkIfExist } from '../util';
+import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export enum Logging {
   'overview' = 'overview',
@@ -28,6 +29,8 @@ export enum TransactionStatus {
 
 export interface ILogging {
   nothingToDeploy(): void;
+  startModuleResolving(moduleName: string): void;
+  finishModuleResolving(moduleName: string): void;
   startModuleDeploy(moduleName: string,  moduleStates: ModuleState): void;
   finishModuleDeploy(moduleName: string, summary: string): void;
   alreadyDeployed(elementName: string): void;
@@ -40,7 +43,7 @@ export interface ILogging {
   bindingExecution(bindingName: string): void;
   finishedBindingExecution(bindingName: string): void;
   eventExecution(eventName: string): void;
-  finishedEventExecution(eventName: string): void;
+  finishedEventExecution(eventName: string, eventType: EventType): void;
   executeContractFunction(contractFunction: string): void;
   finishedExecutionOfContractFunction(functionName: string): void;
   transactionReceipt(): void;
