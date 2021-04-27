@@ -67,6 +67,10 @@ export class UserError extends Error {
   public _isUserError: boolean = true;
   public message: string;
 
+  public moduleName: string;
+  public subModuleName: string;
+  public lineNumber: number;
+
   constructor(message: string) {
     super();
     this.message = message;
@@ -80,6 +84,25 @@ export class CliError extends Error {
   constructor(message: string) {
     super();
     this.message = 'CLI error - ' + message;
+  }
+}
+
+export class DeploymentFileError extends UserError {
+  constructor(e: Error) {
+    super(`Error inside deployment file:
+
+${e.stack}
+`);
+  }
+}
+
+export class EventExecutionError extends UserError {
+  constructor(e: Error) {
+    super(`Error inside event hook:
+
+Error message: ${e.message}
+${e.stack}
+`);
   }
 }
 

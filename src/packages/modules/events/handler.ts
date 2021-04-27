@@ -3,7 +3,7 @@ import {
   AfterDeployEvent,
   BeforeCompileEvent,
   BeforeDeployEvent,
-  ContractBinding,
+  ContractBinding, EventFn,
   EventFnCompiled,
   EventFnDeployed, EventType,
   ModuleEvent, ModuleEventFn,
@@ -13,7 +13,7 @@ import {
 import { checkIfExist } from '../../utils/util';
 import { ModuleStateRepo } from '../states/state_repo';
 import { ModuleState } from '../states/module';
-import { CliError } from '../../types/errors';
+import { CliError, EventExecutionError } from '../../types/errors';
 import { ILogging } from '../../utils/logging';
 
 export class EventHandler {
@@ -55,10 +55,9 @@ export class EventHandler {
       }
     }
 
-    await this.moduleState.setSingleEventName(eventName);
-    await fn();
+    await this.executeEvent(eventName, fn);
     await this.moduleState.finishCurrentEvent(moduleName, moduleState, eventName);
-    this.prompter.finishedEventExecution(eventName, event.eventType);
+    this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
   }
 
   async executeAfterCompileEventHook(moduleName: string, event: AfterCompileEvent, moduleState: ModuleState): Promise<void> {
@@ -102,18 +101,17 @@ export class EventHandler {
     eventName: string,
     eventType: EventType,
     fn: ModuleEventFn,
-    moduleStates: ModuleState,
+    moduleState: ModuleState,
   ) {
-    const eventElement = moduleStates[eventName] as StatefulEvent;
+    const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
       this.prompter.finishedEventExecution(eventName, eventType);
       return;
     }
 
-    await this.moduleState.setSingleEventName(eventName);
-    await fn();
-    await this.moduleState.finishCurrentModuleEvent(moduleName, moduleStates, eventType, eventName);
+    await this.executeEvent(eventName, fn);
+    await this.moduleState.finishCurrentModuleEvent(moduleName, moduleState, eventType, eventName);
     this.prompter.finishedEventExecution(eventName, eventType);
   }
 
@@ -122,9 +120,9 @@ export class EventHandler {
     eventName: string,
     fn: EventFnDeployed,
     deps: string[],
-    moduleStates: ModuleState,
+    moduleState: ModuleState,
   ) {
-    const eventElement = moduleStates[eventName] as StatefulEvent;
+    const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
       this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
@@ -132,25 +130,24 @@ export class EventHandler {
     }
 
     for (const dependencyName of deps) {
-      if (!checkIfExist(moduleStates[dependencyName]) && checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode)) {
+      if (!checkIfExist(moduleState[dependencyName]) && checkIfExist((moduleState[dependencyName] as ContractBinding).bytecode)) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
       if (
-        !checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode) ||
-        !checkIfExist((moduleStates[dependencyName] as ContractBinding).deployMetaData?.contractAddress)
+        !checkIfExist((moduleState[dependencyName] as ContractBinding).bytecode) ||
+        !checkIfExist((moduleState[dependencyName] as ContractBinding).deployMetaData?.contractAddress)
       ) {
         throw new CliError(`Desired contract is not yet deployed - ${dependencyName}`);
       }
 
-      if ((moduleStates[dependencyName] as ContractBinding).deployMetaData?.lastEventName == eventName) {
-        (moduleStates[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
+      if ((moduleState[dependencyName] as ContractBinding).deployMetaData?.lastEventName == eventName) {
+        (moduleState[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
       }
     }
 
-    await this.moduleState.setSingleEventName(eventName);
-    await fn();
-    await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
+    await this.executeEvent(eventName, fn);
+    await this.moduleState.finishCurrentEvent(moduleName, moduleState, eventName);
     this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
   }
 
@@ -159,9 +156,9 @@ export class EventHandler {
     eventName: string,
     fn: EventFnCompiled,
     deps: string[],
-    moduleStates: ModuleState,
+    moduleState: ModuleState,
   ) {
-    const eventElement = moduleStates[eventName] as StatefulEvent;
+    const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
       this.prompter.alreadyDeployed(eventName);
       this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
@@ -169,25 +166,37 @@ export class EventHandler {
     }
 
     for (const dependencyName of deps) {
-      if (!checkIfExist(moduleStates[dependencyName]) && checkIfExist((moduleStates[dependencyName] as ContractBinding)?.bytecode)) {
+      if (!checkIfExist(moduleState[dependencyName]) && checkIfExist((moduleState[dependencyName] as ContractBinding)?.bytecode)) {
         throw new CliError('Module state element that is part of event dependency is not contract.');
       }
 
       if (
-        !checkIfExist((moduleStates[dependencyName] as ContractBinding).bytecode) ||
-        !checkIfExist((moduleStates[dependencyName] as ContractBinding).abi)
+        !checkIfExist((moduleState[dependencyName] as ContractBinding).bytecode) ||
+        !checkIfExist((moduleState[dependencyName] as ContractBinding).abi)
       ) {
         throw new CliError('Desired contract is not yet been compiled.');
       }
 
-      if ((moduleStates[dependencyName] as ContractBinding).deployMetaData.lastEventName === eventName) {
-        (moduleStates[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
+      if ((moduleState[dependencyName] as ContractBinding).deployMetaData.lastEventName === eventName) {
+        (moduleState[dependencyName] as ContractBinding).deployMetaData.logicallyDeployed = true;
       }
     }
 
-    await this.moduleState.setSingleEventName(eventName);
-    await fn();
-    await this.moduleState.finishCurrentEvent(moduleName, moduleStates, eventName);
+    await this.executeEvent(eventName, fn);
+    await this.moduleState.finishCurrentEvent(moduleName, moduleState, eventName);
     this.prompter.finishedEventExecution(eventName, eventElement.event.eventType);
+  }
+
+  private async executeEvent(eventName: string, fn: EventFn) {
+    await this.moduleState.setSingleEventName(eventName);
+    try {
+      await fn();
+    } catch (e) {
+      if (e._isUserError || e._isCliError) {
+        throw e;
+      }
+
+      throw new EventExecutionError(e);
+    }
   }
 }

@@ -19,7 +19,6 @@ export const TerminalLayout = ({
                                  summary,
                                  errorMessage = '',
                                  errorStack = '',
-                                 userPrompt = '',
                                }) => {
     useEffect(() => {
     }, []);

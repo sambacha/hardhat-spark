@@ -17,11 +17,10 @@ import { ILogging } from '../packages/utils/logging';
 import {
   ArgumentLengthInvalid,
   BindingsConflict,
-  CliError, ContractNotDeployedError, EventDoesntExistError, EventNameExistsError,
+  CliError, ContractNotDeployedError, DeploymentFileError, EventDoesntExistError, EventNameExistsError,
   MissingContractMetadata,
-  NoNetworkError, ShouldRedeployAlreadyDefinedError,
+  ShouldRedeployAlreadyDefinedError,
   TemplateNotFound,
-  TransactionFailed,
   WalletTransactionNotInEventError
 } from '../packages/types/errors';
 import { IModuleRegistryResolver } from '../packages/modules/states/registry';
@@ -1633,7 +1632,15 @@ export class Module {
       moduleSession.set(clsNamespaces.MODULE_NAME, this.name);
     }
 
-    await this.fn(moduleBuilder, wallets);
+    try {
+      await this.fn(moduleBuilder, wallets);
+    } catch (err) {
+      if (err._isUserError || err._isCliError) {
+        throw err;
+      }
+
+      throw new DeploymentFileError(err);
+    }
     moduleBuilder = await handleModule(moduleBuilder, this.name, this.isUsage, !!m);
 
     this.bindings = moduleBuilder.getAllBindings();
