@@ -13,6 +13,10 @@ npm link
 Cd to `example/tornado_cash` and run `npm i` to install all dependencies and link to local
 binary of ignition.
 
+## Setup environment file
+
+Create `.env` file and populate fields from `.env.example`.
+
 ## Compilation
 
 Compile the project before deploying:

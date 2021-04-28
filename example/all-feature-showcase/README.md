@@ -24,6 +24,10 @@ Run next command:
 npx hardhat compile
 ```
 
+## Setup environment file
+
+Create `.env` file and populate fields from `.env.example`.
+
 ## Run Node
 
 Run next command:
