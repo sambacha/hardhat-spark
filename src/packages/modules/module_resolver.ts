@@ -366,6 +366,10 @@ export class ModuleResolver {
 
   private static invalidateBindingEventsDependant(bindingEventDeps: EventsDepRef, moduleStateFile: ModuleStateFile, resolvedModule: ModuleState) {
     const invalidateSingleEvent = (statefulEvent: StatefulEvent) => {
+      if (!checkIfExist(statefulEvent)) {
+        return;
+      }
+
       if (!statefulEvent.executed) {
         return;
       }
