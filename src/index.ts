@@ -44,6 +44,7 @@ import { StreamlinedPrompter } from './packages/utils/logging/prompter';
 import { GlobalConfigService } from './packages/config/global_config_service';
 import { AnalyticsService } from './packages/utils/analytics/analytics_service';
 import { IAnalyticsService } from './packages/utils/analytics';
+import { ModulePackagingService } from './packages/modules/module_packaging';
 
 export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
@@ -327,6 +328,17 @@ export async function migrate(
   await analyticsService.sendCommandHit('migration');
 
   cli.info('Migration successfully completed!');
+}
+
+export async function createPackage(modulePackagingService: ModulePackagingService) {
+  // initialize empty dist folder with package.json
+  await modulePackagingService.initializePackageDistributionFolder();
+
+  // fetch all contracts from contracts folder and put it in package folder
+  await modulePackagingService.copyAllContracts();
+
+  // same for modules
+  await modulePackagingService.copyAllDeploymentModules();
 }
 
 export async function defaultInputParams(moduleFilePath?: string, network?: string, state?: string, rpcProvider?: string, logging?: string, configScriptPath?: string): Promise<{
