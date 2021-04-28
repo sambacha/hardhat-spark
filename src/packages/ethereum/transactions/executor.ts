@@ -72,8 +72,8 @@ export class TxExecutor {
     await this.moduleState.storeNewState(moduleName, moduleState);
 
     if (this.parallelize) {
-      await this.prompter.parallelizationExperimental();
       await this.prompter.startModuleDeploy(moduleName, moduleState);
+      await this.prompter.parallelizationExperimental();
       if (!checkIfExist(moduleState)) {
         this.prompter.nothingToDeploy();
       }
