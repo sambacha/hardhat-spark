@@ -160,9 +160,12 @@ export type Deployed = {
  * Module config is simple way to specify if desired contract should be deployed or not.
  */
 export type ModuleConfig = {
-  [contractName: string]: {
-    deploy: boolean
-  }
+  contract: {
+    [contractName: string]: {
+      deploy: boolean
+    }
+  },
+  defaultOptions: ModuleOptions
 };
 
 export type FactoryCustomOpts = {
@@ -1607,7 +1610,7 @@ export class Module {
     this.isUsage = usageModule;
 
     this.opts = {
-      params: {}
+      params: moduleConfig.defaultOptions.params
     };
   }
 
