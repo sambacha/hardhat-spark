@@ -82,7 +82,7 @@ export function searchModuleFilesName(currentPath: string, results: any[]): stri
     if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
       return searchModuleFilesName(path.resolve(currentPath, fileName), results);
     }
-    if (!path.parse(fileName).base.includes('module')) {
+    if (!path.parse(fileName).base.includes('module') || fileName.includes('.log') ) {
       return;
     }
 
