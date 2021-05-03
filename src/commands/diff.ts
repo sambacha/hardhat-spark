@@ -15,6 +15,7 @@ import { ILogging } from '../packages/utils/logging';
 import { EthClient } from '../packages/ethereum/client';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { defaultInputParams, errorHandling } from '../index';
+import { CommandParsingFailed } from '../packages/types/errors';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current deployment.';
@@ -60,7 +61,15 @@ export default class Diff extends Command {
   static args = [{name: 'module_file_path'}];
 
   async run() {
-    const {args, flags} = this.parse(Diff);
+    let args;
+    let flags;
+    try {
+      const commandOutput = this.parse(Diff);
+      args = commandOutput.args;
+      flags = commandOutput.flags;
+    } catch (err) {
+      throw new CommandParsingFailed(err);
+    }
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';

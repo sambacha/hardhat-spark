@@ -1,12 +1,11 @@
-import { buildModule } from '@tenderly/hardhat-ignition';
-import { SynthetixModuleBuilder } from '../SynthetixModule';
+import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
-export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: SynthetixModuleBuilder) => {
+export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: ModuleBuilder) => {
   m.library('SafeDecimalMath');
   m.library('Math');
 });
 
-export const SynthetixTemplates = buildModule('SynthetixTemplates', async (m: SynthetixModuleBuilder) => {
+export const SynthetixTemplates = buildModule('SynthetixTemplates', async (m: ModuleBuilder) => {
   m.contractTemplate('ReadProxy');
   m.contractTemplate('Proxy');
   m.contractTemplate('EternalStorage');

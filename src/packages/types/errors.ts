@@ -87,6 +87,14 @@ export class CliError extends Error {
   }
 }
 
+export class CommandParsingFailed extends UserError {
+  constructor(err: Error) {
+    super(`Command failed to start. You have provided wrong command parameters.
+
+${err}`);
+  }
+}
+
 export class DeploymentFileError extends UserError {
   constructor(e: Error) {
     super(`Error inside deployment file:

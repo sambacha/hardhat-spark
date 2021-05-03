@@ -1,8 +1,8 @@
 import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import {
+  CommandParsingFailed,
   NoDeploymentModuleError,
-  PathNotProvided,
   WrongDeploymentPathForNetwork
 } from '../packages/types/errors';
 import path from 'path';
@@ -45,8 +45,15 @@ export default class GenTypes extends Command {
   static args = [{name: 'module_file_path'}];
 
   async run() {
-    const {args, flags} = this.parse(GenTypes);
-    if (flags.debug) {
+    let args;
+    let flags;
+    try {
+      const commandOutput = this.parse(GenTypes);
+      args = commandOutput.args;
+      flags = commandOutput.flags;
+    } catch (err) {
+      throw new CommandParsingFailed(err);
+    }    if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }

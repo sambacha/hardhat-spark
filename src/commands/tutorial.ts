@@ -9,6 +9,7 @@ import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
 import { GlobalConfigService } from '../packages/config/global_config_service';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { errorHandling } from '../index';
+import { CommandParsingFailed } from '../packages/types/errors';
 
 const ARTIFACTS_FOLDER = 'artifacts';
 
@@ -28,8 +29,15 @@ export default class Tutorial extends Command {
   };
 
   async run() {
-    const {args, flags} = this.parse(Tutorial);
-    if (flags.debug) {
+    let args;
+    let flags;
+    try {
+      const commandOutput = this.parse(Tutorial);
+      args = commandOutput.args;
+      flags = commandOutput.flags;
+    } catch (err) {
+      throw new CommandParsingFailed(err);
+    }    if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';
     }

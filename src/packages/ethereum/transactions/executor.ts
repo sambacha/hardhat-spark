@@ -50,7 +50,7 @@ export class TxExecutor {
   private eventHandler: EventHandler;
   private eventSession: Namespace;
   private eventTxExecutor: EventTxExecutor;
-  private blockConfirmation: number;
+  private readonly blockConfirmation: number;
 
   constructor(prompter: ILogging, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: string, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
     this.prompter = prompter;

@@ -1,5 +1,6 @@
 import {
   buildModule,
+  ModuleBuilder,
   ModuleConfig
 } from '@tenderly/hardhat-ignition';
 import { SynthetixLibraries, SynthetixTemplates } from './modules/helper.module';
@@ -13,11 +14,10 @@ import { SynthetixRebuildCache } from './modules/rebuild_cache_module.module';
 import { SystemSettingsModule } from './modules/system_setting_setup.module';
 import { SynthetixIssuerSetup } from './modules/issuer_setup.module';
 import { SynthetixDebtCacheSetup } from './modules/debt_cache_setup.module';
-import { SynthetixModuleBuilder } from './SynthetixModule';
 
 const moduleConfig = require('./local/config.json') as ModuleConfig;
 
-export const SynthetixModule = buildModule('SynthetixModule', async (m: SynthetixModuleBuilder) => {
+export const SynthetixModule = buildModule('SynthetixModule', async (m: ModuleBuilder) => {
   await m.useModule(SynthetixLibraries);
   await m.useModule(SynthetixTemplates);
 

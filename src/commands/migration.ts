@@ -11,6 +11,7 @@ import { ModuleMigrationService } from '../packages/modules/module_migration';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { GlobalConfigService } from '../packages/config/global_config_service';
 import { errorHandling } from '../index';
+import { CommandParsingFailed } from '../packages/types/errors';
 
 export default class Migrate extends Command {
   static description = 'Migrate deployment meta data from other deployers to hardhat-ignition state file.';
@@ -39,7 +40,15 @@ export default class Migrate extends Command {
 
 
   async run() {
-    const {args, flags} = this.parse(Migrate);
+    let args;
+    let flags;
+    try {
+      const commandOutput = this.parse(Migrate);
+      args = commandOutput.args;
+      flags = commandOutput.flags;
+    } catch (err) {
+      throw new CommandParsingFailed(err);
+    }
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';

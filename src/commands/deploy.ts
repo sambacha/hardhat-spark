@@ -19,6 +19,7 @@ import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
 import { EthClient } from '../packages/ethereum/client';
 import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { CommandParsingFailed } from '../packages/types/errors';
 
 export default class Deploy extends Command {
   static description = 'Deploy new module, difference between current module and already deployed one.';
@@ -93,7 +94,15 @@ export default class Deploy extends Command {
       process.exit(1);
     });
 
-    const {args, flags} = this.parse(Deploy);
+    let args;
+    let flags;
+    try {
+      const commandOutput = this.parse(Deploy);
+      args = commandOutput.args;
+      flags = commandOutput.flags;
+    } catch (err) {
+      throw new CommandParsingFailed(err);
+    }
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';

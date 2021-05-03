@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Box, Newline, Text } from 'ink';
-import { ContractBinding, StatefulEvent } from '../../../../../../interfaces/hardhat_ignition';
+import { ContractBinding, ContractEvent, StatefulEvent } from '../../../../../../interfaces/hardhat_ignition';
 import { ElementStatus, ElementWithStatus } from '../../index';
 import Spinner from 'ink-spinner';
 import { Props } from 'ink/build/components/Box';
@@ -84,13 +84,25 @@ function ModuleElements(
 
   const mappedModuleElements = {};
   Object.values(formattedModuleElements).map((value: ElementWithStatus) => {
-    value.element = value.element as ContractBinding;
-    const subModule = (value.element.subModuleNameDepth || []).join(' > ');
-    if (!checkIfExist(mappedModuleElements[subModule])) {
-      mappedModuleElements[subModule] = [];
+    if ((value.element as ContractBinding)._isContractBinding) {
+      value.element = value.element as ContractBinding;
+      const subModule = (value.element.subModuleNameDepth || []).join(' > ');
+      if (!checkIfExist(mappedModuleElements[subModule])) {
+        mappedModuleElements[subModule] = [];
+      }
+
+      mappedModuleElements[subModule].push(value);
     }
 
-    mappedModuleElements[subModule].push(value);
+    if ((value.element as StatefulEvent)._isStatefulEvent) {
+      value.element = value.element as StatefulEvent;
+      const subModule = ((value.element?.event as ContractEvent)?.subModuleNameDepth || []).join(' > ');
+      if (!checkIfExist(mappedModuleElements[subModule])) {
+        mappedModuleElements[subModule] = [];
+      }
+
+      mappedModuleElements[subModule].push(value);
+    }
   });
 
   return (

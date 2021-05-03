@@ -54,6 +54,7 @@ export const config: HardhatIgnitionConfig = {
       localDeployment: true,
       deploymentFilePath: './deployment/module.ts',
       blockConfirmation: 1,
+      // parallelizeDeployment: true,
     },
     'kovan': {
       networkId: '42',

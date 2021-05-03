@@ -133,5 +133,12 @@ export async function errorHandling(error: Error) {
   if (cli.config.outputLevel == 'debug') {
     cli.debug(error.stack);
   }
-  this.analyticsService.reportError(error);
+
+  if (this?.analyticsService) {
+    this.analyticsService.reportError(error);
+  }
+}
+
+export function copyValue(variableOne: any): any {
+  return JSON.parse(JSON.stringify(variableOne));
 }

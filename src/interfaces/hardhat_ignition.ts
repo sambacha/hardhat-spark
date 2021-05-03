@@ -4,6 +4,7 @@ import {
   checkIfExist,
   checkIfSameInputs,
   checkIfSuitableForInstantiating,
+  copyValue,
   isSameBytecode
 } from '../packages/utils/util';
 import { ModuleValidator } from '../packages/modules/module_validator';
@@ -94,6 +95,10 @@ export type BaseEvent = {
 
   usage: string[],
   eventUsage: string[],
+
+  // moduleMetaData
+  moduleName: string,
+  subModuleNameDepth: string[],
 };
 
 export interface BeforeDeployEvent extends BaseEvent {
@@ -213,9 +218,11 @@ export type SearchParams = {
 
 export class GroupedDependencies {
   dependencies: (ContractBinding | ContractEvent)[];
+  moduleSession: Namespace;
 
-  constructor(dependencies: (ContractBinding | ContractEvent)[]) {
+  constructor(dependencies: (ContractBinding | ContractEvent)[], moduleSession: Namespace) {
     this.dependencies = dependencies;
+    this.moduleSession = moduleSession;
   }
 
   // util
@@ -225,7 +232,7 @@ export class GroupedDependencies {
       }
     ) as ContractBinding[];
 
-    return new GroupedDependencies(bindings);
+    return new GroupedDependencies(bindings, this.moduleSession);
   }
 
   exclude(...elementName: string[]): GroupedDependencies {
@@ -238,7 +245,7 @@ export class GroupedDependencies {
       return !fullExpr.test(target.name);
     });
 
-    return new GroupedDependencies(newBindings);
+    return new GroupedDependencies(newBindings, this.moduleSession);
   }
 
   map(fn: (value: ContractBinding, index: number, array: (ContractBinding | ContractEvent)[]) => any): (ContractBinding | ContractEvent)[] {
@@ -267,7 +274,7 @@ export class GroupedDependencies {
   // beforeDeploy runs each time the Binding is about to be triggered.
   // This event can be used to force the binding in question to be deployed.
   beforeDeploy(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeployEvent'], this.dependencies, usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeployEvent'], this.dependencies, usages, this.moduleSession);
     const beforeDeploy: BeforeDeployEvent = {
       ...generateBaseEvent,
       fn,
@@ -290,7 +297,7 @@ export class GroupedDependencies {
 
   // afterDeploy runs after the Binding was deployed.
   afterDeploy(m: ModuleBuilder, eventName: string, fn: EventFnDeployed, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeployEvent'], this.dependencies, usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeployEvent'], this.dependencies, usages, this.moduleSession);
     const afterDeploy: AfterDeployEvent = {
       ...generateBaseEvent,
       fn,
@@ -313,7 +320,7 @@ export class GroupedDependencies {
 
   // beforeCompile runs before the source code is compiled.
   beforeCompile(m: ModuleBuilder, eventName: string, fn: EventFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeCompileEvent'], this.dependencies, usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeCompileEvent'], this.dependencies, usages, this.moduleSession);
     const beforeCompile: BeforeCompileEvent = {
       ...generateBaseEvent,
       fn,
@@ -336,7 +343,7 @@ export class GroupedDependencies {
 
   // afterCompile runs after the source code is compiled and the bytecode is available.
   afterCompile(m: ModuleBuilder, eventName: string, fn: EventFnCompiled, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterCompileEvent'], this.dependencies, usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterCompileEvent'], this.dependencies, usages, this.moduleSession);
     const afterCompile: AfterCompileEvent = {
       ...generateBaseEvent,
       fn,
@@ -359,7 +366,7 @@ export class GroupedDependencies {
 
   // onChange runs after the Binding gets redeployed or changed
   onChange(m: ModuleBuilder, eventName: string, fn: RedeployFn, ...usages: (ContractBinding | ContractEvent)[]): ContractEvent {
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['OnChangeEvent'], this.dependencies, usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['OnChangeEvent'], this.dependencies, usages, this.moduleSession);
     const onChangeEvent: OnChangeEvent = {
       ...generateBaseEvent,
       fn,
@@ -412,10 +419,11 @@ export class ContractBinding extends Binding {
   public moduleStateRepo: ModuleStateRepo | undefined;
   public eventTxExecutor: EventTxExecutor | undefined;
   public eventSession: Namespace | undefined;
+  public moduleSession: Namespace;
 
   constructor(
     // metadata
-    name: string, contractName: string, args: Arguments, moduleName: string, subModuleNameDepth: string[], subModule: string,
+    name: string, contractName: string, args: Arguments, moduleName: string, subModuleNameDepth: string[], subModule: string, moduleSession: Namespace,
     bytecode?: string, abi?: JsonFragment[], libraries?: SingleContractLinkReference, deployMetaData?: Deployed, txData?: TransactionData,
     // event hooks
     events?: EventsDepRef,
@@ -467,6 +475,7 @@ export class ContractBinding extends Binding {
     this.moduleName = moduleName;
     this.subModuleNameDepth = subModuleNameDepth;
     this.subModule = subModule;
+    this.moduleSession = moduleSession;
   }
 
   /**
@@ -632,7 +641,7 @@ export class ContractBinding extends Binding {
     }
     this.eventsDeps.beforeDeploy.push(eventName);
 
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeployEvent'], [this], usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeDeployEvent'], [this], usages, this.moduleSession);
 
     const beforeDeployEvent: BeforeDeployEvent = {
       ...generateBaseEvent,
@@ -661,7 +670,7 @@ export class ContractBinding extends Binding {
     }
     this.eventsDeps.afterDeploy.push(eventName);
 
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeployEvent'], [this], usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterDeployEvent'], [this], usages, this.moduleSession);
 
     const afterDeployEvent: AfterDeployEvent = {
       ...generateBaseEvent,
@@ -701,7 +710,7 @@ export class ContractBinding extends Binding {
     }
     this.eventsDeps.beforeCompile.push(eventName);
 
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeCompileEvent'], [this], usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['BeforeCompileEvent'], [this], usages, this.moduleSession);
 
     const beforeCompileEvent: BeforeCompileEvent = {
       ...generateBaseEvent,
@@ -729,7 +738,7 @@ export class ContractBinding extends Binding {
     }
     this.eventsDeps.afterCompile.push(eventName);
 
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterCompileEvent'], [this], usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['AfterCompileEvent'], [this], usages, this.moduleSession);
 
     const afterCompileEvent: AfterCompileEvent = {
       ...generateBaseEvent,
@@ -757,7 +766,7 @@ export class ContractBinding extends Binding {
     }
     this.eventsDeps.onChange.push(eventName);
 
-    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['OnChangeEvent'], [this], usages);
+    const generateBaseEvent = ContractBinding.generateBaseEvent(eventName, EventType['OnChangeEvent'], [this], usages, this.moduleSession);
 
     const onChangeEvent: OnChangeEvent = {
       ...generateBaseEvent,
@@ -768,7 +777,7 @@ export class ContractBinding extends Binding {
     return onChangeEvent;
   }
 
-  public static generateBaseEvent(eventName: string, eventType: EventType, dependencies: (ContractBinding | ContractEvent)[], usages: (ContractBinding | ContractEvent)[]): BaseEvent {
+  public static generateBaseEvent(eventName: string, eventType: EventType, dependencies: (ContractBinding | ContractEvent)[], usages: (ContractBinding | ContractEvent)[], moduleSession: Namespace): BaseEvent {
     const usageBindings: string[] = [];
     const eventUsages: string[] = [];
 
@@ -790,6 +799,8 @@ export class ContractBinding extends Binding {
         depEvents.push((dep as ContractEvent).name);
       }
     }
+    const moduleName = copyValue(moduleSession.get(clsNamespaces.MODULE_NAME));
+    const subModuleNameDepth = copyValue(moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || []);
 
     return {
       name: eventName,
@@ -798,6 +809,8 @@ export class ContractBinding extends Binding {
       eventDeps: depEvents,
       usage: usageBindings,
       eventUsage: eventUsages,
+      moduleName: moduleName,
+      subModuleNameDepth: subModuleNameDepth,
     };
   }
 }
@@ -1224,7 +1237,7 @@ export class ModuleBuilder {
     const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
     const subModuleNameDepth = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
     const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
-    this.bindings[name] = new ContractBinding(name, name, args, moduleName, subModuleNameDepth.slice(0), subModule);
+    this.bindings[name] = new ContractBinding(name, name, args, moduleName, subModuleNameDepth.slice(0), subModule, this.moduleSession);
     this[name] = this.bindings[name];
     return this.bindings[name];
   }
@@ -1252,7 +1265,7 @@ export class ModuleBuilder {
    * @param dependencies
    */
   group(...dependencies: (ContractBinding | ContractEvent)[]): GroupedDependencies {
-    return new GroupedDependencies(dependencies);
+    return new GroupedDependencies(dependencies, this.moduleSession);
   }
 
   /**
@@ -1283,9 +1296,9 @@ export class ModuleBuilder {
     }
 
     const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
-    const subModuleDepthName = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME);
-    const subModuleName = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
-    this.bindings[name] = new ContractBinding(name, this.templates[templateName].contractName, args, moduleName, subModuleDepthName, subModuleName);
+    const subModuleNameDepth = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+    const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
+    this.bindings[name] = new ContractBinding(name, this.templates[templateName].contractName, args, moduleName, subModuleNameDepth.slice(0), subModule, this.moduleSession);
     this[name] = this.bindings[name];
 
     return this.bindings[name];
@@ -1394,6 +1407,11 @@ export class ModuleBuilder {
     let moduleBuilder: ModuleBuilder;
     if (!m.isInitialized()) {
       moduleBuilder = await m.init(this.moduleSession, wallets, this, options);
+      const oldDepth = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+      if (oldDepth.length >= 1) {
+        oldDepth.pop();
+      }
+      this.moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
     }
 
     const bindings = m.getAllBindings();
@@ -1642,12 +1660,6 @@ export class Module {
     this.opts = moduleBuilder.getAllOpts();
 
     this.initialized = true;
-
-    const oldDepth = moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
-    if (oldDepth.length >= 1) {
-      oldDepth.pop();
-    }
-    moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
 
     return moduleBuilder;
   }

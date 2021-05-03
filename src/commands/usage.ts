@@ -13,6 +13,7 @@ import { checkIfExist } from '../packages/utils/util';
 import { DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 import { GlobalConfigService } from '../packages/config/global_config_service';
+import { CommandParsingFailed } from '../packages/types/errors';
 
 export default class Usage extends Command {
   private mutex = false;
@@ -58,7 +59,15 @@ export default class Usage extends Command {
   static args = [{name: 'module_file_path'}];
 
   async run() {
-    const {args, flags} = this.parse(Usage);
+    let args;
+    let flags;
+    try {
+      const commandOutput = this.parse(Usage);
+      args = commandOutput.args;
+      flags = commandOutput.flags;
+    } catch (err) {
+      throw new CommandParsingFailed(err);
+    }
     if (flags.debug) {
       cli.config.outputLevel = 'debug';
       process.env.DEBUG = '*';

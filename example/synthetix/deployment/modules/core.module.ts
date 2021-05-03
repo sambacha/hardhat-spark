@@ -1,9 +1,8 @@
-import { buildModule, sendAfterDeploy } from '@tenderly/hardhat-ignition';
+import { buildModule, sendAfterDeploy, ModuleBuilder } from '@tenderly/hardhat-ignition';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
-import { SynthetixModuleBuilder } from '../SynthetixModule';
 
-export const SynthetixCore = buildModule('SynthetixCore', async (m: SynthetixModuleBuilder) => {
+export const SynthetixCore = buildModule('SynthetixCore', async (m: ModuleBuilder) => {
   const AddressResolver = m.contract('AddressResolver', m.ETH_ADDRESS);
   const ReadProxyAddressResolver = m.bindTemplate('ReadProxyAddressResolver', 'ReadProxy', m.ETH_ADDRESS);
 
