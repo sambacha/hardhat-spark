@@ -30,7 +30,7 @@ export const config: HardhatIgnitionConfig = {
       mnemonic: 'test test test test test test test test test test test junk',
       hdPath: "m/44'/60'/0'/0",
       localDeployment: true,
-      deploymentFilePath: './deployment/module.ts',
+      deploymentFilePath: './deployment/tornado.module.ts',
       blockConfirmation: 1,
     },
     'kovan': {

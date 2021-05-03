@@ -17,6 +17,7 @@ export type HardhatIgnitionConfig = {
       localDeployment?: boolean;
       deploymentFilePath?: string;
       blockConfirmation?: number;
+      parallelizeDeployment?: boolean;
       gasPriceBackoff?: GasPriceBackoff;
     }
   }

@@ -3,10 +3,10 @@ import React, { useCallback, useState } from 'react';
 import TextInput from 'ink-text-input';
 
 
-export function ContractMissingOnNetworkQuestion({
-                                                   userPrompt,
-                                                   resolve,
-                                                 }) {
+export function ConfirmationQuestion({
+                                       userPrompt,
+                                       resolve,
+                                     }) {
   const [answer, setAnswer] = useState();
   const [value, setValue] = useState('');
   const handleSubmit = useCallback(submitValue => {
@@ -25,7 +25,7 @@ export function ContractMissingOnNetworkQuestion({
   }, [setAnswer]);
 
   return (
-    <Box>
+    <Box flexDirection={'column'}>
       <Text>{userPrompt} (Y/n): </Text>
 
       <TextInput

@@ -68,7 +68,7 @@ export class IgnitionTests implements IIgnitionUsage {
     this.eventSession = cls.createNamespace('event');
 
     this.moduleStateRepo = new ModuleStateRepo(configFlags.networkName, 'test', false, true);
-    this.eventTxExecutor = new EventTxExecutor(this.eventSession);
+    this.eventTxExecutor = new EventTxExecutor(this.eventSession, this.moduleStateRepo);
     const ethClient = new EthClient(this.provider);
     this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession, ethClient);
 
@@ -78,6 +78,9 @@ export class IgnitionTests implements IIgnitionUsage {
     this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
     this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(this.moduleStateRepo);
     this.analyticsService = new EmptyAnalyticsService();
+
+    this.configFile = configFile;
+    this.configFlags = configFlags;
   }
 
   cleanup() {

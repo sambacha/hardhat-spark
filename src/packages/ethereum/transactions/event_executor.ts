@@ -4,12 +4,16 @@ import { CliError } from '../../types/errors';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Namespace } from 'cls-hooked';
 import { KeyMutex } from '../../utils/mutex/key_mutex';
+import { ModuleStateRepo } from '../../modules/states/state_repo';
+import { clsNamespaces } from '../../utils/continuation_local_storage';
 
 export class EventTxExecutor {
+  private readonly moduleStateRepo: ModuleStateRepo;
   private eventSession: Namespace;
-  private rootEvents: {
+  private readonly rootEvents: {
     [eventName: string]: {
       sender: string,
+      contractBindingName: string,
       func: ContractFunction
       resolveFunc: Function | undefined,
       args: Array<any> | undefined,
@@ -19,23 +23,26 @@ export class EventTxExecutor {
 
   private mutex: KeyMutex;
 
-  constructor(eventSession: Namespace) {
+  constructor(eventSession: Namespace, moduleStateRepo: ModuleStateRepo) {
     this.rootEvents = {};
     this.eventSession = eventSession;
     this.currentNumber = 0;
 
     this.mutex = new KeyMutex();
+    this.moduleStateRepo = moduleStateRepo;
   }
 
-  add(eventName: string, walletAddress: string, fn: ((...args: Array<any>) => Promise<TransactionResponse>)) {
+  add(eventName: string, senderAddress: string, contractBindingName: string, fn: ((...args: Array<any>) => Promise<TransactionResponse>)) {
     if (checkIfExist(this.rootEvents[eventName])) {
       throw new CliError(`Execution is still blocked, something went wrong - ${eventName}`);
     }
 
     this.rootEvents[eventName] = {
       func: fn,
-      sender: walletAddress,
-      args: undefined, resolveFunc: undefined,
+      sender: senderAddress,
+      contractBindingName: contractBindingName,
+      args: undefined,
+      resolveFunc: undefined,
     };
     this.currentNumber++;
   }
@@ -53,6 +60,7 @@ export class EventTxExecutor {
     });
   }
 
+  // this should be executed inside transaction executor.
   async executeAll(): Promise<void> {
     const executionOrdering: { [address: string]: any } = {};
 
@@ -83,13 +91,31 @@ export class EventTxExecutor {
       const args = singleElement.event.args;
       const func = singleElement.event.func;
 
+      const eventName = singleElement.eventName;
+      const bindingName = singleElement.event.contractBindingName;
+
       const resolve = await this.mutex.acquireQueued(sender);
       const tx = await func(...args);
-      resolve();
+      let transactionReceipt;
+      try {
+        transactionReceipt = tx;
+        if (!checkIfExist(tx?.confirmations) || tx?.confirmations == 0) {
+          transactionReceipt = await tx.wait(1);
 
-      await singleElement.event.resolveFunc(tx);
+          if (!this.eventSession.get(clsNamespaces.PARALLELIZE)) {
+            const blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
+            transactionReceipt = await tx.wait(blockConfirmation);
+          }
+        }
+      } catch (e) {
+        throw e;
+      }
+      resolve(); // potentially we can move unlock above tx confirmation
+      await this.moduleStateRepo.storeEventTransactionData(bindingName, undefined, transactionReceipt, eventName);
 
-      delete this.rootEvents[singleElement.eventName];
+      await singleElement.event.resolveFunc(transactionReceipt);
+
+      delete this.rootEvents[eventName];
     }
   }
 }

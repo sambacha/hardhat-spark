@@ -84,7 +84,7 @@ export class ModuleDeploymentSummaryService {
     let numberOfContracts = BigNumber.from(0);
     let numberOfEvents = BigNumber.from(0);
     for (let [elementName, element] of Object.entries(currentModuleState)) {
-      let transactionReceiptList = {
+      const transactionReceiptList = {
         input: [],
         output: [],
       };
@@ -102,10 +102,8 @@ export class ModuleDeploymentSummaryService {
         numberOfEvents = numberOfEvents.add(1);
         for (const [, txObject] of Object.entries(element.txData)) {
           // @ts-ignore
-          transactionReceiptList = {
-            input: txObject.contractInput,
-            output: txObject.contractOutput,
-          };
+          transactionReceiptList.input.push(...txObject.contractInput);
+          transactionReceiptList.output.push(...txObject.contractOutput);
         }
       }
 
@@ -120,7 +118,7 @@ export class ModuleDeploymentSummaryService {
           continue;
         }
 
-        if (!checkIfExist(element?.txData?.input)) {
+        if (!checkIfExist(element?.txData?.output)) {
           continue;
         }
 
@@ -129,19 +127,21 @@ export class ModuleDeploymentSummaryService {
         transactionReceiptList.output.push(element.txData.output);
       }
 
-      numberOfTransactions = numberOfTransactions.add(Object.entries(transactionReceiptList).length);
+      numberOfTransactions = numberOfTransactions.add(transactionReceiptList.output.length);
       transactionReceiptList.input.forEach((singleTxInput: any, index: number) => {
         const singleTxOutput = transactionReceiptList.output[index];
 
         let inputGasPrice;
-        let outputGasUsed;
-        if (!checkIfExist(singleTxOutput.gasUsed.hex)) {
-          outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
-        } else {
-          outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
+        let outputGasUsed = BigNumber.from(0);
+        if (singleTxOutput) {
+          if (!checkIfExist(singleTxOutput.gasUsed?.hex)) {
+            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
+          } else {
+            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
+          }
         }
 
-        if (!checkIfExist(singleTxInput.gasPrice.hex)) {
+        if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
           inputGasPrice = BigNumber.from(singleTxInput.gasPrice._hex);
         } else {
           inputGasPrice = BigNumber.from(singleTxInput.gasPrice.hex);

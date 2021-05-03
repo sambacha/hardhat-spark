@@ -9,7 +9,7 @@ import { FileLogging } from '../file_logging';
 import { checkIfExist } from '../../util';
 import chalk from 'chalk';
 import { cli } from 'cli-ux';
-import { ContractMissingOnNetworkQuestion } from './ui/layout/confirmation_question';
+import { ConfirmationQuestion } from './ui/layout/confirmation_question';
 
 export enum ElementStatus {
   'EMPTY' = 'EMPTY',
@@ -217,8 +217,16 @@ export class OverviewPrompter extends FileLogging implements ILogging {
     super.nothingToDeploy();
   }
 
-  parallelizationExperimental() {
-    super.parallelizationExperimental();
+  parallelizationExperimental(): Promise<boolean> {
+    return new Promise((resolve) => {
+      super.parallelizationExperimental();
+
+      render(<ConfirmationQuestion
+        userPrompt={`${chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production')}
+Confirm you are willing to continue?`}
+        resolve={resolve}
+      />);
+    });
   }
 
   promptContinueDeployment(): Promise<void> {
@@ -343,7 +351,7 @@ export class OverviewPrompter extends FileLogging implements ILogging {
     return new Promise(resolve => {
       super.wrongNetwork();
 
-      render(<ContractMissingOnNetworkQuestion
+      render(<ConfirmationQuestion
         userPrompt={'Contracts are missing on the network, do you wish to continue?'}
         resolve={resolve}
       />);

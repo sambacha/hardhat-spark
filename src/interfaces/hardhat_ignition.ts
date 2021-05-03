@@ -3,7 +3,8 @@ import { HardhatCompiler } from '../packages/ethereum/compiler/hardhat';
 import {
   checkIfExist,
   checkIfSameInputs,
-  checkIfSuitableForInstantiating, compareBytecode
+  checkIfSuitableForInstantiating,
+  isSameBytecode
 } from '../packages/utils/util';
 import { ModuleValidator } from '../packages/modules/module_validator';
 import { JsonFragment, JsonFragmentType } from '../packages/types/artifacts/abi';
@@ -971,17 +972,11 @@ export class ContractInstance {
           throw err;
         }
         await this.prompter.sentTx(sessionEventName, fragment.name);
+        await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], undefined, sessionEventName);
 
         this.prompter.waitTransactionConfirmation();
-        if (!this.eventSession.get(clsNamespaces.PARALLELIZE)) {
-          const blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
-          const txReceipt = await tx.wait(blockConfirmation);
-          await this.moduleStateRepo.storeEventTransactionData(this.contractBinding.name, currentEventTransactionData.contractInput[contractTxIterator], txReceipt, sessionEventName);
-          this.prompter.transactionConfirmation(blockConfirmation, sessionEventName, fragment.name);
-        }
 
         this.contractBinding.contractTxProgress = ++contractTxIterator;
-
         this.prompter.finishedExecutionOfContractFunction(fragment.name);
 
         return tx;
@@ -989,7 +984,7 @@ export class ContractInstance {
 
       const currentEventAbstraction = this.eventSession.get(clsNamespaces.EVENT_NAME);
       const txSender = await this.signer.getAddress();
-      this.eventTxExecutor.add(currentEventAbstraction, txSender, func);
+      this.eventTxExecutor.add(currentEventAbstraction, txSender, this.contractBinding.name, func);
 
       return await this.eventTxExecutor.executeSingle(currentEventAbstraction, ...args);
     };
@@ -1092,16 +1087,7 @@ export class IgnitionWallet extends ethers.Wallet {
         throw err;
       }
       await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
-
-      let txReceipt;
-      if (!this.sessionNamespace.get(clsNamespaces.PARALLELIZE)) {
-        this.prompter.waitTransactionConfirmation();
-        const blockConfirmation = +process.env.BLOCK_CONFIRMATION_NUMBER || 1;
-        txReceipt = await txResp.wait(blockConfirmation);
-        this.prompter.transactionConfirmation(blockConfirmation, currentEventName, 'raw wallet transaction');
-      }
-
-      await this.moduleStateRepo.storeEventTransactionData(this.address, txResp, txReceipt, currentEventName);
+      await this.moduleStateRepo.storeEventTransactionData(this.address, txResp, undefined, currentEventName);
 
       await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
 
@@ -1109,7 +1095,7 @@ export class IgnitionWallet extends ethers.Wallet {
     };
 
     const currentEventName = this.sessionNamespace.get(clsNamespaces.EVENT_NAME);
-    this.eventTxExecutor.add(currentEventName, this.address, func);
+    this.eventTxExecutor.add(currentEventName, this.address, this.address, func);
 
     return this.eventTxExecutor.executeSingle(currentEventName);
   }
@@ -1430,7 +1416,7 @@ export class ModuleBuilder {
       if (
         checkIfExist(this.bindings[bindingName]) &&
         this.bindings[bindingName] &&
-        !compareBytecode(this.bindings[bindingName].bytecode, binding.bytecode)
+        !isSameBytecode(this.bindings[bindingName].bytecode, binding.bytecode)
       ) {
         continue;
       }

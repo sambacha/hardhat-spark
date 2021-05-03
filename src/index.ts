@@ -339,6 +339,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
   prompter: ILogging,
   config: HardhatIgnitionConfig,
   configService: IConfigService,
+  parallelizeDeployment: boolean,
 }> {
   const globalConfigService = new GlobalConfigService();
   await globalConfigService.mustConfirmConsent();
@@ -353,6 +354,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
 
   let filePath = moduleFilePath;
   let isLocalDeployment = true;
+  let parallelizeDeployment = false;
   let gasPriceBackoff;
   if (!checkIfExist(networkName)) {
     networkName = DEFAULT_NETWORK_NAME;
@@ -402,6 +404,12 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
       checkIfExist(config.networks[networkName].gasPriceBackoff)
     ) {
       gasPriceBackoff = config.networks[networkName].gasPriceBackoff;
+    }
+
+    if (
+      checkIfExist(config.networks[networkName].parallelizeDeployment)
+    ) {
+      parallelizeDeployment = true;
     }
   }
   if (!checkIfExist(filePath)) {
@@ -471,5 +479,6 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
     prompter,
     config,
     configService,
+    parallelizeDeployment,
   };
 }

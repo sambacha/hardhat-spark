@@ -343,8 +343,11 @@ export class TxExecutor {
         await Batcher.handleCompiledEvent(event as BeforeDeployEvent, element, batches, elementsBatches);
         break;
       }
-      case EventType.OnStart: {
-        await Batcher.handleOnModuleStart(event as ModuleEvent, element, batches);
+      case EventType.OnStart:
+      case EventType.OnCompletion:
+      case EventType.OnFail:
+      case EventType.OnSuccess: {
+        await Batcher.handleModuleEvent(event as ModuleEvent, element, batches);
         break;
       }
       default: {

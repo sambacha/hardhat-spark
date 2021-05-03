@@ -87,7 +87,7 @@ export default class Diff extends Command {
 
     const moduleStateRepo = new ModuleStateRepo(networkName, currentPath);
     const eventSession = cls.createNamespace('event');
-    const eventTxExecutor = new EventTxExecutor(eventSession);
+    const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
     const ethClient = new EthClient(rpcProvider);
     const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 

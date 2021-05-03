@@ -83,31 +83,31 @@ export class IgnitionHardhatActions {
 }
 
 export class HardhatIgnition implements IIgnition {
-  public states: string[];
-  public provider: ethers.providers.JsonRpcProvider;
-  public prompter: ILogging;
-  public configService: IConfigService;
-  public gasProvider: IGasProvider;
-  public txGenerator: EthTxGenerator;
-  public moduleStateRepo: ModuleStateRepo;
-  public moduleResolver: ModuleResolver;
-  public eventHandler: EventHandler;
-  public txExecutor: TxExecutor;
-  public transactionManager: TransactionManager;
-  public eventTxExecutor: EventTxExecutor;
-  public eventSession: Namespace;
-  public walletWrapper: WalletWrapper;
+  public states: string[] | undefined;
+  public provider: ethers.providers.JsonRpcProvider | undefined;
+  public prompter: ILogging | undefined;
+  public configService: IConfigService | undefined;
+  public gasProvider: IGasProvider | undefined;
+  public txGenerator: EthTxGenerator | undefined;
+  public moduleStateRepo: ModuleStateRepo | undefined;
+  public moduleResolver: ModuleResolver | undefined;
+  public eventHandler: EventHandler | undefined;
+  public txExecutor: TxExecutor | undefined;
+  public transactionManager: TransactionManager | undefined;
+  public eventTxExecutor: EventTxExecutor | undefined;
+  public eventSession: Namespace | undefined;
+  public walletWrapper: WalletWrapper | undefined;
 
-  public moduleTyping: ModuleTypings;
-  public tutorialService: TutorialService;
-  public stateMigrationService: StateMigrationService;
-  public moduleUsage: ModuleUsage;
-  public moduleMigrationService: ModuleMigrationService;
-  public moduleDeploymentSummaryService: ModuleDeploymentSummaryService;
-  public analyticsService: AnalyticsService;
+  public moduleTyping: ModuleTypings | undefined;
+  public tutorialService: TutorialService | undefined;
+  public stateMigrationService: StateMigrationService | undefined;
+  public moduleUsage: ModuleUsage | undefined;
+  public moduleMigrationService: ModuleMigrationService | undefined;
+  public moduleDeploymentSummaryService: ModuleDeploymentSummaryService | undefined;
+  public analyticsService: AnalyticsService | undefined ;
 
-  public conf: HardhatIgnitionConfig;
-  public deploymentPath: string;
+  public conf: HardhatIgnitionConfig | undefined;
+  public deploymentPath: string = '';
 
   constructor() {
   }
@@ -184,7 +184,7 @@ export class HardhatIgnition implements IIgnition {
     await command.usage(
       this.conf,
       this.deploymentPath,
-      args.state.split(','),
+      (args.state || '').split(','),
       this.configService,
       this.walletWrapper,
       this.moduleStateRepo,
@@ -218,14 +218,14 @@ export class HardhatIgnition implements IIgnition {
 
     this.gasProvider = new GasPriceCalculator(this.provider);
     this.eventSession = cls.createNamespace('event');
-    this.eventTxExecutor = new EventTxExecutor(this.eventSession);
+
+    this.moduleStateRepo = new ModuleStateRepo(networkName, currentPath, false);
+    this.eventTxExecutor = new EventTxExecutor(this.eventSession, this.moduleStateRepo);
 
     process.env.IGNITION_NETWORK_ID = String(networkId);
 
     this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), networkId, this.gasProvider, this.gasProvider, this.prompter, gasPriceBackoff);
     this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, networkId, this.provider, this.transactionManager, this.transactionManager, this.prompter, gasPriceBackoff);
-
-    this.moduleStateRepo = new ModuleStateRepo(networkName, currentPath, false);
 
     this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
     this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, networkId, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);

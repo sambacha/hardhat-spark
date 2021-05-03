@@ -21,8 +21,9 @@ import { ModuleDeploymentSummaryService } from '../packages/modules/module_deplo
 import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
 
 export default class Deploy extends Command {
-  private mutex = false;
   static description = 'Deploy new module, difference between current module and already deployed one.';
+
+  private mutex = false;
   private prompter: ILogging | undefined;
   private analyticsService: AnalyticsService;
 
@@ -85,6 +86,7 @@ export default class Deploy extends Command {
   static args = [{name: 'module_file_path'}];
 
   async run() {
+    // maybe? move this to core
     process.on('SIGINT', () => {
       checkMutex(this.mutex, 20, 10);
 
@@ -107,6 +109,7 @@ export default class Deploy extends Command {
       prompter,
       config,
       configService,
+      parallelizeDeployment,
     } = await defaultInputParams.bind(this)(args.module_file_path, flags.network, flags.state, flags.rpcProvider, flags.logging, flags.configScriptPath);
 
     this.prompter = prompter;
@@ -119,24 +122,24 @@ export default class Deploy extends Command {
     const txGenerator = new EthTxGenerator(configService, gasCalculator, gasProvider, networkId, rpcProvider, transactionManager, transactionManager, this.prompter, gasPriceBackoff);
 
     const currentPath = process.cwd();
-    const moduleState = new ModuleStateRepo(networkName, currentPath, this.mutex, flags.testEnv);
+    const moduleStateRepo = new ModuleStateRepo(networkName, currentPath, this.mutex, flags.testEnv);
 
     const eventSession = cls.createNamespace('event');
-    const eventTxExecutor = new EventTxExecutor(eventSession);
+    const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
 
     const ethClient = new EthClient(rpcProvider);
-    const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), this.prompter, txGenerator, moduleState, eventTxExecutor, eventSession, ethClient);
+    const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), this.prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 
-    const eventHandler = new EventHandler(moduleState, this.prompter);
-    const txExecutor = new TxExecutor(this.prompter, moduleState, txGenerator, networkId, rpcProvider, eventHandler, eventSession, eventTxExecutor, flags.parallelize);
+    const eventHandler = new EventHandler(moduleStateRepo, this.prompter);
+    const txExecutor = new TxExecutor(this.prompter, moduleStateRepo, txGenerator, networkId, rpcProvider, eventHandler, eventSession, eventTxExecutor, parallelizeDeployment);
 
-    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasProvider, moduleState, this.prompter, eventTxExecutor);
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasCalculator, gasProvider, moduleStateRepo, this.prompter, eventTxExecutor);
 
-    const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(moduleState);
+    const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(moduleStateRepo);
 
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
-    await command.deploy(deploymentFilePath, config, states, moduleState, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService, this.analyticsService);
+    await command.deploy(deploymentFilePath, config, states, moduleStateRepo, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService, this.analyticsService);
   }
 
   async catch(error: Error) {

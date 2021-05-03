@@ -139,7 +139,7 @@ export class ModuleStateRepo {
     return eventState.txData[bindingName];
   }
 
-  async storeEventTransactionData(bindingName: string, contractInput: ContractInput | TransactionRequest, contractOutput?: TransactionResponse, eventName?: string): Promise<void> {
+  async storeEventTransactionData(bindingName: string, contractInput?: ContractInput | TransactionRequest, contractOutput?: TransactionResponse, eventName?: string): Promise<void> {
     if (this.currentModuleName == '') {
       throw new CliError('Current module name is not set');
     }
@@ -176,7 +176,10 @@ export class ModuleStateRepo {
       };
     }
 
-    currentEvent.txData[bindingName].contractInput.push(contractInput);
+    // @TODO check if input/output is already present
+    if (contractInput) {
+      currentEvent.txData[bindingName].contractInput.push(contractInput);
+    }
     if (contractOutput) {
       currentEvent.txData[bindingName].contractOutput.push(contractOutput);
     }

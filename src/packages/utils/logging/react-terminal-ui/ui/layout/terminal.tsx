@@ -38,7 +38,10 @@ export const TerminalLayout = ({
             <ModuleElements
               moduleElementsWithStatus={moduleElementsWithStatus}
             />
-            <Text>Status: {transactionStatus}</Text>
+            {checkIfEmpty(summary) ? (
+              <Text>Status: {transactionStatus}</Text>
+            ) : (<></>)
+            }
           </>
         ) : (
           <></>
@@ -61,9 +64,11 @@ export const TerminalLayout = ({
   }
 ;
 
-function ModuleElements({
-                          moduleElementsWithStatus
-                        }) {
+function ModuleElements(
+  {
+    moduleElementsWithStatus
+  }
+) {
 
   const formattedModuleElements =
     Object.values(moduleElementsWithStatus)
@@ -103,10 +108,12 @@ function ModuleElements({
   );
 }
 
-function SubModuleElements({
-                             subModuleDepth,
-                             moduleElements
-                           }) {
+function SubModuleElements(
+  {
+    subModuleDepth,
+    moduleElements
+  }
+) {
   return (
     <>
       {(subModuleDepth != '') ? (

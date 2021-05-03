@@ -3,7 +3,7 @@ import {
   StatefulEvent,
   ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData, EventsDepRef,
 } from '../../interfaces/hardhat_ignition';
-import { checkIfExist, compareBytecode } from '../utils/util';
+import { checkIfExist, isSameBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { ILogging } from '../utils/logging';
@@ -74,7 +74,7 @@ export class ModuleResolver {
         oldModuleElement = (oldModuleElement as ContractBindingMetaData);
         newModuleElement = (newModuleElement as ContractBinding);
 
-        if (!compareBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
+        if (!isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
           return true;
         }
 
@@ -130,7 +130,7 @@ export class ModuleResolver {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
         newModuleElement = newModuleElement as ContractBinding;
 
-        if (!compareBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
+        if (!isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
           cli.info('~', 'Contract: ', newModuleElement.name);
           printArgs(newModuleElement.args, '  ');
         }
@@ -248,8 +248,8 @@ export class ModuleResolver {
           userAlwaysDeploy ||
           resolvedModuleStateElement.forceFlag == true ||
           (
-            !compareBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
-            !(!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
+            isSameBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
+            (!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
               resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement))
           )
           || !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
@@ -375,6 +375,7 @@ export class ModuleResolver {
       }
 
       statefulEvent.executed = false;
+      statefulEvent.txData = {};
     };
 
     for (const eventName of bindingEventDeps.onChange) {

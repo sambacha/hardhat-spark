@@ -32,7 +32,7 @@ export class Batcher {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleOnModuleStart(event: ModuleEvent, element: StatefulEvent, batches: any[]) {
+  static async handleModuleEvent(event: ModuleEvent, element: StatefulEvent, batches: any[]) {
     this.moduleEventHandling(element, batches);
   }
 
