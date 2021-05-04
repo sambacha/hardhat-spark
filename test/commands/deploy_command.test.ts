@@ -1,47 +1,56 @@
 // @ts-ignore
 import { getStateIfExist, storeNewState } from '../utils/files';
 import { assert } from 'chai';
-import { IgnitionTests, STATE_DIR_NAME } from '../../src';
+import { CONFIG_SCRIPT_NAME, IgnitionTests, STATE_DIR_NAME, STATE_NAME } from '../../src';
 import * as path from 'path';
 import { ContractBindingMetaData } from '../../src';
+import { DEPLOYMENT_FOLDER } from '../../src/packages/tutorial/tutorial_service';
 
 const networkId = '31337'; // hardhat localhost chainId
 const networkName = 'local'; // hardhat localhost chainId
-const testPrivateKey = '0xde9be858da4a475276426320d5e9262ecfc3ba460bfac56360bfa6c4c28b4ee0';
+const testPrivateKeys = [
+  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+  '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
+];
 const moduleName = 'ExampleModule';
+const moduleFileName = 'module.ts';
 const rootDir = process.cwd();
 
 describe('ignition deploy', () => {
-  describe('ignition deploy - integration', () => {
-    const ignition = new IgnitionTests(
-      {
-        networkId: networkId,
-        networkName: networkName,
-        stateFileNames: [],
-      }, {
-        privateKeys: [testPrivateKey],
-        mnemonic: '',
-        hdPath: '',
-      });
+  const ignition = new IgnitionTests(
+    {
+      networkId: networkId,
+      networkName: networkName,
+      stateFileNames: [],
+    }, {
+      privateKeys: testPrivateKeys,
+      mnemonic: '',
+      hdPath: '',
+    });
+  afterEach(() => {
+    ignition.cleanup();
+  });
 
+  describe('ignition deploy - integration', () => {
     it('should be able to deploy module - single new binding', async () => {
       const projectFileName = 'single-new-binding';
-      process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(ignition, projectFileName);
-      await runDeployCommand(ignition, projectFileName);
+      const projectLocation = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`);
+      process.chdir(projectLocation);
+      await loadStateFile(projectLocation, ignition, moduleName);
+      await runDeployCommand(ignition, projectLocation);
 
       const moduleStateFile = await ignition.getStateFile(moduleName);
       const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
       assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
-      ignition.cleanup();
     });
 
     it('should be able to deploy module - multiple new bindings', async () => {
       const projectFileName = 'multiple-new-bindings';
-      process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(ignition, projectFileName);
-      await runDeployCommand(ignition, projectFileName);
+      const projectLocation = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`);
+      process.chdir(projectLocation);
+      await loadStateFile(projectLocation, ignition, moduleName);
+      await runDeployCommand(ignition, projectLocation);
 
       const moduleStateFile = await ignition.getStateFile(moduleName);
       const firstContractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
@@ -52,17 +61,16 @@ describe('ignition deploy', () => {
 
       assert.equal(secondContractBinding.deployMetaData.contractAddress.length > 0, true);
       assert.equal(secondContractBinding.deployMetaData.logicallyDeployed, true);
-
-      ignition.cleanup();
     });
 
     it('should be able to deploy module - single modified binding', async () => {
       const projectFileName = 'single-modified-binding';
-      process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(ignition, projectFileName);
+      const projectLocation = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`);
+      process.chdir(projectLocation);
+      await loadStateFile(projectLocation, ignition, moduleName);
       const moduleStateFileBefore = await ignition.getStateFile(moduleName);
 
-      const output = await runDeployCommand(ignition, projectFileName);
+      await runDeployCommand(ignition, projectLocation);
       const moduleStateFileAfter = await ignition.getStateFile(moduleName);
 
       const contractBindingBefore = moduleStateFileBefore['Example'] as unknown as ContractBindingMetaData;
@@ -73,16 +81,16 @@ describe('ignition deploy', () => {
         , true);
       assert.equal(contractBindingBefore.deployMetaData.logicallyDeployed, true);
       assert.equal(contractBindingAfter.deployMetaData.logicallyDeployed, true);
-      ignition.cleanup();
     });
 
     it('should be able to deploy module - multiple modified binding', async () => {
       const projectFileName = 'multiple-modified-binding';
-      process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(ignition, projectFileName);
+      const projectLocation = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`);
+      process.chdir(projectLocation);
+      await loadStateFile(projectLocation, ignition, moduleName);
       const moduleStateFileBefore = await ignition.getStateFile(moduleName);
 
-      const output = await runDeployCommand(ignition, projectFileName);
+      await runDeployCommand(ignition, projectLocation);
       const moduleStateFileAfter = await ignition.getStateFile(moduleName);
 
 
@@ -105,17 +113,16 @@ describe('ignition deploy', () => {
         , true);
       assert.equal(secondContractBindingBefore.deployMetaData.logicallyDeployed, true);
       assert.equal(secondContractBindingAfter.deployMetaData.logicallyDeployed, true);
-
-      ignition.cleanup();
     });
 
     it('should do nothing if their is no difference in modules', async () => {
       const projectFileName = 'no-difference-in-binding';
-      process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(ignition, projectFileName);
+      const projectLocation = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`);
+      process.chdir(projectLocation);
+      await loadStateFile(projectLocation, ignition, moduleName);
       const oldModuleStateFile = await ignition.getStateFile(moduleName);
 
-      await runDeployCommand(ignition, projectFileName);
+      await runDeployCommand(ignition, projectLocation);
 
       const newModuleStateFile = await ignition.getStateFile(moduleName);
 
@@ -124,41 +131,135 @@ describe('ignition deploy', () => {
       assert.equal(newContractBinding.deployMetaData.contractAddress, oldContractBinding.deployMetaData.contractAddress);
       assert.equal(newContractBinding.deployMetaData.logicallyDeployed, true);
       assert.equal(oldContractBinding.deployMetaData.logicallyDeployed, true);
-      ignition.cleanup();
     });
 
     it('should do nothing if their is less bindings in modules compared to deployed one', async () => {
       const projectFileName = 'less-bindings';
-      process.chdir(path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`));
-      await loadStateFile(ignition, projectFileName);
-      await runDeployCommand(ignition, projectFileName);
+      const projectLocation = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}`);
+      process.chdir(projectLocation);
+      await loadStateFile(projectLocation, ignition, moduleName);
+      await runDeployCommand(ignition, projectLocation);
 
       const moduleStateFile = await ignition.getStateFile(moduleName);
       const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
       assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
-      ignition.cleanup();
     });
   });
 
-  describe('module dependency resolve', () => {
-    // @TODO implement couple more cases
+  describe('ignition deploy - examples - sync', () => {
+    runExamples(ignition);
+  });
+
+  describe('ignition deploy - examples - parallel', () => {
+    const ignitionParallelMode = new IgnitionTests(
+      {
+        networkId: networkId,
+        networkName: networkName,
+        stateFileNames: [],
+      }, {
+        privateKeys: testPrivateKeys,
+        mnemonic: '',
+        hdPath: '',
+        parallelizeDeployment: true,
+      });
+    runExamples(ignitionParallelMode, true);
   });
 });
 
-async function loadStateFile(ignition: IgnitionTests, projectFileName: string) {
-  const stateFilePath = path.resolve(rootDir, `./test/projects-scenarios/${projectFileName}/${STATE_DIR_NAME}/ExampleModule/${networkName}_deployed_module_state.json`);
+async function runExamples(ignition: IgnitionTests, skipSynthethix: boolean = false) {
+  it('should be able to run - examples/all-feature-showcase', async () => {
+    const projectFileName = 'all-feature-showcase';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'module.ts');
+  });
+
+  it('should be able to run - examples/basic', async () => {
+    const projectFileName = 'basic';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'first.module.ts');
+  });
+
+  it('should be able to run - examples/dai-module', async () => {
+    const projectFileName = 'dai-module';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'module.ts');
+  });
+
+  it('should be able to run - examples/intermediate', async () => {
+    const projectFileName = 'intermediate';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'root.module.ts');
+  });
+
+  it('should be able to run - examples/migration', async () => {
+    const projectFileName = 'migration';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'tutorial.module.ts');
+  });
+
+  it('should be able to run - examples/patterns - factory', async () => {
+    const projectFileName = 'patterns';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'factory.module.ts');
+  });
+
+  it('should be able to run - examples/patterns - proxy', async () => {
+    const projectFileName = 'patterns';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+    await runDeployCommand(ignition, projectLocation, 'proxy.module.ts');
+  });
+
+  if (!skipSynthethix) {
+    it('should be able to run - examples/synthetix', async () => {
+      const projectFileName = 'synthetix';
+      const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+      process.chdir(projectLocation);
+
+      const {
+        config: synthetixConfigFile
+      } = require(path.resolve(projectLocation, CONFIG_SCRIPT_NAME));
+      await ignition.changeConfigFile(synthetixConfigFile);
+
+      await runDeployCommand(ignition, projectLocation, 'module.ts');
+    }).timeout(200000); // ~160s normal running time
+  }
+
+  it('should be able to run - examples/tornado_core', async () => {
+    const projectFileName = 'tornado_core';
+    const projectLocation = path.resolve(rootDir, `./example/${projectFileName}`);
+    process.chdir(projectLocation);
+
+    const {
+      config: configFile
+    } = require(path.resolve(projectLocation, CONFIG_SCRIPT_NAME));
+
+    await ignition.changeConfigFile(configFile);
+
+    await runDeployCommand(ignition, projectLocation, 'tornado.module.ts');
+  });
+}
+
+async function loadStateFile(projectLocation: string, ignition: IgnitionTests, moduleName: string) {
+  const stateFilePath = path.join(projectLocation, STATE_DIR_NAME, moduleName, `${networkName}_${STATE_NAME}`);
   let stateFile;
   try {
     stateFile = require(stateFilePath);
   } catch (e) {
     stateFile = {};
   }
-  ignition.setStateFile(moduleName, stateFile);
+  await ignition.setStateFile(moduleName, stateFile);
 }
 
-async function runDeployCommand(ignition: IgnitionTests, projectFileName: string): Promise<void> {
-  const migrationPath = `./test/projects-scenarios/${projectFileName}/migrations/migration.ts`;
+async function runDeployCommand(ignition: IgnitionTests, projectLocation: string, projectFileName: string = moduleFileName): Promise<void> {
+  const deploymentFilePath = path.join(projectLocation, DEPLOYMENT_FOLDER, projectFileName);
 
-  await ignition.deploy(path.resolve(rootDir, migrationPath));
+  await ignition.deploy(deploymentFilePath);
 }

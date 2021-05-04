@@ -87,12 +87,16 @@ export class IgnitionTests implements IIgnitionUsage {
     this.moduleStateRepo.clear();
   }
 
-  setStateFile(moduleName: string, stateFile: ModuleStateFile) {
-    this.moduleStateRepo.storeNewState(moduleName, stateFile);
+  async setStateFile(moduleName: string, stateFile: ModuleStateFile) {
+    await this.moduleStateRepo.storeNewState(moduleName, stateFile);
   }
 
   async getStateFile(moduleName: string): Promise<ModuleStateFile> {
     return this.moduleStateRepo.getStateIfExist(moduleName);
+  }
+
+  async changeConfigFile(configFile: HardhatIgnitionConfig) {
+    this.configFile = configFile;
   }
 
   async deploy(deploymentFilePath: string): Promise<void> {

@@ -4,12 +4,13 @@ import { ethers } from 'ethers';
 import { PrivateKeyIsMissing, PrivateKeyNotValid } from '../types/errors';
 import { checkIfExist } from '../utils/util';
 import { IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
+import { DEFAULT_NETWORK_NAME } from '../utils/constants';
 
 export default class MemoryConfigService implements IConfigService {
   private readonly config: HardhatIgnitionConfig;
   private readonly networkName: string | undefined;
 
-  constructor(config?: HardhatIgnitionConfig, networkName?: string) {
+  constructor(config?: HardhatIgnitionConfig, networkName: string = DEFAULT_NETWORK_NAME) {
     if (checkIfExist(config)) {
       this.config = config;
     } else {
@@ -57,7 +58,7 @@ export default class MemoryConfigService implements IConfigService {
       wallets.push(wallet);
     }
 
-    if (checkIfExist(hdPath) && checkIfExist(mnemonic)) {
+    if (checkIfExist(hdPath) && checkIfExist(mnemonic) && hdPath != '' && mnemonic != '') {
       for (let i = 0; i < NUMBER_OF_HD_ACCOUNTS; i++) {
         const components = hdPath.split('/');
         components[components.length - 1] = String(i);

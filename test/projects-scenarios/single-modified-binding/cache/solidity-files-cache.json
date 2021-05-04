@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/macbookpro/go/src/github.com/tenderly/mortar-tenderly/test/projects-scenarios/single-modified-binding/contracts/Example.sol": {
-      "lastModificationDate": 1611579006144,
-      "contentHash": "e2048b2bd9e882df555c6b484fa8e6f5",
+      "lastModificationDate": 1620115146996,
+      "contentHash": "7ee8f8b6e6ead3fd8db43a67653b6418",
       "sourceName": "contracts/Example.sol",
       "solcConfig": {
         "version": "0.7.3",

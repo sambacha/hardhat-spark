@@ -354,7 +354,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
 
   let filePath = moduleFilePath;
   let isLocalDeployment = true;
-  let parallelizeDeployment = false;
+  let parallelizeDeployment = config?.parallelizeDeployment || false;
   let gasPriceBackoff;
   if (!checkIfExist(networkName)) {
     networkName = DEFAULT_NETWORK_NAME;

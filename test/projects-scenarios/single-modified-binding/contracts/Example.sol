@@ -6,6 +6,6 @@ contract Example {
   }
 
   function hello() public pure returns (string memory) {
-    return "hello";
+    return "hello00000kfdskfk";
   }
 }

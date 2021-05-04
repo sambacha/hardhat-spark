@@ -196,7 +196,7 @@ export class EventHandler {
         throw e;
       }
 
-      throw new EventExecutionError(e);
+      throw new EventExecutionError(eventName, e);
     }
   }
 }

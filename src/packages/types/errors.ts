@@ -105,8 +105,8 @@ ${e.stack}
 }
 
 export class EventExecutionError extends UserError {
-  constructor(e: Error) {
-    super(`Error inside event hook:
+  constructor(eventName: string, e: Error) {
+    super(`Error inside event hook ${eventName}
 
 Error message: ${e.message}
 ${e.stack}

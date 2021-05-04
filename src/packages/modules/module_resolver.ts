@@ -247,12 +247,10 @@ export class ModuleResolver {
         if (
           userAlwaysDeploy ||
           resolvedModuleStateElement.forceFlag == true ||
-          (
-            isSameBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) &&
-            (!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
-              resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement))
-          )
-          || !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
+          !isSameBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) ||
+          (!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
+            resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement)) ||
+          !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
         ) {
           resolvedModuleStateElement.signer = this.signer;
           resolvedModuleStateElement.prompter = this.prompter;

@@ -21,6 +21,7 @@ export type HardhatIgnitionConfig = {
       gasPriceBackoff?: GasPriceBackoff;
     }
   }
+  parallelizeDeployment?: boolean;
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasPriceCalculator,

@@ -44,7 +44,7 @@ export class TxExecutor {
   private readonly parallelize: boolean;
 
   private prompter: ILogging;
-  private moduleState: ModuleStateRepo;
+  private moduleStateRepo: ModuleStateRepo;
   private txGenerator: EthTxGenerator;
   private ethers: providers.JsonRpcProvider;
   private eventHandler: EventHandler;
@@ -54,7 +54,7 @@ export class TxExecutor {
 
   constructor(prompter: ILogging, moduleState: ModuleStateRepo, txGenerator: EthTxGenerator, networkId: string, ethers: providers.JsonRpcProvider, eventHandler: EventHandler, eventSession: Namespace, eventTxExecutor: EventTxExecutor, parallelize: boolean = false) {
     this.prompter = prompter;
-    this.moduleState = moduleState;
+    this.moduleStateRepo = moduleState;
     this.txGenerator = txGenerator;
 
     this.ethers = ethers;
@@ -69,7 +69,7 @@ export class TxExecutor {
 
   async execute(moduleName: string, moduleState: ModuleState, registry: IModuleRegistryResolver | undefined, resolver: IModuleRegistryResolver | undefined, moduleConfig: ModuleConfig | undefined): Promise<void> {
     // store everything before execution is started
-    await this.moduleState.storeNewState(moduleName, moduleState);
+    await this.moduleStateRepo.storeNewState(moduleName, moduleState);
 
     if (this.parallelize) {
       await this.prompter.startModuleDeploy(moduleName, moduleState);
@@ -111,7 +111,7 @@ export class TxExecutor {
         if (checkIfExist(contractAddress)) {
           element.deployMetaData.contractAddress = contractAddress as string;
           this.prompter.alreadyDeployed(elementName);
-          await this.moduleState.storeSingleBinding(element as ContractBinding);
+          await this.moduleStateRepo.storeSingleBinding(element as ContractBinding);
           await this.prompter.finishedBindingExecution(elementName);
           continue;
         }
@@ -139,7 +139,7 @@ export class TxExecutor {
           await registry?.setAddress(this.networkId, moduleName, element.name, element?.deployMetaData?.contractAddress as string);
         }
 
-        await this.moduleState.storeSingleBinding(element);
+        await this.moduleStateRepo.storeSingleBinding(element);
         this.prompter.finishedBindingExecution(element.name);
         continue;
       }
@@ -199,7 +199,7 @@ export class TxExecutor {
 
         if (checkIfExist(contractAddress)) {
           batchElement.deployMetaData.contractAddress = contractAddress as string;
-          await this.moduleState.storeSingleBinding(batchElement as ContractBinding);
+          await this.moduleStateRepo.storeSingleBinding(batchElement as ContractBinding);
           continue;
         }
 
@@ -247,7 +247,7 @@ export class TxExecutor {
             await registry?.setAddress(this.networkId, moduleName, batchElement.name, batchElement?.deployMetaData?.contractAddress as string);
           }
 
-          await this.moduleState.storeSingleBinding(batchElement);
+          await this.moduleStateRepo.storeSingleBinding(batchElement);
           this.prompter.finishedBindingExecution(batchElement.name);
         }
       }
@@ -415,7 +415,7 @@ export class TxExecutor {
           if (checkIfExist((event.event as ContractEvent)?.deps)) {
             const deps = (event.event as ContractEvent).deps;
             for (const depName of deps) {
-              await this.moduleState.storeSingleBinding(moduleState[depName] as ContractBinding);
+              await this.moduleStateRepo.storeSingleBinding(moduleState[depName] as ContractBinding);
             }
           }
 
@@ -446,9 +446,9 @@ export class TxExecutor {
 
     if (binding.deployMetaData.deploymentSpec.deployFn) {
       // @TODO this doesn't work when running parallelized
-      this.moduleState.setSingleEventName(`Deploy${binding.name}`);
+      this.moduleStateRepo.setSingleEventName(`Deploy${binding.name}`);
       const resp = await binding.deployMetaData.deploymentSpec.deployFn();
-      await this.moduleState.finishCurrentEvent(moduleName, moduleState, `Deploy${binding.name}`);
+      await this.moduleStateRepo.finishCurrentEvent(moduleName, moduleState, `Deploy${binding.name}`);
 
       binding.deployMetaData.contractAddress = resp.contractAddress;
       binding.txData.output = resp.transaction;
@@ -607,13 +607,13 @@ export class TxExecutor {
         this.prompter.sentTx(elementName);
 
         binding.txData.input = txResp;
-        await this.moduleState.storeSingleBinding(binding);
+        await this.moduleStateRepo.storeSingleBinding(binding);
 
         this.prompter.waitTransactionConfirmation();
         this.prompter.transactionConfirmation(1, elementName);
         let txReceipt = await txResp.wait(1);
         binding.txData.output = txReceipt;
-        await this.moduleState.storeSingleBinding(binding);
+        await this.moduleStateRepo.storeSingleBinding(binding);
 
         let currentConfirmation = 2;
         while (currentConfirmation < this.blockConfirmation) {
@@ -624,7 +624,7 @@ export class TxExecutor {
 
         txReceipt = await txResp.wait(this.blockConfirmation);
         binding.txData.output = txReceipt;
-        await this.moduleState.storeSingleBinding(binding);
+        await this.moduleStateRepo.storeSingleBinding(binding);
         this.prompter.transactionConfirmation(this.blockConfirmation, elementName);
 
         resolve(txReceipt);
