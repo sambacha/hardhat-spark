@@ -90,6 +90,7 @@
     "url": "git+https://github.com/nomiclabs/hardhat-ignition.git"
   },
   "scripts": {
+    "build": "tsc -b",
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest",
     "pack": "oclif-dev pack",

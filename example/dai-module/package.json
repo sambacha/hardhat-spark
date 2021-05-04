@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project-three",
+  "name": "dai-module",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
