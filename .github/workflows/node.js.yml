@@ -49,8 +49,8 @@ jobs:
           yarn run install:examples
           yarn run install:tests
 
-      - name: Run Typescript Checks
-        run: yarn lint
+#      - name: Run Typescript Checks
+#        run: yarn lint
 
       - name: Run Tests and hardhat node
         run: |
