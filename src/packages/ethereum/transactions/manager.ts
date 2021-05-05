@@ -57,7 +57,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   async generateSingedTx(value: number, data: string, wallet?: ethers.Wallet | undefined): Promise<string> {
     let gas = BigNumber.from(0);
     try {
-      gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
+      gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data) as BigNumber;
     } catch (err) {
       throw err;
     }
@@ -103,6 +103,6 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       }
     }
 
-    return gasPrice;
+    return gasPrice as BigNumber;
   }
 }

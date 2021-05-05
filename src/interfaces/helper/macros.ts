@@ -74,7 +74,7 @@ export const filler = (
   m: ModuleBuilder,
   rootWallet: ethers.Wallet,
   wallets: ethers.Wallet[],
-  value: ethers.BigNumber = ethers.utils.parseUnits('1', 'ether'),
+  value: ethers.BigNumber = ethers.utils.parseUnits('1', 'ether') as ethers.BigNumber,
 ): void => {
   m.onStart('on start distribute ethers to all accounts', async () => {
     for (let i = 0; i < wallets.length; i++) {

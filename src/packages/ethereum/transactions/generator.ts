@@ -119,7 +119,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     }
 
     return {
-      gasPrice: gasPrice,
+      gasPrice: gasPrice as BigNumber,
       nonce: await this.nonceManager.getAndIncrementTransactionCount(walletAddress),
     };
   }
@@ -142,7 +142,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
       }
     }
 
-    return gasPrice;
+    return gasPrice as BigNumber;
   }
 
   generateSingedTx(value: number, data: string, wallet?: Wallet | undefined): Promise<string> {

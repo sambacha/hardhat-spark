@@ -61,6 +61,7 @@
     "ethereum-waffle": "^3.2.0",
     "globby": "^10",
     "hardhat": "^2.0.3",
+    "lerna": "^4.0.0",
     "local-package-publisher": "^1.0.4",
     "mocha": "^5",
     "nyc": "^14",
@@ -90,12 +91,17 @@
     "url": "git+https://github.com/nomiclabs/hardhat-ignition.git"
   },
   "scripts": {
+    "lint": "tsc",
     "build": "tsc -b",
+    "install:examples": "./bin/install_example_node_modules.sh",
+    "install:tests": "./bin/install_tests_projects_node_modules.sh",
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest",
     "pack": "oclif-dev pack",
     "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "oclif-dev readme && git add README.md"
+    "test:ci": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif-dev readme && git add README.md",
+    "hardhat:node": "cd example/synthetix && npx hardhat node"
   },
   "types": "lib/index.d.ts",
   "type": "commonjs",
