@@ -74,8 +74,11 @@ export const filler = (
   m: ModuleBuilder,
   rootWallet: ethers.Wallet,
   wallets: ethers.Wallet[],
-  value: ethers.BigNumber = ethers.utils.parseUnits('1', 'ether') as ethers.BigNumber,
+  value?: ethers.BigNumberish | any,
 ): void => {
+  if (!value) {
+    value = ethers.utils.parseUnits('1', 'ether') as ethers.BigNumber;
+  }
   m.onStart('on start distribute ethers to all accounts', async () => {
     for (let i = 0; i < wallets.length; i++) {
       await rootWallet.sendTransaction({

@@ -4,10 +4,6 @@ import path from 'path';
 require('dotenv').config({path: path.resolve(__dirname + '/.env')});
 
 const {
-  MERKLE_TREE_HEIGHT,
-  ERC20_TOKEN,
-  TOKEN_AMOUNT,
-  ETH_AMOUNT,
   PRIVATE_KEY,
   INFURA_KEY
 } = process.env;
@@ -45,9 +41,9 @@ export const config: HardhatIgnitionConfig = {
     }
   },
   params: {
-    merkleTreeHeight: MERKLE_TREE_HEIGHT,
-    erc20Token: ERC20_TOKEN,
-    ethAmount: ETH_AMOUNT,
-    tokenAmount: TOKEN_AMOUNT
+    MERKLE_TREE_HEIGHT: '20',
+    ERC20_TOKEN: '',
+    ETH_AMOUNT: '100000000000000000',
+    TOKEN_AMOUNT: '100000000000000000'
   }
 };

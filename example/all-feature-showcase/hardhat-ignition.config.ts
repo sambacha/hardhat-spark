@@ -19,20 +19,20 @@ const {
   PRIVATE_KEY
 } = process.env;
 
-const gasPriceProvider = new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average);
-const constantGasPriceProvider = new ConstantGasPrice();
-const provider = new providers.JsonRpcProvider('http://localhost:8545');
-// @ts-ignore
-const gasCalculator = new GasPriceCalculator(provider);
-const wallet = new ethers.Wallet(PRIVATE_KEY);
-const txManager = new TransactionManager(provider, wallet, process.env.IGNITION_NETWORK_ID, gasCalculator, gasPriceProvider);
-const registryAndResolver = new RemoteBucketStorage(
-  'https://storage.googleapis.com',
-  'europe-west3',
-  'ignition_state_bucket',
-  GOOGLE_ACCESS_KEY || '',
-  GOOGLE_SECRET_ACCESS_KEY || '',
-);
+// const gasPriceProvider = new EthGasStationProvider(ETH_GAS_STATION_API_KEY, GasPriceType.average);
+// const constantGasPriceProvider = new ConstantGasPrice();
+// const provider = new providers.JsonRpcProvider('http://localhost:8545');
+// // @ts-ignore
+// const gasCalculator = new GasPriceCalculator(provider);
+// const wallet = new ethers.Wallet(PRIVATE_KEY);
+// const txManager = new TransactionManager(provider, wallet, process.env.IGNITION_NETWORK_ID, gasCalculator, gasPriceProvider);
+// const registryAndResolver = new RemoteBucketStorage(
+//   'https://storage.googleapis.com',
+//   'europe-west3',
+//   'ignition_state_bucket',
+//   GOOGLE_ACCESS_KEY || '',
+//   GOOGLE_SECRET_ACCESS_KEY || '',
+// );
 
 export const config: HardhatIgnitionConfig = {
   privateKeys: [

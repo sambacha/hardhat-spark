@@ -10,7 +10,7 @@ env:
   CI: true
   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
-  lint:
+  lint-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -52,9 +52,9 @@ jobs:
       - name: Run Typescript Checks
         run: yarn lint
 
-#     Can I do this???
-#      - name: Run hardhat node
-#        run: yarn hardhat:node
-#
-#      - name: Run Tests
-#        run: yarn test:ci
+      - name: Run Tests and hardhat node
+        run: |
+          yarn hardhat:node &
+          sleep 2 &&
+          curl http://localhost:8545 &&
+          yarn test:ci

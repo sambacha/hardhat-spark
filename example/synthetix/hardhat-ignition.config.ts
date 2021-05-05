@@ -11,6 +11,8 @@ const {
   PRIVATE_KEY
 } = process.env;
 
+const ownerAddress = ETH_ADDRESS || '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
+
 export const config: HardhatIgnitionConfig = {
   privateKeys: [
     '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
@@ -53,8 +55,8 @@ export const config: HardhatIgnitionConfig = {
     poolFee: web3utils.toWei('0.008'), // 0.8% of the market's value goes to the pool in the end.
     creatorFee: web3utils.toWei('0.002'), // 0.2% of the market's value goes to the creator.
     refundFee: web3utils.toWei('0.05'), // 5% of a bid stays in the pot if it is refunded.
-    oracleExRatesContractAddress: ETH_ADDRESS,
-    ETH_ADDRESS: ETH_ADDRESS,
+    oracleExRatesContractAddress: ownerAddress,
+    ETH_ADDRESS: ownerAddress,
     useOvm: false,
     currentSynthetixSupply: ethers.BigNumber.from('100000'),
     currentWeekOfInflation: 0,

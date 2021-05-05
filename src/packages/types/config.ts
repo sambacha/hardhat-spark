@@ -31,7 +31,7 @@ export type HardhatIgnitionConfig = {
 };
 
 export type GasPriceBackoff = {
-  maxGasPrice: ethers.BigNumber;
+  maxGasPrice: ethers.BigNumberish | any;
   backoffTime: number;
   numberOfRetries: number;
 };

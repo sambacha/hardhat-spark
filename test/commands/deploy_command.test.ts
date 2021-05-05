@@ -29,6 +29,7 @@ describe('ignition deploy', () => {
     });
   afterEach(() => {
     ignition.cleanup();
+    process.chdir(rootDir);
   });
 
   describe('ignition deploy - integration', () => {
