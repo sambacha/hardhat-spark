@@ -8,6 +8,7 @@ on:
 
 env:
   CI: true
+  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   lint:
     runs-on: ubuntu-latest
