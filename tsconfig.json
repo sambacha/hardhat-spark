@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "jsx": "react",
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
   },
   "exclude": [
     "node_modules",
