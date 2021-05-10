@@ -1,1 +1,1 @@
-export * as hardhat from './packages/hardhat_plugin';
+export * as hardhat from './services/hardhat_plugin';

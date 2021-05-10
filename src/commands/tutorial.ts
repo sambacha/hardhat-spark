@@ -1,22 +1,22 @@
 import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { TutorialService } from '../packages/tutorial/tutorial_service';
-import { DeploymentFileGenerator } from '../packages/tutorial/deployment_file_gen';
-import { DeploymentFileRepo } from '../packages/tutorial/deployment_file_repo';
-import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
-import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
-import { GlobalConfigService } from '../packages/config/global_config_service';
-import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { TutorialService } from '../services/tutorial/tutorial_service';
+import { DeploymentFileGenerator } from '../services/tutorial/deployment_file_gen';
+import { DeploymentFileRepo } from '../services/tutorial/deployment_file_repo';
+import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { SystemCrawlingService } from '../services/tutorial/system_crawler';
+import { GlobalConfigService } from '../services/config/global_config_service';
+import { AnalyticsService } from '../services/utils/analytics/analytics_service';
 import { errorHandling } from '../index';
-import { CommandParsingFailed } from '../packages/types/errors';
+import { CommandParsingFailed } from '../services/types/errors';
 
 const ARTIFACTS_FOLDER = 'artifacts';
 
 export default class Tutorial extends Command {
   static description = 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.';
-  private prompter: StreamlinedPrompter;
-  private analyticsService: AnalyticsService;
+  private prompter: StreamlinedPrompter | undefined;
+  private analyticsService: AnalyticsService | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),

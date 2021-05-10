@@ -8,11 +8,13 @@
     "target": "es2017",
     "esModuleInterop": true,
     "jsx": "react",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true,
   },
   "exclude": [
     "node_modules",
-    "example",
+    "./node_modules",
+    "./node_modules/@types/node/index.d.ts",
     "lib"
   ],
   "include": [

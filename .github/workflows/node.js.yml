@@ -50,7 +50,7 @@ jobs:
           yarn run install:tests
 
       - name: Run Typescript Checks
-        run: yarn lint
+        run: yarn compile
 
 #      - name: Run Tests and hardhat node
 #        run: |

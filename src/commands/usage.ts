@@ -1,25 +1,30 @@
 import { Command, flags } from '@oclif/command';
-import ConfigService from '../packages/config/service';
+import ConfigService from '../services/config/service';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
-import { ILogging } from '../packages/utils/logging';
+import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { ILogging } from '../services/utils/logging';
 import path from 'path';
-import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { errorHandling, WalletWrapper } from '../index';
-import { ModuleResolver } from '../packages/modules/module_resolver';
-import { ModuleUsage } from '../packages/modules/module_usage';
-import { checkIfExist } from '../packages/utils/util';
-import { DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../packages/utils/constants';
-import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
-import { GlobalConfigService } from '../packages/config/global_config_service';
-import { CommandParsingFailed } from '../packages/types/errors';
+import { ModuleStateRepo } from '../services/modules/states/state_repo';
+import { defaultInputParams, errorHandling, IGasCalculator, WalletWrapper } from '../index';
+import { ModuleResolver } from '../services/modules/module_resolver';
+import { ModuleUsage } from '../services/modules/module_usage';
+import { checkIfExist } from '../services/utils/util';
+import { DEFAULT_NETWORK_ID, DEFAULT_NETWORK_NAME } from '../services/utils/constants';
+import { AnalyticsService } from '../services/utils/analytics/analytics_service';
+import { GlobalConfigService } from '../services/config/global_config_service';
+import { CommandParsingFailed } from '../services/types/errors';
+import * as cls from 'cls-hooked';
+import { TransactionManager } from '../services/ethereum/transactions/manager';
+import { Wallet } from 'ethers';
+import { GasPriceCalculator } from '../services/ethereum/gas/calculator';
+import { EventTxExecutor } from '../services/ethereum/transactions/event_executor';
 
 export default class Usage extends Command {
   private mutex = false;
   static description = 'Generate public usage module from standard module.';
   private prompter: ILogging | undefined;
-  private analyticsService: AnalyticsService;
+  private analyticsService: AnalyticsService | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -73,59 +78,47 @@ export default class Usage extends Command {
       process.env.DEBUG = '*';
     }
 
+    const {
+      networkId,
+      gasPriceBackoff,
+      rpcProvider,
+      filePath,
+      states,
+      config,
+      configService,
+    } = await defaultInputParams(args.module_file_path, flags.network, flags.state);
+
     const globalConfigService = new GlobalConfigService();
     await globalConfigService.mustConfirmConsent();
     this.analyticsService = new AnalyticsService(globalConfigService);
 
     const currentPath = process.cwd();
-    const filePath = args.module_file_path as string;
-    if (filePath == '') {
-      cli.info('Their is no hardhat-ignition config, please run init first.\n   Use --help for more information.');
-    }
-
-    let networkName = flags.network;
-    if (!checkIfExist(networkName)) {
-      networkName = DEFAULT_NETWORK_NAME;
-    }
-
-    const configService = new ConfigService(networkName);
-    const config = await configService.initializeIgnitionConfig(process.cwd(), flags.configScriptPath);
-
-    let networkId = config.networks[networkName].networkId;
-    if (!checkIfExist(networkId)) {
-      networkId = DEFAULT_NETWORK_ID;
-    }
-    process.env.IGNITION_NETWORK_ID = String(networkId);
-    process.env.IGNITION_NETWORK_NAME = String(networkName);
 
     this.prompter = new StreamlinedPrompter();
 
     const moduleStateRepo = new ModuleStateRepo(networkId, currentPath, this.mutex, flags.testEnv);
-    const moduleResolver = new ModuleResolver(
-      undefined,
-      configService.getFirstPrivateKey(),
-      this.prompter,
-      undefined,
-      moduleStateRepo,
-      undefined,
-      undefined,
-      undefined
-    );
+    const eventSession = cls.createNamespace('event');
+    const gasProvider = new GasPriceCalculator(rpcProvider);
+    let gasPriceCalculator = config.gasPriceProvider;
+    if (!gasPriceCalculator) {
+      gasPriceCalculator = gasProvider;
+    }
+    const transactionManager = new TransactionManager(rpcProvider, new Wallet(configService.getFirstPrivateKey(), rpcProvider), networkId, gasProvider, gasPriceCalculator, this.prompter, gasPriceBackoff);
+    const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
     const walletWrapper = new WalletWrapper(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+      eventSession,
+      transactionManager,
+      gasPriceCalculator,
+      gasProvider as IGasCalculator,
       moduleStateRepo,
       this.prompter,
-      undefined
+      eventTxExecutor
     );
 
     const deploymentFilePath = path.resolve(currentPath, filePath);
-    const states: string[] = flags.state?.split(',') || [];
     const moduleUsage = new ModuleUsage(deploymentFilePath, moduleStateRepo);
 
-    await command.usage(config, deploymentFilePath, states, configService, walletWrapper, moduleStateRepo, moduleResolver, moduleUsage, this.prompter, this.analyticsService);
+    await command.usage(config, deploymentFilePath, states, configService, walletWrapper, moduleStateRepo, moduleUsage, this.prompter, this.analyticsService);
   }
 
   async catch(error: Error) {

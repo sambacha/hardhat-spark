@@ -4,27 +4,29 @@ import {
   CommandParsingFailed,
   NoDeploymentModuleError,
   WrongDeploymentPathForNetwork
-} from '../packages/types/errors';
+} from '../services/types/errors';
 import path from 'path';
-import { ModuleTypings } from '../packages/modules/typings';
+import { ModuleTypings } from '../services/modules/typings';
 import * as command from '../index';
-import ConfigService from '../packages/config/service';
+import ConfigService from '../services/config/service';
 import chalk from 'chalk';
-import { ILogging } from '../packages/utils/logging';
-import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
-import { checkIfExist } from '../packages/utils/util';
+import { ILogging } from '../services/utils/logging';
+import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { checkIfExist } from '../services/utils/util';
 import fs from 'fs';
 import * as inquirer from 'inquirer';
-import { DEFAULT_DEPLOYMENT_FOLDER } from '../packages/utils/constants';
-import { SystemCrawlingService } from '../packages/tutorial/system_crawler';
-import { GlobalConfigService } from '../packages/config/global_config_service';
-import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { DEFAULT_DEPLOYMENT_FOLDER } from '../services/utils/constants';
+import { SystemCrawlingService } from '../services/tutorial/system_crawler';
+import { GlobalConfigService } from '../services/config/global_config_service';
+import { AnalyticsService } from '../services/utils/analytics/analytics_service';
 import { errorHandling } from '../index';
+import { IAnalyticsService } from '../services/utils/analytics';
+import * as net from 'net';
 
 export default class GenTypes extends Command {
   static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';
   private prompter: ILogging | undefined;
-  private analyticsService: AnalyticsService;
+  private analyticsService: IAnalyticsService | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -103,9 +105,9 @@ export default class GenTypes extends Command {
       return;
     }
 
-    for (const [networkName, network] of Object.entries(config.networks)) {
+    for (const [networkName, network] of Object.entries(config.networks || {})) {
       if (
-        checkIfExist(network.deploymentFilePath)
+        network.deploymentFilePath
       ) {
         filePath = network.deploymentFilePath;
         if (!fs.existsSync(filePath)) {

@@ -2,7 +2,7 @@ import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { errorHandling } from '../index';
-import { ModulePackagingService } from '../packages/modules/module_packaging';
+import { ModulePackagingService } from '../services/modules/module_packaging';
 
 export default class Package extends Command {
   static description = '';
@@ -12,13 +12,15 @@ export default class Package extends Command {
     name: flags.string(
       {
         name: 'name',
-        description: 'Here you specify package name for your name. In case of npm this name should be used when package is being installed.'
+        description: 'Here you specify package name for your name. In case of npm this name should be used when package is being installed.',
+        required: true,
       }
     ),
     version: flags.string(
       {
         name: 'version',
-        description: 'Package version e.g. v0.1.0'
+        description: 'Package version e.g. v0.1.0',
+        required: true,
       }
     ),
     debug: flags.boolean(
