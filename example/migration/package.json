@@ -19,12 +19,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cpr": "^3.0.1",
     "dotenv": "^7.0.0",
     "openzeppelin-solidity": "^2.2.0",
     "rimraf": "^2.6.3",
-    "truffle": "^5.0.8",
-    "truffle-hdwallet-provider-privkey": "^1.0.3"
+    "truffle": "^5.0.8"
   },
   "devDependencies": {
     "@tenderly/hardhat-ignition": "file:../..",

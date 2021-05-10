@@ -46,6 +46,7 @@ jobs:
 
       - name: Install all subprojects packages
         run: |
+          sudo apt-get install build-essential
           yarn run install:examples
           yarn run install:tests
 

@@ -19,8 +19,6 @@
  */
 require("dotenv").config();
 
-const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
-
 if (!process.env.PRIVATE_KEY) {
     throw new Error("define PRIVATE_KEY in .env first!");
 } else {
@@ -57,33 +55,6 @@ module.exports = {
             port: 8545,
             gas: 6700000,
             network_id: "31337",
-        },
-        
-        // Useful for private networks
-        // private: {
-        // port: 8777,             // Custom port
-        // network_id: 1342,       // Custom network
-        // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
-        // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
-        // from: <address>,        // Account to send txs from (default: accounts[0])
-        // websockets: true        // Enable EventEmitter interface for web3 (default: false)
-        // production: true    // Treats this network as if it was a public net. (default: false)
-        // },
-        private: {
-            provider: () => new HDWalletProvider([process.env.PRIVATE_KEY], process.env.PRIVATE_NETWORK_URL),
-            gas: 0, // example settings for "ethereum-free" networks.
-            gasPrice: 0,
-            network_id: process.env.PRIVATE_NETWORK_ID,
-        },
-        
-        // Useful for deploying to a public network.
-        ropsten: {
-            provider: () => new HDWalletProvider([process.env.PRIVATE_KEY], `https://ropsten.infura.io/v3/${process.env.INFURA_APIKEY}`),
-            network_id: 3,       // Ropsten's id
-            gas: 4000000,        // Ropsten has a lower block limit than mainnet
-            // confirmations: 2,    // # of confs to wait between deployments. (default: 0)
-            // timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
-            skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
         },
     },
     // Set default mocha options here, use special reporters etc.
