@@ -1050,7 +1050,7 @@ export class ContractInstance {
 
   public withSigner(wallet: ethers.Wallet) {
     if (wallet._isSigner) {
-      this.signer = wallet as ethers.Signer;
+      this.signer = wallet as unknown as ethers.Signer;
     }
   }
 }

@@ -252,7 +252,7 @@ export class ModuleResolver {
             resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement)) ||
           !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
         ) {
-          resolvedModuleStateElement.signer = this.signer;
+          resolvedModuleStateElement.signer = this.signer as unknown as ethers.Signer;
           resolvedModuleStateElement.prompter = this.prompter;
           resolvedModuleStateElement.txGenerator = this.txGenerator;
           resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
@@ -275,7 +275,7 @@ export class ModuleResolver {
         resolvedModuleStateElement.libraries = stateFileElement.libraries;
         resolvedModuleStateElement.deployMetaData = stateFileElement.deployMetaData;
         resolvedModuleStateElement.txData = stateFileElement.txData;
-        resolvedModuleStateElement.signer = this.signer;
+        resolvedModuleStateElement.signer = this.signer as unknown as ethers.Signer;
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
@@ -327,7 +327,7 @@ export class ModuleResolver {
       if ((resolvedModuleStateElement as ContractBinding)._isContractBinding) {
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
 
-        resolvedModuleStateElement.signer = this.signer;
+        resolvedModuleStateElement.signer = this.signer as unknown as ethers.Signer;
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
