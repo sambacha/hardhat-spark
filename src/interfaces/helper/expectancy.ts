@@ -111,8 +111,10 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
     }
   }
 
-  if (value.eq(expectedValue)) {
-    return true;
+  if (value instanceof ethers.BigNumber) {
+    if (value.eq(expectedValue)) {
+      return true;
+    }
   }
 
   if (expectedValue._isBigNumber) {

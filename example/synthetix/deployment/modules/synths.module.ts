@@ -99,7 +99,7 @@ export const SynthetixSynths = buildModule('SynthetixSynths', async (m: Syntheti
       );
     }
 
-    const {feed} = m.feeds[asset] || {};
+    const {feed} = (m.feeds as {[feedName: string]: any})[asset] || {};
     if (ethers.utils.isAddress(feed)) {
       sendAfterDeploy(m,
         ExchangeRates,

@@ -1,6 +1,6 @@
 import * as web3utils from 'web3-utils';
 
-export const chainIdToNetwork: {[name: number]: string} = {
+export const chainIdToNetwork: {[networkId: number]: string} = {
   1: 'mainnet',
   3: 'ropsten',
   4: 'rinkeby',

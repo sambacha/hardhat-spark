@@ -15,6 +15,8 @@ const {
   IGNITION_NETWORK_ID
 } = process.env;
 
+const networkId: number = +(IGNITION_NETWORK_ID || 31337);
+
 export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
   // @ts-ignore
@@ -111,10 +113,11 @@ export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m
     await expectFuncRead(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT'], SystemSettings.deployed().crossDomainMessageGasLimit);
 
     // @ts-ignore
-    if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]])) {
+    if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[networkId]])) {
       // @ts-ignore
-      await SystemSettings.deployed().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]]);
-      await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[+IGNITION_NETWORK_ID]], SystemSettings.deployed().aggregatorWarningFlags);
+      await SystemSettings.deployed().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[networkId]]);
+      // @ts-ignore
+      await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[networkId]] as string, SystemSettings.deployed().aggregatorWarningFlags);
     }
   });
 });

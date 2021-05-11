@@ -38,7 +38,7 @@ export const config: HardhatIgnitionConfig = {
       networkId: '42',
       rpcProvider: `https://kovan.infura.io/v3/${INFURA_KEY}`,
       privateKeys: [
-        PRIVATE_KEY,
+        PRIVATE_KEY as string,
       ],
       localDeployment: false,
       deploymentFilePath: './deployment/module.ts',

@@ -199,7 +199,7 @@ export type ModuleOptions = {
   params: { [name: string]: any }
 };
 
-export type ModuleBuilderFn = (m: ModuleBuilder | any, wallets?: ethers.Wallet[]) => Promise<void>;
+export type ModuleBuilderFn = (m: ModuleBuilder | any, wallets: ethers.Wallet[]) => Promise<void>;
 
 export abstract class Binding {
   public name: string;
@@ -1410,7 +1410,7 @@ export class ModuleBuilder {
    *
    * @returns Module builder data from sub-module.
    */
-  async useModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets?: ethers.Wallet[] | any[]): Promise<ModuleBuilder> {
+  async useModule(m: Module | Promise<Module>, opts?: ModuleOptions, wallets: ethers.Wallet[] | any[] = []): Promise<ModuleBuilder> {
     const options = opts ? Object.assign(this.opts, opts) : this.opts;
 
     if (m instanceof Promise) {
@@ -1644,7 +1644,7 @@ export class Module {
     return this.initialized;
   }
 
-  async init(moduleSession: Namespace, wallets?: ethers.Wallet[], m?: ModuleBuilder, opts?: ModuleOptions): Promise<ModuleBuilder> {
+  async init(moduleSession: Namespace, wallets: ethers.Wallet[], m?: ModuleBuilder, opts?: ModuleOptions): Promise<ModuleBuilder> {
     if (opts && checkIfExist(opts)) {
       this.opts = opts;
     }
