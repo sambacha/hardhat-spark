@@ -1,38 +1,38 @@
-import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { HardhatCompiler } from '../packages/ethereum/compiler/hardhat';
+import { ModuleStateRepo } from '../services/modules/states/state_repo';
+import { HardhatCompiler } from '../services/ethereum/compiler/hardhat';
 import {
   checkIfExist,
   checkIfSameInputs,
   checkIfSuitableForInstantiating,
   copyValue,
   isSameBytecode
-} from '../packages/utils/util';
-import { ModuleValidator } from '../packages/modules/module_validator';
-import { JsonFragment, JsonFragmentType } from '../packages/types/artifacts/abi';
+} from '../services/utils/util';
+import { ModuleValidator } from '../services/modules/module_validator';
+import { JsonFragment, JsonFragmentType } from '../services/types/artifacts/abi';
 import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { cli } from 'cli-ux';
 import { CallOverrides, ethers } from 'ethers';
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
 import { FunctionFragment } from '@ethersproject/abi';
-import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { ILogging } from '../packages/utils/logging';
+import { EthTxGenerator } from '../services/ethereum/transactions/generator';
+import { ILogging } from '../services/utils/logging';
 import {
   ArgumentLengthInvalid,
   BindingsConflict,
   CliError, ContractNotDeployedError, DeploymentFileError, EventDoesntExistError, EventNameExistsError,
-  MissingContractMetadata,
+  MissingContractMetadata, MissingToAddressInWalletTransferTransaction, ModuleIsAlreadyInitialized,
   ShouldRedeployAlreadyDefinedError,
   TemplateNotFound,
   WalletTransactionNotInEventError
-} from '../packages/types/errors';
-import { IModuleRegistryResolver } from '../packages/modules/states/registry';
-import { LinkReferences, SingleContractLinkReference } from '../packages/types/artifacts/libraries';
-import { IGasCalculator, IGasPriceCalculator } from '../packages/ethereum/gas';
-import { INonceManager, ITransactionSigner } from '../packages/ethereum/transactions';
-import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+} from '../services/types/errors';
+import { IModuleRegistryResolver } from '../services/modules/states/registry';
+import { LinkReferences, SingleContractLinkReference } from '../services/types/artifacts/libraries';
+import { IGasCalculator, IGasPriceCalculator } from '../services/ethereum/gas';
+import { INonceManager, ITransactionSigner } from '../services/ethereum/transactions';
+import { EventTxExecutor } from '../services/ethereum/transactions/event_executor';
 import { Namespace } from 'cls-hooked';
 import { Deferrable } from '@ethersproject/properties';
-import { clsNamespaces } from '../packages/utils/continuation_local_storage';
+import { clsNamespaces } from '../services/utils/continuation_local_storage';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -158,7 +158,7 @@ export type Deployed = {
   shouldRedeploy: ShouldRedeployFn | undefined,
   deploymentSpec: {
     deployFn: DeployFn | undefined,
-    deps: (ContractBinding | ContractBindingMetaData | ContractEvent)[]
+    deps: (ContractBinding | ContractBindingMetaData)[]
   } | undefined,
 };
 
@@ -166,9 +166,12 @@ export type Deployed = {
  * Module config is simple way to specify if desired contract should be deployed or not.
  */
 export type ModuleConfig = {
-  [contractName: string]: {
-    deploy: boolean
-  }
+  contract: {
+    [contractName: string]: {
+      deploy: boolean
+    }
+  },
+  defaultOptions: ModuleOptions
 };
 
 export type FactoryCustomOpts = {
@@ -180,7 +183,7 @@ export class StatefulEvent {
   public _isStatefulEvent: boolean = true;
 
   public event: Event;
-  public moduleName: string;
+  public moduleName: string | undefined;
   public executed: boolean;
   public txData: { [bindingName: string]: EventTransactionData };
 
@@ -400,7 +403,7 @@ export class ContractBinding extends Binding {
   public subModuleNameDepth: string[];
   public subModule: string;
 
-  public bytecode: string | undefined;
+  public bytecode: string = '';
   public abi: JsonFragment[] | undefined;
   public library: boolean = false;
   public libraries: SingleContractLinkReference | undefined;
@@ -455,7 +458,9 @@ export class ContractBinding extends Binding {
       onChange: []
     };
 
-    this.bytecode = bytecode;
+    if (bytecode) {
+      this.bytecode = bytecode;
+    }
     this.abi = abi;
     this.libraries = libraries;
 
@@ -491,7 +496,8 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      throw new ContractNotDeployedError(this.name, this.contractName, this.eventSession.get(clsNamespaces.EVENT_NAME));
+      const eventName = (this.eventSession?.get(clsNamespaces.EVENT_NAME)) || '';
+      throw new ContractNotDeployedError(this.name, this.contractName, eventName);
     }
 
     this.contractInstance = new ContractInstance(
@@ -590,8 +596,8 @@ export class ContractBinding extends Binding {
    * @param opts Custom object that can overwrite smartly defined getterFunc and getterArgs.
    */
   factoryCreate(m: ModuleBuilder, childName: string, createFuncName: string, args: any[], opts?: FactoryCustomOpts): ContractBinding {
-    const getFunctionName = opts.getterFunc ? opts.getterFunc : 'get' + createFuncName.substr(5);
-    const getFunctionArgs = opts.getterArgs ? opts.getterArgs : [];
+    const getFunctionName = opts?.getterFunc ? opts.getterFunc : 'get' + createFuncName.substr(5);
+    const getFunctionArgs = opts?.getterArgs ? opts.getterArgs : [];
 
     const child = m.contract(childName);
     child.deployFn(async () => {
@@ -825,9 +831,9 @@ export class Action {
   }
 }
 
-type TxData = {
+export type TxData = {
   from: string
-  input: string
+  input?: string
 };
 
 export type ContractInput = {
@@ -836,13 +842,13 @@ export type ContractInput = {
 };
 
 export type TransactionData = {
-  input: TxData | TransactionResponse | undefined
-  output: TransactionReceipt | undefined
+  input: TxData | TransactionResponse
+  output?: TransactionReceipt
 };
 
 export type EventTransactionData = {
-  contractInput: (ContractInput | TransactionRequest | TransactionResponse)[]
-  contractOutput: TransactionResponse[]
+  contractInput: ContractInput[]
+  contractOutput: (TransactionReceipt)[]
 };
 
 export class ContractInstance {
@@ -918,7 +924,7 @@ export class ContractInstance {
 
   private buildDefaultWrapper(contractFunction: ContractFunction, fragment: FunctionFragment): ContractFunction {
     return async (...args: Array<any>): Promise<TransactionResponse> => {
-      const func = async function (...args: Array<any>): Promise<TransactionResponse> {
+      const func = async function (this: ContractInstance, ...args: Array<any>): Promise<TransactionResponse | TransactionReceipt> {
         const sessionEventName = this.eventSession.get(clsNamespaces.EVENT_NAME);
 
         if ( // optional overrides
@@ -947,8 +953,12 @@ export class ContractInstance {
         const currentInputs = currentEventTransactionData.contractInput[contractTxIterator];
         const contractOutput = currentEventTransactionData.contractOutput[contractTxIterator];
 
-        if (checkIfExist(currentInputs) &&
-          checkIfSameInputs(currentInputs, fragment.name, args) && checkIfExist(contractOutput)) {
+        if (
+          checkIfExist(currentInputs) &&
+          checkIfSameInputs(currentInputs, fragment.name, args) &&
+          checkIfExist(contractOutput)
+        ) {
+          this.prompter.contractFunctionAlreadyExecuted(fragment.name, ...args);
           cli.info('Contract function already executed: ', fragment.name, ...args, '... skipping');
 
           this.contractBinding.contractTxProgress = ++contractTxIterator;
@@ -1040,7 +1050,7 @@ export class ContractInstance {
 
   public withSigner(wallet: ethers.Wallet) {
     if (wallet._isSigner) {
-      this.signer = wallet as ethers.Signer;
+      this.signer = wallet as unknown as ethers.Signer;
     }
   }
 }
@@ -1077,8 +1087,11 @@ export class IgnitionWallet extends ethers.Wallet {
 
   async sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
     const func = async (): Promise<TransactionResponse> => {
-      const toAddr = await transaction.to;
-      await this.prompter.executeWalletTransfer(this.address, toAddr);
+      const toAddr = (await transaction).to as string;
+      if (!toAddr) {
+        throw new MissingToAddressInWalletTransferTransaction();
+      }
+      this.prompter.executeWalletTransfer(this.address, toAddr);
       const currentEventName = this.sessionNamespace.get(clsNamespaces.EVENT_NAME);
       if (!checkIfExist(currentEventName)) {
         throw new WalletTransactionNotInEventError();
@@ -1093,14 +1106,9 @@ export class IgnitionWallet extends ethers.Wallet {
         throw err;
       }
 
-      let txResp;
-      try {
-        txResp = await super.sendTransaction(ignitionTransaction);
-      } catch (err) {
-        throw err;
-      }
-      await this.prompter.sentTx(currentEventName, 'raw wallet transaction');
-      await this.moduleStateRepo.storeEventTransactionData(this.address, txResp, undefined, currentEventName);
+      const txResp = await super.sendTransaction(ignitionTransaction);
+      this.prompter.sentTx(currentEventName, 'raw wallet transaction');
+      await this.moduleStateRepo.storeEventTransactionData(this.address, undefined, undefined, currentEventName);
 
       await this.prompter.finishedExecutionOfWalletTransfer(this.address, toAddr);
 
@@ -1125,12 +1133,13 @@ export class IgnitionWallet extends ethers.Wallet {
     if (!checkIfExist(transaction.gasPrice)) {
       const toAddr = await transaction.to;
       const data = await transaction.data;
-
-      transaction.gasLimit = await this.gasCalculator.estimateGas(
-        this.address,
-        toAddr || undefined,
-        data
-      );
+      if (data) {
+        transaction.gasLimit = await this.gasCalculator.estimateGas(
+          this.address,
+          toAddr || undefined,
+          data
+        );
+      }
     }
 
     return await super.populateTransaction(transaction);
@@ -1143,7 +1152,7 @@ export class ContractBindingMetaData {
   public name: string;
   public contractName: string;
   public args: Arguments;
-  public bytecode: string | undefined;
+  public bytecode: string = '';
   public abi: JsonFragment[] | undefined;
   public libraries: SingleContractLinkReference | undefined;
   public txData: TransactionData | undefined;
@@ -1155,9 +1164,13 @@ export class ContractBindingMetaData {
     this.name = name;
     this.contractName = contractName;
     this.args = args;
-    this.bytecode = bytecode;
+    if (bytecode) {
+      this.bytecode = bytecode;
+    }
     this.abi = abi;
-    this.library = library;
+    if (library) {
+      this.library = library;
+    }
     this.libraries = libraries;
     this.txData = txData;
     this.deployMetaData = deployMetaData || {
@@ -1405,14 +1418,16 @@ export class ModuleBuilder {
     }
 
     let moduleBuilder: ModuleBuilder;
-    if (!m.isInitialized()) {
-      moduleBuilder = await m.init(this.moduleSession, wallets, this, options);
-      const oldDepth = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
-      if (oldDepth.length >= 1) {
-        oldDepth.pop();
-      }
-      this.moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
+    if (m.isInitialized()) {
+      throw new ModuleIsAlreadyInitialized();
     }
+
+    moduleBuilder = await m.init(this.moduleSession, wallets, this, options);
+    const oldDepth = this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+    if (oldDepth.length >= 1) {
+      oldDepth.pop();
+    }
+    this.moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
 
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
@@ -1481,7 +1496,7 @@ export class ModuleBuilder {
     this.gasPriceProvider = provider;
   }
 
-  getCustomGasPriceProvider(): IGasPriceCalculator {
+  getCustomGasPriceProvider(): IGasPriceCalculator | undefined {
     return this.gasPriceProvider;
   }
 
@@ -1489,7 +1504,7 @@ export class ModuleBuilder {
     this.nonceManager = nonceManager;
   }
 
-  getCustomNonceManager(): INonceManager {
+  getCustomNonceManager(): INonceManager | undefined {
     return this.nonceManager;
   }
 
@@ -1497,7 +1512,7 @@ export class ModuleBuilder {
     this.transactionSigner = txSigner;
   }
 
-  getCustomTransactionSigner(): ITransactionSigner {
+  getCustomTransactionSigner(): ITransactionSigner | undefined {
     return this.transactionSigner;
   }
 
@@ -1590,7 +1605,7 @@ export class Module {
   private events: Events;
   private moduleEvents: ModuleEvents;
   private actions: { [name: string]: Action };
-  private moduleConfig: ModuleConfig | undefined;
+  private readonly moduleConfig: ModuleConfig | undefined;
   private templates: { [name: string]: Template };
 
   private registry: IModuleRegistryResolver | undefined;
@@ -1611,8 +1626,18 @@ export class Module {
     this.isUsage = usageModule;
 
     this.opts = {
-      params: {}
+      params: moduleConfig?.defaultOptions?.params || {}
     };
+    this.bindings = {};
+    this.events = {};
+    this.moduleEvents = {
+      onFail: {},
+      onCompletion: {},
+      onStart: {},
+      onSuccess: {},
+    };
+    this.actions = {};
+    this.templates = {};
   }
 
   isInitialized(): boolean {
@@ -1620,11 +1645,13 @@ export class Module {
   }
 
   async init(moduleSession: Namespace, wallets?: ethers.Wallet[], m?: ModuleBuilder, opts?: ModuleOptions): Promise<ModuleBuilder> {
-    if (checkIfExist(opts)) {
+    if (opts && checkIfExist(opts)) {
       this.opts = opts;
     }
     let moduleBuilder = m ? m : new ModuleBuilder(moduleSession, opts);
-    moduleBuilder.setParam(opts);
+    if (opts) {
+      moduleBuilder.setParam(opts);
+    }
 
     // this is needed in order for ContractBindings to be aware of their originating module for later context changes
     if (!!m) {
@@ -1712,15 +1739,15 @@ export class Module {
     return this.templates;
   }
 
-  getCustomGasPriceProvider(): IGasPriceCalculator {
+  getCustomGasPriceProvider(): IGasPriceCalculator | undefined {
     return this.gasPriceProvider;
   }
 
-  getCustomNonceManager(): INonceManager {
+  getCustomNonceManager(): INonceManager | undefined {
     return this.nonceManager;
   }
 
-  getCustomTransactionSigner(): ITransactionSigner {
+  getCustomTransactionSigner(): ITransactionSigner | undefined {
     return this.transactionSigner;
   }
 }

@@ -4,7 +4,7 @@ import { assert } from 'chai';
 import { CONFIG_SCRIPT_NAME, IgnitionTests, STATE_DIR_NAME, STATE_NAME } from '../../src';
 import * as path from 'path';
 import { ContractBindingMetaData } from '../../src';
-import { DEPLOYMENT_FOLDER } from '../../src/packages/tutorial/tutorial_service';
+import { DEPLOYMENT_FOLDER } from '../../src/services/tutorial/tutorial_service';
 
 const networkId = '31337'; // hardhat localhost chainId
 const networkName = 'local'; // hardhat localhost chainId
@@ -42,7 +42,7 @@ describe('ignition deploy', () => {
 
       const moduleStateFile = await ignition.getStateFile(moduleName);
       const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
-      assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
+      assert.equal(!!contractBinding?.deployMetaData?.contractAddress, true);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
     });
 
@@ -57,10 +57,10 @@ describe('ignition deploy', () => {
       const firstContractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
       const secondContractBinding = moduleStateFile['SecondExample'] as unknown as ContractBindingMetaData;
 
-      assert.equal(firstContractBinding.deployMetaData.contractAddress.length > 0, true);
+      assert.equal(!!firstContractBinding?.deployMetaData?.contractAddress, true);
       assert.equal(firstContractBinding.deployMetaData.logicallyDeployed, true);
 
-      assert.equal(secondContractBinding.deployMetaData.contractAddress.length > 0, true);
+      assert.equal(!!secondContractBinding?.deployMetaData?.contractAddress, true);
       assert.equal(secondContractBinding.deployMetaData.logicallyDeployed, true);
     });
 
@@ -143,7 +143,7 @@ describe('ignition deploy', () => {
 
       const moduleStateFile = await ignition.getStateFile(moduleName);
       const contractBinding = moduleStateFile['Example'] as unknown as ContractBindingMetaData;
-      assert.equal(contractBinding.deployMetaData.contractAddress.length > 0, true);
+      assert.equal(!!contractBinding?.deployMetaData?.contractAddress, true);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
     });
   });

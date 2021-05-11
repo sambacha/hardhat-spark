@@ -4,7 +4,7 @@ import { EthGasStationProvider, GasPriceType } from './deployment/custom_provide
 // @ts-ignore
 import { TransactionManager } from './deployment/custom_providers/transaction_manager';
 import { ethers, providers } from 'ethers';
-import { GasPriceCalculator } from '@tenderly/hardhat-ignition/src/packages/ethereum/gas/calculator';
+import { GasPriceCalculator } from '@tenderly/hardhat-ignition/src/services/ethereum/gas/calculator';
 import * as path from 'path';
 // @ts-ignore
 import { ConstantGasPrice } from './deployment/custom_providers/constant_gas_price';

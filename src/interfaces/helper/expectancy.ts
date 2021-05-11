@@ -1,6 +1,6 @@
 import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
-import { checkIfExist } from '../../packages/utils/util';
-import { UnexpectedValueError, ValueMismatch } from '../../packages/types/errors';
+import { checkIfExist } from '../../services/utils/util';
+import { UnexpectedValueError, ValueMismatch } from '../../services/types/errors';
 import { ethers } from 'ethers';
 import { ContractBinding } from '../hardhat_ignition';
 

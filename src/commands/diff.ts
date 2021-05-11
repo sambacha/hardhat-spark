@@ -2,25 +2,26 @@ import { Command, flags } from '@oclif/command';
 import * as path from 'path';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { ModuleResolver } from '../packages/modules/module_resolver';
+import { ModuleResolver } from '../services/modules/module_resolver';
 import { Wallet } from 'ethers';
-import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
-import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
-import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { TransactionManager } from '../packages/ethereum/transactions/manager';
-import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { EthTxGenerator } from '../services/ethereum/transactions/generator';
+import { GasPriceCalculator } from '../services/ethereum/gas/calculator';
+import { ModuleStateRepo } from '../services/modules/states/state_repo';
+import { TransactionManager } from '../services/ethereum/transactions/manager';
+import { EventTxExecutor } from '../services/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
-import { ILogging } from '../packages/utils/logging';
-import { EthClient } from '../packages/ethereum/client';
-import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
+import { ILogging } from '../services/utils/logging';
+import { EthClient } from '../services/ethereum/client';
+import { AnalyticsService } from '../services/utils/analytics/analytics_service';
 import { defaultInputParams, errorHandling } from '../index';
-import { CommandParsingFailed } from '../packages/types/errors';
+import { CommandParsingFailed } from '../services/types/errors';
+import { IAnalyticsService } from '../services/utils/analytics';
 
 export default class Diff extends Command {
   static description = 'Difference between deployed and current deployment.';
   private prompter: ILogging | undefined;
-  private analyticsService: AnalyticsService;
+  private analyticsService: IAnalyticsService | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -82,8 +83,10 @@ export default class Diff extends Command {
       states,
       config,
       configService,
-    } = await defaultInputParams.bind(this)(args.module_file_path, flags.network, flags.state, undefined, undefined, flags.configScriptPath);
+      analyticsService,
+    } = await defaultInputParams(args.module_file_path, flags.network, flags.state, undefined, undefined, flags.configScriptPath);
 
+    this.analyticsService = analyticsService;
     const currentPath = process.cwd();
     const resolvedPath = path.resolve(currentPath, filePath);
 
@@ -100,7 +103,7 @@ export default class Diff extends Command {
     const ethClient = new EthClient(rpcProvider);
     const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 
-    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService, this.analyticsService);
+    await command.diff(resolvedPath, config, states, moduleResolver, moduleStateRepo, configService, analyticsService);
   }
 
   async catch(error: Error) {

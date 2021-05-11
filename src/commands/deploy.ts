@@ -1,32 +1,32 @@
 import { Command, flags } from '@oclif/command';
 import * as path from 'path';
-import { ModuleStateRepo } from '../packages/modules/states/state_repo';
-import { ModuleResolver } from '../packages/modules/module_resolver';
-import { checkIfExist, checkMutex, errorHandling } from '../packages/utils/util';
-import { EthTxGenerator } from '../packages/ethereum/transactions/generator';
-import { TxExecutor } from '../packages/ethereum/transactions/executor';
-import { GasPriceCalculator } from '../packages/ethereum/gas/calculator';
+import { ModuleStateRepo } from '../services/modules/states/state_repo';
+import { ModuleResolver } from '../services/modules/module_resolver';
+import { checkMutex, errorHandling } from '../services/utils/util';
+import { EthTxGenerator } from '../services/ethereum/transactions/generator';
+import { TxExecutor } from '../services/ethereum/transactions/executor';
+import { GasPriceCalculator } from '../services/ethereum/gas/calculator';
 import { Wallet } from 'ethers';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import { defaultInputParams } from '../index';
-import { EventHandler } from '../packages/modules/events/handler';
-import { TransactionManager } from '../packages/ethereum/transactions/manager';
-import { EventTxExecutor } from '../packages/ethereum/transactions/event_executor';
+import { EventHandler } from '../services/modules/events/handler';
+import { TransactionManager } from '../services/ethereum/transactions/manager';
+import { EventTxExecutor } from '../services/ethereum/transactions/event_executor';
 import * as cls from 'cls-hooked';
-import { ILogging, Logging } from '../packages/utils/logging';
-import { WalletWrapper } from '../packages/ethereum/wallet/wrapper';
-import { EthClient } from '../packages/ethereum/client';
-import { ModuleDeploymentSummaryService } from '../packages/modules/module_deployment_summary';
-import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
-import { CommandParsingFailed } from '../packages/types/errors';
+import { ILogging, Logging } from '../services/utils/logging';
+import { WalletWrapper } from '../services/ethereum/wallet/wrapper';
+import { EthClient } from '../services/ethereum/client';
+import { ModuleDeploymentSummaryService } from '../services/modules/module_deployment_summary';
+import { CommandParsingFailed } from '../services/types/errors';
+import { IAnalyticsService } from '../services/utils/analytics';
 
 export default class Deploy extends Command {
   static description = 'Deploy new module, difference between current module and already deployed one.';
 
   private mutex = false;
   private prompter: ILogging | undefined;
-  private analyticsService: AnalyticsService;
+  private analyticsService: IAnalyticsService | undefined;
 
   static flags = {
     network: flags.string(
@@ -119,12 +119,14 @@ export default class Deploy extends Command {
       config,
       configService,
       parallelizeDeployment,
-    } = await defaultInputParams.bind(this)(args.module_file_path, flags.network, flags.state, flags.rpcProvider, flags.logging, flags.configScriptPath);
+      analyticsService,
+    } = await defaultInputParams(args.module_file_path, flags.network, flags.state, flags.rpcProvider, flags.logging, flags.configScriptPath);
 
+    this.analyticsService = analyticsService;
     this.prompter = prompter;
     const gasProvider = new GasPriceCalculator(rpcProvider);
     let gasCalculator = config.gasPriceProvider;
-    if (!checkIfExist(gasCalculator)) {
+    if (!gasCalculator) {
       gasCalculator = gasProvider;
     }
     const transactionManager = new TransactionManager(rpcProvider, new Wallet(configService.getFirstPrivateKey(), rpcProvider), networkId, gasProvider, gasCalculator, this.prompter, gasPriceBackoff);
@@ -148,7 +150,7 @@ export default class Deploy extends Command {
 
     const deploymentFilePath = path.resolve(currentPath, filePath);
 
-    await command.deploy(deploymentFilePath, config, states, moduleStateRepo, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService, this.analyticsService);
+    await command.deploy(deploymentFilePath, config, states, moduleStateRepo, moduleResolver, txGenerator, this.prompter, txExecutor, configService, walletWrapper, moduleDeploymentSummaryService, analyticsService);
   }
 
   async catch(error: Error) {

@@ -2,21 +2,21 @@ import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import chalk from 'chalk';
-import { StreamlinedPrompter } from '../packages/utils/logging/prompter';
-import { Migration } from '../packages/types/migration';
-import { StateMigrationService } from '../packages/modules/states/state_migration_service';
-import { FileSystemModuleState } from '../packages/modules/states/module/file_system';
-import { ILogging } from '../packages/utils/logging';
-import { ModuleMigrationService } from '../packages/modules/module_migration';
-import { AnalyticsService } from '../packages/utils/analytics/analytics_service';
-import { GlobalConfigService } from '../packages/config/global_config_service';
+import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { Migration } from '../services/types/migration';
+import { StateMigrationService } from '../services/modules/states/state_migration_service';
+import { FileSystemModuleState } from '../services/modules/states/module/file_system';
+import { ILogging } from '../services/utils/logging';
+import { ModuleMigrationService } from '../services/modules/module_migration';
+import { AnalyticsService } from '../services/utils/analytics/analytics_service';
+import { GlobalConfigService } from '../services/config/global_config_service';
 import { errorHandling } from '../index';
-import { CommandParsingFailed } from '../packages/types/errors';
+import { CommandParsingFailed } from '../services/types/errors';
 
 export default class Migrate extends Command {
   static description = 'Migrate deployment meta data from other deployers to hardhat-ignition state file.';
-  private prompter: ILogging;
-  private analyticsService: AnalyticsService;
+  private prompter: ILogging | undefined;
+  private analyticsService: AnalyticsService | undefined;
 
   static flags = {
     help: flags.help({char: 'h'}),
@@ -28,7 +28,8 @@ export default class Migrate extends Command {
     }),
     moduleName: flags.string({
       name: 'moduleName',
-      description: 'Module name for which you would like to migrate state file to.'
+      description: 'Module name for which you would like to migrate state file to.',
+      required: true,
     }),
     debug: flags.boolean(
       {

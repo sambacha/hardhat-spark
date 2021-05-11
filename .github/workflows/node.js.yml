@@ -46,11 +46,12 @@ jobs:
 
       - name: Install all subprojects packages
         run: |
+          sudo apt-get install build-essential
           yarn run install:examples
           yarn run install:tests
 
       - name: Run Typescript Checks
-        run: yarn lint
+        run: yarn compile
 
 #      - name: Run Tests and hardhat node
 #        run: |

@@ -1,4 +1,4 @@
-import { Logging } from '../packages/utils/logging';
+import { Logging } from '../services/utils/logging';
 
 export type ConfigFlags = {
   networkId: string,

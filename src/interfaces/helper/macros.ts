@@ -1,7 +1,7 @@
 import { ContractBinding, ContractEvent, ModuleBuilder } from '../hardhat_ignition';
 import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
-import { checkIfExist } from '../../packages/utils/util';
+import { checkIfExist } from '../../services/utils/util';
 
 /**
  * sendAfterDeploy is fastest way to set new value and validate if the same value is correctly set. It

@@ -1,66 +1,68 @@
 import { cli } from 'cli-ux';
 import { Module, ModuleOptions } from './interfaces/hardhat_ignition';
-import { checkIfExist } from './packages/utils/util';
-import { ModuleStateRepo } from './packages/modules/states/state_repo';
-import { ModuleResolver } from './packages/modules/module_resolver';
-import { EthTxGenerator } from './packages/ethereum/transactions/generator';
-import { TxExecutor } from './packages/ethereum/transactions/executor';
-import { StateResolver } from './packages/modules/states/state_resolver';
-import { ModuleState } from './packages/modules/states/module';
-import { ModuleTypings } from './packages/modules/typings';
-import { IConfigService } from './packages/config';
-import { ILogging, Logging } from './packages/utils/logging';
-import { WalletWrapper } from './packages/ethereum/wallet/wrapper';
+import { checkIfExist } from './services/utils/util';
+import { ModuleStateRepo } from './services/modules/states/state_repo';
+import { ModuleResolver } from './services/modules/module_resolver';
+import { EthTxGenerator } from './services/ethereum/transactions/generator';
+import { TxExecutor } from './services/ethereum/transactions/executor';
+import { StateResolver } from './services/modules/states/state_resolver';
+import { ModuleState } from './services/modules/states/module';
+import { ModuleTypings } from './services/modules/typings';
+import { IConfigService } from './services/config';
+import { ILogging, Logging } from './services/utils/logging';
+import { WalletWrapper } from './services/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
-import { GasPriceBackoff, HardhatIgnitionConfig } from './packages/types/config';
-import { loadScript } from './packages/utils/typescript_checker';
-import { ModuleUsage } from './packages/modules/module_usage';
+import { GasPriceBackoff, HardhatIgnitionConfig } from './services/types/config';
+import { loadScript } from './services/utils/typescript_checker';
+import { ModuleUsage } from './services/modules/module_usage';
 import {
   MissingContractAddressInStateFile,
   NoDeploymentModuleError,
-} from './packages/types/errors';
+} from './services/types/errors';
 import * as cls from 'cls-hooked';
 import * as path from 'path';
 import chalk from 'chalk';
-import { INITIAL_MSG, MODULE_NAME_DESC } from './packages/tutorial/tutorial_desc';
-import { TutorialService } from './packages/tutorial/tutorial_service';
-import { StateMigrationService } from './packages/modules/states/state_migration_service';
-import { ModuleMigrationService } from './packages/modules/module_migration';
-import { ModuleDeploymentSummaryService } from './packages/modules/module_deployment_summary';
-import { SimpleOverviewPrompter } from './packages/utils/logging/simple_logging';
+import { INITIAL_MSG, MODULE_NAME_DESC } from './services/tutorial/tutorial_desc';
+import { TutorialService } from './services/tutorial/tutorial_service';
+import { StateMigrationService } from './services/modules/states/state_migration_service';
+import { ModuleMigrationService } from './services/modules/module_migration';
+import { ModuleDeploymentSummaryService } from './services/modules/module_deployment_summary';
+import { SimpleOverviewPrompter } from './services/utils/logging/simple_logging';
 import {
   DEFAULT_DEPLOYMENT_FOLDER,
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
   DEFAULT_RPC_PROVIDER
-} from './packages/utils/constants';
-import ConfigService from './packages/config/service';
+} from './services/utils/constants';
+import ConfigService from './services/config/service';
 import fs from 'fs';
-import { SystemCrawlingService } from './packages/tutorial/system_crawler';
+import { SystemCrawlingService } from './services/tutorial/system_crawler';
 import * as inquirer from 'inquirer';
-import { JsonPrompter } from './packages/utils/logging/json_logging';
-import { OverviewPrompter } from './packages/utils/logging/react-terminal-ui';
-import { StreamlinedPrompter } from './packages/utils/logging/prompter';
-import { GlobalConfigService } from './packages/config/global_config_service';
-import { AnalyticsService } from './packages/utils/analytics/analytics_service';
-import { IAnalyticsService } from './packages/utils/analytics';
+import { JsonPrompter } from './services/utils/logging/json_logging';
+import { OverviewPrompter } from './services/utils/logging/react-terminal-ui';
+import { StreamlinedPrompter } from './services/utils/logging/prompter';
+import { GlobalConfigService } from './services/config/global_config_service';
+import { AnalyticsService } from './services/utils/analytics/analytics_service';
+import { IAnalyticsService } from './services/utils/analytics';
+import { ModulePackagingService } from './services/modules/module_packaging';
+import { HardhatIgnition } from './usage_interfaces/hardhat_plugin';
 
 export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
 export * from './interfaces/helper/macros';
 export * from './usage_interfaces/tests';
 export * from './usage_interfaces/index';
-export * from './packages/config';
-export * from './packages/types';
-export * from './packages/ethereum/compiler';
-export * from './packages/ethereum/gas';
-export * from './packages/ethereum/transactions';
-export * from './packages/ethereum/wallet/wrapper';
-export * from './packages/modules/states/module';
-export * from './packages/modules/states/registry';
-export * from './packages/modules/states/registry/remote_bucket_storage';
-export * from './packages/modules/typings';
-export * from './packages/utils/util';
+export * from './services/config';
+export * from './services/types';
+export * from './services/ethereum/compiler';
+export * from './services/ethereum/gas';
+export * from './services/ethereum/transactions';
+export * from './services/ethereum/wallet/wrapper';
+export * from './services/modules/states/module';
+export * from './services/modules/states/registry';
+export * from './services/modules/states/registry/remote_bucket_storage';
+export * from './services/modules/typings';
+export * from './services/utils/util';
 
 export async function deploy(
   deploymentFilePath: string,
@@ -69,7 +71,7 @@ export async function deploy(
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
-  prompter: ILogging,
+  prompter: ILogging, // @todo
   executor: TxExecutor,
   configService: IConfigService,
   walletWrapper: WalletWrapper,
@@ -88,8 +90,8 @@ export async function deploy(
   for (const [moduleName, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
 
-    // if module is initialized it means it is sub module inside bigger one. Only modules that are not initialized
-    // can be executed
+    // If a module is initialized it means it is sub module inside the bigger one. Only modules that are not initialized
+    // can be executed.
     if (module.isInitialized()) {
       continue;
     }
@@ -98,7 +100,7 @@ export async function deploy(
     const moduleSession = cls.createNamespace('module');
     await moduleSession.runAndReturn(async () => {
       await module.init(moduleSession, ignitionWallets as ethers.Wallet[], undefined, {
-        params: config?.params,
+        params: config?.params || {},
       });
     });
     moduleStateRepo.initStateRepo(moduleName);
@@ -117,15 +119,24 @@ export async function deploy(
     prompter.finishModuleResolving(moduleName);
 
     // setting up custom functionality
-    if (module.getCustomGasPriceProvider()) {
+    if (
+      module.getCustomGasPriceProvider() &&
+      config.gasPriceProvider
+    ) {
       txGenerator.changeGasPriceCalculator(config.gasPriceProvider);
     }
 
-    if (module.getCustomNonceManager()) {
+    if (
+      module.getCustomNonceManager() &&
+      config.nonceManager
+    ) {
       txGenerator.changeNonceManager(config.nonceManager);
     }
 
-    if (module.getCustomTransactionSigner()) {
+    if (
+      module.getCustomTransactionSigner() &&
+      config.transactionSigner
+    ) {
       txGenerator.changeTransactionSigner(config.transactionSigner);
     }
 
@@ -169,7 +180,7 @@ export async function diff(
     const moduleSession = cls.createNamespace('module');
     await moduleSession.runAndReturn(async () => {
       await module.init(moduleSession, wallets, undefined, {
-        params: config?.params,
+        params: config?.params || {},
       });
     });
     moduleStateRepo.initStateRepo(moduleName);
@@ -230,7 +241,6 @@ export async function usage(
   configService: IConfigService,
   walletWrapper: WalletWrapper,
   moduleStateRepo: ModuleStateRepo,
-  moduleResolver: ModuleResolver,
   moduleUsage: ModuleUsage,
   prompter: ILogging,
   analyticsService: IAnalyticsService,
@@ -252,7 +262,7 @@ export async function usage(
     const moduleSession = cls.createNamespace('module');
     await moduleSession.runAndReturn(async () => {
       await module.init(moduleSession, ignitionWallets as ethers.Wallet[], undefined, {
-        params: config?.params,
+        params: config?.params || {},
       });
     });
     moduleStateRepo.initStateRepo(moduleName);
@@ -329,40 +339,52 @@ export async function migrate(
   cli.info('Migration successfully completed!');
 }
 
+export async function createPackage(modulePackagingService: ModulePackagingService) {
+  // initialize empty dist folder with package.json
+  await modulePackagingService.initializePackageDistributionFolder();
+
+  // fetch all contracts from contracts folder and put it in package folder
+  await modulePackagingService.copyAllContracts();
+
+  // same for modules
+  await modulePackagingService.copyAllDeploymentModules();
+}
+
 export async function defaultInputParams(moduleFilePath?: string, network?: string, state?: string, rpcProvider?: string, logging?: string, configScriptPath?: string): Promise<{
   networkName: string,
   networkId: string,
-  gasPriceBackoff: GasPriceBackoff,
+  gasPriceBackoff: GasPriceBackoff | undefined,
   rpcProvider: ethers.providers.JsonRpcProvider,
-  filePath: string,
   states: string[],
   prompter: ILogging,
   config: HardhatIgnitionConfig,
   configService: IConfigService,
   parallelizeDeployment: boolean,
+  analyticsService: IAnalyticsService,
+  filePath: string,
 }> {
   const globalConfigService = new GlobalConfigService();
   await globalConfigService.mustConfirmConsent();
-  this.analyticsService = new AnalyticsService(globalConfigService);
+  const analyticsService = new AnalyticsService(globalConfigService);
 
-  let networkName = network;
-  if (!checkIfExist(networkName)) {
-    networkName = DEFAULT_NETWORK_NAME;
-  }
+  let networkName = network || DEFAULT_NETWORK_NAME;
   const configService = new ConfigService(networkName);
   const config = await configService.initializeIgnitionConfig(process.cwd(), configScriptPath);
 
   let filePath = moduleFilePath;
   let isLocalDeployment = true;
   let parallelizeDeployment = config?.parallelizeDeployment || false;
-  let gasPriceBackoff;
+  let gasPriceBackoff: GasPriceBackoff | undefined;
   if (!checkIfExist(networkName)) {
     networkName = DEFAULT_NETWORK_NAME;
   }
 
-  let networkId;
-  if (checkIfExist(config?.networks) && checkIfExist(config?.networks[networkName])) {
-    networkId = config?.networks[networkName]?.networkId;
+  let networkId: string = DEFAULT_NETWORK_ID;
+  if (
+    config?.networks &&
+    config?.networks[networkName]
+  ) {
+    networkId = config?.networks[networkName]?.networkId as string;
   }
   if (!checkIfExist(networkId)) {
     networkId = DEFAULT_NETWORK_ID;
@@ -372,8 +394,8 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
   let provider = new ethers.providers.JsonRpcProvider();
   process.env.IGNITION_RPC_PROVIDER = DEFAULT_RPC_PROVIDER;
   if (
-    checkIfExist(config.networks) &&
-    checkIfExist(config.networks[networkName])
+    config.networks &&
+    config.networks[networkName]
   ) {
     if (checkIfExist(config.networks[networkName].rpcProvider)) {
       provider = new ethers.providers.JsonRpcProvider(
@@ -386,24 +408,27 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
       process.env.BLOCK_CONFIRMATION_NUMBER = String(config.networks[networkName].blockConfirmation);
     }
 
-    if (checkIfExist(config.networks[networkName].localDeployment)) {
-      isLocalDeployment = config.networks[networkName].localDeployment;
+    if (
+      config.networks[networkName].localDeployment
+    ) {
+      isLocalDeployment = config.networks[networkName].localDeployment || true;
     }
 
     if (
-      !checkIfExist(filePath) &&
-      checkIfExist(config.networks[networkName].deploymentFilePath)
+      !filePath &&
+      config.networks[networkName].deploymentFilePath &&
+      config.networks[networkName].deploymentFilePath != ''
     ) {
-      filePath = config.networks[networkName].deploymentFilePath;
+      filePath = config.networks[networkName].deploymentFilePath as string;
       if (!fs.existsSync(filePath)) {
         filePath = undefined;
       }
     }
 
     if (
-      checkIfExist(config.networks[networkName].gasPriceBackoff)
+      config.networks[networkName].gasPriceBackoff
     ) {
-      gasPriceBackoff = config.networks[networkName].gasPriceBackoff;
+      gasPriceBackoff = config.networks[networkName].gasPriceBackoff as GasPriceBackoff;
     }
 
     if (
@@ -412,7 +437,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
       parallelizeDeployment = true;
     }
   }
-  if (!checkIfExist(filePath)) {
+  if (!filePath) {
     const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
     const deploymentModules = systemCrawlingService.crawlDeploymentModule();
     const deploymentFileName = (await inquirer.prompt([{
@@ -456,7 +481,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
         const con = await cli.prompt('Would you like to be prompted at every single step? (Y/n)', {
           required: false
         });
-        yes = con == 'n';
+        yes = con == 'n'; // @TODO Handle, N. NO
       }
 
       prompter = new StreamlinedPrompter(yes);
@@ -480,5 +505,6 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
     config,
     configService,
     parallelizeDeployment,
+    analyticsService,
   };
 }
