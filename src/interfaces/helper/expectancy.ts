@@ -1,4 +1,4 @@
-import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
+import { ContractFunction } from '@ethersproject/contracts';
 import { checkIfExist } from '../../services/utils/util';
 import { UnexpectedValueError, ValueMismatch } from '../../services/types/errors';
 import { ethers } from 'ethers';
@@ -111,10 +111,8 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
     }
   }
 
-  if (value instanceof ethers.BigNumber) {
-    if (value.eq(expectedValue)) {
-      return true;
-    }
+  if (value.eq(expectedValue)) {
+    return true;
   }
 
   if (expectedValue._isBigNumber) {

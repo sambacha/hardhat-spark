@@ -1,4 +1,4 @@
-import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
+import { ContractFunction } from '@ethersproject/contracts';
 import { checkIfExist } from '../../utils/util';
 import { CliError } from '../../types/errors';
 import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';

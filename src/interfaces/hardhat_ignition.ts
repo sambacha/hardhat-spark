@@ -12,7 +12,7 @@ import { JsonFragment, JsonFragmentType } from '../services/types/artifacts/abi'
 import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
 import { cli } from 'cli-ux';
 import { CallOverrides, ethers } from 'ethers';
-import { ContractFunction } from '@ethersproject/contracts/src.ts/index';
+import { ContractFunction } from '@ethersproject/contracts';
 import { FunctionFragment } from '@ethersproject/abi';
 import { EthTxGenerator } from '../services/ethereum/transactions/generator';
 import { ILogging } from '../services/utils/logging';

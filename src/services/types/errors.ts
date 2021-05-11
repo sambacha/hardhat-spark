@@ -8,7 +8,7 @@ import {
   EventType,
   StatefulEvent
 } from '../../interfaces/hardhat_ignition';
-import { ParamType } from '@ethersproject/abi/src.ts/fragments';
+import { ParamType } from '@ethersproject/abi';
 import { ethers } from 'ethers';
 
 const EVENT_HOOK_DEFINITION_DOCS_LINK = 'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
