@@ -1,7 +1,6 @@
 import { ContractBinding, ContractInput, ModuleBuilder, StatefulEvent } from '../../interfaces/hardhat_ignition';
-import { CliError, handleMappedErrorCodes, UserError } from '../types/errors';
+import { handleMappedErrorCodes } from '../types/errors';
 import { cli } from 'cli-ux';
-import chalk from 'chalk';
 import * as os from 'os';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));

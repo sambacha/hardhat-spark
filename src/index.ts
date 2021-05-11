@@ -27,7 +27,7 @@ import { TutorialService } from './services/tutorial/tutorial_service';
 import { StateMigrationService } from './services/modules/states/state_migration_service';
 import { ModuleMigrationService } from './services/modules/module_migration';
 import { ModuleDeploymentSummaryService } from './services/modules/module_deployment_summary';
-import { SimpleOverviewPrompter } from './services/utils/logging/simple_logging';
+import { SimpleOverviewLogger } from './services/utils/logging/simple_logging';
 import {
   DEFAULT_DEPLOYMENT_FOLDER,
   DEFAULT_NETWORK_ID,
@@ -38,14 +38,13 @@ import ConfigService from './services/config/service';
 import fs from 'fs';
 import { SystemCrawlingService } from './services/tutorial/system_crawler';
 import * as inquirer from 'inquirer';
-import { JsonPrompter } from './services/utils/logging/json_logging';
-import { OverviewPrompter } from './services/utils/logging/react-terminal-ui';
-import { StreamlinedPrompter } from './services/utils/logging/prompter';
+import { JsonLogger } from './services/utils/logging/json_logging';
+import { OverviewLogger } from './services/utils/logging/react-terminal-ui';
+import { StreamlinedLogger } from './services/utils/logging/streamlined_logger';
 import { GlobalConfigService } from './services/config/global_config_service';
 import { AnalyticsService } from './services/utils/analytics/analytics_service';
 import { IAnalyticsService } from './services/utils/analytics';
 import { ModulePackagingService } from './services/modules/module_packaging';
-import { HardhatIgnition } from './usage_interfaces/hardhat_plugin';
 
 export * from './interfaces/hardhat_ignition';
 export * from './interfaces/helper/expectancy';
@@ -71,7 +70,7 @@ export async function deploy(
   moduleStateRepo: ModuleStateRepo,
   moduleResolver: ModuleResolver,
   txGenerator: EthTxGenerator,
-  prompter: ILogging, // @todo
+  logging: ILogging, // @todo
   executor: TxExecutor,
   configService: IConfigService,
   walletWrapper: WalletWrapper,
@@ -113,10 +112,10 @@ export async function deploy(
       stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
     }
 
-    prompter.startModuleResolving(moduleName);
+    logging.startModuleResolving(moduleName);
     // resolving contract and events dependencies and determining execution order
     const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-    prompter.finishModuleResolving(moduleName);
+    logging.finishModuleResolving(moduleName);
 
     // setting up custom functionality
     if (
@@ -141,7 +140,7 @@ export async function deploy(
     }
 
     const initializedTxModuleState = txGenerator.initTx(moduleState);
-    await prompter.promptContinueDeployment();
+    await logging.promptContinueDeployment();
 
     try {
       await executor.execute(moduleName, initializedTxModuleState, config?.registry, config?.resolver, module.getModuleConfig());
@@ -152,7 +151,7 @@ export async function deploy(
     }
 
     const summary = await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
-    prompter.finishModuleDeploy(moduleName, summary);
+    logging.finishModuleDeploy(moduleName, summary);
     await analyticsService.sendCommandHit('deploy');
   }
 }
@@ -356,7 +355,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
   gasPriceBackoff: GasPriceBackoff | undefined,
   rpcProvider: ethers.providers.JsonRpcProvider,
   states: string[],
-  prompter: ILogging,
+  logger: ILogging,
   config: HardhatIgnitionConfig,
   configService: IConfigService,
   parallelizeDeployment: boolean,
@@ -464,13 +463,13 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
   }
 
   // choosing right prompter from user desires
-  let prompter;
+  let logger;
   switch (logging) {
     case Logging.simple:
-      prompter = new SimpleOverviewPrompter();
+      logger = new SimpleOverviewLogger();
       break;
     case Logging.json:
-      prompter = new JsonPrompter();
+      logger = new JsonLogger();
       break;
     case Logging.streamlined: {
       let yes = true;
@@ -484,12 +483,12 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
         yes = con == 'n'; // @TODO Handle, N. NO
       }
 
-      prompter = new StreamlinedPrompter(yes);
+      logger = new StreamlinedLogger(yes);
       break;
     }
     case Logging.overview:
     default: {
-      prompter = new OverviewPrompter();
+      logger = new OverviewLogger();
       break;
     }
   }
@@ -501,7 +500,7 @@ export async function defaultInputParams(moduleFilePath?: string, network?: stri
     filePath,
     states,
     gasPriceBackoff,
-    prompter,
+    logger,
     config,
     configService,
     parallelizeDeployment,

@@ -2,7 +2,7 @@ import { Command, flags } from '@oclif/command';
 import ConfigService from '../services/config/service';
 import { cli } from 'cli-ux';
 import * as command from '../index';
-import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { StreamlinedLogger } from '../services/utils/logging/streamlined_logger';
 import { ILogging } from '../services/utils/logging';
 import path from 'path';
 import { ModuleStateRepo } from '../services/modules/states/state_repo';
@@ -94,7 +94,7 @@ export default class Usage extends Command {
 
     const currentPath = process.cwd();
 
-    this.prompter = new StreamlinedPrompter();
+    this.prompter = new StreamlinedLogger();
 
     const moduleStateRepo = new ModuleStateRepo(networkId, currentPath, this.mutex, flags.testEnv);
     const eventSession = cls.createNamespace('event');

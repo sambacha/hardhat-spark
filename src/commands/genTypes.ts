@@ -9,9 +9,8 @@ import path from 'path';
 import { ModuleTypings } from '../services/modules/typings';
 import * as command from '../index';
 import ConfigService from '../services/config/service';
-import chalk from 'chalk';
 import { ILogging } from '../services/utils/logging';
-import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { StreamlinedLogger } from '../services/utils/logging/streamlined_logger';
 import { checkIfExist } from '../services/utils/util';
 import fs from 'fs';
 import * as inquirer from 'inquirer';
@@ -21,7 +20,6 @@ import { GlobalConfigService } from '../services/config/global_config_service';
 import { AnalyticsService } from '../services/utils/analytics/analytics_service';
 import { errorHandling } from '../index';
 import { IAnalyticsService } from '../services/utils/analytics';
-import * as net from 'net';
 
 export default class GenTypes extends Command {
   static description = 'It\'ll generate .d.ts file for written deployment modules for better type hinting.';
@@ -69,7 +67,7 @@ export default class GenTypes extends Command {
 
     const currentPath = process.cwd();
     let filePath = args.module_file_path as string;
-    this.prompter = new StreamlinedPrompter();
+    this.prompter = new StreamlinedLogger();
 
     const typings = new ModuleTypings();
 

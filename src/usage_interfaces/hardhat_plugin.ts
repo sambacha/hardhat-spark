@@ -10,10 +10,7 @@ import { ModuleResolver } from '../services/modules/module_resolver';
 import { EventHandler } from '../services/modules/events/handler';
 import { TxExecutor } from '../services/ethereum/transactions/executor';
 import { WalletWrapper } from '../services/ethereum/wallet/wrapper';
-import { ILogging, Logging } from '../services/utils/logging';
-import { IConfigService, HardhatIgnitionConfig } from '../services/config';
-import { IGasProvider } from '../services/ethereum/gas';
-import { Namespace } from 'cls-hooked';
+import { Logging } from '../services/utils/logging';
 import '../services/hardhat_plugin/type_extentions';
 import * as command from '../index';
 import { Migration } from '../services/types/migration';
@@ -28,7 +25,6 @@ import { FileSystemModuleState } from '../services/modules/states/module/file_sy
 import { ModuleMigrationService } from '../services/modules/module_migration';
 import { EthClient } from '../services/ethereum/client';
 import { ModuleDeploymentSummaryService } from '../services/modules/module_deployment_summary';
-import { AnalyticsService } from '../services/utils/analytics/analytics_service';
 import * as path from 'path';
 
 export type Args = DeployArgs | DiffArgs | GenTypesArgs | MigrationArgs | TutorialArgs | UsageArgs;
@@ -209,7 +205,7 @@ export class HardhatIgnition implements IIgnition {
       rpcProvider,
       filePath,
       states,
-      prompter,
+      logger,
       config,
       configService,
       analyticsService,
@@ -226,16 +222,16 @@ export class HardhatIgnition implements IIgnition {
 
     process.env.IGNITION_NETWORK_ID = String(networkId);
 
-    const transactionManager = new TransactionManager(rpcProvider, new Wallet(configService.getFirstPrivateKey(), rpcProvider), networkId, gasProvider, gasProvider, prompter, gasPriceBackoff);
-    const txGenerator = new EthTxGenerator(configService, gasProvider, gasProvider, networkId, rpcProvider, transactionManager, transactionManager, prompter, gasPriceBackoff);
+    const transactionManager = new TransactionManager(rpcProvider, new Wallet(configService.getFirstPrivateKey(), rpcProvider), networkId, gasProvider, gasProvider, logger, gasPriceBackoff);
+    const txGenerator = new EthTxGenerator(configService, gasProvider, gasProvider, networkId, rpcProvider, transactionManager, transactionManager, logger, gasPriceBackoff);
 
-    const eventHandler = new EventHandler(moduleStateRepo, prompter);
-    const txExecutor = new TxExecutor(prompter, moduleStateRepo, txGenerator, networkId, rpcProvider, eventHandler, eventSession, eventTxExecutor);
+    const eventHandler = new EventHandler(moduleStateRepo, logger);
+    const txExecutor = new TxExecutor(logger, moduleStateRepo, txGenerator, networkId, rpcProvider, eventHandler, eventSession, eventTxExecutor);
 
     const ethClient = new EthClient(rpcProvider);
-    const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), prompter, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
+    const moduleResolver = new ModuleResolver(rpcProvider, configService.getFirstPrivateKey(), logger, txGenerator, moduleStateRepo, eventTxExecutor, eventSession, ethClient);
 
-    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasProvider, gasProvider, moduleStateRepo, prompter, eventTxExecutor);
+    const walletWrapper = new WalletWrapper(eventSession, transactionManager, gasProvider, gasProvider, moduleStateRepo, logger, eventTxExecutor);
     const moduleTyping = new ModuleTypings();
 
     const deploymentFileRepo = new DeploymentFileRepo();
@@ -261,7 +257,7 @@ export class HardhatIgnition implements IIgnition {
       rpcProvider,
       filePath,
       states,
-      prompter,
+      logger,
       config,
       configService,
 

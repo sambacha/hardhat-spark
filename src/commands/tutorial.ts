@@ -4,7 +4,7 @@ import * as command from '../index';
 import { TutorialService } from '../services/tutorial/tutorial_service';
 import { DeploymentFileGenerator } from '../services/tutorial/deployment_file_gen';
 import { DeploymentFileRepo } from '../services/tutorial/deployment_file_repo';
-import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { StreamlinedLogger } from '../services/utils/logging/streamlined_logger';
 import { SystemCrawlingService } from '../services/tutorial/system_crawler';
 import { GlobalConfigService } from '../services/config/global_config_service';
 import { AnalyticsService } from '../services/utils/analytics/analytics_service';
@@ -15,7 +15,7 @@ const ARTIFACTS_FOLDER = 'artifacts';
 
 export default class Tutorial extends Command {
   static description = 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.';
-  private prompter: StreamlinedPrompter | undefined;
+  private prompter: StreamlinedLogger | undefined;
   private analyticsService: AnalyticsService | undefined;
 
   static flags = {
@@ -46,7 +46,7 @@ export default class Tutorial extends Command {
     await globalConfigService.mustConfirmConsent();
     this.analyticsService = new AnalyticsService(globalConfigService);
 
-    this.prompter = new StreamlinedPrompter();
+    this.prompter = new StreamlinedLogger();
     const deploymentFileRepo = new DeploymentFileRepo();
     const deploymentFileGenerator = new DeploymentFileGenerator(deploymentFileRepo);
     const systemCrawlingService = new SystemCrawlingService(process.cwd(), ARTIFACTS_FOLDER);

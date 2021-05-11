@@ -5,7 +5,7 @@ import { generateErrorMessage, ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { EventType } from '../../../interfaces/hardhat_ignition';
 
-export class StreamlinedPrompter implements ILogging {
+export class StreamlinedLogger implements ILogging {
   private whitespaces: string;
   private readonly skipConfirmation: boolean;
 

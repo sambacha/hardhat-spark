@@ -4,7 +4,7 @@ import { cli } from 'cli-ux';
 import * as command from '../index';
 import { ModuleResolver } from '../services/modules/module_resolver';
 import { Wallet } from 'ethers';
-import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { StreamlinedLogger } from '../services/utils/logging/streamlined_logger';
 import { EthTxGenerator } from '../services/ethereum/transactions/generator';
 import { GasPriceCalculator } from '../services/ethereum/gas/calculator';
 import { ModuleStateRepo } from '../services/modules/states/state_repo';
@@ -13,7 +13,6 @@ import { EventTxExecutor } from '../services/ethereum/transactions/event_executo
 import * as cls from 'cls-hooked';
 import { ILogging } from '../services/utils/logging';
 import { EthClient } from '../services/ethereum/client';
-import { AnalyticsService } from '../services/utils/analytics/analytics_service';
 import { defaultInputParams, errorHandling } from '../index';
 import { CommandParsingFailed } from '../services/types/errors';
 import { IAnalyticsService } from '../services/utils/analytics';
@@ -90,7 +89,7 @@ export default class Diff extends Command {
     const currentPath = process.cwd();
     const resolvedPath = path.resolve(currentPath, filePath);
 
-    const prompter = new StreamlinedPrompter(flags.noPrompt);
+    const prompter = new StreamlinedLogger(flags.noPrompt);
     this.prompter = prompter;
 
     const gasCalculator = new GasPriceCalculator(rpcProvider);

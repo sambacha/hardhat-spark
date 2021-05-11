@@ -2,7 +2,7 @@ import { Command, flags } from '@oclif/command';
 import { cli } from 'cli-ux';
 import * as command from '../index';
 import chalk from 'chalk';
-import { StreamlinedPrompter } from '../services/utils/logging/prompter';
+import { StreamlinedLogger } from '../services/utils/logging/streamlined_logger';
 import { Migration } from '../services/types/migration';
 import { StateMigrationService } from '../services/modules/states/state_migration_service';
 import { FileSystemModuleState } from '../services/modules/states/module/file_system';
@@ -66,7 +66,7 @@ export default class Migrate extends Command {
     }
 
     const currentPath = process.cwd();
-    this.prompter = new StreamlinedPrompter();
+    this.prompter = new StreamlinedLogger();
     const moduleState = new FileSystemModuleState(currentPath);
     const stateMigrationService = new StateMigrationService(moduleState, flags.from);
     const moduleMigrationService = new ModuleMigrationService(currentPath);

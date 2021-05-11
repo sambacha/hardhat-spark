@@ -115,7 +115,7 @@ export default class Deploy extends Command {
       rpcProvider,
       filePath,
       states,
-      prompter,
+      logger,
       config,
       configService,
       parallelizeDeployment,
@@ -123,7 +123,7 @@ export default class Deploy extends Command {
     } = await defaultInputParams(args.module_file_path, flags.network, flags.state, flags.rpcProvider, flags.logging, flags.configScriptPath);
 
     this.analyticsService = analyticsService;
-    this.prompter = prompter;
+    this.prompter = logger;
     const gasProvider = new GasPriceCalculator(rpcProvider);
     let gasCalculator = config.gasPriceProvider;
     if (!gasCalculator) {
