@@ -28,15 +28,15 @@ describe('ignition diff - integration', () => {
     });
 
   beforeEach(() => {
+    process.chdir(rootDir);
+
     output = '';
-    const log = ux.info;
     ux.info = function (format: string, ...args: string[]) {
       output += format;
       if (args.length > 0) {
         output += ' ' + args.join(' ');
       }
       output += '\n';
-      log(format, ...args);
     };
   });
 

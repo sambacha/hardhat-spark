@@ -7,7 +7,7 @@ import { checkIfExist, isSameBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
 import { ethers } from 'ethers';
 import { ILogging } from '../utils/logging';
-import { EthTxGenerator } from '../ethereum/transactions/generator';
+import { EthTxGenerator, EventTxExecutor } from '../ethereum/transactions';
 import {
   CliError, ContractNotCompiledError, ModuleAndModuleStateEventTypeMismatchError,
   ModuleAndModuleStateMismatchElementError,
@@ -18,7 +18,6 @@ import {
 import { ModuleState, ModuleStateFile } from './states/module';
 import { ModuleStateRepo } from './states/state_repo';
 import { SingleContractLinkReference } from '../types/artifacts/libraries';
-import { EventTxExecutor } from '../ethereum/transactions/event_executor';
 import { Namespace } from 'cls-hooked';
 import { EthClient } from '../ethereum/client';
 

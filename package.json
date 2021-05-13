@@ -18,12 +18,11 @@
     "url": "git+https://github.com/nomiclabs/hardhat-ignition.git"
   },
   "scripts": {
-    "compile": "tsc packages/ignition-core packages/ignition-hardhat-plugin packages/ignition-test",
-    "build": "tsc -b packages/ignition-core packages/ignition-hardhat-plugin",
+    "build": "tsc -b packages/ignition-core packages/ignition-hardhat-plugin packages/ignition-test",
+    "build-test": "tsc -b packages/ignition-core packages/ignition-test packages/e2e-tests",
     "install:examples": "./bin/install_example_node_modules.sh",
     "install:tests": "./bin/install_tests_projects_node_modules.sh",
-    "test": "node scripts/run-tests.js",
-    "version": "oclif-dev readme && git add README.md",
+    "test": "npx ts-node scripts/run-tests.ts",
     "hardhat:node": "cd example/synthetix && npx hardhat node",
     "lint": "wsrun --exclude-missing --serial lint",
     "lint:fix": "wsrun --exclude-missing --stages lint:fix",
@@ -42,6 +41,8 @@
     "wsrun": "^5.2.4"
   },
   "dependencies": {
-    "mocha": "^8.4.0"
+    "@types/shelljs": "^0.8.8",
+    "mocha": "^8.4.0",
+    "shelljs": "^0.8.4"
   }
 }

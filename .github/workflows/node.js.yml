@@ -10,7 +10,7 @@ env:
   CI: true
   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
-  lint-and-test:
+  compile-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -50,8 +50,8 @@ jobs:
           yarn run install:examples
           yarn run install:tests
 
-      - name: Run Typescript Checks
-        run: yarn compile
+      - name: Run Typescript Chec
+        run: yarn build
 
 #      - name: Run Tests and hardhat node
 #        run: |

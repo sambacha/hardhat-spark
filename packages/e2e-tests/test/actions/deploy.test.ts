@@ -2,8 +2,6 @@ import { assert } from 'chai';
 import * as path from 'path';
 import {
   CONFIG_SCRIPT_NAME,
-  STATE_DIR_NAME,
-  STATE_NAME,
   ContractBindingMetaData,
   DEPLOYMENT_FOLDER
 } from 'ignition-core';

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { ModuleStateFile, STATE_DIR_NAME, STATE_NAME } from 'ignition-core';
-import { IgnitionTests } from '../../../ignition-test';
+import { IgnitionTests } from 'ignition-test';
 import * as path from 'path';
 import { DEFAULT_NETWORK_NAME } from 'ignition-core/lib/services/utils/constants';
 

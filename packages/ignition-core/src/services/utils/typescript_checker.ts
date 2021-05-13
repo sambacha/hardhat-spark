@@ -78,6 +78,9 @@ export async function loadScript(configScriptPath: string, test: boolean = false
   let module;
 
   try {
+    if (test) {
+      delete require.cache[require.resolve(configScriptPath)];
+    }
     const imported = require(configScriptPath);
     module = imported.default !== undefined ? imported.default : imported;
   } catch (e) {

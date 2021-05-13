@@ -265,7 +265,7 @@ export class IgnitionCore {
         await analyticsService.sendCommandHit('diff');
       }
     } catch (err) {
-      // await errorHandling(err, logger, analyticsService);
+      await errorHandling(err, undefined, analyticsService);
     }
   }
 

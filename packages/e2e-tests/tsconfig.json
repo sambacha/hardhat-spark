@@ -8,6 +8,6 @@
     "dist"
   ],
   "include": [
-    "test/**/*.test.ts"
+    "test",
   ]
 }

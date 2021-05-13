@@ -19,9 +19,9 @@
     "clean": "node ../../node_modules/rimraf/bin.js dist",
     "compile": "node ../../node_modules/typescript/bin/tsc --noEmit",
     "build": "node ../../node_modules/typescript/bin/tsc --build .",
-    "test": "nyc --extension .ts node ../../node_modules/mocha/bin/mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
-    "test:deploy": "nyc --extension .ts node ../../node_modules/mocha/bin/mocha --config ./.mocharc.yaml \"test/actions/deploy.test.ts\"",
-    "test:diff": "nyc --extension .ts node ../../node_modules/mocha/bin/mocha --config ./.mocharc.yaml \"test/actions/diff.test.ts\""
+    "test": "node ../../node_modules/mocha/bin/mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
+    "test:deploy": "node ../../node_modules/mocha/bin/mocha --config ./.mocharc.yaml \"test/actions/deploy.test.ts\"",
+    "test:diff": "node ../../node_modules/mocha/bin/mocha --config ./.mocharc.yaml \"test/actions/diff.test.ts\""
   },
   "dependencies": {
     "cli-ux": "^5.5.1",

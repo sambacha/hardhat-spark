@@ -1,4 +1,4 @@
-const childProcess = require('child_process');
+import * as shell from 'shelljs';
 
 // skip ts-node type checks (this is already covered in previous 'build-test' script)
 process.env.TS_NODE_TRANSPILE_ONLY = "true";
@@ -8,18 +8,18 @@ const isGithubActions = process.env.GITHUB_WORKFLOW !== undefined;
 // only Build tests in local environment
 const shouldBuildTests = !isGithubActions;
 
-childProcess.execSync("yarn build");
+shell.exec("yarn build");
 
-// if (shouldBuildTests) {
-//   childProcess.execSync("yarn build-test");
-// }
+if (shouldBuildTests) {
+  shell.exec("yarn build-test");
+}
 
 function runTests() {
   console.time("Total test time");
 
   try {
-    childProcess.execSync(
-      `yarn wsrun --serial --fast-exit test`
+    shell.exec(
+      `yarn wsrun --serial --fast-exit --exclude-missing test`
     );
   } finally {
     console.timeEnd("Total test time");
