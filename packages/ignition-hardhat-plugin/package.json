@@ -4,6 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "ignition-core": "0.0.1"
+    "cls-hooked": "^4.2.2",
+    "ethers": "^5.1.4",
+    "ignition-core": "0.0.1",
+    "path": "^0.12.7"
   }
 }

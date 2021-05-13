@@ -1,18 +1,10 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "declaration": true,
-    "importHelpers": true,
-    "module": "commonjs",
     "outDir": "lib",
-    "rootDir": "src",
-    "target": "es2017",
-    "esModuleInterop": true,
-    "jsx": "react",
-    "skipLibCheck": true,
-    "strict": true,
+    "jsx": "react"
   },
   "exclude": [
-    "node_modules",
     "lib"
   ],
   "include": [

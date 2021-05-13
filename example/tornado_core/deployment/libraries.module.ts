@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 import { ethers } from 'ethers';
 
 export const LibrariesModule = buildModule('LibrariesModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {

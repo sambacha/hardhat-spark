@@ -1,10 +1,9 @@
-import { RemoteBucketStorage, HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
+import { RemoteBucketStorage, HardhatIgnitionConfig } from 'ignition-core';
 // @ts-ignore
 import { EthGasStationProvider, GasPriceType } from './deployment/custom_providers/eth_gas_station_provider';
 // @ts-ignore
 import { TransactionManager } from './deployment/custom_providers/transaction_manager';
 import { ethers, providers } from 'ethers';
-import { GasPriceCalculator } from '@tenderly/hardhat-ignition/src/services/ethereum/gas/calculator';
 import * as path from 'path';
 // @ts-ignore
 import { ConstantGasPrice } from './deployment/custom_providers/constant_gas_price';

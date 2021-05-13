@@ -1,4 +1,4 @@
-import { HardhatIgnitionConfig, RemoteBucketStorage } from '@tenderly/hardhat-ignition';
+import { HardhatIgnitionConfig, RemoteBucketStorage } from 'ignition-core';
 import path from 'path';
 
 require('dotenv').config({path: path.resolve(__dirname + '/.env')});

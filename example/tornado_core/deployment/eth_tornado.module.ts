@@ -1,5 +1,5 @@
 require('dotenv').config({path: '../.env'});
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 import { ethers } from 'ethers';
 
 export const ETHTornadoModule = buildModule('ETHTornadoModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {

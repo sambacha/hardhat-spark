@@ -18,17 +18,16 @@
     "url": "git+https://github.com/nomiclabs/hardhat-ignition.git"
   },
   "scripts": {
-    "compile": "tsc",
-    "build": "tsc -b",
+    "compile": "tsc packages/ignition-core packages/ignition-hardhat-plugin packages/ignition-test",
+    "build": "tsc -b packages/ignition-core packages/ignition-hardhat-plugin",
     "install:examples": "./bin/install_example_node_modules.sh",
     "install:tests": "./bin/install_tests_projects_node_modules.sh",
-    "postpack": "rm -f oclif.manifest.json",
-    "prepack": "rm -rf lib && tsc -b && oclif-dev manifest",
-    "pack": "oclif-dev pack",
-    "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
-    "test:ci": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "node scripts/run-tests.js",
     "version": "oclif-dev readme && git add README.md",
-    "hardhat:node": "cd example/synthetix && npx hardhat node"
+    "hardhat:node": "cd example/synthetix && npx hardhat node",
+    "lint": "wsrun --exclude-missing --serial lint",
+    "lint:fix": "wsrun --exclude-missing --stages lint:fix",
+    "clean": "wsrun --exclude-missing clean"
   },
   "types": "lib/index.d.ts",
   "type": "commonjs",
@@ -37,5 +36,12 @@
     "example": "example",
     "lib": "lib",
     "test": "test"
+  },
+  "devDependencies": {
+    "ts-node": "^9.1.1",
+    "wsrun": "^5.2.4"
+  },
+  "dependencies": {
+    "mocha": "^8.4.0"
   }
 }

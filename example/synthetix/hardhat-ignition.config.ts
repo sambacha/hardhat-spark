@@ -1,4 +1,4 @@
-import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
+import { HardhatIgnitionConfig } from 'ignition-core';
 import * as web3utils from 'web3-utils';
 import { ethers } from 'ethers';
 import path from 'path';

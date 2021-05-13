@@ -1,4 +1,4 @@
-import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
+import { HardhatIgnitionConfig } from 'ignition-core';
 import path from 'path';
 
 require('dotenv').config({path: path.resolve(__dirname + '/.env')});

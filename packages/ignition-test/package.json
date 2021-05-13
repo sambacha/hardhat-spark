@@ -1,6 +1,10 @@
 {
   "name": "ignition-test",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "cls-hooked": "^4.2.2",
+    "ethers": "^5.1.4"
+  }
 }

@@ -1,4 +1,4 @@
-import { buildModule, sendAfterDeploy, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, sendAfterDeploy, ModuleBuilder } from 'ignition-core';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 

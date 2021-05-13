@@ -2,7 +2,7 @@ import {
   DeployReturn,
   buildModule,
   ModuleBuilder,
-} from '@tenderly/hardhat-ignition';
+} from 'ignition-core';
 
 export const FactoryModule = buildModule('FactoryModule', async (m: ModuleBuilder) => {
   const factory = m.contract('Factory');

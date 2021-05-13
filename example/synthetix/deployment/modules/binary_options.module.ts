@@ -1,4 +1,4 @@
-import { buildModule } from '@tenderly/hardhat-ignition';
+import { buildModule } from 'ignition-core';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const BinaryOptionsModule = buildModule('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {

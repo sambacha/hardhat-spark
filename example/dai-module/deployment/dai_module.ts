@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { buildModule } from '@tenderly/hardhat-ignition';
+import { buildModule } from 'ignition-core';
 // @ts-ignore
 import { DaiModuleBuilder } from '../.ignition/DaiModule/DaiModule';
 

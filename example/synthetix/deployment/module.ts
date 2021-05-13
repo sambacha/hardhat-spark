@@ -2,7 +2,7 @@ import {
   buildModule,
   ModuleBuilder,
   ModuleConfig
-} from '@tenderly/hardhat-ignition';
+} from 'ignition-core';
 import { SynthetixLibraries, SynthetixTemplates } from './modules/helper.module';
 import { SynthetixCore } from './modules/core.module';
 import { BinaryOptionsModule } from './modules/binary_options.module';

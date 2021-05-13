@@ -43,7 +43,7 @@ import { StreamlinedLogger } from './src/services/utils/logging';
 import { GlobalConfigService } from './src/services/config';
 import { AnalyticsService } from './src/services/utils/analytics';
 import { IAnalyticsService } from './src/services/utils/analytics';
-import { DeployArgs, DiffArgs, GenTypesArgs, MigrationArgs, TutorialArgs, UsageArgs } from '../../src';
+import { errorHandling } from './src/services/utils/util';
 
 export * from './src/interfaces/hardhat_ignition';
 export * from './src/interfaces/helper/expectancy';
@@ -79,13 +79,33 @@ export * from './src/services/modules/module_deployment_summary';
 export * from './src/services/config';
 export * from './src/services/utils/analytics/index';
 
+export interface DiffArgs {
+  moduleFilePath?: string;
+  networkName?: string;
+  state?: string;
+  configScriptPath?: string;
+}
+
+export interface DeployArgs {
+  moduleFilePath?: string;
+  networkName?: string;
+  rpcProvider?: string;
+  parallelize?: boolean;
+  logging?: Logging;
+  state?: string;
+  configScriptPath?: string;
+  testEnv?: boolean;
+}
+
+export interface GenTypesArgs {
+  moduleFilePath?: string;
+  configScriptPath?: string;
+}
+
 export interface IIgnition {
   deploy(args: DeployArgs): Promise<void>;
   diff(args: DiffArgs): Promise<void>;
   genTypes(args: GenTypesArgs): Promise<void>;
-  migration(args: MigrationArgs): Promise<void>;
-  tutorial(args: TutorialArgs): Promise<void>;
-  usage(args: UsageArgs): Promise<void>;
 }
 
 export interface IIgnitionUsage {
@@ -104,7 +124,7 @@ export class IgnitionCore {
     moduleStateRepo: ModuleStateRepo,
     moduleResolver: ModuleResolver,
     txGenerator: EthTxGenerator,
-    logging: ILogging,
+    logger: ILogging,
     executor: TxExecutor,
     configService: IConfigService,
     walletWrapper: WalletWrapper,
@@ -112,81 +132,85 @@ export class IgnitionCore {
     analyticsService: IAnalyticsService,
     test: boolean = false
   ) {
-    // this is needed in order to support both js and ts
-    const modules = await loadScript(deploymentFilePath, test);
+    try {
+      // this is needed in order to support both js and ts
+      const modules = await loadScript(deploymentFilePath, test);
 
-    // wrapping ether.Wallet in order to support state file storage
-    const rpcProvider = process.env.IGNITION_RPC_PROVIDER;
-    const wallets = configService.getAllWallets(rpcProvider);
-    const ignitionWallets = walletWrapper.wrapWallets(wallets);
+      // wrapping ether.Wallet in order to support state file storage
+      const rpcProvider = process.env.IGNITION_RPC_PROVIDER;
+      const wallets = configService.getAllWallets(rpcProvider);
+      const ignitionWallets = walletWrapper.wrapWallets(wallets);
 
-    for (const [moduleName, moduleFunc] of Object.entries(modules)) {
-      const module = (await moduleFunc) as Module;
+      for (const [moduleName, moduleFunc] of Object.entries(modules)) {
+        const module = (await moduleFunc) as Module;
 
-      // If a module is initialized it means it is sub module inside the bigger one. Only modules that are not initialized
-      // can be executed.
-      if (module.isInitialized()) {
-        continue;
-      }
+        // If a module is initialized it means it is sub module inside the bigger one. Only modules that are not initialized
+        // can be executed.
+        if (module.isInitialized()) {
+          continue;
+        }
 
-      // ability to surface module's context when using subModule functionality
-      const moduleSession = cls.createNamespace('module');
-      await moduleSession.runAndReturn(async () => {
-        await module.init(moduleSession, ignitionWallets as ethers.Wallet[], undefined, {
-          params: config?.params || {},
+        // ability to surface module's context when using subModule functionality
+        const moduleSession = cls.createNamespace('module');
+        await moduleSession.runAndReturn(async () => {
+          await module.init(moduleSession, ignitionWallets as ethers.Wallet[], undefined, {
+            params: config?.params || {},
+          });
         });
-      });
-      moduleStateRepo.initStateRepo(moduleName);
+        moduleStateRepo.initStateRepo(moduleName);
 
-      // merging state file with provided states files
-      let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
-      for (const moduleStateName of states) {
-        const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName);
+        // merging state file with provided states files
+        let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
+        for (const moduleStateName of states) {
+          const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName);
 
-        stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
+          stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
+        }
+
+        logger.startModuleResolving(moduleName);
+        // resolving contract and events dependencies and determining execution order
+        const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+        logger.finishModuleResolving(moduleName);
+
+        // setting up custom functionality
+        if (
+          module.getCustomGasPriceProvider() &&
+          config.gasPriceProvider
+        ) {
+          txGenerator.changeGasPriceCalculator(config.gasPriceProvider);
+        }
+
+        if (
+          module.getCustomNonceManager() &&
+          config.nonceManager
+        ) {
+          txGenerator.changeNonceManager(config.nonceManager);
+        }
+
+        if (
+          module.getCustomTransactionSigner() &&
+          config.transactionSigner
+        ) {
+          txGenerator.changeTransactionSigner(config.transactionSigner);
+        }
+
+        const initializedTxModuleState = txGenerator.initTx(moduleState);
+        await logger.promptContinueDeployment();
+
+        try {
+          await executor.execute(moduleName, initializedTxModuleState, config?.registry, config?.resolver, module.getModuleConfig());
+        } catch (error) {
+          await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
+
+          throw error;
+        }
+
+        const summary = await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
+        logger.finishModuleDeploy(moduleName, summary);
+        await analyticsService.sendCommandHit('deploy');
       }
-
-      logging.startModuleResolving(moduleName);
-      // resolving contract and events dependencies and determining execution order
-      const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-      logging.finishModuleResolving(moduleName);
-
-      // setting up custom functionality
-      if (
-        module.getCustomGasPriceProvider() &&
-        config.gasPriceProvider
-      ) {
-        txGenerator.changeGasPriceCalculator(config.gasPriceProvider);
-      }
-
-      if (
-        module.getCustomNonceManager() &&
-        config.nonceManager
-      ) {
-        txGenerator.changeNonceManager(config.nonceManager);
-      }
-
-      if (
-        module.getCustomTransactionSigner() &&
-        config.transactionSigner
-      ) {
-        txGenerator.changeTransactionSigner(config.transactionSigner);
-      }
-
-      const initializedTxModuleState = txGenerator.initTx(moduleState);
-      await logging.promptContinueDeployment();
-
-      try {
-        await executor.execute(moduleName, initializedTxModuleState, config?.registry, config?.resolver, module.getModuleConfig());
-      } catch (error) {
-        await executor.executeModuleEvents(moduleName, moduleState, module.getAllModuleEvents().onFail);
-
-        throw error;
-      }
-
-      const summary = await moduleDeploymentSummaryService.showSummary(moduleName, stateFileRegistry);
-      logging.finishModuleDeploy(moduleName, summary);
-      await analyticsService.sendCommandHit('deploy');
+    } catch (err) {
+      await errorHandling(err, logger, analyticsService);
     }
   }
 
@@ -200,44 +224,48 @@ export class IgnitionCore {
     analyticsService: IAnalyticsService,
     test: boolean = false
   ) {
-    const modules = await loadScript(resolvedPath, test);
+    try {
+      const modules = await loadScript(resolvedPath, test);
 
-    const wallets = configService.getAllWallets();
+      const wallets = configService.getAllWallets();
 
-    for (const [moduleName, modFunc] of Object.entries(modules)) {
-      const module = await modFunc as Module;
-      if (module.isInitialized()) {
-        continue;
-      }
+      for (const [moduleName, modFunc] of Object.entries(modules)) {
+        const module = await modFunc as Module;
+        if (module.isInitialized()) {
+          continue;
+        }
 
-      const moduleSession = cls.createNamespace('module');
-      await moduleSession.runAndReturn(async () => {
-        await module.init(moduleSession, wallets, undefined, {
-          params: config?.params || {},
+        const moduleSession = cls.createNamespace('module');
+        await moduleSession.runAndReturn(async () => {
+          await module.init(moduleSession, wallets, undefined, {
+            params: config?.params || {},
+          });
         });
-      });
-      moduleStateRepo.initStateRepo(moduleName);
+        moduleStateRepo.initStateRepo(moduleName);
 
-      let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
-      for (const moduleStateName of states) {
-        const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName);
+        let stateFileRegistry = await moduleStateRepo.getStateIfExist(moduleName);
+        for (const moduleStateName of states) {
+          const moduleState = await moduleStateRepo.getStateIfExist(moduleStateName);
 
-        stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
+          stateFileRegistry = StateResolver.mergeStates(stateFileRegistry, moduleState);
+        }
+
+        const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
+        if (!checkIfExist(moduleState)) {
+          cli.info('Current module state is empty, add something and try again.');
+          process.exit(0);
+        }
+
+        if (moduleResolver.checkIfDiff(stateFileRegistry, moduleState)) {
+          cli.info(`\nModule: ${moduleName}`);
+          moduleResolver.printDiffParams(stateFileRegistry, moduleState);
+        } else {
+          cli.info(`Nothing changed from last revision - ${moduleName}`);
+        }
+        await analyticsService.sendCommandHit('diff');
       }
-
-      const moduleState: ModuleState | null = await moduleResolver.resolve(module.getAllBindings(), module.getAllEvents(), module.getAllModuleEvents(), stateFileRegistry);
-      if (!checkIfExist(moduleState)) {
-        cli.info('Current module state is empty, add something and try again.');
-        process.exit(0);
-      }
-
-      if (moduleResolver.checkIfDiff(stateFileRegistry, moduleState)) {
-        cli.info(`\nModule: ${moduleName}`);
-        moduleResolver.printDiffParams(stateFileRegistry, moduleState);
-      } else {
-        cli.info(`Nothing changed from last revision - ${moduleName}`);
-      }
-      await analyticsService.sendCommandHit('diff');
+    } catch (err) {
+      // await errorHandling(err, logger, analyticsService);
     }
   }
 
@@ -246,25 +274,29 @@ export class IgnitionCore {
     ignitionConfig: HardhatIgnitionConfig,
     moduleTypings: ModuleTypings,
     config: IConfigService,
-    prompter: ILogging,
+    logger: ILogging,
     analyticsService: IAnalyticsService,
   ) {
-    const modules = await loadScript(resolvedPath);
-    const wallets = config.getAllWallets();
+    try {
+      const modules = await loadScript(resolvedPath);
+      const wallets = config.getAllWallets();
 
-    for (const [moduleName, modFunc] of Object.entries(modules)) {
-      const module = await modFunc as Module;
-      const moduleSession = cls.createNamespace('module');
-      await moduleSession.runAndReturn(async () => {
-        await module.init(moduleSession, wallets, undefined, ignitionConfig as ModuleOptions);
-      });
+      for (const [moduleName, modFunc] of Object.entries(modules)) {
+        const module = await modFunc as Module;
+        const moduleSession = cls.createNamespace('module');
+        await moduleSession.runAndReturn(async () => {
+          await module.init(moduleSession, wallets, undefined, ignitionConfig as ModuleOptions);
+        });
 
-      const deploymentFolder = path.dirname(resolvedPath);
-      moduleTypings.generate(deploymentFolder, moduleName, module);
+        const deploymentFolder = path.dirname(resolvedPath);
+        moduleTypings.generate(deploymentFolder, moduleName, module);
+      }
+
+      logger.generatedTypes();
+      await analyticsService.sendCommandHit('genTypes');
+    } catch (err) {
+      await errorHandling(err, logger, analyticsService);
     }
-
-    prompter.generatedTypes();
-    await analyticsService.sendCommandHit('genTypes');
   }
 
   async usage(

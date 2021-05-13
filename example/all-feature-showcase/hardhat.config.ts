@@ -1,4 +1,4 @@
-import '@tenderly/hardhat-ignition/src/hardhat';
+import 'ignition-hardhat-plugin';
 // @ts-ignore
 import { config } from './hardhat-ignition.config';
 

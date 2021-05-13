@@ -3,6 +3,8 @@ import { CliError, handleMappedErrorCodes, UserError } from '../types/errors';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
 import * as os from 'os';
+import { ILogging } from './logging';
+import { IAnalyticsService } from './analytics';
 
 export const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -114,9 +116,9 @@ export function extractObjectInfo(obj: any): string {
   return '';
 }
 
-export async function errorHandling(this: any, error: Error) {
-  if (this.prompter) {
-    this.prompter.logError(error);
+export async function errorHandling(error: Error, logger?: ILogging, analyticsService?: IAnalyticsService) {
+  if (logger) {
+    logger.logError(error);
 
     return;
   }
@@ -137,8 +139,8 @@ export async function errorHandling(this: any, error: Error) {
   }
 
   // unhandled errors
-  if (this?.analyticsService) {
-    this.analyticsService.reportError(error);
+  if (analyticsService) {
+    analyticsService.reportError(error);
   }
 }
 

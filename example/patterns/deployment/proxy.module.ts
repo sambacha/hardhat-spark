@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 
 export const ProxyModule = buildModule('ProxyModule', async (m: ModuleBuilder) => {
   m.contract('Registry');

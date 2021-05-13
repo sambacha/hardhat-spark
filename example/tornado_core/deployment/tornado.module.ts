@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 import { ethers } from 'ethers';
 import { LibrariesModule } from './libraries.module';
 import { ETHTornadoModule } from './eth_tornado.module';

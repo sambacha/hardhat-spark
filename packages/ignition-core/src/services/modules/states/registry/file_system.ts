@@ -50,7 +50,7 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
     }
 
     return (JSON.parse(fs.readFileSync(dir, {
-      encoding: 'UTF-8'
+      encoding: 'utf-8'
     })) || {}) as ModuleRegistryResolver;
   }
 }

@@ -26,7 +26,7 @@ export class FileSystemModuleState implements IModuleState {
     }
 
     return JSON.parse(fs.readFileSync(dir, {
-      encoding: 'UTF-8'
+      encoding: 'utf-8'
     })) || {};
   }
 

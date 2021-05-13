@@ -1,4 +1,4 @@
-import { ContractBinding, buildModule, ModuleBuilder, filler } from '@tenderly/hardhat-ignition';
+import { ContractBinding, buildModule, ModuleBuilder, filler } from 'ignition-core';
 import { BigNumber, ethers } from 'ethers';
 
 export const ExampleModule = buildModule('ExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {

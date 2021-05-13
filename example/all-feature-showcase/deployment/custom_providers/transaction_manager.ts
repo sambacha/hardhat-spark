@@ -1,6 +1,6 @@
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { ethers, providers } from 'ethers';
-import { checkIfExist, IGasPriceCalculator, IGasCalculator, INonceManager, ITransactionSigner } from '@tenderly/hardhat-ignition';
+import { checkIfExist, IGasPriceCalculator, IGasCalculator, INonceManager, ITransactionSigner } from 'ignition-core';
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };

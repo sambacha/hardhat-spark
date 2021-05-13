@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 // @ts-ignore
 import { ExampleModule } from './module';
 import { ethers } from 'ethers';

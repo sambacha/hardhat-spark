@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder, expectFuncRead, sendAfterDeploy } from '../../../src';
+import { buildModule, ModuleBuilder, expectFuncRead, sendAfterDeploy } from 'ignition-core';
 import { ethers } from 'ethers';
 
 export const SomeModule = buildModule('SomeModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {

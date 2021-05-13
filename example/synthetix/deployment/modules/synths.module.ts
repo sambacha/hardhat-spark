@@ -1,4 +1,4 @@
-import { sendAfterDeploy, ContractBinding, buildModule } from '@tenderly/hardhat-ignition';
+import { sendAfterDeploy, ContractBinding, buildModule } from 'ignition-core';
 import { ethers } from 'ethers';
 import { toBytes32 } from '../../util/util';
 import { SynthetixModuleBuilder } from '../SynthetixModule';

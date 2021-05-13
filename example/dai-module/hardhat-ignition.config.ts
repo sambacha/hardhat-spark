@@ -1,4 +1,4 @@
-import { HardhatIgnitionConfig } from '@tenderly/hardhat-ignition';
+import { HardhatIgnitionConfig } from 'ignition-core';
 
 export const config: HardhatIgnitionConfig = {
   privateKeys: [

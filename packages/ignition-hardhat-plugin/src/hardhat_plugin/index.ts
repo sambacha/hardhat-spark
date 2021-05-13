@@ -1,18 +1,15 @@
 import { extendEnvironment, task } from 'hardhat/config';
 import { lazyObject } from 'hardhat/plugins';
 import { ActionType } from 'hardhat/types';
-import { Logging, Migration } from 'ignition-core';
 import {
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
-  MigrationArgs,
-  TutorialArgs,
-  UsageArgs,
-  HardhatIgnition,
-  IgnitionHardhatActions
-} from '../hardhat_plugin';
+  Logging
+} from 'ignition-core';
 import './type_extentions';
+import { HardhatRuntimeEnvironment } from 'hardhat/types/runtime';
+import { HardhatIgnition } from '../index';
 
 export const PluginName = 'hardhat-ignition';
 
@@ -20,74 +17,27 @@ extendEnvironment(env => {
   env.ignition = lazyObject(() => new HardhatIgnition());
 });
 
-const tutorial: ActionType<TutorialArgs> = async (
-  tutorialArgs: TutorialArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
-) => {
-  await IgnitionHardhatActions.tutorial(tutorialArgs);
-};
-
 const diff: ActionType<DiffArgs> = async (
   diffArgs: DiffArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
+  env: HardhatRuntimeEnvironment,
 ) => {
-  await IgnitionHardhatActions.diff(diffArgs);
+  await env.ignition.diff(diffArgs);
 };
 
 const deploy: ActionType<DeployArgs> = async (
   deployArgs: DeployArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
+  env: HardhatRuntimeEnvironment,
+
 ) => {
-  await IgnitionHardhatActions.deploy(deployArgs);
+  await env.ignition.deploy(deployArgs);
 };
 
 const genTypes: ActionType<GenTypesArgs> = async (
   genTypesArgs: GenTypesArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
+  env: HardhatRuntimeEnvironment,
 ) => {
-  await IgnitionHardhatActions.genTypes(genTypesArgs);
+  await  env.ignition.genTypes(genTypesArgs);
 };
-
-const migration: ActionType<MigrationArgs> = async (
-  migrationArgs: MigrationArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
-) => {
-  await IgnitionHardhatActions.migration(migrationArgs);
-};
-
-const usage: ActionType<UsageArgs> = async (
-  usageArgs: UsageArgs,
-  {
-    config,
-    hardhatArguments,
-    run
-  }
-) => {
-  await IgnitionHardhatActions.usage(usageArgs);
-};
-
-task('ignition:tutorial', 'Easiest way to get started with hardhat-ignition, create couple contracts and start deploying.')
-  .setAction(tutorial);
 
 task('ignition:diff', 'Difference between deployed and current deployment.')
   .addOptionalPositionalParam(
@@ -118,14 +68,14 @@ task('ignition:deploy', 'Deploy new module, difference between current module an
   )
   .addOptionalParam<string>(
     'networkName',
-    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
+    'Network name is specified inside your config file and if their is none it will default to local (http://localhost:8545)',
     'local',
     undefined,
   )
   .addOptionalParam<Logging>(
     'logging',
-    'Logging options: streamlined, simple or json. default: streamlined',
-    Logging.simple,
+    'Logging options: streamlined, simple or json',
+    Logging.overview,
     undefined,
   )
   .addOptionalParam<string>(
@@ -161,50 +111,3 @@ task('ignition:genTypes', 'It\'ll generate .d.ts file for written deployment mod
     undefined,
   )
   .setAction(genTypes);
-
-task('ignition:migration', 'Migrate deployment meta data from other deployers to hardhat-ignition state file.')
-  .addParam<Migration>(
-    'from',
-    'Deployment package name (truffle, hardhatDeploy)',
-    Migration.truffle,
-    undefined,
-    true
-  )
-  .addParam<string>(
-    'moduleName',
-    'Module name for which you would like to migrate state file to.',
-    undefined,
-    undefined,
-    false,
-  )
-  .setAction(migration);
-
-task('ignition:usage', 'Generate public usage module from standard module.')
-  .addOptionalPositionalParam(
-    'moduleFilePath',
-    'Path to module deployment file.'
-  )
-  .addParam<string>(
-    'networkName',
-    'Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)',
-    'local',
-    undefined,
-    true,
-  )
-  .addOptionalParam<string>(
-    'configScriptPath',
-    'Path to the hardhat-ignition.config.js script, default is same as current path.',
-    undefined,
-    undefined,
-  )
-  .addOptionalParam<string>(
-    'state',
-    'Provide name of module\'s that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other.',
-    '',
-    undefined,
-  )
-  .addFlag(
-    'testEnv',
-    'This should be provided in case of test and/or CI/CD, it means that no state file will be store.'
-  )
-  .setAction(usage);

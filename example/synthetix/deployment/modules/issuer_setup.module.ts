@@ -3,7 +3,7 @@ import {
   buildModule,
   expectFuncRead,
   gracefulExpectFuncRead
-} from '@tenderly/hardhat-ignition';
+} from 'ignition-core';
 import { toBytes32 } from '../../util/util';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
