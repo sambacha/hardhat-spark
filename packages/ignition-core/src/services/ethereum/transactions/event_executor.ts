@@ -1,7 +1,10 @@
 import { ContractFunction } from '@ethersproject/contracts';
 import { checkIfExist } from '../../utils/util';
 import { CliError } from '../../types/errors';
-import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
+import {
+  TransactionReceipt,
+  TransactionResponse,
+} from '@ethersproject/abstract-provider';
 import { Namespace } from 'cls-hooked';
 import { KeyMutex } from '../../utils/mutex/key_mutex';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
@@ -13,12 +16,12 @@ export class EventTxExecutor {
   private eventSession: Namespace;
   private readonly rootEvents: {
     [eventName: string]: {
-      sender: string,
-      contractBindingName: string,
-      func: ContractFunction
-      resolveFunc: Function | undefined,
-      args: Array<any> | undefined,
-    }
+      sender: string;
+      contractBindingName: string;
+      func: ContractFunction;
+      resolveFunc: Function | undefined;
+      args: Array<any> | undefined;
+    };
   };
   private currentNumber: number;
 
@@ -33,9 +36,19 @@ export class EventTxExecutor {
     this.moduleStateRepo = moduleStateRepo;
   }
 
-  add(eventName: string, senderAddress: string, contractBindingName: string, fn: ((this: ContractInstance, ...args: Array<any>) => Promise<TransactionResponse | TransactionReceipt>)) {
+  add(
+    eventName: string,
+    senderAddress: string,
+    contractBindingName: string,
+    fn: (
+      this: ContractInstance,
+      ...args: Array<any>
+    ) => Promise<TransactionResponse | TransactionReceipt>
+  ) {
     if (checkIfExist(this.rootEvents[eventName])) {
-      throw new CliError(`Execution is still blocked, something went wrong - ${eventName}`);
+      throw new CliError(
+        `Execution is still blocked, something went wrong - ${eventName}`
+      );
     }
 
     this.rootEvents[eventName] = {
@@ -48,7 +61,10 @@ export class EventTxExecutor {
     this.currentNumber++;
   }
 
-  async executeSingle(eventName: string, ...args: Array<any>): Promise<TransactionResponse> {
+  async executeSingle(
+    eventName: string,
+    ...args: Array<any>
+  ): Promise<TransactionResponse> {
     this.rootEvents[eventName].args = args;
 
     return new Promise(async (resolve, reject) => {
@@ -72,7 +88,7 @@ export class EventTxExecutor {
 
       executionOrdering[rootEvent.sender].push({
         eventName,
-        event: rootEvent
+        event: rootEvent,
       });
     }
 
@@ -87,7 +103,10 @@ export class EventTxExecutor {
     this.currentNumber = 0;
   }
 
-  private async executeSenderContractFunctions(sender: string, array: Array<any>): Promise<void> {
+  private async executeSenderContractFunctions(
+    sender: string,
+    array: Array<any>
+  ): Promise<void> {
     for (const singleElement of array) {
       const args = singleElement.event.args;
       const func = singleElement.event.func;
@@ -104,7 +123,9 @@ export class EventTxExecutor {
           transactionReceipt = await tx.wait(1);
 
           if (!this.eventSession.get(clsNamespaces.PARALLELIZE)) {
-            const blockConfirmation = +(process.env.BLOCK_CONFIRMATION_NUMBER || 1);
+            const blockConfirmation = +(
+              process.env.BLOCK_CONFIRMATION_NUMBER || 1
+            );
             transactionReceipt = await tx.wait(blockConfirmation);
           }
         }
@@ -112,7 +133,12 @@ export class EventTxExecutor {
         throw e;
       }
       resolve(); // potentially we can move unlock above tx confirmation
-      await this.moduleStateRepo.storeEventTransactionData(bindingName, undefined, transactionReceipt, eventName);
+      await this.moduleStateRepo.storeEventTransactionData(
+        bindingName,
+        undefined,
+        transactionReceipt,
+        eventName
+      );
 
       await singleElement.event.resolveFunc(transactionReceipt);
 

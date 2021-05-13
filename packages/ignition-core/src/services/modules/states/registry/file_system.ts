@@ -1,4 +1,8 @@
-import { IModuleRegistryResolver, ModuleRegistryResolver, REGISTRY_NAME } from './index';
+import {
+  IModuleRegistryResolver,
+  ModuleRegistryResolver,
+  REGISTRY_NAME,
+} from './index';
 import path from 'path';
 import fs from 'fs';
 import { checkIfExist } from '../../../utils/util';
@@ -18,7 +22,11 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
     this.registryPath = dir;
   }
 
-  async resolveContract(networkId: string, moduleName: string, bindingName: string): Promise<string> {
+  async resolveContract(
+    networkId: string,
+    moduleName: string,
+    bindingName: string
+  ): Promise<string> {
     const stateObject = await this.getRegistry(moduleName, networkId);
     if (!checkIfExist(stateObject[this.version])) {
       stateObject[this.version] = {};
@@ -27,7 +35,12 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
     return stateObject[this.version][bindingName];
   }
 
-  async setAddress(networkId: string, moduleName: string, bindingName: string, contractAddress: string): Promise<boolean> {
+  async setAddress(
+    networkId: string,
+    moduleName: string,
+    bindingName: string,
+    contractAddress: string
+  ): Promise<boolean> {
     const stateObject = await this.getRegistry(moduleName, networkId);
     if (!checkIfExist(stateObject[this.version])) {
       stateObject[this.version] = {};
@@ -38,19 +51,30 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
       fs.mkdirSync(this.registryPath);
     }
 
-    const stateDir = path.resolve(this.registryPath, `${moduleName}_${networkId}_${REGISTRY_NAME}`);
+    const stateDir = path.resolve(
+      this.registryPath,
+      `${moduleName}_${networkId}_${REGISTRY_NAME}`
+    );
     fs.writeFileSync(stateDir, JSON.stringify(stateObject, undefined, 4));
     return true;
   }
 
-  private async getRegistry(moduleName: string, networkId: string): Promise<ModuleRegistryResolver> {
-    const dir = path.resolve(this.registryPath, `${moduleName}_${networkId}_${REGISTRY_NAME}`);
+  private async getRegistry(
+    moduleName: string,
+    networkId: string
+  ): Promise<ModuleRegistryResolver> {
+    const dir = path.resolve(
+      this.registryPath,
+      `${moduleName}_${networkId}_${REGISTRY_NAME}`
+    );
     if (!fs.existsSync(dir)) {
       return {};
     }
 
-    return (JSON.parse(fs.readFileSync(dir, {
-      encoding: 'utf-8'
-    })) || {}) as ModuleRegistryResolver;
+    return (JSON.parse(
+      fs.readFileSync(dir, {
+        encoding: 'utf-8',
+      })
+    ) || {}) as ModuleRegistryResolver;
   }
 }

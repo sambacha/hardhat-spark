@@ -1,5 +1,9 @@
 import { ModuleState } from '../../modules/states/module';
-import { CliError, handleMappedErrorCodes, UserError } from '../../types/errors';
+import {
+  CliError,
+  handleMappedErrorCodes,
+  UserError,
+} from '../../types/errors';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
 import { checkIfExist } from '../util';
@@ -17,7 +21,7 @@ export enum Logging {
   'overview' = 'overview',
   'simple' = 'simple',
   'json' = 'json',
-  'streamlined' = 'streamlined'
+  'streamlined' = 'streamlined',
 }
 
 export enum StateElementStatus {
@@ -31,7 +35,7 @@ export enum StateElementStatus {
 export enum TransactionStatus {
   'EMPTY' = 0,
   'CONTRACT_TRANSACTION_SENT' = 1,
-  'WAITING_FOR_CONFIRMATION'= 2,
+  'WAITING_FOR_CONFIRMATION' = 2,
   'TRANSACTION_CONFIRMED' = 3,
 }
 
@@ -39,7 +43,7 @@ export interface ILogging {
   nothingToDeploy(): void;
   startModuleResolving(moduleName: string): void;
   finishModuleResolving(moduleName: string): void;
-  startModuleDeploy(moduleName: string,  moduleStates: ModuleState): void;
+  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void;
   finishModuleDeploy(moduleName: string, summary: string): void;
   alreadyDeployed(elementName: string): void;
   promptContinueDeployment(): Promise<void>;
@@ -53,11 +57,18 @@ export interface ILogging {
   eventExecution(eventName: string): void;
   finishedEventExecution(eventName: string, eventType: EventType): void;
   executeContractFunction(contractFunction: string): void;
-  contractFunctionAlreadyExecuted(contractFunction: string, ...args: any[]): void;
+  contractFunctionAlreadyExecuted(
+    contractFunction: string,
+    ...args: any[]
+  ): void;
   finishedExecutionOfContractFunction(functionName: string): void;
   transactionReceipt(): void;
   waitTransactionConfirmation(): void;
-  transactionConfirmation(confirmationNumber: number, elementName: string, functionName?: string): void;
+  transactionConfirmation(
+    confirmationNumber: number,
+    elementName: string,
+    functionName?: string
+  ): void;
   finishedExecutionOfWalletTransfer(from: string, to: string): void;
   executeWalletTransfer(address: string, to: string): void;
   generatedTypes(): void;
@@ -68,19 +79,18 @@ export interface ILogging {
   gasPriceIsLarge(backoffTime: number): void;
 }
 
-export function generateErrorMessage(error: Error): {
-  message: string,
-  stack: any,
+export function generateErrorMessage(
+  error: Error
+): {
+  message: string;
+  stack: any;
 } {
   let stack;
   if (cli.config.outputLevel == 'debug') {
     stack = error.stack;
   }
 
-  if (
-    (error as UserError)._isUserError ||
-    (error as CliError)._isCliError
-  ) {
+  if ((error as UserError)._isUserError || (error as CliError)._isCliError) {
     return {
       message: chalk.red(error.message),
       stack,

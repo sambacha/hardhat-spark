@@ -6,7 +6,11 @@ import { CliError } from '../types/errors';
 import fs from 'fs';
 import * as path from 'path';
 import { generateModuleFile } from '../utils/files';
-import { FileGenerationType, ModuleFile, ModuleStateBindings } from '../types/migration';
+import {
+  FileGenerationType,
+  ModuleFile,
+  ModuleStateBindings,
+} from '../types/migration';
 
 export class ModuleUsage {
   private readonly fileLocation: string;
@@ -19,7 +23,10 @@ export class ModuleUsage {
     this.fileLocation = removeLastPathElement(deploymentFilePath);
   }
 
-  generateRawUsage(moduleName: string, moduleStateFile: ModuleStateFile): ModuleStateBindings {
+  generateRawUsage(
+    moduleName: string,
+    moduleStateFile: ModuleStateFile
+  ): ModuleStateBindings {
     if (checkIfExist(this.moduleName)) {
       throw new CliError('Usage generation has not been concluded.');
     }
@@ -42,11 +49,18 @@ export class ModuleUsage {
       throw new CliError('Module name is missing.');
     }
 
-    return generateModuleFile(this.moduleName, moduleRawUsage, FileGenerationType.usage);
+    return generateModuleFile(
+      this.moduleName,
+      moduleRawUsage,
+      FileGenerationType.usage
+    );
   }
 
   storeUsageFile(moduleRawUsage: ModuleFile) {
-    const stateDir = path.resolve(this.fileLocation, `${this.moduleName}.usage.ts`);
+    const stateDir = path.resolve(
+      this.fileLocation,
+      `${this.moduleName}.usage.ts`
+    );
     fs.writeFileSync(stateDir, moduleRawUsage);
 
     this.moduleName = undefined;

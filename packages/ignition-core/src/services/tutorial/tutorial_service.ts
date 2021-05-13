@@ -1,7 +1,11 @@
 import * as path from 'path';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
-import { CONSTRUCTOR_ARGS, CONTRACT_DUPLICATES, CONTRACT_NAME_DESC } from './tutorial_desc';
+import {
+  CONSTRUCTOR_ARGS,
+  CONTRACT_DUPLICATES,
+  CONTRACT_NAME_DESC,
+} from './tutorial_desc';
 import { checkIfExist } from '../utils/util';
 import { DeploymentFileGenerator } from './deployment_file_gen';
 import { SystemCrawlingService } from './system_crawler';
@@ -20,7 +24,7 @@ export class TutorialService {
 
   constructor(
     deploymentFileGenerator: DeploymentFileGenerator,
-    systemCrawlingService: SystemCrawlingService,
+    systemCrawlingService: SystemCrawlingService
   ) {
     this.deploymentFileGenerator = deploymentFileGenerator;
     this.systemCrawlingService = systemCrawlingService;
@@ -28,7 +32,10 @@ export class TutorialService {
   }
 
   setDeploymentPath(rootPath: string) {
-    this.deploymentFileGenerator.setDeploymentPath(path.resolve(rootPath, DEPLOYMENT_FOLDER), DEPLOYMENT_FILE);
+    this.deploymentFileGenerator.setDeploymentPath(
+      path.resolve(rootPath, DEPLOYMENT_FOLDER),
+      DEPLOYMENT_FILE
+    );
   }
 
   setModuleName(moduleName: string) {
@@ -40,22 +47,28 @@ export class TutorialService {
     const contracts = this.systemCrawlingService.crawlSolidityContractsNames();
 
     while (true) {
-      let yes = await cli.confirm('Do you want to deploy a smart contract?(yes/no)');
+      let yes = await cli.confirm(
+        'Do you want to deploy a smart contract?(yes/no)'
+      );
       if (!yes) {
         break;
       }
 
       cli.info(chalk.gray(CONTRACT_NAME_DESC));
-      const contractName = (await inquirer.prompt([{
-        name: 'contractName',
-        message: 'Contract name:',
-        type: 'list',
-        choices: contracts.map((v) => {
-          return {
-            name: v
-          };
-        }),
-      }])).contractName;
+      const contractName = (
+        await inquirer.prompt([
+          {
+            name: 'contractName',
+            message: 'Contract name:',
+            type: 'list',
+            choices: contracts.map((v) => {
+              return {
+                name: v,
+              };
+            }),
+          },
+        ])
+      ).contractName;
 
       let bindingName = contractName;
       if (checkIfExist(this.contractNames[contractName])) {
@@ -69,47 +82,83 @@ export class TutorialService {
       });
       constructorArgs = constructorArgs.split(',');
 
-      this.deploymentFileGenerator.newContract(contractName, bindingName, ...constructorArgs);
+      this.deploymentFileGenerator.newContract(
+        contractName,
+        bindingName,
+        ...constructorArgs
+      );
 
-      yes = await cli.confirm('Do you wish to execute any contract function after contract deployment?(yes/no)');
+      yes = await cli.confirm(
+        'Do you wish to execute any contract function after contract deployment?(yes/no)'
+      );
       await this.handleContractFuncExecution(contractName, bindingName, yes);
     }
 
-    cli.info(`Successfully generated module deployment! Look under ${path.resolve(DEPLOYMENT_FOLDER, DEPLOYMENT_FILE)}`);
+    cli.info(
+      `Successfully generated module deployment! Look under ${path.resolve(
+        DEPLOYMENT_FOLDER,
+        DEPLOYMENT_FILE
+      )}`
+    );
   }
 
-  async handleContractFuncExecution(contractName: string, bindingName: string, yes: boolean): Promise<boolean> {
+  async handleContractFuncExecution(
+    contractName: string,
+    bindingName: string,
+    yes: boolean
+  ): Promise<boolean> {
     if (!yes) {
       return false;
     }
 
     while (true) {
       if (yes) {
-        const contractFunctionNames = await this.systemCrawlingService.crawlSolidityFunctionsOfContract(contractName);
-        if (contractFunctionNames && contractFunctionNames.length > 0 ) {
-          const functionName = (await inquirer.prompt([{
-            name: 'functionName',
-            message: 'Function name:',
-            type: 'list',
-            choices: contractFunctionNames.map((v) => {
-              return {
-                name: v.name
-              };
-            }),
-          }])).functionName;
+        const contractFunctionNames = await this.systemCrawlingService.crawlSolidityFunctionsOfContract(
+          contractName
+        );
+        if (contractFunctionNames && contractFunctionNames.length > 0) {
+          const functionName = (
+            await inquirer.prompt([
+              {
+                name: 'functionName',
+                message: 'Function name:',
+                type: 'list',
+                choices: contractFunctionNames.map((v) => {
+                  return {
+                    name: v.name,
+                  };
+                }),
+              },
+            ])
+          ).functionName;
 
           let functionArgs = await cli.prompt(`Contract function arguments?`, {
             required: false,
           });
           functionArgs = functionArgs?.split(',');
 
-          this.deploymentFileGenerator.newContractInvocation(contractName, bindingName, functionName, functionArgs);
+          this.deploymentFileGenerator.newContractInvocation(
+            contractName,
+            bindingName,
+            functionName,
+            functionArgs
+          );
         } else {
-          cli.info('Contract dont have any callable function... please continue');
+          cli.info(
+            'Contract dont have any callable function... please continue'
+          );
         }
 
-        const yes = await cli.confirm('Any more contract functions to be executed?(yes/no)');
-        if (!await this.handleContractFuncExecution(contractName, bindingName, yes)) {
+        const yes = await cli.confirm(
+          'Any more contract functions to be executed?(yes/no)'
+        );
+        if (
+          !(await this.handleContractFuncExecution(
+            contractName,
+            bindingName,
+            yes
+          ))
+        ) {
           break;
         }
       }

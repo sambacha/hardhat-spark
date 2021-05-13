@@ -11,8 +11,11 @@ export interface IGasPriceCalculator {
 }
 
 export interface IGasCalculator {
-  estimateGas(fromAddr: string, toAddr: string | undefined, data: BytesLike): Promise<BigNumber>;
+  estimateGas(
+    fromAddr: string,
+    toAddr: string | undefined,
+    data: BytesLike
+  ): Promise<BigNumber>;
 }
 
-export interface IGasProvider extends IGasPriceCalculator, IGasCalculator {
-}
+export interface IGasProvider extends IGasPriceCalculator, IGasCalculator {}

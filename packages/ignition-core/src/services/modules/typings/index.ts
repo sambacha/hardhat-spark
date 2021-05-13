@@ -3,10 +3,13 @@ import fs from 'fs';
 import { Module } from '../../../interfaces/hardhat_ignition';
 
 export class ModuleTypings {
-  constructor() {
-  }
+  constructor() {}
 
-  generate(deploymentPath: string, moduleName: string, module: Module | undefined) {
+  generate(
+    deploymentPath: string,
+    moduleName: string,
+    module: Module | undefined
+  ) {
     if (module == undefined) {
       return;
     }

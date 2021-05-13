@@ -1,8 +1,7 @@
 import { IAnalyticsService } from './index';
 
 export class EmptyAnalyticsService implements IAnalyticsService {
-  constructor() {
-  }
+  constructor() {}
 
   reportError(err: Error) {
     return;

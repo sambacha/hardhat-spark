@@ -23,14 +23,14 @@ import {
   EthClient,
   ModuleDeploymentSummaryService,
   IAnalyticsService,
-  EmptyAnalyticsService
+  EmptyAnalyticsService,
 } from 'ignition-core';
 
 export type ConfigFlags = {
-  networkId: string,
-  networkName: string,
-  stateFileNames: string[],
-  rpcProvider?: string,
+  networkId: string;
+  networkName: string;
+  stateFileNames: string[];
+  rpcProvider?: string;
 };
 
 export class IgnitionTests implements IIgnitionUsage {
@@ -62,31 +62,87 @@ export class IgnitionTests implements IIgnitionUsage {
 
     this.provider = new ethers.providers.JsonRpcProvider();
     if (configFlags.rpcProvider) {
-      this.provider = new ethers.providers.JsonRpcProvider(configFlags.rpcProvider);
+      this.provider = new ethers.providers.JsonRpcProvider(
+        configFlags.rpcProvider
+      );
     }
 
-    process.env.IGNITION_RPC_PROVIDER = String(configFlags.rpcProvider || 'http://localhost:8545');
+    process.env.IGNITION_RPC_PROVIDER = String(
+      configFlags.rpcProvider || 'http://localhost:8545'
+    );
 
     this.prompter = new EmptyPrompter();
     this.configService = new MemoryConfigService(configFile);
 
     this.gasProvider = new GasPriceCalculator(this.provider);
 
-    this.transactionManager = new TransactionManager(this.provider, new Wallet(this.configService.getFirstPrivateKey(), this.provider), configFlags.networkId, this.gasProvider, this.gasProvider, this.prompter);
-    this.txGenerator = new EthTxGenerator(this.configService, this.gasProvider, this.gasProvider, configFlags.networkId, this.provider, this.transactionManager, this.transactionManager, this.prompter);
+    this.transactionManager = new TransactionManager(
+      this.provider,
+      new Wallet(this.configService.getFirstPrivateKey(), this.provider),
+      configFlags.networkId,
+      this.gasProvider,
+      this.gasProvider,
+      this.prompter
+    );
+    this.txGenerator = new EthTxGenerator(
+      this.configService,
+      this.gasProvider,
+      this.gasProvider,
+      configFlags.networkId,
+      this.provider,
+      this.transactionManager,
+      this.transactionManager,
+      this.prompter
+    );
 
     this.eventSession = cls.createNamespace('event');
 
-    this.moduleStateRepo = new ModuleStateRepo(configFlags.networkName, 'test', false, true);
-    this.eventTxExecutor = new EventTxExecutor(this.eventSession, this.moduleStateRepo);
+    this.moduleStateRepo = new ModuleStateRepo(
+      configFlags.networkName,
+      'test',
+      false,
+      true
+    );
+    this.eventTxExecutor = new EventTxExecutor(
+      this.eventSession,
+      this.moduleStateRepo
+    );
     const ethClient = new EthClient(this.provider);
-    this.moduleResolver = new ModuleResolver(this.provider, this.configService.getFirstPrivateKey(), this.prompter, this.txGenerator, this.moduleStateRepo, this.eventTxExecutor, this.eventSession, ethClient);
+    this.moduleResolver = new ModuleResolver(
+      this.provider,
+      this.configService.getFirstPrivateKey(),
+      this.prompter,
+      this.txGenerator,
+      this.moduleStateRepo,
+      this.eventTxExecutor,
+      this.eventSession,
+      ethClient
+    );
 
     this.eventHandler = new EventHandler(this.moduleStateRepo, this.prompter);
-    this.txExecutor = new TxExecutor(this.prompter, this.moduleStateRepo, this.txGenerator, configFlags.networkName, this.provider, this.eventHandler, this.eventSession, this.eventTxExecutor);
+    this.txExecutor = new TxExecutor(
+      this.prompter,
+      this.moduleStateRepo,
+      this.txGenerator,
+      configFlags.networkName,
+      this.provider,
+      this.eventHandler,
+      this.eventSession,
+      this.eventTxExecutor
+    );
 
-    this.walletWrapper = new WalletWrapper(this.eventSession, this.transactionManager, this.gasProvider, this.gasProvider, this.moduleStateRepo, this.prompter, this.eventTxExecutor);
-    this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(this.moduleStateRepo);
+    this.walletWrapper = new WalletWrapper(
+      this.eventSession,
+      this.transactionManager,
+      this.gasProvider,
+      this.gasProvider,
+      this.moduleStateRepo,
+      this.prompter,
+      this.eventTxExecutor
+    );
+    this.moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(
+      this.moduleStateRepo
+    );
     this.analyticsService = new EmptyAnalyticsService();
 
     this.configFile = configFile;

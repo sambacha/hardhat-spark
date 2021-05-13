@@ -10,7 +10,10 @@ export class MemoryConfigService implements IConfigService {
   private readonly config: HardhatIgnitionConfig;
   private readonly networkName: string;
 
-  constructor(config: HardhatIgnitionConfig, networkName: string = DEFAULT_NETWORK_NAME) {
+  constructor(
+    config: HardhatIgnitionConfig,
+    networkName: string = DEFAULT_NETWORK_NAME
+  ) {
     if (checkIfExist(config)) {
       this.config = config;
     } else {
@@ -35,10 +38,7 @@ export class MemoryConfigService implements IConfigService {
     let privateKeys = config?.privateKeys || [];
     let mnemonic = config?.mnemonic || '';
     let hdPath = config?.hdPath || '';
-    if (
-      config?.networks &&
-      config?.networks[this.networkName]
-    ) {
+    if (config?.networks && config?.networks[this.networkName]) {
       if (config.networks[this.networkName]?.privateKeys) {
         privateKeys = config.networks[this.networkName]?.privateKeys || [];
       }
@@ -58,7 +58,7 @@ export class MemoryConfigService implements IConfigService {
       wallets.push(wallet);
     }
 
-    if (hdPath && mnemonic  && hdPath != '' && mnemonic != '') {
+    if (hdPath && mnemonic && hdPath != '' && mnemonic != '') {
       for (let i = 0; i < NUMBER_OF_HD_ACCOUNTS; i++) {
         const components = hdPath.split('/');
         components[components.length - 1] = String(i);
@@ -87,19 +87,26 @@ export class MemoryConfigService implements IConfigService {
       privateKeys = this.config.networks[this.networkName]?.privateKeys || [];
     }
     if (privateKeys.length < 1) {
-      throw new PrivateKeyIsMissing('Private keys are missing. Please provide them inside hardhat-ignition config file.');
+      throw new PrivateKeyIsMissing(
+        'Private keys are missing. Please provide them inside hardhat-ignition config file.'
+      );
     }
     try {
       new ethers.utils.SigningKey(privateKeys[0]);
     } catch (error) {
       cli.debug(error);
-      throw new PrivateKeyNotValid(`You have provided string that is not private key. ${privateKeys[0]}`);
+      throw new PrivateKeyNotValid(
+        `You have provided string that is not private key. ${privateKeys[0]}`
+      );
     }
 
     return privateKeys[0];
   }
 
-  initializeIgnitionConfig(currentPath: string, configScriptPath: string): Promise<HardhatIgnitionConfig> {
+  initializeIgnitionConfig(
+    currentPath: string,
+    configScriptPath: string
+  ): Promise<HardhatIgnitionConfig> {
     return Promise.resolve(this.config);
   }
 }

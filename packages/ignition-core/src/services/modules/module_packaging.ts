@@ -14,7 +14,10 @@ export class ModulePackagingService {
 
   constructor(packageName: string, packageVersion: string) {
     this.currentDir = process.cwd();
-    this.currentDistFolder = path.resolve(process.cwd(), PACKAGE_DISTRIBUTION_FOLDER_NAME);
+    this.currentDistFolder = path.resolve(
+      process.cwd(),
+      PACKAGE_DISTRIBUTION_FOLDER_NAME
+    );
     if (!fs.existsSync(this.currentDistFolder)) {
       fs.mkdirSync(this.currentDistFolder);
     }
@@ -24,20 +27,32 @@ export class ModulePackagingService {
   }
 
   async initializePackageDistributionFolder() {
-    const currentPackageFile = fs.readFileSync(path.resolve(this.currentDir, 'package.json'), 'utf-8');
+    const currentPackageFile = fs.readFileSync(
+      path.resolve(this.currentDir, 'package.json'),
+      'utf-8'
+    );
     const packageJson = JSON.parse(currentPackageFile);
 
     packageJson.name = this.packageName;
     packageJson.version = this.packageVersion;
 
-    fs.writeFileSync(path.resolve(this.currentDistFolder, 'package.json'), JSON.stringify(packageJson, undefined, 4));
+    fs.writeFileSync(
+      path.resolve(this.currentDistFolder, 'package.json'),
+      JSON.stringify(packageJson, undefined, 4)
+    );
   }
 
   async copyAllContracts() {
-    fse.copySync(path.resolve(this.currentDir, CONTRACTS_FOLDER), path.resolve(this.currentDistFolder, CONTRACTS_FOLDER));
+    fse.copySync(
+      path.resolve(this.currentDir, CONTRACTS_FOLDER),
+      path.resolve(this.currentDistFolder, CONTRACTS_FOLDER)
+    );
   }
 
   async copyAllDeploymentModules() {
-    fse.copySync(path.resolve(this.currentDir, DEPLOYMENT_FOLDER), path.resolve(this.currentDistFolder, DEPLOYMENT_FOLDER));
+    fse.copySync(
+      path.resolve(this.currentDir, DEPLOYMENT_FOLDER),
+      path.resolve(this.currentDistFolder, DEPLOYMENT_FOLDER)
+    );
   }
 }

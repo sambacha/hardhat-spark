@@ -1,4 +1,8 @@
-import { IModuleRegistryResolver, ModuleRegistryResolver, REGISTRY_NAME } from './index';
+import {
+  IModuleRegistryResolver,
+  ModuleRegistryResolver,
+  REGISTRY_NAME,
+} from './index';
 import AWS from 'aws-sdk';
 import { checkIfExist } from '../../../utils/util';
 
@@ -9,7 +13,14 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
   private readonly version: string;
   private registryFile: ModuleRegistryResolver;
 
-  constructor(endpoint: string, region: string, bucketName: string, accessKey: string = '', secretAccessKey: string = '', version: string = 'v0.0.1') {
+  constructor(
+    endpoint: string,
+    region: string,
+    bucketName: string,
+    accessKey: string = '',
+    secretAccessKey: string = '',
+    version: string = 'v0.0.1'
+  ) {
     this.bucketName = bucketName;
     this.accessKey = accessKey;
     this.version = version;
@@ -26,8 +37,11 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     });
   }
 
-
-  async resolveContract(networkId: string, moduleName: string, bindingName: string): Promise<string> {
+  async resolveContract(
+    networkId: string,
+    moduleName: string,
+    bindingName: string
+  ): Promise<string> {
     try {
       if (!checkIfExist(this.registryFile[this.version])) {
         this.registryFile = await this.getRemoteRegistry(moduleName, networkId);
@@ -43,7 +57,12 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     }
   }
 
-  async setAddress(networkId: string, moduleName: string, bindingName: string, contractAddress: string): Promise<boolean> {
+  async setAddress(
+    networkId: string,
+    moduleName: string,
+    bindingName: string,
+    contractAddress: string
+  ): Promise<boolean> {
     if (contractAddress == '') {
       return true;
     }
@@ -65,7 +84,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     const params: AWS.S3.Types.PutObjectRequest = {
       Bucket: this.bucketName,
       Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,
-      Body: JSON.stringify(this.registryFile, undefined, 4)
+      Body: JSON.stringify(this.registryFile, undefined, 4),
     };
 
     await this.s3.upload(params).promise();
@@ -73,7 +92,10 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     return true;
   }
 
-  private async getRemoteRegistry(moduleName: string, networkId: string): Promise<ModuleRegistryResolver> {
+  private async getRemoteRegistry(
+    moduleName: string,
+    networkId: string
+  ): Promise<ModuleRegistryResolver> {
     const req = this.s3.getObject({
       Bucket: this.bucketName,
       Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,
@@ -84,7 +106,9 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
         !checkIfExist(req.httpRequest.headers['Authorization']) &&
         checkIfExist(this.accessKey)
       ) {
-        req.httpRequest.headers['Authorization'] = `Credential=${this.accessKey}`;
+        req.httpRequest.headers[
+          'Authorization'
+        ] = `Credential=${this.accessKey}`;
 
         return;
       }
@@ -96,9 +120,9 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
         return;
       }
 
-      req.httpRequest.headers['Authorization'] =
-        req.httpRequest.headers['Authorization']
-          .replace('Credential=/', `Credential=${this.accessKey}`);
+      req.httpRequest.headers['Authorization'] = req.httpRequest.headers[
+        'Authorization'
+      ].replace('Credential=/', `Credential=${this.accessKey}`);
     });
 
     const object = await req.promise();

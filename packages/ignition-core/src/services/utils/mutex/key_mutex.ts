@@ -1,6 +1,6 @@
 export class KeyMutex {
   private _lock: {
-    [key: string]: any
+    [key: string]: any;
   };
 
   constructor() {
@@ -19,9 +19,9 @@ export class KeyMutex {
 
   _acquire(key: string) {
     let release: any;
-    const lock = this._lock[key] = new Promise(resolve => {
+    const lock = (this._lock[key] = new Promise((resolve) => {
       release = resolve;
-    });
+    }));
     return () => {
       if (this._lock[key] == lock) {
         this._lock[key] = undefined;

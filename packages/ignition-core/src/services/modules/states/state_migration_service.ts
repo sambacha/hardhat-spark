@@ -1,7 +1,16 @@
-import { Build, HardhatBuild, Migration, TruffleBuild } from '../../types/migration';
+import {
+  Build,
+  HardhatBuild,
+  Migration,
+  TruffleBuild,
+} from '../../types/migration';
 import { checkIfExist } from '../../utils/util';
 import { IModuleState, ModuleStateFile } from './module';
-import { ContractBindingMetaData, Deployed, TxData } from '../../../interfaces/hardhat_ignition';
+import {
+  ContractBindingMetaData,
+  Deployed,
+  TxData,
+} from '../../../interfaces/hardhat_ignition';
 import { searchBuilds, searchBuildsAndNetworks } from '../../utils/files';
 import { CliError } from '../../types/errors';
 import path from 'path';
@@ -20,10 +29,16 @@ export class StateMigrationService {
 
     switch (this.stateMigrationType) {
       case Migration.truffle:
-        this.artifactsPath = path.resolve(process.cwd(), TRUFFLE_BUILD_DIR_NAME);
+        this.artifactsPath = path.resolve(
+          process.cwd(),
+          TRUFFLE_BUILD_DIR_NAME
+        );
         break;
       case Migration.hardhatDeploy:
-        this.artifactsPath = path.resolve(process.cwd(), HARDHAT_DEPLOYMENTS_DIR_NAME);
+        this.artifactsPath = path.resolve(
+          process.cwd(),
+          HARDHAT_DEPLOYMENTS_DIR_NAME
+        );
         break;
     }
   }
@@ -33,7 +48,10 @@ export class StateMigrationService {
       case Migration.truffle:
         return searchBuilds(this.artifactsPath, []) as TruffleBuild[];
       case Migration.hardhatDeploy:
-        return searchBuildsAndNetworks(this.artifactsPath, []) as HardhatBuild[];
+        return searchBuildsAndNetworks(
+          this.artifactsPath,
+          []
+        ) as HardhatBuild[];
       default:
         throw new CliError('Migration type not found, please check.');
     }
@@ -73,14 +91,18 @@ export class StateMigrationService {
     }
   }
 
-  mapBuildsToStateFile(validBuilds: Build[]): { [networkId: string]: ModuleStateFile } {
+  mapBuildsToStateFile(
+    validBuilds: Build[]
+  ): { [networkId: string]: ModuleStateFile } {
     switch (this.stateMigrationType) {
       case Migration.truffle: {
         const stateObject: { [networkId: string]: ModuleStateFile } = {};
 
         for (let validBuild of validBuilds) {
           validBuild = validBuild as TruffleBuild;
-          for (const [networkId, metaData] of Object.entries(validBuild.networks)) {
+          for (const [networkId, metaData] of Object.entries(
+            validBuild.networks
+          )) {
             if (!checkIfExist(stateObject[networkId])) {
               stateObject[networkId] = {};
             }
@@ -92,7 +114,7 @@ export class StateMigrationService {
               lastEventName: undefined,
               logicallyDeployed: undefined,
               shouldRedeploy: undefined,
-              contractAddress: metaData.address
+              contractAddress: metaData.address,
             };
 
             stateObject[networkId][elementName] = new ContractBindingMetaData(
@@ -124,14 +146,16 @@ export class StateMigrationService {
             lastEventName: undefined,
             logicallyDeployed: undefined,
             shouldRedeploy: undefined,
-            contractAddress: validBuild.address
+            contractAddress: validBuild.address,
           };
 
           if (!checkIfExist(stateObject[validBuild.networkId])) {
             stateObject[validBuild.networkId] = {};
           }
 
-          stateObject[validBuild.networkId][elementName] = new ContractBindingMetaData(
+          stateObject[validBuild.networkId][
+            elementName
+          ] = new ContractBindingMetaData(
             validBuild.contractName,
             validBuild.contractName,
             validBuild.args,
@@ -143,7 +167,7 @@ export class StateMigrationService {
               output: validBuild.receipt,
               input: {
                 from: validBuild.receipt.from,
-              } as TxData
+              } as TxData,
             },
             deployMetaData
           );
@@ -154,7 +178,10 @@ export class StateMigrationService {
     }
   }
 
-  async storeNewStateFiles(moduleName: string, stateFiles: { [networkId: string]: ModuleStateFile }) {
+  async storeNewStateFiles(
+    moduleName: string,
+    stateFiles: { [networkId: string]: ModuleStateFile }
+  ) {
     for (const [networkId, stateFile] of Object.entries(stateFiles)) {
       await this.moduleState.storeStates(networkId, moduleName, stateFile);
     }

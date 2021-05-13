@@ -1,32 +1,41 @@
 import { ModuleStateRepo } from './states/state_repo';
 import { ModuleStateFile } from './states/module';
-import { ContractBindingMetaData, ContractInput, StatefulEvent, TxData } from '../../interfaces/hardhat_ignition';
+import {
+  ContractBindingMetaData,
+  ContractInput,
+  StatefulEvent,
+  TxData,
+} from '../../interfaces/hardhat_ignition';
 import { BigNumber, ethers } from 'ethers';
 import { checkIfExist } from '../utils/util';
 import { cli } from 'cli-ux';
 import chalk from 'chalk';
 import { getIgnitionVersion } from '../utils/package_info';
-import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
+import {
+  TransactionReceipt,
+  TransactionRequest,
+  TransactionResponse,
+} from '@ethersproject/abstract-provider';
 
 export enum SummaryType {
   'EMPTY' = 'EMPTY',
   'JSON' = 'JSON',
   'SIMPLE' = 'SIMPLE',
-  'ALL' = 'ALL'
+  'ALL' = 'ALL',
 }
 
 type SummaryDataOption = {
-  time: boolean
-  totalEthers: boolean
-  totalGas: boolean
-  averageGasPrice: boolean
-  numberOfContract: boolean
-  numberOfEvents: boolean
-  numberOfTransactions: boolean
+  time: boolean;
+  totalEthers: boolean;
+  totalGas: boolean;
+  averageGasPrice: boolean;
+  numberOfContract: boolean;
+  numberOfEvents: boolean;
+  numberOfTransactions: boolean;
 };
 
 const summaryDataOptions: { [type: string]: SummaryDataOption } = {
-  'EMPTY': {
+  EMPTY: {
     time: false,
     totalEthers: false,
     totalGas: false,
@@ -35,7 +44,7 @@ const summaryDataOptions: { [type: string]: SummaryDataOption } = {
     numberOfEvents: false,
     numberOfTransactions: false,
   },
-  'SIMPLE': {
+  SIMPLE: {
     time: true,
     totalEthers: true,
     totalGas: true,
@@ -44,7 +53,7 @@ const summaryDataOptions: { [type: string]: SummaryDataOption } = {
     numberOfEvents: false,
     numberOfTransactions: false,
   },
-  'ALL': {
+  ALL: {
     time: true,
     totalEthers: true,
     totalGas: true,
@@ -59,7 +68,10 @@ export class ModuleDeploymentSummaryService {
   private readonly moduleStateRepo: ModuleStateRepo;
   private startTime: Date;
 
-  constructor(moduleStateRepo: ModuleStateRepo, summaryType: SummaryType = SummaryType.SIMPLE) {
+  constructor(
+    moduleStateRepo: ModuleStateRepo,
+    summaryType: SummaryType = SummaryType.SIMPLE
+  ) {
     this.moduleStateRepo = moduleStateRepo;
     this.startTime = new Date();
   }
@@ -69,9 +81,14 @@ export class ModuleDeploymentSummaryService {
     return (endTime.getTime() - this.startTime.getTime()) / 1000;
   }
 
-  async showSummary(moduleName: string, oldModuleState: ModuleStateFile): Promise<string> {
+  async showSummary(
+    moduleName: string,
+    oldModuleState: ModuleStateFile
+  ): Promise<string> {
     const elapsedTime = this.endTimer();
-    const currentModuleState = await this.moduleStateRepo.getStateIfExist(moduleName);
+    const currentModuleState = await this.moduleStateRepo.getStateIfExist(
+      moduleName
+    );
 
     let totalWeiSpent = BigNumber.from(0);
     let totalGasSpent = BigNumber.from(0);
@@ -81,8 +98,10 @@ export class ModuleDeploymentSummaryService {
     let numberOfEvents = BigNumber.from(0);
     for (let [elementName, element] of Object.entries(currentModuleState)) {
       const transactionReceiptList: {
-        input: Array<ContractInput | TxData | TransactionResponse | TransactionRequest>
-        output: Array<TransactionReceipt>
+        input: Array<
+          ContractInput | TxData | TransactionResponse | TransactionRequest
+        >;
+        output: Array<TransactionReceipt>;
       } = {
         input: [],
         output: [],
@@ -108,8 +127,13 @@ export class ModuleDeploymentSummaryService {
 
       if ((element as ContractBindingMetaData)._isContractBindingMetaData) {
         element = element as ContractBindingMetaData;
-        const oldElement = oldModuleState[elementName] as ContractBindingMetaData;
-        if (oldElement?.deployMetaData?.contractAddress == element?.deployMetaData?.contractAddress) {
+        const oldElement = oldModuleState[
+          elementName
+        ] as ContractBindingMetaData;
+        if (
+          oldElement?.deployMetaData?.contractAddress ==
+          element?.deployMetaData?.contractAddress
+        ) {
           continue;
         }
 
@@ -131,34 +155,38 @@ export class ModuleDeploymentSummaryService {
         }
       }
 
-      numberOfTransactions = numberOfTransactions.add(transactionReceiptList.output.length);
-      transactionReceiptList.input.forEach((singleTxInput: any, index: number) => {
-        const singleTxOutput = transactionReceiptList.output[index];
+      numberOfTransactions = numberOfTransactions.add(
+        transactionReceiptList.output.length
+      );
+      transactionReceiptList.input.forEach(
+        (singleTxInput: any, index: number) => {
+          const singleTxOutput = transactionReceiptList.output[index];
 
-        let inputGasPrice;
-        let outputGasUsed = BigNumber.from(0);
-        if (singleTxOutput && singleTxOutput.gasUsed) {
-          // @ts-ignore
-          if (!singleTxOutput.gasUsed?.hex) {
-            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
-          } else {
+          let inputGasPrice;
+          let outputGasUsed = BigNumber.from(0);
+          if (singleTxOutput && singleTxOutput.gasUsed) {
             // @ts-ignore
-            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
+            if (!singleTxOutput.gasUsed?.hex) {
+              outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
+            } else {
+              // @ts-ignore
+              outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
+            }
           }
+
+          if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
+            inputGasPrice = BigNumber.from(singleTxInput.gasPrice._hex);
+          } else {
+            inputGasPrice = BigNumber.from(singleTxInput.gasPrice.hex);
+          }
+
+          totalGasSpent = totalGasSpent.add(BigNumber.from(outputGasUsed));
+
+          totalGasPrice = totalGasPrice.add(inputGasPrice);
+          const wei = outputGasUsed.mul(inputGasPrice);
+          totalWeiSpent = totalWeiSpent.add(wei);
         }
-
-        if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
-          inputGasPrice = BigNumber.from(singleTxInput.gasPrice._hex);
-        } else {
-          inputGasPrice = BigNumber.from(singleTxInput.gasPrice.hex);
-        }
-
-        totalGasSpent = totalGasSpent.add(BigNumber.from(outputGasUsed));
-
-        totalGasPrice = totalGasPrice.add(inputGasPrice);
-        const wei = outputGasUsed.mul(inputGasPrice);
-        totalWeiSpent = totalWeiSpent.add(wei);
-      });
+      );
     }
 
     let averageGasPrice = BigNumber.from(0);
@@ -169,8 +197,12 @@ export class ModuleDeploymentSummaryService {
     return `
 ${chalk.bold(moduleName)} deployed successfully 🚀
 
-${chalk.bold(numberOfTransactions.toString())} transactions used ${chalk.bold(totalGasSpent.toString())} gas (avg price ${chalk.bold(averageGasPrice.toString())} wei)
-Spent ${chalk.bold(ethers.utils.formatEther(totalWeiSpent.toString()))} ETH in ${chalk.bold(elapsedTime.toString())}s
+${chalk.bold(numberOfTransactions.toString())} transactions used ${chalk.bold(
+      totalGasSpent.toString()
+    )} gas (avg price ${chalk.bold(averageGasPrice.toString())} wei)
+Spent ${chalk.bold(
+      ethers.utils.formatEther(totalWeiSpent.toString())
+    )} ETH in ${chalk.bold(elapsedTime.toString())}s
 
 Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}.$timestamp.log
 `;

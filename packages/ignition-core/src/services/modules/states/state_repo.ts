@@ -2,14 +2,20 @@ import {
   ContractBinding,
   ContractBindingMetaData,
   ContractEvent,
-  ContractInput, Deployed,
+  ContractInput,
+  Deployed,
   EventTransactionData,
   EventType,
-  MetaDataEvent, ModuleEvent,
+  MetaDataEvent,
+  ModuleEvent,
   StatefulEvent,
 } from '../../../interfaces/hardhat_ignition';
 import { CliError } from '../../types/errors';
-import { TransactionReceipt, TransactionRequest, TransactionResponse } from '@ethersproject/abstract-provider';
+import {
+  TransactionReceipt,
+  TransactionRequest,
+  TransactionResponse,
+} from '@ethersproject/abstract-provider';
 import { checkIfExist } from '../../utils/util';
 import { FileSystemModuleState } from './module/file_system';
 import { IModuleState, ModuleState, ModuleStateFile } from './module';
@@ -25,10 +31,17 @@ export class ModuleStateRepo {
   private currentEventName: string;
   private readonly test: boolean;
 
-  constructor(networkName: string, currentPath: string, mutex: boolean = false, testEnv: boolean = false) {
+  constructor(
+    networkName: string,
+    currentPath: string,
+    mutex: boolean = false,
+    testEnv: boolean = false
+  ) {
     this.mutex = mutex;
     this.networkName = networkName;
-    this.stateRepo = testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath);
+    this.stateRepo = testEnv
+      ? new MemoryModuleState()
+      : new FileSystemModuleState(currentPath);
     this.currentModuleName = '';
     this.currentEventName = '';
     this.test = testEnv;
@@ -51,7 +64,10 @@ export class ModuleStateRepo {
     return this.stateRepo.getModuleState(this.networkName, moduleName);
   }
 
-  async storeNewState(moduleName: string, moduleState: ModuleState | ModuleStateFile | null): Promise<void> {
+  async storeNewState(
+    moduleName: string,
+    moduleState: ModuleState | ModuleStateFile | null
+  ): Promise<void> {
     await this.stateRepo.storeStates(this.networkName, moduleName, moduleState);
   }
 
@@ -63,14 +79,18 @@ export class ModuleStateRepo {
     return this.currentEventName;
   }
 
-  async finishCurrentEvent(moduleName: string, moduleStates: ModuleState, eventName?: string): Promise<void> {
+  async finishCurrentEvent(
+    moduleName: string,
+    moduleStates: ModuleState,
+    eventName?: string
+  ): Promise<void> {
     const currEventName = eventName ? eventName : this.currentEventName;
-    const currentState = (await this.getStateIfExist(moduleName));
-    const currentEvent = (currentState[currEventName] as StatefulEvent);
-    if (
-      !checkIfExist(currentEvent)
-    ) {
-      throw new CliError(`Cant finish event that doesn't exist in state - ${currEventName}`);
+    const currentState = await this.getStateIfExist(moduleName);
+    const currentEvent = currentState[currEventName] as StatefulEvent;
+    if (!checkIfExist(currentEvent)) {
+      throw new CliError(
+        `Cant finish event that doesn't exist in state - ${currEventName}`
+      );
     }
 
     currentEvent.executed = true;
@@ -80,10 +100,15 @@ export class ModuleStateRepo {
     this.currentEventName = '';
   }
 
-  async finishCurrentModuleEvent(moduleName: string, moduleState: ModuleState, eventType: EventType, eventName?: string): Promise<void> {
+  async finishCurrentModuleEvent(
+    moduleName: string,
+    moduleState: ModuleState,
+    eventType: EventType,
+    eventName?: string
+  ): Promise<void> {
     const currEventName = eventName ? eventName : this.currentEventName;
-    const currentState = (await this.getStateIfExist(moduleName));
-    let currentEvent = (currentState[currEventName] as StatefulEvent);
+    const currentState = await this.getStateIfExist(moduleName);
+    let currentEvent = currentState[currEventName] as StatefulEvent;
 
     if (
       eventType == EventType.OnFail ||
@@ -100,10 +125,10 @@ export class ModuleStateRepo {
       );
     }
 
-    if (
-      !checkIfExist(currentEvent)
-    ) {
-      throw new CliError(`Cant finish event that doesn't exist in state - ${currEventName}`);
+    if (!checkIfExist(currentEvent)) {
+      throw new CliError(
+        `Cant finish event that doesn't exist in state - ${currEventName}`
+      );
     }
 
     currentEvent.executed = true;
@@ -113,7 +138,10 @@ export class ModuleStateRepo {
     this.currentEventName = '';
   }
 
-  async getEventTransactionData(bindingName: string, eventName?: string): Promise<EventTransactionData> {
+  async getEventTransactionData(
+    bindingName: string,
+    eventName?: string
+  ): Promise<EventTransactionData> {
     if (this.currentModuleName == '') {
       throw new CliError('Current module name is not set');
     }
@@ -123,8 +151,8 @@ export class ModuleStateRepo {
       throw new CliError('Current event name is not set');
     }
 
-    const currentState = (await this.getStateIfExist(this.currentModuleName));
-    const eventState = (currentState[currEventName] as StatefulEvent);
+    const currentState = await this.getStateIfExist(this.currentModuleName);
+    const eventState = currentState[currEventName] as StatefulEvent;
     if (
       !checkIfExist(eventState) ||
       !checkIfExist(eventState.txData) ||
@@ -132,14 +160,19 @@ export class ModuleStateRepo {
     ) {
       return {
         contractInput: [],
-        contractOutput: []
+        contractOutput: [],
       };
     }
 
     return eventState.txData[bindingName];
   }
 
-  async storeEventTransactionData(bindingName: string, contractInput?: ContractInput, contractOutput?: TransactionReceipt, eventName?: string): Promise<void> {
+  async storeEventTransactionData(
+    bindingName: string,
+    contractInput?: ContractInput,
+    contractOutput?: TransactionReceipt,
+    eventName?: string
+  ): Promise<void> {
     if (this.currentModuleName == '') {
       throw new CliError('Current module name is not set');
     }
@@ -150,20 +183,16 @@ export class ModuleStateRepo {
       throw new CliError('Current event name is not set');
     }
 
-    const currentState = (await this.getStateIfExist(this.currentModuleName));
+    const currentState = await this.getStateIfExist(this.currentModuleName);
 
-    let currentEvent = (currentState[currEventName] as StatefulEvent);
-    if (
-      !checkIfExist(currentEvent)) {
+    let currentEvent = currentState[currEventName] as StatefulEvent;
+    if (!checkIfExist(currentEvent)) {
       // if event is not define in module it is custom deploy event..
       const event = {
         name: currEventName,
-        eventType: EventType.Deploy
+        eventType: EventType.Deploy,
       } as MetaDataEvent;
-      currentEvent = new StatefulEvent(
-        event,
-        false,
-        {});
+      currentEvent = new StatefulEvent(event, false, {});
     }
 
     if (
@@ -172,7 +201,7 @@ export class ModuleStateRepo {
     ) {
       currentEvent.txData[bindingName] = {
         contractInput: [],
-        contractOutput: []
+        contractOutput: [],
       };
     }
 
@@ -192,13 +221,17 @@ export class ModuleStateRepo {
     if (this.currentModuleName == '') {
       throw new CliError('Current module name is not set');
     }
-    const currentState = (await this.getStateIfExist(this.currentModuleName));
+    const currentState = await this.getStateIfExist(this.currentModuleName);
 
-    currentState[singleElement.name] = ModuleStateRepo.convertBindingToMetaData(singleElement);
+    currentState[singleElement.name] = ModuleStateRepo.convertBindingToMetaData(
+      singleElement
+    );
     await this.storeNewState(this.currentModuleName, currentState);
   }
 
-  static convertBindingToMetaData(binding: ContractBinding | ContractBindingMetaData): ContractBindingMetaData {
+  static convertBindingToMetaData(
+    binding: ContractBinding | ContractBindingMetaData
+  ): ContractBindingMetaData {
     for (let i = 0; i < binding.args.length; i++) {
       if (checkIfExist((binding.args[i] as ContractBinding)?.bytecode)) {
         const argBinding = binding.args[i] as ContractBinding;
@@ -211,12 +244,22 @@ export class ModuleStateRepo {
           argBinding.library,
           argBinding.libraries,
           argBinding.txData,
-          this.convertDeployMetaData(argBinding.deployMetaData),
+          this.convertDeployMetaData(argBinding.deployMetaData)
         );
       }
     }
 
-    return new ContractBindingMetaData(binding.name, binding.contractName, binding.args, binding.bytecode, binding.abi, binding.library, binding.libraries, binding.txData, this.convertDeployMetaData(binding.deployMetaData));
+    return new ContractBindingMetaData(
+      binding.name,
+      binding.contractName,
+      binding.args,
+      binding.bytecode,
+      binding.abi,
+      binding.library,
+      binding.libraries,
+      binding.txData,
+      this.convertDeployMetaData(binding.deployMetaData)
+    );
   }
 
   static convertDeployMetaData(deployMetaData: Deployed): Deployed {
@@ -225,26 +268,34 @@ export class ModuleStateRepo {
     deployed.deploymentSpec = {
       deployFn: deployMetaData.deploymentSpec?.deployFn,
       deps: (deployed.deploymentSpec?.deps || [])?.map(
-        (element: (ContractBinding | ContractBindingMetaData)) => {
+        (element: ContractBinding | ContractBindingMetaData) => {
           return ModuleStateRepo.convertBindingToMetaData(element);
         }
-      )
+      ),
     };
 
     return deployed;
   }
 
-  static convertStatesToMetaData(moduleState: ModuleState | { [p: string]: ContractBindingMetaData | StatefulEvent }): { [p: string]: ContractBindingMetaData | StatefulEvent } {
-    const metaData: { [p: string]: ContractBindingMetaData | StatefulEvent } = {};
+  static convertStatesToMetaData(
+    moduleState:
+      | ModuleState
+      | { [p: string]: ContractBindingMetaData | StatefulEvent }
+  ): { [p: string]: ContractBindingMetaData | StatefulEvent } {
+    const metaData: {
+      [p: string]: ContractBindingMetaData | StatefulEvent;
+    } = {};
 
     for (let [stateElementName, stateElement] of Object.entries(moduleState)) {
       if (
         (stateElement as ContractBinding)._isContractBinding ||
         (stateElement as ContractBindingMetaData)._isContractBindingMetaData ||
-        checkIfExist((stateElement as unknown as ContractBinding)?.bytecode)
+        checkIfExist(((stateElement as unknown) as ContractBinding)?.bytecode)
       ) {
         stateElement = stateElement as ContractBinding;
-        metaData[stateElementName] = ModuleStateRepo.convertBindingToMetaData(stateElement);
+        metaData[stateElementName] = ModuleStateRepo.convertBindingToMetaData(
+          stateElement
+        );
 
         continue;
       }

@@ -19,15 +19,15 @@ export type HardhatIgnitionConfig = {
       blockConfirmation?: number;
       parallelizeDeployment?: boolean;
       gasPriceBackoff?: GasPriceBackoff;
-    }
-  }
+    };
+  };
   parallelizeDeployment?: boolean;
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
-  gasPriceProvider?: IGasPriceCalculator,
-  nonceManager?: INonceManager,
-  transactionSigner?: ITransactionSigner,
-  params?: { [name: string]: any },
+  gasPriceProvider?: IGasPriceCalculator;
+  nonceManager?: INonceManager;
+  transactionSigner?: ITransactionSigner;
+  params?: { [name: string]: any };
 };
 
 export type GasPriceBackoff = {

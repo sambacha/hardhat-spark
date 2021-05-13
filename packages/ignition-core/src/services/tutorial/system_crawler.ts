@@ -27,17 +27,24 @@ export class SystemCrawlingService {
     return contracts;
   }
 
-  crawlSolidityFunctionsOfContract(contractName: string): {
-    name: string,
-    inputs?: Array<JsonFragmentType>,
-  }[] | undefined {
+  crawlSolidityFunctionsOfContract(
+    contractName: string
+  ):
+    | {
+        name: string;
+        inputs?: Array<JsonFragmentType>;
+      }[]
+    | undefined {
     const functionNames: {
-      name: string,
-      inputs?: Array<JsonFragmentType>,
+      name: string;
+      inputs?: Array<JsonFragmentType>;
     }[] = [];
 
     const artifacts = searchBuilds(this.currentPath, []) as Artifact[];
-    const contractBuilds = SystemCrawlingService.filterArtifactsByName(artifacts, contractName);
+    const contractBuilds = SystemCrawlingService.filterArtifactsByName(
+      artifacts,
+      contractName
+    );
 
     if (!contractBuilds) {
       return undefined;
@@ -57,7 +64,10 @@ export class SystemCrawlingService {
     return functionNames;
   }
 
-  private static filterArtifactsByName(artifacts: Artifact[], contractName: string): Artifact | undefined {
+  private static filterArtifactsByName(
+    artifacts: Artifact[],
+    contractName: string
+  ): Artifact | undefined {
     for (const artifact of artifacts) {
       if (artifact.contractName == contractName) {
         return artifact;

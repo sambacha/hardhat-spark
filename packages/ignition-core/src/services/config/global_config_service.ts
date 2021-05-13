@@ -4,9 +4,7 @@ import { cli } from 'cli-ux';
 
 const IGNITION_GLOBAL_FILE_NAME = '.hardhat-ignition';
 
-const {
-  HOME
-} = process.env;
+const { HOME } = process.env;
 
 export class GlobalConfigService {
   private readonly homePath: string;
@@ -15,18 +13,26 @@ export class GlobalConfigService {
     this.homePath = HOME as string;
 
     // check if file exist if it doesn't ask for consent and store it
-    const globalConfigFilePath = path.resolve(this.homePath, IGNITION_GLOBAL_FILE_NAME);
+    const globalConfigFilePath = path.resolve(
+      this.homePath,
+      IGNITION_GLOBAL_FILE_NAME
+    );
     if (!fs.existsSync(globalConfigFilePath)) {
       return;
     }
   }
 
   async mustConfirmConsent() {
-    const globalFilePath = path.resolve(this.homePath, IGNITION_GLOBAL_FILE_NAME);
+    const globalFilePath = path.resolve(
+      this.homePath,
+      IGNITION_GLOBAL_FILE_NAME
+    );
     if (fs.existsSync(globalFilePath)) {
       return;
     }
-    const confirm = await cli.confirm('We are gathering some error reporting data, do you want to opt in? (Y/n)');
+    const confirm = await cli.confirm(
+      'We are gathering some error reporting data, do you want to opt in? (Y/n)'
+    );
 
     fs.writeFileSync(globalFilePath, `IGNITION_ERROR_REPORTING=${confirm}`);
 
@@ -34,13 +40,16 @@ export class GlobalConfigService {
   }
 
   checkConsent(): boolean {
-    const globalConfigFilePath = path.resolve(this.homePath, IGNITION_GLOBAL_FILE_NAME);
+    const globalConfigFilePath = path.resolve(
+      this.homePath,
+      IGNITION_GLOBAL_FILE_NAME
+    );
     if (!fs.existsSync(globalConfigFilePath)) {
       return false;
     }
 
     const file = fs.readFileSync(globalConfigFilePath);
-    require('dotenv').config({path: globalConfigFilePath});
+    require('dotenv').config({ path: globalConfigFilePath });
     return process.env.IGNITION_ERROR_REPORTING == 'true';
   }
 }

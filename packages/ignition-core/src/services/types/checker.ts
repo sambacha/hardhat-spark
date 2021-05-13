@@ -1,7 +1,12 @@
 import { BigNumber, ethers } from 'ethers';
 import { ContractParameterIsMissing, ContractTypeMismatch } from './errors';
 
-export function handleTypes(bindingName: string, value: any, type: string, internalType: string | undefined): void {
+export function handleTypes(
+  bindingName: string,
+  value: any,
+  type: string,
+  internalType: string | undefined
+): void {
   switch (typeof value) {
     case 'object': {
       if (value?._isBigNumber) {
@@ -21,17 +26,22 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
         break;
       }
 
-      if (
-        'contract ' + value.name != internalType &&
-        'address' != type
-      ) {
-        throw new ContractTypeMismatch(`Unsupported type for - ${bindingName}\n provided: ${value.name}\n expected: ${internalType || ''}`);
+      if ('contract ' + value.name != internalType && 'address' != type) {
+        throw new ContractTypeMismatch(
+          `Unsupported type for - ${bindingName}\n provided: ${
+            value.name
+          }\n expected: ${internalType || ''}`
+        );
       }
       break;
     }
     case 'number': {
       if (!type.includes('int')) {
-        throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: number \n expected: ${type || ''}`);
+        throw new ContractTypeMismatch(
+          `Unsupported type for - ${bindingName} \n provided: number \n expected: ${
+            type || ''
+          }`
+        );
       }
 
       handleInt(bindingName, BigNumber.from(value), type);
@@ -43,15 +53,23 @@ export function handleTypes(bindingName: string, value: any, type: string, inter
     }
     case 'boolean': {
       if (!type.includes('bool')) {
-        throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: bool \n expected: ${type || ''}`);
+        throw new ContractTypeMismatch(
+          `Unsupported type for - ${bindingName} \n provided: bool \n expected: ${
+            type || ''
+          }`
+        );
       }
       break;
     }
     case 'undefined': {
-      throw new ContractParameterIsMissing(`Parameter in ${bindingName} is undefined, please check contract definition.`);
+      throw new ContractParameterIsMissing(
+        `Parameter in ${bindingName} is undefined, please check contract definition.`
+      );
     }
     default: {
-      throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: ${(typeof value)}`);
+      throw new ContractTypeMismatch(
+        `Unsupported type for - ${bindingName} \n provided: ${typeof value}`
+      );
     }
   }
 }
@@ -76,14 +94,20 @@ function handleString(bindingName: string, value: string, type: string): void {
   // address
   if (type.includes('address')) {
     if (!ethers.utils.isAddress(value)) {
-      throw new ContractTypeMismatch(`Not valid address - ${bindingName} \n provided length: ${value} \n type: ${type}`);
+      throw new ContractTypeMismatch(
+        `Not valid address - ${bindingName} \n provided length: ${value} \n type: ${type}`
+      );
     }
 
     return;
   }
 }
 
-function handleArray(bindingName: string, values: string[], type: string): void {
+function handleArray(
+  bindingName: string,
+  values: string[],
+  type: string
+): void {
   // let arrayLength = 0;
   //
   // const rawType = type.substring(0, type.indexOf('['));
@@ -104,7 +128,11 @@ function handleArray(bindingName: string, values: string[], type: string): void 
 
 function handleInt(bindingName: string, value: BigNumber, type: string) {
   if (value.lt(0) && type.includes('uint')) {
-    throw new ContractTypeMismatch(`Unsupported type for - ${bindingName} \n provided: negative number \n expected: ${type || ''}`);
+    throw new ContractTypeMismatch(
+      `Unsupported type for - ${bindingName} \n provided: negative number \n expected: ${
+        type || ''
+      }`
+    );
   }
 
   const bits = type.substring(type.lastIndexOf('int') + 3);
@@ -114,6 +142,10 @@ function handleInt(bindingName: string, value: BigNumber, type: string) {
   range = range.sub(1);
 
   if (BigNumber.from(value).abs().gt(range)) {
-    throw new ContractTypeMismatch(`Number out of range - ${bindingName} \n provided: ${value.toString()} \n expected: ${type || ''}`);
+    throw new ContractTypeMismatch(
+      `Number out of range - ${bindingName} \n provided: ${value.toString()} \n expected: ${
+        type || ''
+      }`
+    );
   }
 }

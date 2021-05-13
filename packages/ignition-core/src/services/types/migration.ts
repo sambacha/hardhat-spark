@@ -14,7 +14,7 @@ export enum FileGenerationType {
 
 export enum Migration {
   'truffle' = 'truffle',
-  'hardhatDeploy' = 'hardhatDeploy'
+  'hardhatDeploy' = 'hardhatDeploy',
 }
 
 export type Build = TruffleBuild | HardhatBuild;
@@ -28,7 +28,7 @@ export type HardhatBuild = {
   args: any[];
   bytecode: string;
   deployedBytecode: string;
-  networkId: string
+  networkId: string;
 };
 
 export type TruffleBuild = {
@@ -41,6 +41,6 @@ export type TruffleBuild = {
       events: { [eventHash: string]: object };
       address: string;
       transactionHash: string;
-    }
-  }
+    };
+  };
 };

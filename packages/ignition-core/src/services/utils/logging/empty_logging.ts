@@ -3,41 +3,29 @@ import { ModuleState } from '../../modules/states/module';
 import { EventType } from '../../../interfaces/hardhat_ignition';
 
 export class EmptyPrompter implements ILogging {
-  alreadyDeployed(elementName: string): void {
-  }
+  alreadyDeployed(elementName: string): void {}
 
-  bindingExecution(bindingName: string): void {
-  }
+  bindingExecution(bindingName: string): void {}
 
-  logError(): void {
-  }
+  logError(): void {}
 
-  eventExecution(eventName: string): void {
-  }
+  eventExecution(eventName: string): void {}
 
-  executeContractFunction(contractFunction: string): void {
-  }
+  executeContractFunction(contractFunction: string): void {}
 
-  executeWalletTransfer(address: string, to: string): void {
-  }
+  executeWalletTransfer(address: string, to: string): void {}
 
-  finishModuleDeploy(moduleName: string): void {
-  }
+  finishModuleDeploy(moduleName: string): void {}
 
-  finishedBindingExecution(bindingName: string): void {
-  }
+  finishedBindingExecution(bindingName: string): void {}
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
-  }
+  finishedEventExecution(eventName: string, eventType: EventType): void {}
 
-  finishedExecutionOfContractFunction(functionName: string): void {
-  }
+  finishedExecutionOfContractFunction(functionName: string): void {}
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
-  }
+  finishedExecutionOfWalletTransfer(from: string, to: string): void {}
 
-  nothingToDeploy(): void {
-  }
+  nothingToDeploy(): void {}
 
   promptContinueDeployment(): Promise<void> {
     return Promise.resolve(undefined);
@@ -47,52 +35,44 @@ export class EmptyPrompter implements ILogging {
     return Promise.resolve(undefined);
   }
 
-  promptSignedTransaction(tx: string): void {
-  }
+  promptSignedTransaction(tx: string): void {}
 
-  sendingTx(elementName: string, functionName?: string): void {
-  }
+  sendingTx(elementName: string, functionName?: string): void {}
 
-  sentTx(elementName: string, functionName?: string): void {
-  }
+  sentTx(elementName: string, functionName?: string): void {}
 
-  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
-  }
+  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {}
 
-  transactionConfirmation(confirmationNumber: number, elementName: string, functionName?: string): void {
-  }
+  transactionConfirmation(
+    confirmationNumber: number,
+    elementName: string,
+    functionName?: string
+  ): void {}
 
-  transactionReceipt(): void {
-  }
+  transactionReceipt(): void {}
 
-  waitTransactionConfirmation(): void {
-  }
+  waitTransactionConfirmation(): void {}
 
-  generatedTypes(): void {
-  }
+  generatedTypes(): void {}
 
-  finishedModuleUsageGeneration(moduleName: string) {
-  }
+  finishedModuleUsageGeneration(moduleName: string) {}
 
-  startingModuleUsageGeneration(moduleName: string) {
-  }
+  startingModuleUsageGeneration(moduleName: string) {}
 
-  parallelizationExperimental() {
-  }
+  parallelizationExperimental() {}
 
   async wrongNetwork(): Promise<boolean> {
     return false;
   }
 
-  gasPriceIsLarge(backoffTime: number) {
-  }
+  gasPriceIsLarge(backoffTime: number) {}
 
-  finishModuleResolving(): void {
-  }
+  finishModuleResolving(): void {}
 
-  startModuleResolving(): void {
-  }
+  startModuleResolving(): void {}
 
-  contractFunctionAlreadyExecuted(contractFunction: string, ...args: any[]): void {
-  }
+  contractFunctionAlreadyExecuted(
+    contractFunction: string,
+    ...args: any[]
+  ): void {}
 }

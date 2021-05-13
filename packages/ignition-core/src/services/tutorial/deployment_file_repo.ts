@@ -5,8 +5,7 @@ export class DeploymentFileRepo {
   private deploymentPath: string | undefined;
   private deploymentFile: string | undefined;
 
-  constructor() {
-  }
+  constructor() {}
 
   setDeploymentPath(deploymentPath: string, deploymentFile: string): void {
     this.deploymentPath = deploymentPath;
@@ -21,6 +20,10 @@ export class DeploymentFileRepo {
     if (!fs.existsSync(this.deploymentPath)) {
       fs.mkdirSync(this.deploymentPath);
     }
-    fs.writeFileSync(path.resolve(this.deploymentPath, this.deploymentFile), fileContent, {encoding: 'utf8'});
+    fs.writeFileSync(
+      path.resolve(this.deploymentPath, this.deploymentFile),
+      fileContent,
+      { encoding: 'utf8' }
+    );
   }
 }

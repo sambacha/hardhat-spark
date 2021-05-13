@@ -11,13 +11,16 @@ import { readAnalyticsId } from './analytics_util';
 import {
   readFirstLegacyAnalyticsId,
   readSecondLegacyAnalyticsId,
-  writeAnalyticsId
+  writeAnalyticsId,
 } from 'hardhat/internal/util/global-dir';
 import { IAnalyticsService } from './index';
 
-require('dotenv').config({path: path.resolve(__dirname + '../../../../.env.local')});
+require('dotenv').config({
+  path: path.resolve(__dirname + '../../../../.env.local'),
+});
 
-const SENTRY_DSN = 'https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032';
+const SENTRY_DSN =
+  'https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032';
 
 const GOOGLE_ANALYTICS_URL = 'https://www.google-analytics.com/collect';
 const GA_TRACKING_ID = 'UA-125013494-5';
@@ -76,9 +79,7 @@ export class AnalyticsService implements IAnalyticsService {
     Sentry.captureException(err);
   }
 
-  public async sendCommandHit(
-    taskName: string
-  ): Promise<Response | any> {
+  public async sendCommandHit(taskName: string): Promise<Response | any> {
     if (process.env.IGNITION_ENV == 'development') {
       return;
     }
@@ -107,7 +108,7 @@ export class AnalyticsService implements IAnalyticsService {
       cm: 'User Type',
       cd1: 'hardhat-ignition',
       cd2: this.userType,
-      cd3: await getIgnitionVersion() || '',
+      cd3: (await getIgnitionVersion()) || '',
     };
   }
 

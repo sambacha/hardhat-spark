@@ -1,7 +1,12 @@
 import {
   Events,
   StatefulEvent,
-  ContractBinding, ModuleEvents, ModuleEvent, ContractEvent, ContractBindingMetaData, EventsDepRef,
+  ContractBinding,
+  ModuleEvents,
+  ModuleEvent,
+  ContractEvent,
+  ContractBindingMetaData,
+  EventsDepRef,
 } from '../../interfaces/hardhat_ignition';
 import { checkIfExist, isSameBytecode } from '../utils/util';
 import { cli } from 'cli-ux';
@@ -9,7 +14,9 @@ import { ethers } from 'ethers';
 import { ILogging } from '../utils/logging';
 import { EthTxGenerator, EventTxExecutor } from '../ethereum/transactions';
 import {
-  CliError, ContractNotCompiledError, ModuleAndModuleStateEventTypeMismatchError,
+  CliError,
+  ContractNotCompiledError,
+  ModuleAndModuleStateEventTypeMismatchError,
   ModuleAndModuleStateMismatchElementError,
   ModuleAndModuleStateMismatchElementNameError,
   ModuleStateMismatchError,
@@ -38,7 +45,7 @@ export class ModuleResolver {
     moduleStateRepo: ModuleStateRepo,
     eventTxExecutor: EventTxExecutor,
     eventSession: Namespace,
-    ethereumClient: EthClient,
+    ethereumClient: EthClient
   ) {
     this.signer = new ethers.Wallet(privateKey, provider);
     this.prompter = prompter;
@@ -49,7 +56,10 @@ export class ModuleResolver {
     this.ethClient = ethereumClient;
   }
 
-  checkIfDiff(oldModuleState: ModuleStateFile, newModuleStates: ModuleState): boolean {
+  checkIfDiff(
+    oldModuleState: ModuleStateFile,
+    newModuleStates: ModuleState
+  ): boolean {
     let oldBindingsLength = 0;
     let newBindingsLength = 0;
     if (checkIfExist(oldModuleState)) {
@@ -65,15 +75,22 @@ export class ModuleResolver {
 
     let i = 0;
     while (i < oldBindingsLength) {
-      let oldModuleElement: ContractBindingMetaData | StatefulEvent = oldModuleState[Object.keys(oldModuleState)[i]];
-      let newModuleElement: ContractBinding | StatefulEvent = newModuleStates[Object.keys(newModuleStates)[i]];
+      let oldModuleElement: ContractBindingMetaData | StatefulEvent =
+        oldModuleState[Object.keys(oldModuleState)[i]];
+      let newModuleElement: ContractBinding | StatefulEvent =
+        newModuleStates[Object.keys(newModuleStates)[i]];
 
       // @ts-ignore
-      if (checkIfExist(oldModuleElement?.bytecode) && checkIfExist(newModuleElement?.bytecode)) {
-        oldModuleElement = (oldModuleElement as ContractBindingMetaData);
-        newModuleElement = (newModuleElement as ContractBinding);
+      if (
+        checkIfExist(oldModuleElement?.bytecode) &&
+        checkIfExist(newModuleElement?.bytecode)
+      ) {
+        oldModuleElement = oldModuleElement as ContractBindingMetaData;
+        newModuleElement = newModuleElement as ContractBinding;
 
-        if (!isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
+        if (
+          !isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)
+        ) {
           return true;
         }
 
@@ -89,8 +106,8 @@ export class ModuleResolver {
         continue;
       }
 
-      oldModuleElement = (oldModuleElement as StatefulEvent);
-      newModuleElement = (newModuleElement as StatefulEvent);
+      oldModuleElement = oldModuleElement as StatefulEvent;
+      newModuleElement = newModuleElement as StatefulEvent;
 
       if (
         oldModuleElement.event.name != newModuleElement.event.name &&
@@ -105,7 +122,10 @@ export class ModuleResolver {
     return false;
   }
 
-  printDiffParams(oldModuleStates: ModuleStateFile, newModuleStates: ModuleState): void {
+  printDiffParams(
+    oldModuleStates: ModuleStateFile,
+    newModuleStates: ModuleState
+  ): void {
     if (!this.checkIfDiff(oldModuleStates, newModuleStates)) {
       return;
     }
@@ -121,15 +141,22 @@ export class ModuleResolver {
 
     let i = 0;
     while (i < oldModuleStatesLength) {
-      let oldModuleElement: ContractBindingMetaData | StatefulEvent = oldModuleStates[Object.keys(oldModuleStates)[i]];
-      let newModuleElement: ContractBinding | StatefulEvent = newModuleStates[Object.keys(newModuleStates)[i]];
+      let oldModuleElement: ContractBindingMetaData | StatefulEvent =
+        oldModuleStates[Object.keys(oldModuleStates)[i]];
+      let newModuleElement: ContractBinding | StatefulEvent =
+        newModuleStates[Object.keys(newModuleStates)[i]];
 
       // @ts-ignore
-      if (checkIfExist(oldModuleElement?.bytecode) && checkIfExist(newModuleElement?.bytecode)) {
+      if (
+        checkIfExist(oldModuleElement?.bytecode) &&
+        checkIfExist(newModuleElement?.bytecode)
+      ) {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
         newModuleElement = newModuleElement as ContractBinding;
 
-        if (!isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)) {
+        if (
+          !isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)
+        ) {
           cli.info('~', 'Contract: ', newModuleElement.name);
           printArgs(newModuleElement.args, '  ');
         }
@@ -140,7 +167,10 @@ export class ModuleResolver {
 
       oldModuleElement = oldModuleElement as StatefulEvent;
       newModuleElement = newModuleElement as StatefulEvent;
-      if (checkIfExist(oldModuleElement?.event) && checkIfExist(newModuleElement?.event)) {
+      if (
+        checkIfExist(oldModuleElement?.event) &&
+        checkIfExist(newModuleElement?.event)
+      ) {
         const newEvent = newModuleElement.event as ContractEvent;
         const oldEvent = oldModuleElement.event as ContractEvent;
 
@@ -159,7 +189,8 @@ export class ModuleResolver {
     }
 
     while (i < newModuleStatesLength) {
-      let newModuleElement: ContractBinding | StatefulEvent = newModuleStates[Object.keys(newModuleStates)[i]];
+      let newModuleElement: ContractBinding | StatefulEvent =
+        newModuleStates[Object.keys(newModuleStates)[i]];
 
       // @ts-ignore
       if (checkIfExist(newModuleElement?.bytecode)) {
@@ -191,24 +222,38 @@ export class ModuleResolver {
     currentBindings: { [p: string]: ContractBinding },
     currentEvents: Events,
     moduleEvents: ModuleEvents,
-    moduleStateFile: ModuleStateFile,
+    moduleStateFile: ModuleStateFile
   ): Promise<ModuleState> {
     let userAlwaysDeploy = undefined;
     let resolvedModuleElements: ModuleState = {};
 
     // onStart module event resolving
-    ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onStart);
+    ModuleResolver.handleModuleEvents(
+      resolvedModuleElements,
+      moduleEvents.onStart
+    );
     for (const [bindingName, binding] of Object.entries(currentBindings)) {
       if (checkIfExist(resolvedModuleElements[bindingName])) {
         continue;
       }
 
       // contract and his events resolving
-      resolvedModuleElements = ModuleResolver.resolveContractsAndEvents(resolvedModuleElements, currentBindings, binding, currentEvents);
+      resolvedModuleElements = ModuleResolver.resolveContractsAndEvents(
+        resolvedModuleElements,
+        currentBindings,
+        binding,
+        currentEvents
+      );
     }
     // onSuccess and onCompletion module event
-    ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onSuccess);
-    ModuleResolver.handleModuleEvents(resolvedModuleElements, moduleEvents.onCompletion);
+    ModuleResolver.handleModuleEvents(
+      resolvedModuleElements,
+      moduleEvents.onSuccess
+    );
+    ModuleResolver.handleModuleEvents(
+      resolvedModuleElements,
+      moduleEvents.onCompletion
+    );
 
     let moduleStateLength = 0;
     if (checkIfExist(resolvedModuleElements)) {
@@ -220,38 +265,55 @@ export class ModuleResolver {
     const moduleElementNames = Object.keys(resolvedModuleElements);
     while (i < moduleStateLength) {
       const moduleElementName = moduleElementNames[i];
-      let resolvedModuleStateElement = resolvedModuleElements[moduleElementName];
+      let resolvedModuleStateElement =
+        resolvedModuleElements[moduleElementName];
 
       let stateFileElement = moduleStateFile[moduleElementName];
       stateFileElement = stateFileElement as ContractBindingMetaData;
-      if (checkIfExist(stateFileElement) && checkIfExist(stateFileElement?.bytecode)) {
-        if (!((resolvedModuleStateElement as ContractBinding)._isContractBinding)) {
-          throw new ModuleStateMismatchError(stateFileElement, resolvedModuleStateElement as StatefulEvent);
+      if (
+        checkIfExist(stateFileElement) &&
+        checkIfExist(stateFileElement?.bytecode)
+      ) {
+        if (
+          !(resolvedModuleStateElement as ContractBinding)._isContractBinding
+        ) {
+          throw new ModuleStateMismatchError(
+            stateFileElement,
+            resolvedModuleStateElement as StatefulEvent
+          );
         }
 
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
         // check if network has code at specific address
-        if (userAlwaysDeploy == undefined && stateFileElement.deployMetaData.contractAddress) {
-            const code = await this.ethClient.getCode(stateFileElement?.deployMetaData?.contractAddress);
-            if (
-              !checkIfExist(code) ||
-              code == '0x'
-            ) {
-              userAlwaysDeploy = await this.prompter.wrongNetwork();
-              if (!userAlwaysDeploy) {
-                moduleStateFile = {};
-              }
+        if (
+          userAlwaysDeploy == undefined &&
+          stateFileElement.deployMetaData.contractAddress
+        ) {
+          const code = await this.ethClient.getCode(
+            stateFileElement?.deployMetaData?.contractAddress
+          );
+          if (!checkIfExist(code) || code == '0x') {
+            userAlwaysDeploy = await this.prompter.wrongNetwork();
+            if (!userAlwaysDeploy) {
+              moduleStateFile = {};
             }
+          }
         }
         if (
           userAlwaysDeploy ||
           resolvedModuleStateElement.forceFlag == true ||
-          !isSameBytecode(stateFileElement.bytecode, resolvedModuleStateElement.bytecode) ||
+          !isSameBytecode(
+            stateFileElement.bytecode,
+            resolvedModuleStateElement.bytecode
+          ) ||
           (!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
-            resolvedModuleStateElement.deployMetaData.shouldRedeploy(resolvedModuleStateElement)) ||
+            resolvedModuleStateElement.deployMetaData.shouldRedeploy(
+              resolvedModuleStateElement
+            )) ||
           !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
         ) {
-          resolvedModuleStateElement.signer = this.signer as unknown as ethers.Signer;
+          resolvedModuleStateElement.signer = (this
+            .signer as unknown) as ethers.Signer;
           resolvedModuleStateElement.prompter = this.prompter;
           resolvedModuleStateElement.txGenerator = this.txGenerator;
           resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
@@ -263,7 +325,11 @@ export class ModuleResolver {
           // this is necessary in order to surface contract metadata to consumer;
           currentBindings[moduleElementName] = resolvedModuleStateElement;
 
-          ModuleResolver.invalidateStateElementDependant(moduleStateFile, resolvedModuleElements, resolvedModuleStateElement);
+          ModuleResolver.invalidateStateElementDependant(
+            moduleStateFile,
+            resolvedModuleElements,
+            resolvedModuleStateElement
+          );
 
           i++;
           continue;
@@ -272,9 +338,11 @@ export class ModuleResolver {
         resolvedModuleStateElement.bytecode = stateFileElement.bytecode;
         resolvedModuleStateElement.abi = stateFileElement.abi;
         resolvedModuleStateElement.libraries = stateFileElement.libraries;
-        resolvedModuleStateElement.deployMetaData = stateFileElement.deployMetaData;
+        resolvedModuleStateElement.deployMetaData =
+          stateFileElement.deployMetaData;
         resolvedModuleStateElement.txData = stateFileElement.txData;
-        resolvedModuleStateElement.signer = this.signer as unknown as ethers.Signer;
+        resolvedModuleStateElement.signer = (this
+          .signer as unknown) as ethers.Signer;
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
@@ -284,31 +352,41 @@ export class ModuleResolver {
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
         // this is necessary in order to surface contract metadata to consumer;
-        currentBindings[moduleElementName] = resolvedModuleState[moduleElementName] as ContractBinding;
+        currentBindings[moduleElementName] = resolvedModuleState[
+          moduleElementName
+        ] as ContractBinding;
 
         i++;
         continue;
       }
 
-      stateFileElement = stateFileElement as unknown as StatefulEvent;
+      stateFileElement = (stateFileElement as unknown) as StatefulEvent;
       if (
         !userAlwaysDeploy &&
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {
         resolvedModuleStateElement = resolvedModuleStateElement as StatefulEvent;
-        if (!(resolvedModuleStateElement._isStatefulEvent)) {
-          throw new ModuleAndModuleStateMismatchElementError(resolvedModuleStateElement, stateFileElement as unknown as ContractBinding);
+        if (!resolvedModuleStateElement._isStatefulEvent) {
+          throw new ModuleAndModuleStateMismatchElementError(
+            resolvedModuleStateElement,
+            (stateFileElement as unknown) as ContractBinding
+          );
         }
 
-        if (stateFileElement.event.name !== resolvedModuleStateElement.event.name) {
+        if (
+          stateFileElement.event.name !== resolvedModuleStateElement.event.name
+        ) {
           throw new ModuleAndModuleStateMismatchElementNameError(
             stateFileElement.event.name,
             resolvedModuleStateElement.event.name
           );
         }
 
-        if (stateFileElement.event.eventType !== resolvedModuleStateElement.event.eventType) {
+        if (
+          stateFileElement.event.eventType !==
+          resolvedModuleStateElement.event.eventType
+        ) {
           throw new ModuleAndModuleStateEventTypeMismatchError(
             resolvedModuleStateElement.event.name,
             resolvedModuleStateElement.event.eventType,
@@ -326,7 +404,8 @@ export class ModuleResolver {
       if ((resolvedModuleStateElement as ContractBinding)._isContractBinding) {
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
 
-        resolvedModuleStateElement.signer = this.signer as unknown as ethers.Signer;
+        resolvedModuleStateElement.signer = (this
+          .signer as unknown) as ethers.Signer;
         resolvedModuleStateElement.prompter = this.prompter;
         resolvedModuleStateElement.txGenerator = this.txGenerator;
         resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
@@ -346,22 +425,40 @@ export class ModuleResolver {
     return resolvedModuleState;
   }
 
-  private static invalidateStateElementDependant(moduleStateFile: ModuleStateFile, resolvedModule: ModuleState, currentBinding: ContractBinding) {
+  private static invalidateStateElementDependant(
+    moduleStateFile: ModuleStateFile,
+    resolvedModule: ModuleState,
+    currentBinding: ContractBinding
+  ) {
     for (const arg of currentBinding.args) {
       if (
         (arg._isContractBinding || arg._isContractBindingMetaData) &&
         checkIfExist(arg.deployMetaData.contractAddress)
       ) {
-        (moduleStateFile[arg.name] as ContractBindingMetaData).deployMetaData.contractAddress = undefined;
+        (moduleStateFile[
+          arg.name
+        ] as ContractBindingMetaData).deployMetaData.contractAddress = undefined;
 
-        this.invalidateStateElementDependant(moduleStateFile, resolvedModule, resolvedModule[arg.name] as ContractBinding);
+        this.invalidateStateElementDependant(
+          moduleStateFile,
+          resolvedModule,
+          resolvedModule[arg.name] as ContractBinding
+        );
       }
     }
 
-    this.invalidateBindingEventsDependant(currentBinding.eventsDeps, moduleStateFile, resolvedModule);
+    this.invalidateBindingEventsDependant(
+      currentBinding.eventsDeps,
+      moduleStateFile,
+      resolvedModule
+    );
   }
 
-  private static invalidateBindingEventsDependant(bindingEventDeps: EventsDepRef, moduleStateFile: ModuleStateFile, resolvedModule: ModuleState) {
+  private static invalidateBindingEventsDependant(
+    bindingEventDeps: EventsDepRef,
+    moduleStateFile: ModuleStateFile,
+    resolvedModule: ModuleState
+  ) {
     const invalidateSingleEvent = (statefulEvent: StatefulEvent) => {
       if (!checkIfExist(statefulEvent)) {
         return;
@@ -400,7 +497,7 @@ export class ModuleResolver {
     moduleState: ModuleState,
     bindings: { [p: string]: ContractBinding },
     binding: ContractBinding,
-    events: Events,
+    events: Events
   ): ModuleState {
     // recursion exit
     if (checkIfExist(moduleState[binding.name])) {
@@ -421,7 +518,11 @@ export class ModuleResolver {
     }
 
     if (!checkIfExist(binding?.libraries)) {
-      throw new ContractNotCompiledError(binding.name, binding.contractName, binding.moduleName);
+      throw new ContractNotCompiledError(
+        binding.name,
+        binding.contractName,
+        binding.moduleName
+      );
     }
 
     // resolve all libraries usage
@@ -436,13 +537,19 @@ export class ModuleResolver {
     }
 
     // in case custom deployFn is provided with their deps, resolve them first
-    for (const deployDeps of (binding?.deployMetaData?.deploymentSpec?.deps) || []) {
+    for (const deployDeps of binding?.deployMetaData?.deploymentSpec?.deps ||
+      []) {
       const deployDepsBinding = bindings[deployDeps.name];
       if (!checkIfExist(deployDepsBinding)) {
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, deployDepsBinding, events);
+      this.resolveContractsAndEvents(
+        moduleState,
+        bindings,
+        deployDepsBinding,
+        events
+      );
     }
 
     // resolving before deploy events for this contract (beforeCompile, afterCompile, beforeDeploy)
@@ -464,15 +571,17 @@ export class ModuleResolver {
     moduleState: ModuleState,
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
-    events: Events,
+    events: Events
   ): void {
     const addEvent = (eventName: string) => {
       if (checkIfExist(moduleState[eventName])) {
         return;
       }
 
-      for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
-        const event = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+      for (const eventDepName of (events[eventName].event as ContractEvent)
+        .eventDeps) {
+        const event = (events[eventDepName] as StatefulEvent)
+          .event as ContractEvent;
         if (!checkIfExist(event.eventDeps)) {
           continue;
         }
@@ -483,14 +592,21 @@ export class ModuleResolver {
             continue;
           }
 
-          this.resolveContractsAndEvents(moduleState, bindings, bindings[bindingName], events);
+          this.resolveContractsAndEvents(
+            moduleState,
+            bindings,
+            bindings[bindingName],
+            events
+          );
           bindings[bindingName].deployMetaData.lastEventName = eventName;
           bindings[bindingName].deployMetaData.logicallyDeployed = false;
         }
       }
 
-      for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
-        const event = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+      for (const eventDepName of (events[eventName].event as ContractEvent)
+        .eventUsage) {
+        const event = (events[eventDepName] as StatefulEvent)
+          .event as ContractEvent;
         if (!checkIfExist(event.eventDeps)) {
           continue;
         }
@@ -498,7 +614,9 @@ export class ModuleResolver {
         const deps = event.deps;
         for (const bindingName of deps) {
           if (!checkIfExist(moduleState[bindingName])) {
-            throw new UsageEventNotFound('Event that you are trying to use is not present in module.');
+            throw new UsageEventNotFound(
+              'Event that you are trying to use is not present in module.'
+            );
           }
         }
       }
@@ -529,14 +647,26 @@ export class ModuleResolver {
     moduleState: ModuleState,
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
-    events: Events,
+    events: Events
   ): void {
     for (const eventIndex in binding.eventsDeps.afterDeploy) {
-      this.addEvent(binding.eventsDeps.afterDeploy[eventIndex], moduleState, binding, bindings, events);
+      this.addEvent(
+        binding.eventsDeps.afterDeploy[eventIndex],
+        moduleState,
+        binding,
+        bindings,
+        events
+      );
     }
 
     for (const eventIndex in binding.eventsDeps.onChange) {
-      this.addEvent(binding.eventsDeps.onChange[eventIndex], moduleState, binding, bindings, events);
+      this.addEvent(
+        binding.eventsDeps.onChange[eventIndex],
+        moduleState,
+        binding,
+        bindings,
+        events
+      );
     }
   }
 
@@ -545,7 +675,7 @@ export class ModuleResolver {
     moduleState: ModuleState,
     binding: ContractBinding,
     bindings: { [p: string]: ContractBinding },
-    events: Events,
+    events: Events
   ) {
     // iterate over all contract dependencies and resolve them
     for (const depName of (events[eventName].event as ContractEvent).deps) {
@@ -553,39 +683,64 @@ export class ModuleResolver {
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events);
+      this.resolveContractsAndEvents(
+        moduleState,
+        bindings,
+        bindings[depName],
+        events
+      );
     }
 
     // iterate over all event dependencies and resolve them
-    for (const eventDepName of (events[eventName].event as ContractEvent).eventDeps) {
-      const contractEvent = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+    for (const eventDepName of (events[eventName].event as ContractEvent)
+      .eventDeps) {
+      const contractEvent = (events[eventDepName] as StatefulEvent)
+        .event as ContractEvent;
 
       // this is need if event is dependant fo multiple events, in that case above for loop wouldn't be enough
-      this.resolveSingleEvent(moduleState, bindings, events, binding, contractEvent);
+      this.resolveSingleEvent(
+        moduleState,
+        bindings,
+        events,
+        binding,
+        contractEvent
+      );
 
       if (!checkIfExist(moduleState[contractEvent.name])) {
-        throw new CliError(`Event was not been resolved - ${eventName} ${contractEvent.name}`);
+        throw new CliError(
+          `Event was not been resolved - ${eventName} ${contractEvent.name}`
+        );
       }
     }
 
     // iterate over all contract usage and resolve them
-    for (const usageBindingName of (events[eventName].event as ContractEvent).usage) {
+    for (const usageBindingName of (events[eventName].event as ContractEvent)
+      .usage) {
       if (checkIfExist(moduleState[usageBindingName])) {
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, bindings[usageBindingName], events);
+      this.resolveContractsAndEvents(
+        moduleState,
+        bindings,
+        bindings[usageBindingName],
+        events
+      );
     }
 
     // iterate over all event usage and throw error if missing
-    for (const eventDepName of (events[eventName].event as ContractEvent).eventUsage) {
-      const eventUsage = (events[eventDepName] as StatefulEvent).event as ContractEvent;
+    for (const eventDepName of (events[eventName].event as ContractEvent)
+      .eventUsage) {
+      const eventUsage = (events[eventDepName] as StatefulEvent)
+        .event as ContractEvent;
 
       for (const bindingUsageName of eventUsage.deps) {
         const eventUsageBinding = bindings[bindingUsageName] as ContractBinding;
 
         if (!checkIfExist(moduleState[eventUsageBinding.name])) {
-          throw new UsageEventNotFound(`Event that you want to use is not present in your module, please check dependencies. ${events[eventName].event.name} - ${eventDepName} - ${eventUsageBinding.name}`);
+          throw new UsageEventNotFound(
+            `Event that you want to use is not present in your module, please check dependencies. ${events[eventName].event.name} - ${eventDepName} - ${eventUsageBinding.name}`
+          );
         }
       }
     }
@@ -593,7 +748,13 @@ export class ModuleResolver {
     moduleState[eventName] = events[eventName];
   }
 
-  static resolveSingleEvent(moduleState: ModuleState, bindings: { [p: string]: ContractBinding }, events: Events, binding: ContractBinding, contractEvent: ContractEvent) {
+  static resolveSingleEvent(
+    moduleState: ModuleState,
+    bindings: { [p: string]: ContractBinding },
+    events: Events,
+    binding: ContractBinding,
+    contractEvent: ContractEvent
+  ) {
     if (checkIfExist(moduleState[contractEvent.name])) {
       return;
     }
@@ -603,12 +764,23 @@ export class ModuleResolver {
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, bindings[depName], events);
+      this.resolveContractsAndEvents(
+        moduleState,
+        bindings,
+        bindings[depName],
+        events
+      );
       bindings[binding.name].deployMetaData.lastEventName = contractEvent.name;
       bindings[binding.name].deployMetaData.logicallyDeployed = false;
     }
     for (const eventDepName of contractEvent.eventDeps) {
-      this.resolveSingleEvent(moduleState, bindings, events, binding, events[eventDepName].event as ContractEvent);
+      this.resolveSingleEvent(
+        moduleState,
+        bindings,
+        events,
+        binding,
+        events[eventDepName].event as ContractEvent
+      );
     }
 
     for (const usageName of contractEvent.usage) {
@@ -616,29 +788,41 @@ export class ModuleResolver {
         continue;
       }
 
-      this.resolveContractsAndEvents(moduleState, bindings, bindings[usageName], events);
+      this.resolveContractsAndEvents(
+        moduleState,
+        bindings,
+        bindings[usageName],
+        events
+      );
     }
     for (const eventUsageName of contractEvent.eventUsage) {
-      this.resolveSingleEvent(moduleState, bindings, events, binding, events[eventUsageName].event as ContractEvent);
+      this.resolveSingleEvent(
+        moduleState,
+        bindings,
+        events,
+        binding,
+        events[eventUsageName].event as ContractEvent
+      );
     }
 
     moduleState[contractEvent.name] = events[contractEvent.name];
   }
 
   static handleModuleEvents(
-    moduleState: ModuleState | { [p: string]: ContractBindingMetaData | StatefulEvent },
-    moduleEvents: { [name: string]: ModuleEvent },
+    moduleState:
+      | ModuleState
+      | { [p: string]: ContractBindingMetaData | StatefulEvent },
+    moduleEvents: { [name: string]: ModuleEvent }
   ) {
     for (const [eventName, moduleEvent] of Object.entries(moduleEvents)) {
-      if (checkIfExist(moduleState[eventName]) && (moduleState[eventName] as StatefulEvent).executed) {
+      if (
+        checkIfExist(moduleState[eventName]) &&
+        (moduleState[eventName] as StatefulEvent).executed
+      ) {
         continue;
       }
 
-      moduleState[eventName] = new StatefulEvent(
-        moduleEvent,
-        false,
-        {}
-      );
+      moduleState[eventName] = new StatefulEvent(moduleEvent, false, {});
     }
   }
 }
@@ -681,7 +865,6 @@ function checkArgs(currentArgs: any[], deployedArgs: any[]): boolean {
 
   let i = 0;
   while (i < currentArgsLen) {
-
     if (currentArgs[i] != deployedArgs[i]) {
       return false;
     }
@@ -699,4 +882,3 @@ function checkArgs(currentArgs: any[], deployedArgs: any[]): boolean {
 
   return true;
 }
-

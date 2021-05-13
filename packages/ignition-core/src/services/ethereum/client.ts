@@ -6,7 +6,10 @@ export class EthClient {
     this.provider = provider;
   }
 
-  getCode(contractAddress: string, blockNumber?: string | number): Promise<string> {
+  getCode(
+    contractAddress: string,
+    blockNumber?: string | number
+  ): Promise<string> {
     return this.provider.getCode(contractAddress, blockNumber);
   }
 }

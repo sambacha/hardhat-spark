@@ -7,12 +7,10 @@ function generatePathsSync(packageName = 'hardhat') {
   return envPaths(packageName);
 }
 
-
 async function generatePaths(packageName = 'hardhat') {
   const { default: envPaths } = await import('env-paths');
   return envPaths(packageName);
 }
-
 
 async function getDataDir(packageName?: string): Promise<string> {
   const { data } = await generatePaths(packageName);

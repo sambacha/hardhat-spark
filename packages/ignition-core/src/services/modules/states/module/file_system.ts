@@ -1,4 +1,10 @@
-import { IModuleState, ModuleState, ModuleStateFile, STATE_DIR_NAME, STATE_NAME } from './index';
+import {
+  IModuleState,
+  ModuleState,
+  ModuleStateFile,
+  STATE_DIR_NAME,
+  STATE_NAME,
+} from './index';
 import path from 'path';
 import fs from 'fs';
 import { ModuleStateRepo } from '../state_repo';
@@ -19,18 +25,33 @@ export class FileSystemModuleState implements IModuleState {
     this.mutex = new Mutex();
   }
 
-  async getModuleState(networkName: string, moduleName: string): Promise<ModuleStateFile> {
-    const dir = path.resolve(this.statePath, moduleName, `${networkName}_${STATE_NAME}`);
+  async getModuleState(
+    networkName: string,
+    moduleName: string
+  ): Promise<ModuleStateFile> {
+    const dir = path.resolve(
+      this.statePath,
+      moduleName,
+      `${networkName}_${STATE_NAME}`
+    );
     if (!fs.existsSync(dir)) {
       return {};
     }
 
-    return JSON.parse(fs.readFileSync(dir, {
-      encoding: 'utf-8'
-    })) || {};
+    return (
+      JSON.parse(
+        fs.readFileSync(dir, {
+          encoding: 'utf-8',
+        })
+      ) || {}
+    );
   }
 
-  async storeStates(networkName: string, moduleName: string, moduleStates: ModuleState | null): Promise<boolean> {
+  async storeStates(
+    networkName: string,
+    moduleName: string,
+    moduleStates: ModuleState | null
+  ): Promise<boolean> {
     if (moduleStates == undefined) {
       return true;
     }
@@ -57,7 +78,11 @@ export class FileSystemModuleState implements IModuleState {
   }
 
   checkIfSet(moduleName: string, networkName: string): boolean {
-    const dir = path.resolve(this.statePath, moduleName, `${networkName}_${STATE_NAME}`);
+    const dir = path.resolve(
+      this.statePath,
+      moduleName,
+      `${networkName}_${STATE_NAME}`
+    );
 
     return fs.existsSync(dir);
   }

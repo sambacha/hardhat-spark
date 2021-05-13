@@ -6,10 +6,14 @@ import {
   ConfigMissingError,
   OneConfigAllowedError,
   PrivateKeyIsMissing,
-  PrivateKeyNotValid
+  PrivateKeyNotValid,
 } from '../types/errors';
 import { checkIfExist } from '../utils/util';
-import { CONFIG_SCRIPT_NAME, IConfigService, NUMBER_OF_HD_ACCOUNTS } from './index';
+import {
+  CONFIG_SCRIPT_NAME,
+  IConfigService,
+  NUMBER_OF_HD_ACCOUNTS,
+} from './index';
 import { loadScript } from '../utils/typescript_checker';
 import { DEFAULT_NETWORK_NAME } from '../utils/constants';
 
@@ -21,7 +25,11 @@ export default class ConfigService implements IConfigService {
     this.networkName = networkName || DEFAULT_NETWORK_NAME;
   }
 
-  async initializeIgnitionConfig(currentPath: string, configScriptPath?: string, test: boolean = false): Promise<HardhatIgnitionConfig> {
+  async initializeIgnitionConfig(
+    currentPath: string,
+    configScriptPath?: string,
+    test: boolean = false
+  ): Promise<HardhatIgnitionConfig> {
     let configFilePath;
     if (configScriptPath) {
       configFilePath = path.resolve(currentPath, configScriptPath);
@@ -119,13 +127,17 @@ export default class ConfigService implements IConfigService {
       privateKeys = this.config.networks[this.networkName]?.privateKeys || [];
     }
     if (privateKeys.length < 1) {
-      throw new PrivateKeyIsMissing('Private keys are missing. Please provide them inside hardhat-ignition config file.');
+      throw new PrivateKeyIsMissing(
+        'Private keys are missing. Please provide them inside hardhat-ignition config file.'
+      );
     }
     try {
       new ethers.utils.SigningKey(privateKeys[0]);
     } catch (error) {
       cli.debug(error);
-      throw new PrivateKeyNotValid(`You have provided string that is not private key. ${privateKeys[0]}`);
+      throw new PrivateKeyNotValid(
+        `You have provided string that is not private key. ${privateKeys[0]}`
+      );
     }
 
     return privateKeys[0];

@@ -4,7 +4,11 @@ import { SingleBar } from 'cli-progress';
 import cli from 'cli-ux';
 import chalk from 'chalk';
 import { checkIfExist } from '../util';
-import { CliError, DeniedConfirmation, ModuleContextMissingInLogger } from '../../types/errors';
+import {
+  CliError,
+  DeniedConfirmation,
+  ModuleContextMissingInLogger,
+} from '../../types/errors';
 import { FileLogging } from './file_logging';
 import { EventType } from '../../../interfaces/hardhat_ignition';
 
@@ -20,12 +24,12 @@ enum DescActionList {
   'SKIPPED' = 'skipped',
   'SUCCESSFUL' = 'SUCCESSFUL',
   'CREATE' = 'create',
-  'LOWER_GAS_PRICE' = 'waiting for lower gas price'
+  'LOWER_GAS_PRICE' = 'waiting for lower gas price',
 }
 
 export class SimpleOverviewLogger extends FileLogging implements ILogging {
   private moduleBars: {
-    [moduleName: string]: SingleBar
+    [moduleName: string]: SingleBar;
   };
 
   private currentModuleName: string | undefined;
@@ -46,14 +50,19 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   }
 
   async parallelizationExperimental() {
-    cli.info(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
+    cli.info(
+      chalk.yellow(
+        'WARNING: This feature is experimental, please avoid using it while deploying to production'
+      )
+    );
     cli.confirm('Confirm you are willing to continue');
-    const yes = await cli.confirm('Do you wish to continue with deployment of this module? (Y/n)');
+    const yes = await cli.confirm(
+      'Do you wish to continue with deployment of this module? (Y/n)'
+    );
     if (!yes) {
       throw new DeniedConfirmation('Confirmation has been declined.');
     }
   }
-
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
     super.finishedExecutionOfWalletTransfer(from, to);
@@ -73,12 +82,16 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       clearOnComplete: false,
       synchronousUpdate: true,
       fps: 100,
-      format: `# ${chalk.bold('{module}')} | {percentage}% | {value}/{total} | Current element: ${chalk.bold('{element}')} -> status: {status} | Action: {action}`,
+      format: `# ${chalk.bold(
+        '{module}'
+      )} | {percentage}% | {value}/{total} | Current element: ${chalk.bold(
+        '{element}'
+      )} -> status: {status} | Action: {action}`,
     });
     this.moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
       module: this.currentModuleName,
       element: 'N/A',
-      status: 'N/A'
+      status: 'N/A',
     });
   }
 
@@ -92,7 +105,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: elementName,
       status: StateElementStatus.DEPLOYED,
-      action: DescActionList.SKIPPED
+      action: DescActionList.SKIPPED,
     });
   }
 
@@ -105,7 +118,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: bindingName,
       status: StateElementStatus.RUNNING,
-      action: DescActionList.CREATE
+      action: DescActionList.CREATE,
     });
   }
 
@@ -119,10 +132,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     }
 
     this.moduleBars[this.currentModuleName].stop();
-    const {
-      message,
-      stack
-    } = generateErrorMessage(error);
+    const { message, stack } = generateErrorMessage(error);
 
     cli.info(message);
   }
@@ -136,7 +146,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
-      action: 'N/A'
+      action: 'N/A',
     });
   }
 
@@ -149,7 +159,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: this.currentModuleName,
       status: StateElementStatus.SUCCESSFUL,
-      action: 'N/A'
+      action: 'N/A',
     });
     this.moduleBars[this.currentModuleName].stop();
 
@@ -178,7 +188,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: elementName,
       status: StateElementStatus.SUCCESSFUL,
-      action: 'N/A'
+      action: 'N/A',
     });
   }
 
@@ -188,7 +198,9 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   nothingToDeploy(): void {
     super.nothingToDeploy();
-    cli.info('State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.');
+    cli.info(
+      'State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.'
+    );
     cli.exit(0);
   }
 
@@ -214,14 +226,16 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       throw new ModuleContextMissingInLogger();
     }
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
-      throw new CliError('Current module not found when trying to log transactions');
+      throw new CliError(
+        'Current module not found when trying to log transactions'
+      );
     }
 
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
-      action: `${functionName} -> sending`
+      action: `${functionName} -> sending`,
     });
   }
 
@@ -232,38 +246,45 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     }
 
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
-      throw new CliError('Current module not found when trying to log transactions');
+      throw new CliError(
+        'Current module not found when trying to log transactions'
+      );
     }
 
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
-      action: `${functionName} -> sent`
+      action: `${functionName} -> sent`,
     });
   }
 
-  transactionConfirmation(confirmationNumber: number, eventName: string, functionName: string = 'CREATE'): void {
+  transactionConfirmation(
+    confirmationNumber: number,
+    eventName: string,
+    functionName: string = 'CREATE'
+  ): void {
     super.transactionConfirmation(confirmationNumber, eventName, functionName);
 
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
     }
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
-      throw new CliError('Current module not found when trying to log transactions');
+      throw new CliError(
+        'Current module not found when trying to log transactions'
+      );
     }
 
     this.moduleBars[this.currentModuleName].update({
       module: this.currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
-      action: `${functionName} -> confirmed ${confirmationNumber}`
+      action: `${functionName} -> confirmed ${confirmationNumber}`,
     });
   }
 
   transactionReceipt(): void {
     super.transactionReceipt();
-
   }
 
   waitTransactionConfirmation(): void {
@@ -276,7 +297,9 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   generatedTypes(): void {
     super.generatedTypes();
-    cli.info('Successfully generated module types, look under your deployments folder for .d.ts file.');
+    cli.info(
+      'Successfully generated module types, look under your deployments folder for .d.ts file.'
+    );
   }
 
   finishedModuleUsageGeneration(moduleName: string) {
@@ -289,12 +312,12 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   async wrongNetwork(): Promise<boolean> {
     super.wrongNetwork();
-    return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
+    return await cli.confirm(
+      'Contracts are missing on the network, do you wish to continue? (Y/n)'
+    );
   }
 
-  startModuleResolving(): void {
-  }
+  startModuleResolving(): void {}
 
-  finishModuleResolving(): void {
-  }
+  finishModuleResolving(): void {}
 }

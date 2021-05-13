@@ -13,5 +13,8 @@ export * from './service';
 export interface IConfigService {
   getFirstPrivateKey(): string;
   getAllWallets(rpcPath?: string): ethers.Wallet[];
-  initializeIgnitionConfig(currentPath: string, configScriptPath: string): Promise<HardhatIgnitionConfig>;
+  initializeIgnitionConfig(
+    currentPath: string,
+    configScriptPath: string
+  ): Promise<HardhatIgnitionConfig>;
 }

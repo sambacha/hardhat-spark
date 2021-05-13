@@ -13,9 +13,9 @@ export class Mutex {
 
   _acquire() {
     let release: any;
-    const lock = this._lock = new Promise(resolve => {
+    const lock = (this._lock = new Promise((resolve) => {
       release = resolve;
-    });
+    }));
     return () => {
       if (this._lock == lock) this._lock = undefined;
       release();

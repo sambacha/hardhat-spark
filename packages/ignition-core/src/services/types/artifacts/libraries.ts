@@ -1,7 +1,7 @@
 export interface LinkReferences {
-    [contractName: string]: SingleContractLinkReference;
+  [contractName: string]: SingleContractLinkReference;
 }
 
 export interface SingleContractLinkReference {
-    [libraryName: string]: Array<{ length: number; start: number }>;
+  [libraryName: string]: Array<{ length: number; start: number }>;
 }

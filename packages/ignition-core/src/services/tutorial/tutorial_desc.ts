@@ -17,7 +17,9 @@ export const CONTRACT_NAME_DESC = `This is your smart contract name, you can che
 
 export const CONTRACT_DESC = `This is smart contract deployment definition.`;
 
-export const CONSTRUCTOR_ARGS = `${chalk.gray('comma separated values, in case if other contract is one of constructor arguments just put contract name you defined earlier.')}
+export const CONSTRUCTOR_ARGS = `${chalk.gray(
+  'comma separated values, in case if other contract is one of constructor arguments just put contract name you defined earlier.'
+)}
 Constructor arguments`;
 
 export const CONTRACT_DUPLICATES = `We have detected that you defined your contract multiple times. This is no issue just provide friendly name for this one ;)

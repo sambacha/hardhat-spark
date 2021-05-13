@@ -15,7 +15,9 @@ export class ModuleMigrationService {
     this.currentPath = currentPath;
   }
 
-  mapModuleStateFileToContractBindingsMetaData(moduleStateFiles: { [network: string]: ModuleStateFile }): ModuleStateBindings {
+  mapModuleStateFileToContractBindingsMetaData(moduleStateFiles: {
+    [network: string]: ModuleStateFile;
+  }): ModuleStateBindings {
     const unifiedStateFile: ModuleStateBindings = {};
 
     for (const [, stateFile] of Object.entries(moduleStateFiles)) {
@@ -36,12 +38,23 @@ export class ModuleMigrationService {
     return unifiedStateFile;
   }
 
-  generateModuleFile(moduleName: string, moduleStateBindings: ModuleStateBindings): string {
-    return generateModuleFile(moduleName, moduleStateBindings, FileGenerationType.module);
+  generateModuleFile(
+    moduleName: string,
+    moduleStateBindings: ModuleStateBindings
+  ): string {
+    return generateModuleFile(
+      moduleName,
+      moduleStateBindings,
+      FileGenerationType.module
+    );
   }
 
   storeModuleFile(moduleFile: string, moduleName: string) {
-    const stateDir = path.resolve(this.currentPath, DEFAULT_MODULE_FOLDER, `${moduleName}.module.ts`);
+    const stateDir = path.resolve(
+      this.currentPath,
+      DEFAULT_MODULE_FOLDER,
+      `${moduleName}.module.ts`
+    );
     fs.writeFileSync(stateDir, moduleFile);
   }
 }

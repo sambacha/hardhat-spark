@@ -1,5 +1,10 @@
 import { DeploymentFileRepo } from './deployment_file_repo';
-import { CONTRACT_DESC, EVENT_DESC, MODULE_NAME_DESC, TEMPLATE_DESC } from './tutorial_desc';
+import {
+  CONTRACT_DESC,
+  EVENT_DESC,
+  MODULE_NAME_DESC,
+  TEMPLATE_DESC,
+} from './tutorial_desc';
 import { checkIfExist } from '../utils/util';
 import { EventType } from '../../interfaces/hardhat_ignition';
 
@@ -9,20 +14,20 @@ export class DeploymentFileGenerator {
   private moduleName: string | undefined;
   private readonly contracts: {
     [bindingName: string]: {
-      constructorArgs: any[],
-    }
+      constructorArgs: any[];
+    };
   };
   private readonly templates: {
     [bindingName: string]: {
-      contractName: string,
-    }
+      contractName: string;
+    };
   };
   private readonly events: {
     [eventName: string]: {
-      bindingName: string,
-      contractFunction: string,
-      contractFunctionArgs: any[],
-    }
+      bindingName: string;
+      contractFunction: string;
+      contractFunctionArgs: any[];
+    };
   };
 
   constructor(deploymentFileRepo: DeploymentFileRepo) {
@@ -53,7 +58,7 @@ export class DeploymentFileGenerator {
     }
 
     this.contracts[bindingName] = {
-      constructorArgs: args
+      constructorArgs: args,
     };
 
     const fileContent = this.generateModuleFile();
@@ -61,7 +66,12 @@ export class DeploymentFileGenerator {
     this.deploymentFileRepo.storeNewDeployment(fileContent);
   }
 
-  newContractInvocation(contractName: string, bindingName: string, functionName: string, ...functionArgs: any[]) {
+  newContractInvocation(
+    contractName: string,
+    bindingName: string,
+    functionName: string,
+    ...functionArgs: any[]
+  ) {
     const eventName = `${EventType.AfterDeployEvent}${contractName}${functionName}`;
     this.events[eventName] = {
       bindingName: bindingName,
@@ -101,7 +111,9 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
 `;
 
     for (const contractBindingName of Object.keys(this.contracts)) {
-      const args = this.contracts[contractBindingName]?.constructorArgs.join(', ');
+      const args = this.contracts[contractBindingName]?.constructorArgs.join(
+        ', '
+      );
       if (checkIfExist(this.templates[contractBindingName])) {
         if (args) {
           fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this.templates[contractBindingName].contractName}', ${args});

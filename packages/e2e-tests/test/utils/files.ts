@@ -9,12 +9,17 @@ export function getStateIfExist(dir: string): ModuleStateFile | undefined {
     return undefined;
   }
 
-  return JSON.parse(fs.readFileSync(dir, {
-    encoding: 'utf-8'
-  }));
+  return JSON.parse(
+    fs.readFileSync(dir, {
+      encoding: 'utf-8',
+    })
+  );
 }
 
-export function storeNewState(dir: string, state: ModuleStateFile | null): void {
+export function storeNewState(
+  dir: string,
+  state: ModuleStateFile | null
+): void {
   if (state == undefined) {
     state = {};
   }
@@ -23,8 +28,18 @@ export function storeNewState(dir: string, state: ModuleStateFile | null): void 
   return;
 }
 
-export async function loadStateFile(projectLocation: string, ignition: IgnitionTests, moduleName: string = 'ExampleModule', networkName: string = DEFAULT_NETWORK_NAME) {
-  const stateFilePath = path.join(projectLocation, STATE_DIR_NAME, moduleName, `${networkName}_${STATE_NAME}`);
+export async function loadStateFile(
+  projectLocation: string,
+  ignition: IgnitionTests,
+  moduleName: string = 'ExampleModule',
+  networkName: string = DEFAULT_NETWORK_NAME
+) {
+  const stateFilePath = path.join(
+    projectLocation,
+    STATE_DIR_NAME,
+    moduleName,
+    `${networkName}_${STATE_NAME}`
+  );
   let stateFile;
   try {
     stateFile = require(stateFilePath);

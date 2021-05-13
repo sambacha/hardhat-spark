@@ -15,7 +15,11 @@ export class GasPriceCalculator implements IGasProvider {
     return await this.ethers.getGasPrice();
   }
 
-  async estimateGas(fromAddr: string, toAddr: string | undefined, data: BytesLike): Promise<BigNumber> {
+  async estimateGas(
+    fromAddr: string,
+    toAddr: string | undefined,
+    data: BytesLike
+  ): Promise<BigNumber> {
     const txConfig: TransactionRequest = {
       from: fromAddr,
       data: data,

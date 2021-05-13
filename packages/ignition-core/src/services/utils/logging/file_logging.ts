@@ -17,13 +17,23 @@ export class FileLogging implements ILogging {
 
   constructor() {
     this.logger = {};
-    const timestamp = Math.trunc((new Date()).getTime() / 1000);
+    const timestamp = Math.trunc(new Date().getTime() / 1000);
 
     const currentDir = process.cwd();
-    this.fullLogPath = path.join(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME, `/ignition.error.${timestamp}.log`);
+    this.fullLogPath = path.join(
+      currentDir,
+      DEPLOYMENT_FOLDER,
+      FOLDER_NAME,
+      `/ignition.error.${timestamp}.log`
+    );
 
     const logToTransport = (logObject: ILogObject) => {
-      fs.appendFileSync(this.fullLogPath, `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${logObject.argumentsArray[0]} ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`);
+      fs.appendFileSync(
+        this.fullLogPath,
+        `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${
+          logObject.argumentsArray[0]
+        } ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`
+      );
     };
 
     const logger: Logger = new Logger({
@@ -48,8 +58,7 @@ export class FileLogging implements ILogging {
       try {
         fs.mkdirSync(path.resolve(currentDir, DEPLOYMENT_FOLDER));
         fs.mkdirSync(dirPath);
-      } catch (e) {
-      }
+      } catch (e) {}
     }
   }
 
@@ -59,7 +68,7 @@ export class FileLogging implements ILogging {
     }
     this.logger[this.moduleName].info('Element has already been deployed', {
       moduleName: this.moduleName,
-      elementName
+      elementName,
     });
   }
 
@@ -69,20 +78,17 @@ export class FileLogging implements ILogging {
     }
     this.logger[this.moduleName].info('Started contract binding execution', {
       moduleName: this.moduleName,
-      bindingName
+      bindingName,
     });
   }
 
   logError(error: Error): void {
-    const {
-      message,
-      stack,
-    } = generateErrorMessage(error);
+    const { message, stack } = generateErrorMessage(error);
 
     this.errorLogger.error('Error', {
       message: message,
       errorName: error.name,
-      stack: stack
+      stack: stack,
     });
   }
 
@@ -92,7 +98,7 @@ export class FileLogging implements ILogging {
     }
     this.logger[this.moduleName].info('Started event execution', {
       moduleName: this.moduleName,
-      eventName
+      eventName,
     });
   }
 
@@ -102,7 +108,7 @@ export class FileLogging implements ILogging {
     }
     this.logger[this.moduleName].info('Executing contract function', {
       moduleName: this.moduleName,
-      contractFunction
+      contractFunction,
     });
   }
 
@@ -151,10 +157,13 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('finished execution of contract function', {
-      moduleName: this.moduleName,
-      functionName,
-    });
+    this.logger[this.moduleName].info(
+      'finished execution of contract function',
+      {
+        moduleName: this.moduleName,
+        functionName,
+      }
+    );
   }
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
@@ -249,13 +258,23 @@ export class FileLogging implements ILogging {
   }
 
   startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
-    const timestamp = Math.trunc((new Date()).getTime() / 1000);
+    const timestamp = Math.trunc(new Date().getTime() / 1000);
 
     const currentDir = process.cwd();
-    this.fullLogPath = path.join(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME, `/ignition.${moduleName.toLowerCase()}.${timestamp}.log`);
+    this.fullLogPath = path.join(
+      currentDir,
+      DEPLOYMENT_FOLDER,
+      FOLDER_NAME,
+      `/ignition.${moduleName.toLowerCase()}.${timestamp}.log`
+    );
 
     const logToTransport = (logObject: ILogObject) => {
-      fs.appendFileSync(this.fullLogPath, `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${logObject.argumentsArray[0]} ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`);
+      fs.appendFileSync(
+        this.fullLogPath,
+        `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${
+          logObject.argumentsArray[0]
+        } ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`
+      );
     };
 
     const logger: Logger = new Logger({
@@ -288,10 +307,17 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('started module usage generation', moduleName);
+    this.logger[this.moduleName].info(
+      'started module usage generation',
+      moduleName
+    );
   }
 
-  transactionConfirmation(confirmationNumber: number, elementName: string, functionName: string = 'CREATE'): void {
+  transactionConfirmation(
+    confirmationNumber: number,
+    elementName: string,
+    functionName: string = 'CREATE'
+  ): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -322,12 +348,12 @@ export class FileLogging implements ILogging {
     return Promise.resolve(true);
   }
 
-  finishModuleResolving(moduleName: string): void {
-  }
+  finishModuleResolving(moduleName: string): void {}
 
-  startModuleResolving(moduleName: string): void {
-  }
+  startModuleResolving(moduleName: string): void {}
 
-  contractFunctionAlreadyExecuted(contractFunction: string, ...args: any[]): void {
-  }
+  contractFunctionAlreadyExecuted(
+    contractFunction: string,
+    ...args: any[]
+  ): void {}
 }

@@ -1,4 +1,7 @@
-import { ContractBinding, TransactionData } from '../../../interfaces/hardhat_ignition';
+import {
+  ContractBinding,
+  TransactionData,
+} from '../../../interfaces/hardhat_ignition';
 import { checkIfExist, delay } from '../../utils/util';
 import { BigNumber, providers, Wallet } from 'ethers';
 import { ModuleState } from '../../modules/states/module';
@@ -12,7 +15,7 @@ import { ILogging } from '../../utils/logging';
 
 export type TxMetaData = {
   gasPrice?: BigNumber;
-  nonce?: number
+  nonce?: number;
 };
 
 export class EthTxGenerator implements INonceManager, ITransactionSigner {
@@ -37,12 +40,15 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     nonceManager: INonceManager,
     transactionSigner: ITransactionSigner,
     prompter: ILogging,
-    gasPriceBackoff?: GasPriceBackoff,
+    gasPriceBackoff?: GasPriceBackoff
   ) {
     this.configService = configService;
     this.ethers = ethers;
 
-    this.wallet = new Wallet(this.configService.getFirstPrivateKey(), this.ethers);
+    this.wallet = new Wallet(
+      this.configService.getFirstPrivateKey(),
+      this.ethers
+    );
     this.gasPriceCalculator = gasPriceCalculator;
     this.gasCalculator = gasCalculator;
     this.networkId = networkId;
@@ -66,7 +72,9 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   }
 
   initTx(moduleState: ModuleState): ModuleState {
-    for (const [stateElementName, stateElement] of Object.entries(moduleState)) {
+    for (const [stateElementName, stateElement] of Object.entries(
+      moduleState
+    )) {
       if ((stateElement as ContractBinding)._isContractBinding) {
         if (checkIfExist(moduleState[stateElementName]?.txData)) {
           continue;
@@ -75,7 +83,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
         moduleState[stateElementName].txData = {
           input: {
             from: this.wallet.address,
-            input: (stateElement as ContractBinding).bytecode as string
+            input: (stateElement as ContractBinding).bytecode as string,
           },
           output: undefined,
         };
@@ -85,11 +93,16 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     return moduleState;
   }
 
-  addLibraryAddresses(bytecode: string, binding: ContractBinding, moduleState: ModuleState): string {
+  addLibraryAddresses(
+    bytecode: string,
+    binding: ContractBinding,
+    moduleState: ModuleState
+  ): string {
     const libraries = binding.libraries as SingleContractLinkReference;
 
     for (const [libraryName, libraryOccurrences] of Object.entries(libraries)) {
-      const contractAddress = (moduleState[libraryName] as ContractBinding).deployMetaData?.contractAddress as string;
+      const contractAddress = (moduleState[libraryName] as ContractBinding)
+        .deployMetaData?.contractAddress as string;
       if (!checkIfExist(contractAddress)) {
         throw new CliError(`Library is not deployed - ${libraryName}`);
       }
@@ -112,12 +125,16 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
 
     if (this.gasPriceBackoff && checkIfExist(this.gasPriceBackoff)) {
-      gasPrice = await this.fetchBackoffGasPrice(this.gasPriceBackoff.numberOfRetries);
+      gasPrice = await this.fetchBackoffGasPrice(
+        this.gasPriceBackoff.numberOfRetries
+      );
     }
 
     return {
       gasPrice: gasPrice as BigNumber,
-      nonce: await this.nonceManager.getAndIncrementTransactionCount(walletAddress),
+      nonce: await this.nonceManager.getAndIncrementTransactionCount(
+        walletAddress
+      ),
     };
   }
 
@@ -146,7 +163,11 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     return gasPrice as BigNumber;
   }
 
-  generateSingedTx(value: number, data: string, wallet?: Wallet | undefined): Promise<string> {
+  generateSingedTx(
+    value: number,
+    data: string,
+    wallet?: Wallet | undefined
+  ): Promise<string> {
     return this.transactionSigner.generateSingedTx(value, data, wallet);
   }
 

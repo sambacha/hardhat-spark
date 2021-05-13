@@ -1,6 +1,9 @@
 import { ContractFunction } from '@ethersproject/contracts';
 import { checkIfExist } from '../../services/utils/util';
-import { UnexpectedValueError, ValueMismatch } from '../../services/types/errors';
+import {
+  UnexpectedValueError,
+  ValueMismatch,
+} from '../../services/types/errors';
 import { ethers } from 'ethers';
 import { ContractBinding } from '../hardhat_ignition';
 
@@ -12,8 +15,14 @@ import { ContractBinding } from '../hardhat_ignition';
  *
  * @returns Promise<boolean>
  */
-export async function expectSlotRead(expectedValue: ContractBinding | any | undefined, contract: ethers.Contract, slot: string | any): Promise<boolean> {
-  const value = (await contract.provider.getStorageAt(contract.address, slot)).toLowerCase();
+export async function expectSlotRead(
+  expectedValue: ContractBinding | any | undefined,
+  contract: ethers.Contract,
+  slot: string | any
+): Promise<boolean> {
+  const value = (
+    await contract.provider.getStorageAt(contract.address, slot)
+  ).toLowerCase();
   if (!checkIfExist(expectedValue)) {
     if (checkIfExist(value)) {
       return true;
@@ -31,8 +40,12 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
     }
   }
 
-  if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
-    && value.length != 0 && expectedValue.length != 0) {
+  if (
+    checkIfExist(value.length) &&
+    checkIfExist(expectedValue.length) &&
+    value.length != 0 &&
+    expectedValue.length != 0
+  ) {
     if (value.length != expectedValue.length) {
       throw new ValueMismatch(expectedValue, value);
     }
@@ -75,7 +88,11 @@ export async function expectSlotRead(expectedValue: ContractBinding | any | unde
  *
  * @returns Promise<boolean>
  */
-export async function expectFuncRead(expectedValue: ContractBinding | any | undefined, readFunc: ContractFunction | any, ...readArgs: any): Promise<boolean> {
+export async function expectFuncRead(
+  expectedValue: ContractBinding | any | undefined,
+  readFunc: ContractFunction | any,
+  ...readArgs: any
+): Promise<boolean> {
   const value = await readFunc(...readArgs);
   if (!checkIfExist(expectedValue)) {
     if (checkIfExist(value)) {
@@ -85,13 +102,19 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
     throw new ValueMismatch(expectedValue, value);
   }
 
-  if (expectedValue._isContractBinding
-    && value == expectedValue.deployMetaData.contractAddress) {
+  if (
+    expectedValue._isContractBinding &&
+    value == expectedValue.deployMetaData.contractAddress
+  ) {
     return true;
   }
 
-  if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
-    && value.length != 0 && expectedValue.length != 0) {
+  if (
+    checkIfExist(value.length) &&
+    checkIfExist(expectedValue.length) &&
+    value.length != 0 &&
+    expectedValue.length != 0
+  ) {
     if (value.length != expectedValue.length) {
       throw new ValueMismatch(expectedValue, value);
     }
@@ -145,19 +168,29 @@ export async function expectFuncRead(expectedValue: ContractBinding | any | unde
  *
  * @returns Promise<boolean> true if expectedValue is equal to readFunc value, otherwise false.
  */
-export async function gracefulExpectFuncRead(expectedValue: ContractBinding | any, readFunc: ContractFunction, ...readArgs: any): Promise<boolean> {
+export async function gracefulExpectFuncRead(
+  expectedValue: ContractBinding | any,
+  readFunc: ContractFunction,
+  ...readArgs: any
+): Promise<boolean> {
   const value = await readFunc(...readArgs);
   if (!checkIfExist(expectedValue)) {
     return checkIfExist(value);
   }
 
-  if (expectedValue._isContractBinding
-    && value == expectedValue.deployMetaData.contractAddress) {
+  if (
+    expectedValue._isContractBinding &&
+    value == expectedValue.deployMetaData.contractAddress
+  ) {
     return true;
   }
 
-  if (checkIfExist(value.length) && checkIfExist(expectedValue.length)
-    && value.length != 0 && expectedValue.length != 0) {
+  if (
+    checkIfExist(value.length) &&
+    checkIfExist(expectedValue.length) &&
+    value.length != 0 &&
+    expectedValue.length != 0
+  ) {
     if (value.length != expectedValue.length) {
       return false;
     }

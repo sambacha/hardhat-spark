@@ -6,33 +6,57 @@ import {
   EventType,
   ModuleEvent,
   OnChangeEvent,
-  StatefulEvent
+  StatefulEvent,
 } from '../../../interfaces/hardhat_ignition';
 import { checkIfExist } from '../../utils/util';
 import {
   CliError,
   EventDependencyNotDeployedError,
-  EventUsageIsNotDeployed
+  EventUsageIsNotDeployed,
 } from '../../types/errors';
 
 export class Batcher {
-  static async handleAfterDeployEvent(event: AfterDeployEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  static async handleAfterDeployEvent(
+    event: AfterDeployEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleOnChangeEvent(event: OnChangeEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  static async handleOnChangeEvent(
+    event: OnChangeEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleBeforeCompileEvent(event: BeforeCompileEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  static async handleBeforeCompileEvent(
+    event: BeforeCompileEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleCompiledEvent(event: BeforeDeployEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  static async handleCompiledEvent(
+    event: BeforeDeployEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleModuleEvent(event: ModuleEvent, element: StatefulEvent, batches: any[]) {
+  static async handleModuleEvent(
+    event: ModuleEvent,
+    element: StatefulEvent,
+    batches: any[]
+  ) {
     this.moduleEventHandling(element, batches);
   }
 
@@ -44,7 +68,12 @@ export class Batcher {
     batches[0].push(element);
   }
 
-  private static baseEventHandling(event: BaseEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  private static baseEventHandling(
+    event: BaseEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     switch (event.eventType) {
       case EventType.BeforeCompileEvent:
       case EventType.AfterCompileEvent:
@@ -60,7 +89,12 @@ export class Batcher {
     }
   }
 
-  private static handleBeforeDeployEvents(event: BaseEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  private static handleBeforeDeployEvents(
+    event: BaseEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     let shallowestDepNumber = batches.length;
     let deepestUsageNumber = 0;
 
@@ -105,7 +139,9 @@ export class Batcher {
     }
 
     if (deepestUsageNumber > shallowestDepNumber) {
-      throw new CliError(`batcher failed to resolve element usage and dependencies - ${element.event.name}`);
+      throw new CliError(
+        `batcher failed to resolve element usage and dependencies - ${element.event.name}`
+      );
     }
 
     if (shallowestDepNumber > 0) {
@@ -113,7 +149,10 @@ export class Batcher {
     }
     deepestUsageNumber++;
 
-    const batchNumber = deepestUsageNumber < shallowestDepNumber ? deepestUsageNumber : shallowestDepNumber;
+    const batchNumber =
+      deepestUsageNumber < shallowestDepNumber
+        ? deepestUsageNumber
+        : shallowestDepNumber;
     if (!checkIfExist(batches[batchNumber])) {
       batches[batchNumber] = [];
     }
@@ -122,7 +161,12 @@ export class Batcher {
     elementsBatches[event.name] = batchNumber;
   }
 
-  private static handleAfterDeployEvents(event: BaseEvent, element: StatefulEvent, batches: any[], elementsBatches: any) {
+  private static handleAfterDeployEvents(
+    event: BaseEvent,
+    element: StatefulEvent,
+    batches: any[],
+    elementsBatches: any
+  ) {
     let deepestDepNumber = 0;
 
     for (const usage of event.usage) {

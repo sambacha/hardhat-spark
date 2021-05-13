@@ -1,4 +1,8 @@
-import { ContractBinding, ContractEvent, ModuleBuilder } from '../hardhat_ignition';
+import {
+  ContractBinding,
+  ContractEvent,
+  ModuleBuilder,
+} from '../hardhat_ignition';
 import { expectFuncRead, expectSlotRead } from './expectancy';
 import { ethers } from 'ethers';
 import { checkIfExist } from '../../services/utils/util';
@@ -20,17 +24,21 @@ export const sendAfterDeploy = (
   setterFunc: string,
   setterArgs: any[],
   opts?: {
-    eventName?: string,
-    getterFunc?: string,
-    getterArgs?: any[],
-    expectedValue?: any,
-    deps?: (ContractBinding | ContractEvent)[],
-    slot?: string,
-  },
+    eventName?: string;
+    getterFunc?: string;
+    getterArgs?: any[];
+    expectedValue?: any;
+    deps?: (ContractBinding | ContractEvent)[];
+    slot?: string;
+  }
 ): ContractEvent => {
-  const eventName = opts?.eventName ? opts.eventName : `mutator${setterFunc}${setter.name}`;
+  const eventName = opts?.eventName
+    ? opts.eventName
+    : `mutator${setterFunc}${setter.name}`;
   const getFunc = setterFunc.substring(3);
-  const getterFunc = opts?.getterFunc ? opts.getterFunc : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
+  const getterFunc = opts?.getterFunc
+    ? opts.getterFunc
+    : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
 
   const deps = [];
   if (opts?.deps) {
@@ -38,7 +46,7 @@ export const sendAfterDeploy = (
   }
 
   const usages: (ContractBinding | ContractEvent)[] = [];
-  for (const arg of (setterArgs)) {
+  for (const arg of setterArgs) {
     if (arg?._isContractBinding || checkIfExist(arg?.eventType)) {
       usages.push(arg);
     }
@@ -49,16 +57,25 @@ export const sendAfterDeploy = (
   const getterArgs = opts?.getterArgs ? opts.getterArgs : keys;
   const expectedValue = opts?.expectedValue ? opts.expectedValue : value;
 
-  return m.group(setter, ...deps).afterDeploy(m, eventName, async (): Promise<void> => {
-    await setter.deployed()[`${setterFunc}`](...keys, value);
+  return m.group(setter, ...deps).afterDeploy(
+    m,
+    eventName,
+    async (): Promise<void> => {
+      await setter.deployed()[`${setterFunc}`](...keys, value);
 
-    if (opts?.slot) {
-      await expectSlotRead(expectedValue, setter.deployed(), opts.slot);
-      return;
-    }
+      if (opts?.slot) {
+        await expectSlotRead(expectedValue, setter.deployed(), opts.slot);
+        return;
+      }
 
-    await expectFuncRead(expectedValue, setter.deployed()[getterFunc], ...getterArgs);
-  }, ...usages);
+      await expectFuncRead(
+        expectedValue,
+        setter.deployed()[getterFunc],
+        ...getterArgs
+      );
+    },
+    ...usages
+  );
 };
 
 /**
@@ -74,7 +91,7 @@ export const filler = (
   m: ModuleBuilder,
   rootWallet: ethers.Wallet,
   wallets: ethers.Wallet[],
-  value?: ethers.BigNumberish | any,
+  value?: ethers.BigNumberish | any
 ): void => {
   if (!value) {
     value = ethers.utils.parseUnits('1', 'ether') as ethers.BigNumber;

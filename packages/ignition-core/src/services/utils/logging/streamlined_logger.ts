@@ -15,11 +15,15 @@ export class StreamlinedLogger implements ILogging {
   }
 
   generatedTypes(): void {
-    cli.info('Successfully generated module types, look for .d.ts file in your deployment folder.');
+    cli.info(
+      'Successfully generated module types, look for .d.ts file in your deployment folder.'
+    );
   }
 
   nothingToDeploy(): void {
-    cli.info('State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.');
+    cli.info(
+      'State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.'
+    );
     cli.exit(0);
   }
 
@@ -34,7 +38,10 @@ export class StreamlinedLogger implements ILogging {
   }
 
   alreadyDeployed(elementName: string): void {
-    cli.info(this.whitespaces + `${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`);
+    cli.info(
+      this.whitespaces +
+        `${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`
+    );
   }
 
   async promptContinueDeployment(): Promise<void> {
@@ -42,9 +49,12 @@ export class StreamlinedLogger implements ILogging {
       return;
     }
 
-    const con = await cli.prompt('Do you wish to continue with deployment of this module? (Y/n)', {
-      required: false
-    });
+    const con = await cli.prompt(
+      'Do you wish to continue with deployment of this module? (Y/n)',
+      {
+        required: false,
+      }
+    );
     if (con == 'n') {
       throw new DeniedConfirmation('Confirmation has been declined.');
     }
@@ -56,7 +66,7 @@ export class StreamlinedLogger implements ILogging {
     }
 
     const con = await cli.prompt('Execute transactions? (Y/n)', {
-      required: false
+      required: false,
     });
     if (con == 'n') {
       throw new DeniedConfirmation('Confirmation has been declined.');
@@ -68,10 +78,7 @@ export class StreamlinedLogger implements ILogging {
   }
 
   logError(error: Error): void {
-    const {
-      message,
-      stack,
-    } = generateErrorMessage(error);
+    const { message, stack } = generateErrorMessage(error);
 
     cli.info(message);
   }
@@ -85,13 +92,21 @@ export class StreamlinedLogger implements ILogging {
   }
 
   bindingExecution(bindingName: string): void {
-    cli.info(`${this.whitespaces}${chalk.bold('Started')} deploying binding - ${chalk.bold(bindingName)}`);
+    cli.info(
+      `${this.whitespaces}${chalk.bold(
+        'Started'
+      )} deploying binding - ${chalk.bold(bindingName)}`
+    );
     this.whitespaces += '  ';
   }
 
   finishedBindingExecution(bindingName: string): void {
     this.finishedElementExecution();
-    cli.info(`${this.whitespaces}${chalk.bold('Finished')} binding execution - ${chalk.bold(bindingName)}\n`);
+    cli.info(
+      `${this.whitespaces}${chalk.bold(
+        'Finished'
+      )} binding execution - ${chalk.bold(bindingName)}\n`
+    );
   }
 
   private finishedElementExecution(): void {
@@ -99,33 +114,58 @@ export class StreamlinedLogger implements ILogging {
   }
 
   eventExecution(eventName: string): void {
-    cli.info(this.whitespaces + `${chalk.bold('Started')} executing event - ${chalk.bold(eventName)}`);
+    cli.info(
+      this.whitespaces +
+        `${chalk.bold('Started')} executing event - ${chalk.bold(eventName)}`
+    );
     this.whitespaces += '  ';
   }
 
   finishedEventExecution(eventName: string, eventType: EventType): void {
     this.finishedElementExecution();
-    cli.info(`${this.whitespaces}${chalk.bold('Finished')} event execution - ${chalk.bold(eventName)}\n`);
+    cli.info(
+      `${this.whitespaces}${chalk.bold(
+        'Finished'
+      )} event execution - ${chalk.bold(eventName)}\n`
+    );
   }
 
   executeContractFunction(functionName: string): void {
-    cli.info(this.whitespaces + `${chalk.bold('Started')} execution of contract function - `, chalk.bold(functionName));
+    cli.info(
+      this.whitespaces +
+        `${chalk.bold('Started')} execution of contract function - `,
+      chalk.bold(functionName)
+    );
     this.whitespaces += '  ';
   }
 
   finishedExecutionOfContractFunction(functionName: string): void {
     this.finishedElementExecution();
-    cli.info(`${this.whitespaces}${chalk.bold('Finished')} execution of contract function - ${chalk.bold(functionName)}`);
+    cli.info(
+      `${this.whitespaces}${chalk.bold(
+        'Finished'
+      )} execution of contract function - ${chalk.bold(functionName)}`
+    );
   }
 
   executeWalletTransfer(from: string, to: string): void {
-    cli.info(this.whitespaces + `${chalk.bold('Started')} execution of wallet transfer -  ${chalk.bold(from)} --> ${chalk.bold(to)}`);
+    cli.info(
+      this.whitespaces +
+        `${chalk.bold('Started')} execution of wallet transfer -  ${chalk.bold(
+          from
+        )} --> ${chalk.bold(to)}`
+    );
     this.whitespaces += '  ';
   }
 
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
     this.finishedElementExecution();
-    cli.info(this.whitespaces + `${chalk.bold('Finished')} execution of wallet transfer - ${chalk.bold(from)} --> ${chalk.bold(to)}`);
+    cli.info(
+      this.whitespaces +
+        `${chalk.bold('Finished')} execution of wallet transfer - ${chalk.bold(
+          from
+        )} --> ${chalk.bold(to)}`
+    );
   }
 
   transactionReceipt(): void {
@@ -137,7 +177,9 @@ export class StreamlinedLogger implements ILogging {
   }
 
   transactionConfirmation(confirmationNumber: number): void {
-    cli.action.stop(`\n${this.whitespaces} Current block confirmation: ${confirmationNumber}`);
+    cli.action.stop(
+      `\n${this.whitespaces} Current block confirmation: ${confirmationNumber}`
+    );
   }
 
   finishedModuleUsageGeneration(moduleName: string) {
@@ -149,8 +191,14 @@ export class StreamlinedLogger implements ILogging {
   }
 
   async parallelizationExperimental() {
-    cli.warn(chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production'));
-    const yes = await cli.confirm('Do you wish to continue with deployment of this module? (Y/n)');
+    cli.warn(
+      chalk.yellow(
+        'WARNING: This feature is experimental, please avoid using it while deploying to production'
+      )
+    );
+    const yes = await cli.confirm(
+      'Do you wish to continue with deployment of this module? (Y/n)'
+    );
     if (!yes) {
       throw new DeniedConfirmation('Confirmation has been declined.');
     }
@@ -161,21 +209,24 @@ export class StreamlinedLogger implements ILogging {
       return true;
     }
 
-    return await cli.confirm('Contracts are missing on the network, do you wish to continue? (Y/n)');
+    return await cli.confirm(
+      'Contracts are missing on the network, do you wish to continue? (Y/n)'
+    );
   }
 
   gasPriceIsLarge(backoffTime: number) {
-    cli.info(this.whitespaces + `Gas price is too large, waiting for ${backoffTime}ms before continuing`);
+    cli.info(
+      this.whitespaces +
+        `Gas price is too large, waiting for ${backoffTime}ms before continuing`
+    );
   }
 
-  startModuleResolving(): void {
+  startModuleResolving(): void {}
 
-  }
+  finishModuleResolving(): void {}
 
-  finishModuleResolving(): void {
-
-  }
-
-  contractFunctionAlreadyExecuted(contractFunction: string, ...args: any[]): void {
-  }
+  contractFunctionAlreadyExecuted(
+    contractFunction: string,
+    ...args: any[]
+  ): void {}
 }

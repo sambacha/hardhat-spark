@@ -30,7 +30,9 @@ export class HardhatCompiler extends Compiler {
     }
   }
 
-  extractContractInterface(contractNames: string[]): { [p: string]: JsonFragment[] } {
+  extractContractInterface(
+    contractNames: string[]
+  ): { [p: string]: JsonFragment[] } {
     try {
       const ABIs: { [p: string]: JsonFragment[] } = {};
 
@@ -57,13 +59,17 @@ export class HardhatCompiler extends Compiler {
       for (const artifact of buildArtifacts) {
         const art = JSON.parse(artifact) as Artifact;
 
-        const contractLibDep: { [libraryName: string]: Array<{ length: number; start: number }> } = {};
+        const contractLibDep: {
+          [libraryName: string]: Array<{ length: number; start: number }>;
+        } = {};
         if (!checkIfExist(art.linkReferences)) {
           continue;
         }
 
         for (const [, linkDeps] of Object.entries(art.linkReferences)) {
-          for (const [libraryName, librariesOccurrence] of Object.entries(linkDeps)) {
+          for (const [libraryName, librariesOccurrence] of Object.entries(
+            linkDeps
+          )) {
             contractLibDep[libraryName] = librariesOccurrence;
           }
         }
