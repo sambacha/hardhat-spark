@@ -102,6 +102,26 @@ export class CliError extends Error {
   }
 }
 
+export class ServicesNotInitialized extends UserError {
+  constructor() {
+    super(
+      `Some services are not initialized inside the ignition.
+
+This is internal issue, please open github issue if this happend to you.`
+    );
+  }
+}
+
+export class EmptySigners extends UserError {
+  constructor() {
+    super(
+      `No signers provided.
+
+No signers were provided in config nor in json rpc provider object.`
+    );
+  }
+}
+
 export class MissingToAddressInWalletTransferTransaction extends UserError {
   constructor() {
     super(

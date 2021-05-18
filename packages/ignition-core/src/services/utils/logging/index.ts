@@ -18,6 +18,7 @@ export * from './react-terminal/ui/layout/terminal';
 export * from './react-terminal/ui/layout/confirmation_question';
 
 export enum Logging {
+  'empty' = 'empty',
   'overview' = 'overview',
   'simple' = 'simple',
   'json' = 'json',

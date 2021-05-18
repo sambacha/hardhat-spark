@@ -9,7 +9,7 @@ import { cli } from 'cli-ux';
 import chalk from 'chalk';
 import * as os from 'os';
 import { ILogging } from './logging';
-import { IAnalyticsService } from './analytics';
+import { IErrorReporting } from './analytics';
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -156,7 +156,7 @@ export function extractObjectInfo(obj: any): string {
 export async function errorHandling(
   error: Error,
   logger?: ILogging,
-  analyticsService?: IAnalyticsService
+  errorReporter?: IErrorReporting
 ) {
   if (logger) {
     logger.logError(error);
@@ -180,8 +180,8 @@ export async function errorHandling(
   }
 
   // unhandled errors
-  if (analyticsService) {
-    analyticsService.reportError(error);
+  if (errorReporter) {
+    errorReporter.reportError(error);
   }
 }
 

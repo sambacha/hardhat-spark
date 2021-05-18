@@ -9,7 +9,7 @@
   },
   "scripts": {
     "lint:fix": "node ../../node_modules/prettier/bin-prettier.js --write \"./**/*.{js,ts}\" && yarn lint --fix",
-    "lint": "node -r ts-node/register/transpile-only ../../node_modules/tslint/bin/tslint --config tslint.json --project ./tsconfig.json",
+    "lint": "node -r ts-node/register/transpile-only ../../node_modules/tslint/bin/tslint --config tslint.json \"./**/*.{js,ts}\"",
     "clean": "node ../../node_modules/rimraf/bin.js dist",
     "compile": "node ../../node_modules/typescript/bin/tsc --noEmit",
     "build": "node ../../node_modules/typescript/bin/tsc --build ."

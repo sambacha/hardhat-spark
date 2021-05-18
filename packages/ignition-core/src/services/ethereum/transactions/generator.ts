@@ -1,14 +1,12 @@
 import {
   ContractBinding,
-  TransactionData,
 } from '../../../interfaces/hardhat_ignition';
 import { checkIfExist, delay } from '../../utils/util';
-import { BigNumber, providers, Wallet } from 'ethers';
+import { BigNumber, ethers, providers } from 'ethers';
 import { ModuleState } from '../../modules/states/module';
 import { SingleContractLinkReference } from '../../types/artifacts/libraries';
 import { CliError, GasPriceBackoffError } from '../../types/errors';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
-import { IConfigService } from '../../config';
 import { INonceManager, ITransactionSigner } from './index';
 import { GasPriceBackoff } from '../../types/config';
 import { ILogging } from '../../utils/logging';
@@ -19,11 +17,10 @@ export type TxMetaData = {
 };
 
 export class EthTxGenerator implements INonceManager, ITransactionSigner {
-  private configService: IConfigService;
   private gasPriceCalculator: IGasPriceCalculator;
   private gasCalculator: IGasCalculator;
-  private readonly ethers: providers.JsonRpcProvider;
-  private readonly wallet: Wallet;
+  private readonly provider: providers.JsonRpcProvider;
+  private readonly signer: ethers.Signer;
   private readonly networkId: string;
   private nonceMap: { [address: string]: number };
   private nonceManager: INonceManager;
@@ -32,23 +29,19 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
   private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
-    configService: IConfigService,
+    signer: ethers.Signer,
     gasPriceCalculator: IGasPriceCalculator,
     gasCalculator: IGasCalculator,
     networkId: string,
-    ethers: providers.JsonRpcProvider,
+    provider: providers.JsonRpcProvider,
     nonceManager: INonceManager,
     transactionSigner: ITransactionSigner,
     prompter: ILogging,
     gasPriceBackoff?: GasPriceBackoff
   ) {
-    this.configService = configService;
-    this.ethers = ethers;
+    this.provider = provider;
 
-    this.wallet = new Wallet(
-      this.configService.getFirstPrivateKey(),
-      this.ethers
-    );
+    this.signer = signer;
     this.gasPriceCalculator = gasPriceCalculator;
     this.gasCalculator = gasCalculator;
     this.networkId = networkId;
@@ -71,7 +64,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     this.transactionSigner = newTransactionSigner;
   }
 
-  initTx(moduleState: ModuleState): ModuleState {
+  async initTx(moduleState: ModuleState): Promise<ModuleState> {
     for (const [stateElementName, stateElement] of Object.entries(
       moduleState
     )) {
@@ -82,7 +75,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
 
         moduleState[stateElementName].txData = {
           input: {
-            from: this.wallet.address,
+            from: await this.signer.getAddress(),
             input: (stateElement as ContractBinding).bytecode as string,
           },
           output: undefined,
@@ -163,12 +156,12 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     return gasPrice as BigNumber;
   }
 
-  generateSingedTx(
+  async generateSingedTx(
     value: number,
     data: string,
-    wallet?: Wallet | undefined
+    signer?: ethers.Signer | undefined
   ): Promise<string> {
-    return this.transactionSigner.generateSingedTx(value, data, wallet);
+    return this.transactionSigner.generateSingedTx(value, data, signer);
   }
 
   getAndIncrementTransactionCount(walletAddress: string): Promise<number> {

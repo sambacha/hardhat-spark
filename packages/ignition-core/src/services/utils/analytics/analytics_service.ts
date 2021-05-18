@@ -13,10 +13,10 @@ import {
   readSecondLegacyAnalyticsId,
   writeAnalyticsId,
 } from 'hardhat/internal/util/global-dir';
-import { IAnalyticsService } from './index';
+import { IErrorReporting } from './index';
 
 require('dotenv').config({
-  path: path.resolve(__dirname + '../../../../.env.local'),
+  path: path.resolve(__dirname + '../../.env.local'),
 });
 
 const SENTRY_DSN =
@@ -40,7 +40,7 @@ interface RawAnalytics {
   cd3: string;
 }
 
-export class AnalyticsService implements IAnalyticsService {
+export class ErrorReporter implements IErrorReporting {
   private readonly confirmedConsent: boolean = false;
   private clientId: string | undefined;
   private readonly userType: string;
@@ -79,21 +79,9 @@ export class AnalyticsService implements IAnalyticsService {
     Sentry.captureException(err);
   }
 
-  public async sendCommandHit(taskName: string): Promise<Response | any> {
-    if (process.env.IGNITION_ENV == 'development') {
-      return;
-    }
-
-    if (!this.confirmedConsent) {
-      return Promise.resolve();
-    }
-
-    return AnalyticsService._sendHit(await this._taskHit(taskName));
-  }
-
   private async _taskHit(taskName: string): Promise<RawAnalytics> {
     if (!checkIfExist(this.clientId)) {
-      this.clientId = await AnalyticsService.getClientId();
+      this.clientId = await ErrorReporter.getClientId();
     }
 
     return {

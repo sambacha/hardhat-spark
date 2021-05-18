@@ -17,14 +17,14 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   private provider: providers.JsonRpcProvider;
   private gasCalculator: IGasCalculator;
   private gasPriceCalculator: IGasPriceCalculator;
-  private wallet: ethers.Wallet;
+  private signer: ethers.Signer;
   private readonly networkId: string;
   private readonly prompter: ILogging;
   private readonly gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
     provider: providers.JsonRpcProvider,
-    wallet: ethers.Wallet,
+    signer: ethers.Signer,
     networkId: string,
     gasCalculator: IGasCalculator,
     gasPriceCalculator: IGasPriceCalculator,
@@ -33,7 +33,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   ) {
     this.provider = provider;
     this.nonceMap = {};
-    this.wallet = wallet;
+    this.signer = signer;
     this.networkId = networkId;
     this.gasCalculator = gasCalculator;
     this.gasPriceCalculator = gasPriceCalculator;
@@ -67,12 +67,13 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
   async generateSingedTx(
     value: number,
     data: string,
-    wallet?: ethers.Wallet | undefined
+    signer?: ethers.Signer | undefined
   ): Promise<string> {
     let gas = BigNumber.from(0);
+    const address = await this.signer.getAddress();
     try {
       gas = (await this.gasCalculator.estimateGas(
-        this.wallet.address,
+        address,
         undefined,
         data
       )) as BigNumber;
@@ -87,7 +88,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       );
     }
     const tx: TransactionRequest = {
-      from: this.wallet.address,
+      from: address,
       value: value,
       gasPrice: gasPrice,
       gasLimit: gas,
@@ -95,18 +96,18 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       chainId: +this.networkId,
     };
 
-    if (wallet) {
-      tx.from = wallet.address;
+    if (signer) {
+      tx.from = address;
       tx.nonce = await this.getAndIncrementTransactionCount(
-        await wallet.getAddress()
+        await signer.getAddress()
       );
-      return wallet.signTransaction(tx);
+      return signer.signTransaction(tx);
     }
 
     tx.nonce = await this.getAndIncrementTransactionCount(
-      await this.wallet.getAddress()
+      address
     );
-    return this.wallet.signTransaction(tx);
+    return this.signer.signTransaction(tx);
   }
 
   async fetchBackoffGasPrice(retries: number): Promise<BigNumber> {

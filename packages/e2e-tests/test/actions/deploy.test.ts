@@ -7,12 +7,14 @@ import {
 } from 'ignition-core';
 import { IgnitionTests } from 'ignition-test';
 import { loadStateFile } from '../utils/files';
+import { ethers } from 'ethers';
+import { loadScript } from 'common/typescript';
 
 const networkId = '31337'; // hardhat localhost chainId
 const networkName = 'local'; // hardhat localhost chainId
 const testPrivateKeys = [
-  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-  '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+  new ethers.Wallet('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'),
+  new ethers.Wallet('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'),
 ];
 const moduleName = 'ExampleModule';
 const moduleFileName = 'module.ts';
@@ -21,15 +23,12 @@ const rootDir = process.cwd();
 describe('ignition deploy', () => {
   const ignition = new IgnitionTests(
     {
-      networkId: networkId,
-      networkName: networkName,
-      stateFileNames: [],
+      networkName,
+      networkId,
+      signers: testPrivateKeys,
     },
-    {
-      privateKeys: testPrivateKeys,
-      mnemonic: '',
-      hdPath: '',
-    }
+    {},
+    {},
   );
   afterEach(() => {
     ignition.cleanup();
@@ -230,16 +229,13 @@ describe('ignition deploy', () => {
   describe('ignition deploy - examples - parallel', () => {
     const ignitionParallelMode = new IgnitionTests(
       {
-        networkId: networkId,
-        networkName: networkName,
-        stateFileNames: [],
-      },
-      {
-        privateKeys: testPrivateKeys,
-        mnemonic: '',
-        hdPath: '',
+        networkName,
+        networkId,
+        signers: testPrivateKeys,
         parallelizeDeployment: true,
-      }
+      },
+      {},
+      {},
     );
     runExamples(ignitionParallelMode, true);
   });
@@ -367,6 +363,6 @@ async function runDeployCommand(
     DEPLOYMENT_FOLDER,
     projectFileName
   );
-
-  await ignition.deploy(deploymentFilePath);
+  const module = await loadScript(deploymentFilePath, true);
+  await ignition.deploy(await module);
 }

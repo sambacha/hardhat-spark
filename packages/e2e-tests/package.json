@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "cli-ux": "^5.5.1",
+    "ethers": "^5.1.4",
     "mocha": "^8.4.0",
     "typescript": "^4.2.4"
   }

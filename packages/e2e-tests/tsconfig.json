@@ -5,7 +5,11 @@
     "composite": true
   },
   "exclude": [
-    "dist"
+    "dist",
+    "node_modules",
+    "projects-scenarios/*/node_modules",
+    "projects-scenarios/*/artifacts",
+    "projects-scenarios/*/cache",
   ],
   "include": [
     "test",

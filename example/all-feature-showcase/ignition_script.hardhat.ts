@@ -1,17 +1,12 @@
 import * as hre from 'hardhat';
-import { IIgnition } from 'ignition-core';
 import 'ignition-hardhat-plugin';
 
-const moduleFilePath = './deployment/module.ts';
+import { ExampleModule } from './deployment/module';
 const networkName = 'local';
 
 async function main() {
-  // @ts-ignore
-  const ign = hre.ignition as IIgnition;
-  await ign.deploy({
-    moduleFilePath,
-    networkName,
-  });
+  const ign = hre.ignition;
+  await ign.deploy(await ExampleModule, networkName, true);
 }
 
 main()

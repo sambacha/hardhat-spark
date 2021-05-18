@@ -1,6 +1,6 @@
-import { IAnalyticsService } from './index';
+import { IErrorReporting } from './index';
 
-export class EmptyAnalyticsService implements IAnalyticsService {
+export class EmptyAnalyticsService implements IErrorReporting {
   constructor() {}
 
   reportError(err: Error) {

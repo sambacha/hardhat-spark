@@ -188,9 +188,9 @@ export type Deployed = {
   shouldRedeploy: ShouldRedeployFn | undefined;
   deploymentSpec:
     | {
-        deployFn: DeployFn | undefined;
-        deps: (ContractBinding | ContractBindingMetaData)[];
-      }
+    deployFn: DeployFn | undefined;
+    deps: (ContractBinding | ContractBindingMetaData)[];
+  }
     | undefined;
 };
 
@@ -237,7 +237,7 @@ export type ModuleOptions = {
 
 export type ModuleBuilderFn = (
   m: ModuleBuilder | any,
-  wallets: ethers.Wallet[]
+  wallets: ethers.Signer[]
 ) => Promise<void>;
 
 export abstract class Binding {
@@ -275,7 +275,7 @@ export class GroupedDependencies {
     const bindings = this.dependencies.filter(
       (target: ContractBinding | ContractEvent) => {
         return ((target as ContractBinding)?.abi as JsonFragment[]).find(
-          ({ name }) => name === searchParams?.functionName
+          ({name}) => name === searchParams?.functionName
         );
       }
     ) as ContractBinding[];
@@ -524,7 +524,7 @@ export class ContractBinding extends Binding {
 
   private contractInstance: ethers.Contract | undefined;
 
-  public wallet: ethers.Wallet | undefined;
+  public wallet: ethers.Signer | undefined;
   public forceFlag: boolean;
 
   public signer: ethers.Signer | undefined;
@@ -645,7 +645,7 @@ export class ContractBinding extends Binding {
    *
    * @param wallet Ethers wallet object referencing deployer.
    */
-  setDeployer(wallet: ethers.Wallet): ContractBinding {
+  setDeployer(wallet: ethers.Signer): ContractBinding {
     this.wallet = wallet;
 
     return this;
@@ -687,13 +687,13 @@ export class ContractBinding extends Binding {
 
     this.bytecode = compiler.extractBytecode([this.contractName])[
       this.contractName
-    ];
+      ];
     this.abi = compiler.extractContractInterface([this.contractName])[
       this.contractName
-    ];
+      ];
     this.libraries = compiler.extractContractLibraries([this.contractName])[
       this.contractName
-    ];
+      ];
   }
 
   /**
@@ -1176,8 +1176,8 @@ export class ContractInstance {
         ) {
           this.contractBinding.contractTxProgress = ++contractTxIterator;
           return currentEventTransactionData.contractOutput[
-            contractTxIterator - 1
-          ];
+          contractTxIterator - 1
+            ];
         }
 
         const currentInputs =
@@ -1320,7 +1320,9 @@ export class ContractInstance {
   }
 }
 
-export class IgnitionWallet extends ethers.Wallet {
+export class IgnitionSigner {
+  private _signer: ethers.Signer;
+
   private sessionNamespace: Namespace;
   private moduleStateRepo: ModuleStateRepo;
   private nonceManager: INonceManager;
@@ -1330,7 +1332,7 @@ export class IgnitionWallet extends ethers.Wallet {
   private eventTxExecutor: EventTxExecutor;
 
   constructor(
-    wallet: ethers.Wallet,
+    signer: ethers.Signer,
     sessionNamespace: Namespace,
     nonceManager: INonceManager,
     gasPriceCalculator: IGasPriceCalculator,
@@ -1339,7 +1341,7 @@ export class IgnitionWallet extends ethers.Wallet {
     prompter: ILogging,
     eventTxExecutor: EventTxExecutor
   ) {
-    super(wallet.privateKey, wallet.provider);
+    this._signer = signer;
 
     this.sessionNamespace = sessionNamespace;
     this.nonceManager = nonceManager;
@@ -1353,12 +1355,14 @@ export class IgnitionWallet extends ethers.Wallet {
   async sendTransaction(
     transaction: Deferrable<TransactionRequest>
   ): Promise<TransactionResponse> {
+    const address = await this._signer.getAddress();
+
     const func = async (): Promise<TransactionResponse> => {
       const toAddr = (await transaction).to as string;
       if (!toAddr) {
         throw new MissingToAddressInWalletTransferTransaction();
       }
-      this.prompter.executeWalletTransfer(this.address, toAddr);
+      this.prompter.executeWalletTransfer(address, toAddr);
       const currentEventName = this.sessionNamespace.get(
         clsNamespaces.EVENT_NAME
       );
@@ -1377,17 +1381,17 @@ export class IgnitionWallet extends ethers.Wallet {
         throw err;
       }
 
-      const txResp = await super.sendTransaction(ignitionTransaction);
+      const txResp = await this._signer.sendTransaction(ignitionTransaction);
       this.prompter.sentTx(currentEventName, 'raw wallet transaction');
       await this.moduleStateRepo.storeEventTransactionData(
-        this.address,
+        address,
         undefined,
         undefined,
         currentEventName
       );
 
       await this.prompter.finishedExecutionOfWalletTransfer(
-        this.address,
+        address,
         toAddr
       );
 
@@ -1399,8 +1403,8 @@ export class IgnitionWallet extends ethers.Wallet {
     );
     this.eventTxExecutor.add(
       currentEventName,
-      this.address,
-      this.address,
+      address,
+      address,
       func
     );
 
@@ -1410,9 +1414,10 @@ export class IgnitionWallet extends ethers.Wallet {
   private async populateTransactionWithIgnitionMetadata(
     transaction: Deferrable<TransactionRequest>
   ): Promise<TransactionRequest> {
+    const address = await this._signer.getAddress();
     if (!checkIfExist(transaction.nonce)) {
       transaction.nonce = this.nonceManager.getAndIncrementTransactionCount(
-        this.address
+        address
       );
     }
 
@@ -1425,14 +1430,14 @@ export class IgnitionWallet extends ethers.Wallet {
       const data = await transaction.data;
       if (data) {
         transaction.gasLimit = await this.gasCalculator.estimateGas(
-          this.address,
+          address,
           toAddr || undefined,
           data
         );
       }
     }
 
-    return await super.populateTransaction(transaction);
+    return await this._signer.populateTransaction(transaction);
   }
 }
 
@@ -1979,7 +1984,7 @@ export class Module {
 
   async init(
     moduleSession: Namespace,
-    wallets: ethers.Wallet[],
+    signers: ethers.Signer[],
     m?: ModuleBuilder,
     opts?: ModuleOptions
   ): Promise<ModuleBuilder> {
@@ -2003,7 +2008,7 @@ export class Module {
     }
 
     try {
-      await this.fn(moduleBuilder, wallets);
+      await this.fn(moduleBuilder, signers);
     } catch (err) {
       if (err._isUserError || err._isCliError) {
         throw err;

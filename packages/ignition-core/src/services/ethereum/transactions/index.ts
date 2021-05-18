@@ -14,6 +14,6 @@ export interface ITransactionSigner {
   generateSingedTx(
     value: number,
     data: string,
-    wallet?: ethers.Wallet | undefined
+    signer?: ethers.Signer | undefined
   ): Promise<string>;
 }

@@ -1,36 +1,75 @@
+import * as path from 'path';
 import { extendEnvironment, task } from 'hardhat/config';
 import { lazyObject } from 'hardhat/plugins';
 import { ActionType } from 'hardhat/types';
-import { DeployArgs, DiffArgs, GenTypesArgs, Logging } from 'ignition-core';
+import {
+  DeployArgs,
+  DiffArgs,
+  GenTypesArgs,
+  Module
+} from 'ignition-core';
 import './type_extentions';
 import { HardhatRuntimeEnvironment } from 'hardhat/types/runtime';
 import { HardhatIgnition } from '../index';
+import { extractDataFromConfig } from '../utils/extractor';
+import { loadScript } from 'common/typescript';
 
+const DEFAULT_NETWORK_NAME = 'local';
 export const PluginName = 'hardhat-ignition';
 
 extendEnvironment((env) => {
-  env.ignition = lazyObject(() => new HardhatIgnition());
-});
+  const networkName = env.network.name || env.config.defaultNetwork || DEFAULT_NETWORK_NAME;
+  const chainId = String(env.network.config.chainId || env.config.networks[networkName].chainId);
 
-const diff: ActionType<DiffArgs> = async (
-  diffArgs: DiffArgs,
-  env: HardhatRuntimeEnvironment
-) => {
-  await env.ignition.diff(diffArgs);
-};
+  const {
+    params,
+    customServices,
+    repos,
+    moduleParams
+  } = extractDataFromConfig(networkName, chainId, env.config);
+
+  env.ignition = lazyObject(() => new HardhatIgnition(
+    params,
+    customServices,
+    repos,
+    moduleParams
+  ));
+});
 
 const deploy: ActionType<DeployArgs> = async (
   deployArgs: DeployArgs,
   env: HardhatRuntimeEnvironment
 ) => {
-  await env.ignition.deploy(deployArgs);
+  const modules = loadScript(path.resolve(process.cwd(), deployArgs.moduleFilePath));
+  for (const [, moduleFunc] of Object.entries(modules)) {
+    const module = (await moduleFunc) as Module;
+
+    await env.ignition.deploy(module, deployArgs.networkName);
+  }
+};
+
+const diff: ActionType<DiffArgs> = async (
+  diffArgs: DiffArgs,
+  env: HardhatRuntimeEnvironment
+) => {
+  const modules = loadScript(path.resolve(process.cwd(), diffArgs.moduleFilePath));
+  for (const [, moduleFunc] of Object.entries(modules)) {
+    const module = (await moduleFunc) as Module;
+
+    await env.ignition.diff(module, diffArgs.networkName);
+  }
 };
 
 const genTypes: ActionType<GenTypesArgs> = async (
   genTypesArgs: GenTypesArgs,
   env: HardhatRuntimeEnvironment
 ) => {
-  await env.ignition.genTypes(genTypesArgs);
+  const modules = loadScript(path.resolve(process.cwd(), genTypesArgs.deploymentFolder));
+  for (const [, moduleFunc] of Object.entries(modules)) {
+    const module = (await moduleFunc) as Module;
+
+    await env.ignition.genTypes(module, genTypesArgs.deploymentFolder);
+  }
 };
 
 task('ignition:diff', 'Difference between deployed and current deployment.')
@@ -44,14 +83,11 @@ task('ignition:diff', 'Difference between deployed and current deployment.')
     'local',
     undefined
   )
-  .addOptionalParam<string>(
-    'state',
-    "Provide name of module's that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other.",
-    ''
-  )
-  .addOptionalParam<string>(
-    'configScriptPath',
-    'Path to the hardhat-ignition.config.js script, default is same as current path.'
+  .addOptionalParam<boolean>(
+    'logging',
+    'Logging options: streamlined, simple or json',
+    true,
+    undefined
   )
   .setAction(diff);
 
@@ -69,26 +105,11 @@ task(
     'local',
     undefined
   )
-  .addOptionalParam<Logging>(
+  .addOptionalParam<boolean>(
     'logging',
     'Logging options: streamlined, simple or json',
-    Logging.overview,
+    true,
     undefined
-  )
-  .addOptionalParam<string>(
-    'rpcProvider',
-    'RPC Provider - URL of open RPC interface for your ethereum node.',
-    undefined,
-    undefined
-  )
-  .addOptionalParam<string>(
-    'state',
-    "Provide name of module's that you would want to use as states. Most commonly used if you are deploying more than one module that are dependant on each other.",
-    ''
-  )
-  .addFlag(
-    'parallelize',
-    'If this flag is provided hardhat-ignition will try to parallelize transactions, this mean that it will batch transaction and track dynamically their confirmation.'
   )
   .addFlag(
     'testEnv',
@@ -103,11 +124,5 @@ task(
   .addOptionalPositionalParam(
     'moduleFilePath',
     'Path to module deployment file.'
-  )
-  .addOptionalPositionalParam<string>(
-    'configScriptPath',
-    'Path to the hardhat-ignition.config.js script, default is same as current path.',
-    undefined,
-    undefined
   )
   .setAction(genTypes);

@@ -89,8 +89,8 @@ export const sendAfterDeploy = (
  */
 export const filler = (
   m: ModuleBuilder,
-  rootWallet: ethers.Wallet,
-  wallets: ethers.Wallet[],
+  rootWallet: ethers.Signer,
+  wallets: ethers.Signer[],
   value?: ethers.BigNumberish | any
 ): void => {
   if (!value) {

@@ -2,7 +2,6 @@ export * from './analytics_service';
 export * from './analytics_util';
 export * from './empty_analytics_service';
 
-export interface IAnalyticsService {
+export interface IErrorReporting {
   reportError(err: Error): void;
-  sendCommandHit(taskName: string): void;
 }

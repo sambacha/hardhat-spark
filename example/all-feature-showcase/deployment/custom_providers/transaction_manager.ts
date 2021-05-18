@@ -42,7 +42,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     return (this.nonceMap)[walletAddress];
   }
 
-  async generateSingedTx(value: number, data: string, wallet?: ethers.Wallet | undefined): Promise<string> {
+  async generateSingedTx(value: number, data: string, signer?: ethers.Signer | undefined): Promise<string> {
     const gas = await this.gasCalculator.estimateGas(this.wallet.address, undefined, data);
 
     const tx: TransactionRequest = {
@@ -54,13 +54,13 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       chainId: +this.networkId
     };
 
-    if (wallet) {
-      tx.from = wallet.address;
-      tx.nonce = await this.getAndIncrementTransactionCount(await wallet.getAddress());
-      return wallet.signTransaction(tx);
+    if (signer) {
+      tx.from = await signer.getAddress();
+      tx.nonce = await this.getAndIncrementTransactionCount(tx.from);
+      return signer.signTransaction(tx);
     }
 
-    tx.nonce = await this.getAndIncrementTransactionCount(await this.wallet.getAddress());
+    tx.nonce = await this.getAndIncrementTransactionCount(tx.from);
     return this.wallet.signTransaction(tx);
   }
 }

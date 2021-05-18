@@ -2,7 +2,9 @@ import { ILogging } from './index';
 import { ModuleState } from '../../modules/states/module';
 import { EventType } from '../../../interfaces/hardhat_ignition';
 
-export class EmptyPrompter implements ILogging {
+export class EmptyLogger implements ILogging {
+  constructor() {}
+
   alreadyDeployed(elementName: string): void {}
 
   bindingExecution(bindingName: string): void {}

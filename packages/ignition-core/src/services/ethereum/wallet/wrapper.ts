@@ -1,6 +1,6 @@
 import { Namespace } from 'cls-hooked';
 import { ethers } from 'ethers';
-import { IgnitionWallet } from '../../../interfaces/hardhat_ignition';
+import { IgnitionSigner } from '../../../interfaces/hardhat_ignition';
 import { ModuleStateRepo } from '../../modules/states/state_repo';
 import { INonceManager } from '../transactions';
 import { IGasCalculator, IGasPriceCalculator } from '../gas';
@@ -34,12 +34,12 @@ export class WalletWrapper {
     this.eventTxExecutor = eventTxExecutor;
   }
 
-  wrapWallets(wallets: ethers.Wallet[]): IgnitionWallet[] {
+  wrapSigners(signers: ethers.Signer[]): IgnitionSigner[] {
     const ignitionWallets = [];
-    for (const wallet of wallets) {
+    for (const signer of signers) {
       ignitionWallets.push(
-        new IgnitionWallet(
-          wallet,
+        new IgnitionSigner(
+          signer,
           this.eventSession,
           this.nonceManager,
           this.gasPriceCalculator,

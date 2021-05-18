@@ -29,7 +29,7 @@ import { Namespace } from 'cls-hooked';
 import { EthClient } from '../ethereum/client';
 
 export class ModuleResolver {
-  private readonly signer: ethers.Wallet;
+  private readonly signer: ethers.Signer;
   private readonly prompter: ILogging;
   private readonly txGenerator: EthTxGenerator;
   private readonly moduleStateRepo: ModuleStateRepo;
@@ -39,7 +39,7 @@ export class ModuleResolver {
 
   constructor(
     provider: ethers.providers.JsonRpcProvider,
-    privateKey: string,
+    signer: ethers.Signer,
     prompter: ILogging,
     txGenerator: EthTxGenerator,
     moduleStateRepo: ModuleStateRepo,
@@ -47,7 +47,7 @@ export class ModuleResolver {
     eventSession: Namespace,
     ethereumClient: EthClient
   ) {
-    this.signer = new ethers.Wallet(privateKey, provider);
+    this.signer = signer;
     this.prompter = prompter;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
@@ -80,9 +80,10 @@ export class ModuleResolver {
       let newModuleElement: ContractBinding | StatefulEvent =
         newModuleStates[Object.keys(newModuleStates)[i]];
 
-      // @ts-ignore
       if (
+        // @ts-ignore
         checkIfExist(oldModuleElement?.bytecode) &&
+        // @ts-ignore
         checkIfExist(newModuleElement?.bytecode)
       ) {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
@@ -148,8 +149,8 @@ export class ModuleResolver {
 
       // @ts-ignore
       if (
-        checkIfExist(oldModuleElement?.bytecode) &&
-        checkIfExist(newModuleElement?.bytecode)
+        (oldModuleElement as ContractBindingMetaData)?.bytecode &&
+        (newModuleElement as ContractBinding)?.bytecode
       ) {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
         newModuleElement = newModuleElement as ContractBinding;
@@ -301,7 +302,7 @@ export class ModuleResolver {
         }
         if (
           userAlwaysDeploy ||
-          resolvedModuleStateElement.forceFlag == true ||
+          resolvedModuleStateElement.forceFlag ||
           !isSameBytecode(
             stateFileElement.bytecode,
             resolvedModuleStateElement.bytecode
