@@ -48,10 +48,11 @@ import {
   INonceManager,
   ITransactionSigner,
 } from '../services/ethereum/transactions';
-import { EventTxExecutor } from '../services/ethereum/transactions/event_executor';
+import { EventTxExecutor } from '../services/ethereum/transactions';
 import { Namespace } from 'cls-hooked';
 import { Deferrable } from '@ethersproject/properties';
 import { clsNamespaces } from '../services/utils/continuation_local_storage';
+import { ModuleParams } from '../../index';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -188,9 +189,9 @@ export type Deployed = {
   shouldRedeploy: ShouldRedeployFn | undefined;
   deploymentSpec:
     | {
-    deployFn: DeployFn | undefined;
-    deps: (ContractBinding | ContractBindingMetaData)[];
-  }
+        deployFn: DeployFn | undefined;
+        deps: (ContractBinding | ContractBindingMetaData)[];
+      }
     | undefined;
 };
 
@@ -275,7 +276,7 @@ export class GroupedDependencies {
     const bindings = this.dependencies.filter(
       (target: ContractBinding | ContractEvent) => {
         return ((target as ContractBinding)?.abi as JsonFragment[]).find(
-          ({name}) => name === searchParams?.functionName
+          ({ name }) => name === searchParams?.functionName
         );
       }
     ) as ContractBinding[];
@@ -524,7 +525,6 @@ export class ContractBinding extends Binding {
 
   private contractInstance: ethers.Contract | undefined;
 
-  public wallet: ethers.Signer | undefined;
   public forceFlag: boolean;
 
   public signer: ethers.Signer | undefined;
@@ -641,12 +641,12 @@ export class ContractBinding extends Binding {
   }
 
   /**
-   * Sets custom contract deployer. This means that `wallet` is going to sing contract creation transaction.
+   * Sets custom contract deployer. This means that `signer` is going to sing contract creation transaction.
    *
-   * @param wallet Ethers wallet object referencing deployer.
+   * @param signer Ethers signer object referencing deployer.
    */
-  setDeployer(wallet: ethers.Signer): ContractBinding {
-    this.wallet = wallet;
+  setDeployer(signer: ethers.Signer): ContractBinding {
+    this.signer = signer;
 
     return this;
   }
@@ -687,13 +687,13 @@ export class ContractBinding extends Binding {
 
     this.bytecode = compiler.extractBytecode([this.contractName])[
       this.contractName
-      ];
+    ];
     this.abi = compiler.extractContractInterface([this.contractName])[
       this.contractName
-      ];
+    ];
     this.libraries = compiler.extractContractLibraries([this.contractName])[
       this.contractName
-      ];
+    ];
   }
 
   /**
@@ -1176,8 +1176,8 @@ export class ContractInstance {
         ) {
           this.contractBinding.contractTxProgress = ++contractTxIterator;
           return currentEventTransactionData.contractOutput[
-          contractTxIterator - 1
-            ];
+            contractTxIterator - 1
+          ];
         }
 
         const currentInputs =
@@ -1321,7 +1321,7 @@ export class ContractInstance {
 }
 
 export class IgnitionSigner {
-  private _signer: ethers.Signer;
+  public _signer: ethers.Signer;
 
   private sessionNamespace: Namespace;
   private moduleStateRepo: ModuleStateRepo;
@@ -1341,8 +1341,6 @@ export class IgnitionSigner {
     prompter: ILogging,
     eventTxExecutor: EventTxExecutor
   ) {
-    this._signer = signer;
-
     this.sessionNamespace = sessionNamespace;
     this.nonceManager = nonceManager;
     this.gasPriceCalculator = gasPriceCalculator;
@@ -1350,6 +1348,8 @@ export class IgnitionSigner {
     this.moduleStateRepo = moduleStateRepo;
     this.prompter = prompter;
     this.eventTxExecutor = eventTxExecutor;
+
+    this._signer = signer;
   }
 
   async sendTransaction(
@@ -1390,10 +1390,7 @@ export class IgnitionSigner {
         currentEventName
       );
 
-      await this.prompter.finishedExecutionOfWalletTransfer(
-        address,
-        toAddr
-      );
+      await this.prompter.finishedExecutionOfWalletTransfer(address, toAddr);
 
       return txResp;
     };
@@ -1401,14 +1398,19 @@ export class IgnitionSigner {
     const currentEventName = this.sessionNamespace.get(
       clsNamespaces.EVENT_NAME
     );
-    this.eventTxExecutor.add(
-      currentEventName,
-      address,
-      address,
-      func
-    );
+    this.eventTxExecutor.add(currentEventName, address, address, func);
 
     return this.eventTxExecutor.executeSingle(currentEventName);
+  }
+
+  async getAddress(): Promise<string> {
+    return this._signer.getAddress();
+  }
+
+  async signTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<string> {
+    return this._signer.signTransaction(transaction);
   }
 
   private async populateTransactionWithIgnitionMetadata(
@@ -1422,7 +1424,7 @@ export class IgnitionSigner {
     }
 
     if (!checkIfExist(transaction.gasPrice)) {
-      transaction.gasPrice = this.gasPriceCalculator.getCurrentPrice();
+      transaction.gasPrice = await this.gasPriceCalculator.getCurrentPrice();
     }
 
     if (!checkIfExist(transaction.gasPrice)) {
@@ -1499,7 +1501,7 @@ export class ContractBindingMetaData {
 export class ModuleBuilder {
   [key: string]: ContractBinding | Event | Action | any;
 
-  private opts: ModuleOptions;
+  private params: ModuleParams;
   private readonly bindings: { [name: string]: ContractBinding };
   private readonly contractEvents: Events;
   private readonly moduleEvents: ModuleEvents;
@@ -1515,7 +1517,7 @@ export class ModuleBuilder {
   private readonly subModules: ModuleBuilder[];
   private readonly moduleSession: Namespace;
 
-  constructor(moduleSession: Namespace, opts?: ModuleOptions) {
+  constructor(moduleSession: Namespace, params?: ModuleParams) {
     this.bindings = {};
     this.actions = {};
     this.templates = {};
@@ -1528,11 +1530,9 @@ export class ModuleBuilder {
       onCompletion: {},
       onStart: {},
     };
-    this.opts = {
-      params: {},
-    };
-    if (checkIfExist(opts)) {
-      this.opts = opts as ModuleOptions;
+    this.params = {};
+    if (checkIfExist(params)) {
+      this.params = params || {};
     }
     this.subModules = [];
     this.moduleSession = moduleSession;
@@ -1657,7 +1657,7 @@ export class ModuleBuilder {
    * @param value Parameter value.
    */
   param(name: string, value: any) {
-    this.opts.params[name] = value;
+    this.params.params[name] = value;
   }
 
   /**
@@ -1666,28 +1666,28 @@ export class ModuleBuilder {
    * @param name
    */
   getParam(name: string): any {
-    if (!checkIfExist(this.opts)) {
+    if (!checkIfExist(this.params)) {
       throw new CliError(
         'This module doesnt have params, check if you are deploying right module!'
       );
     }
 
-    return this.opts.params[name];
+    return this.params.params[name];
   }
 
   /**
    * Sets custom module parameters.
    *
-   * @param opts Module options.
+   * @param moduleParams Module parameters.
    */
-  setParam(opts: ModuleOptions) {
-    if (!checkIfExist(opts.params)) {
+  setParam(moduleParams: ModuleParams) {
+    if (!checkIfExist(moduleParams)) {
       return;
     }
 
-    this.opts = opts;
+    this.params = moduleParams;
 
-    for (const [paramName, param] of Object.entries(opts.params)) {
+    for (const [paramName, param] of Object.entries(moduleParams)) {
       this[paramName] = param;
     }
   }
@@ -1736,17 +1736,17 @@ export class ModuleBuilder {
    * sub-module. On function execution it will return the context.
    *
    * @param m Module object
-   * @param opts Optional module options
-   * @param wallets Optional wallets that is going to be surfaced inside sub-module,
+   * @param params Optional module options
+   * @param signers Optional wallets that is going to be surfaced inside sub-module,
    *
    * @returns Module builder data from sub-module.
    */
   async useModule(
     m: Module | Promise<Module>,
-    opts?: ModuleOptions,
-    wallets: ethers.Wallet[] | any[] = []
+    params?: ModuleParams,
+    signers: ethers.Signer[] | any[] = []
   ): Promise<ModuleBuilder> {
-    const options = opts ? Object.assign(this.opts, opts) : this.opts;
+    const moduleParams = params ? Object.assign(this.params, params) : this.params;
 
     if (m instanceof Promise) {
       m = await m;
@@ -1757,7 +1757,7 @@ export class ModuleBuilder {
       throw new ModuleIsAlreadyInitialized();
     }
 
-    moduleBuilder = await m.init(this.moduleSession, wallets, this, options);
+    moduleBuilder = await m.init(this.moduleSession, signers, this, moduleParams);
     const oldDepth =
       this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
     if (oldDepth.length >= 1) {
@@ -1862,8 +1862,8 @@ export class ModuleBuilder {
     return this.templates;
   }
 
-  getAllOpts(): ModuleOptions {
-    return this.opts;
+  getAllParams(): ModuleParams {
+    return this.params;
   }
 
   /**
@@ -1938,7 +1938,7 @@ export class Module {
   private fn: ModuleBuilderFn;
 
   readonly name: string;
-  private opts: ModuleOptions;
+  private params: ModuleParams;
   private bindings: { [name: string]: ContractBinding };
   private events: Events;
   private moduleEvents: ModuleEvents;
@@ -1963,9 +1963,7 @@ export class Module {
     this.moduleConfig = moduleConfig;
     this.isUsage = usageModule;
 
-    this.opts = {
-      params: moduleConfig?.defaultOptions?.params || {},
-    };
+    this.params = moduleConfig?.defaultOptions?.params || {};
     this.bindings = {};
     this.events = {};
     this.moduleEvents = {
@@ -1986,14 +1984,14 @@ export class Module {
     moduleSession: Namespace,
     signers: ethers.Signer[],
     m?: ModuleBuilder,
-    opts?: ModuleOptions
+    moduleParams?: ModuleParams
   ): Promise<ModuleBuilder> {
-    if (opts && checkIfExist(opts)) {
-      this.opts = opts;
+    if (moduleParams && checkIfExist(moduleParams)) {
+      this.params = moduleParams;
     }
-    let moduleBuilder = m ? m : new ModuleBuilder(moduleSession, opts);
-    if (opts) {
-      moduleBuilder.setParam(opts);
+    let moduleBuilder = m ? m : new ModuleBuilder(moduleSession, moduleParams);
+    if (moduleParams) {
+      moduleBuilder.setParam(moduleParams);
     }
 
     // this is needed in order for ContractBindings to be aware of their originating module for later context changes
@@ -2033,7 +2031,7 @@ export class Module {
     this.nonceManager = moduleBuilder.getCustomNonceManager();
     this.transactionSigner = moduleBuilder.getCustomTransactionSigner();
     this.templates = moduleBuilder.getAllTemplates();
-    this.opts = moduleBuilder.getAllOpts();
+    this.params = moduleBuilder.getAllParams();
 
     this.initialized = true;
 
@@ -2048,8 +2046,8 @@ export class Module {
     return this.events;
   }
 
-  getOpts(): ModuleOptions {
-    return this.opts;
+  getParams(): ModuleParams {
+    return this.params;
   }
 
   getAllModuleEvents(): ModuleEvents {
@@ -2149,9 +2147,6 @@ async function handleModule(
     contractBuildNames.push(bind.contractName);
   }
 
-  if (!isSubModule) {
-    compiler.compile(); // @TODO: make this more suitable for other compilers
-  }
   const bytecodes: { [name: string]: string } = compiler.extractBytecode(
     contractBuildNames
   );

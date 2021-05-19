@@ -99,8 +99,8 @@ export const filler = (
   m.onStart('on start distribute ethers to all accounts', async () => {
     for (let i = 0; i < wallets.length; i++) {
       await rootWallet.sendTransaction({
-        from: rootWallet.getAddress(),
-        to: wallets[i].getAddress(),
+        from: await rootWallet.getAddress(),
+        to: await wallets[i].getAddress(),
         value: value,
         gasLimit: 21000,
       });

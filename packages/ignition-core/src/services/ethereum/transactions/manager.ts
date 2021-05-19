@@ -104,9 +104,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       return signer.signTransaction(tx);
     }
 
-    tx.nonce = await this.getAndIncrementTransactionCount(
-      address
-    );
+    tx.nonce = await this.getAndIncrementTransactionCount(address);
     return this.signer.signTransaction(tx);
   }
 

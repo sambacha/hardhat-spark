@@ -1,7 +1,7 @@
 import * as path from 'path';
 
 require('dotenv').config({
-  path: path.resolve(__dirname + '../../.env.local'),
+  path: path.resolve(__dirname + '../../../.env.local'),
 });
 
 let cachedIsTypescriptSupported: boolean | undefined;
@@ -72,24 +72,24 @@ function isTypescriptFile(path: string): boolean {
 }
 
 export async function loadScript(
-  configScriptPath: string,
+  filePath: string,
   test: boolean = false
 ): Promise<any> {
-  if (willRunWithTypescript(configScriptPath)) {
+  if (willRunWithTypescript(filePath)) {
     loadTsNode(test);
   }
 
-  let module;
+  let file;
 
   try {
     if (test) {
-      delete require.cache[require.resolve(configScriptPath)];
+      delete require.cache[require.resolve(filePath)];
     }
-    const imported = require(configScriptPath);
-    module = imported.default !== undefined ? imported.default : imported;
+    const imported = require(filePath);
+    file = imported.default !== undefined ? imported.default : imported;
   } catch (e) {
     throw e;
   }
 
-  return module;
+  return file;
 }

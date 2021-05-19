@@ -1,9 +1,9 @@
 import { assert } from 'chai';
 import * as path from 'path';
 import {
-  CONFIG_SCRIPT_NAME,
   ContractBindingMetaData,
   DEPLOYMENT_FOLDER,
+  Module,
 } from 'ignition-core';
 import { IgnitionTests } from 'ignition-test';
 import { loadStateFile } from '../utils/files';
@@ -12,9 +12,18 @@ import { loadScript } from 'common/typescript';
 
 const networkId = '31337'; // hardhat localhost chainId
 const networkName = 'local'; // hardhat localhost chainId
+const defaultProvider = new ethers.providers.JsonRpcProvider();
+
+// @TODO move this to tests
 const testPrivateKeys = [
-  new ethers.Wallet('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'),
-  new ethers.Wallet('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'),
+  new ethers.Wallet(
+    '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+    defaultProvider
+  ),
+  new ethers.Wallet(
+    '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+    defaultProvider
+  ),
 ];
 const moduleName = 'ExampleModule';
 const moduleFileName = 'module.ts';
@@ -26,13 +35,21 @@ describe('ignition deploy', () => {
       networkName,
       networkId,
       signers: testPrivateKeys,
+      test: true,
     },
     {},
     {},
   );
+  before(async () => {
+    await ignition.init();
+  });
+
   afterEach(() => {
     ignition.cleanup();
     process.chdir(rootDir);
+
+    // resolving same reference of an object that is required multiple times
+    require.cache = {};
   });
 
   describe('ignition deploy - integration', () => {
@@ -226,19 +243,19 @@ describe('ignition deploy', () => {
     runExamples(ignition);
   });
 
-  describe('ignition deploy - examples - parallel', () => {
-    const ignitionParallelMode = new IgnitionTests(
-      {
-        networkName,
-        networkId,
-        signers: testPrivateKeys,
-        parallelizeDeployment: true,
-      },
-      {},
-      {},
-    );
-    runExamples(ignitionParallelMode, true);
-  });
+  // describe('ignition deploy - examples - parallel', () => {
+  //   const ignitionParallelMode = new IgnitionTests(
+  //     {
+  //       networkName,
+  //       networkId,
+  //       signers: testPrivateKeys,
+  //       parallelizeDeployment: true,
+  //     },
+  //     {},
+  //     {}
+  //   );
+  //   runExamples(ignitionParallelMode, true);
+  // });
 });
 
 async function runExamples(
@@ -323,12 +340,7 @@ async function runExamples(
         `../../example/${projectFileName}`
       );
       process.chdir(projectLocation);
-
-      const { config: synthetixConfigFile } = require(path.resolve(
-        projectLocation,
-        CONFIG_SCRIPT_NAME
-      ));
-      await ignition.changeConfigFile(synthetixConfigFile);
+      await loadModuleParams(ignition, projectLocation);
 
       await runDeployCommand(ignition, projectLocation, 'module.ts');
     }).timeout(200000); // ~160s normal running time
@@ -341,13 +353,7 @@ async function runExamples(
       `../../example/${projectFileName}`
     );
     process.chdir(projectLocation);
-
-    const { config: configFile } = require(path.resolve(
-      projectLocation,
-      CONFIG_SCRIPT_NAME
-    ));
-
-    await ignition.changeConfigFile(configFile);
+    await loadModuleParams(ignition, projectLocation);
 
     await runDeployCommand(ignition, projectLocation, 'tornado.module.ts');
   }).timeout(10000);
@@ -358,11 +364,32 @@ async function runDeployCommand(
   projectLocation: string,
   projectFileName: string = moduleFileName
 ): Promise<void> {
-  const deploymentFilePath = path.join(
+  const deploymentFilePath = path.resolve(
     projectLocation,
     DEPLOYMENT_FOLDER,
     projectFileName
   );
-  const module = await loadScript(deploymentFilePath, true);
-  await ignition.deploy(await module);
+  const modules = await loadScript(deploymentFilePath, true);
+  for (const [, moduleFunc] of Object.entries(modules)) {
+    const module = (await moduleFunc) as Module;
+
+    await ignition.deploy(module);
+  }
+}
+
+async function loadModuleParams(ignition: IgnitionTests, projectLocation: string): Promise<void> {
+  let config: any = {};
+  try {
+    const configFileJs = path.resolve(projectLocation, 'deployment', 'module.params.js');
+    config = await loadScript(configFileJs, true);
+  } catch (e) {
+    if (e.code == 'MODULE_NOT_FOUND') {
+      const configFileTs = path.resolve(projectLocation, 'deployment', 'module.params.ts');
+      config = await loadScript(configFileTs, true);
+    } else {
+      throw e;
+    }
+  }
+
+  await ignition.reInit(ignition.core.params, ignition.core.customServices, ignition.core.repos, config.moduleParams);
 }

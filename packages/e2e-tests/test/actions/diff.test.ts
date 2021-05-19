@@ -1,32 +1,36 @@
 import { assert } from 'chai';
 import { IgnitionTests } from 'ignition-test';
 import * as path from 'path';
-import { DEPLOYMENT_FOLDER } from 'ignition-core';
+import { DEPLOYMENT_FOLDER, Module } from 'ignition-core';
 import ux from 'cli-ux';
 import { loadStateFile } from '../utils/files';
+import { loadScript } from 'common/typescript';
+import { ethers } from 'ethers';
 
 const defaultModuleFileName = 'module.ts';
-const NETWORK_NAME = 'local';
-const NETWORK_ID = '31337';
+const networkName = 'local';
+const networkId = '31337';
 const rootDir = process.cwd();
 const testPrivateKeys = [
-  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-  '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+  new ethers.Wallet(
+    '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+  ),
+  new ethers.Wallet(
+    '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
+  ),
 ];
 
 describe('ignition diff - integration', () => {
   let output = '';
   const ignitionTests = new IgnitionTests(
     {
-      networkId: NETWORK_ID,
-      networkName: NETWORK_NAME,
-      stateFileNames: [],
+      networkName,
+      networkId,
+      signers: testPrivateKeys,
+      test: true,
     },
-    {
-      privateKeys: testPrivateKeys,
-      mnemonic: '',
-      hdPath: '',
-    }
+    {},
+    {}
   );
 
   beforeEach(() => {
@@ -40,6 +44,10 @@ describe('ignition diff - integration', () => {
       }
       output += '\n';
     };
+  });
+
+  before(async () => {
+    await ignitionTests.init();
   });
 
   afterEach(() => {
@@ -163,5 +171,10 @@ async function runDiffCommand(
     moduleFileName
   );
 
-  await ignition.diff(deploymentFilePath);
+  const modules = await loadScript(deploymentFilePath, true);
+  for (const [, moduleFunc] of Object.entries(modules)) {
+    const module = (await moduleFunc) as Module;
+
+    await ignition.diff(module);
+  }
 }

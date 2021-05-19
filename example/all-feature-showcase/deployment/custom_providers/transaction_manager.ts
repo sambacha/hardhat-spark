@@ -60,7 +60,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       return signer.signTransaction(tx);
     }
 
-    tx.nonce = await this.getAndIncrementTransactionCount(tx.from);
+    tx.nonce = await this.getAndIncrementTransactionCount(this.wallet.address);
     return this.wallet.signTransaction(tx);
   }
 }

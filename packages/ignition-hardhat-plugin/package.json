@@ -8,6 +8,7 @@
     "ethers": "^5.1.4",
     "hardhat": "^2.2.1",
     "ignition-core": "0.0.1",
+    "inquirer": "^8.0.0",
     "path": "^0.12.7"
   },
   "scripts": {
@@ -16,5 +17,8 @@
     "clean": "node ../../node_modules/rimraf/bin.js dist",
     "compile": "node ../../node_modules/typescript/bin/tsc --noEmit",
     "build": "node ../../node_modules/typescript/bin/tsc --build ."
+  },
+  "devDependencies": {
+    "@types/inquirer": "^7.3.1"
   }
 }

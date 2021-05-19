@@ -843,7 +843,7 @@ export class TxExecutor {
     const signedTx = await this.txGenerator.generateSingedTx(
       0,
       bytecode,
-      binding.wallet
+      binding.signer
     );
 
     await this.prompter.promptSignedTransaction(signedTx);

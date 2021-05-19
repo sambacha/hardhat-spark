@@ -1,7 +1,7 @@
 import {
   HardhatUserConfig,
   HttpNetworkAccountsUserConfig,
-  HttpNetworkConfig
+  HttpNetworkConfig,
 } from 'hardhat/types';
 import { IgnitionParams, IgnitionRepos, IgnitionServices } from 'ignition-core';
 import { ethers } from 'ethers';
@@ -10,9 +10,14 @@ import {
   HardhatNetworkAccountsUserConfig,
   HardhatNetworkHDAccountsConfig,
 } from 'hardhat/src/types/config';
+import { derivePrivateKeys } from 'hardhat/internal/core/providers/util';
 
 const createSigners = (
-  accounts: HttpNetworkAccountsUserConfig | HardhatNetworkAccountsUserConfig | undefined
+  accounts:
+    | HttpNetworkAccountsUserConfig
+    | HardhatNetworkAccountsUserConfig
+    | undefined,
+  provider: ethers.providers.JsonRpcProvider
 ): ethers.Signer[] => {
   const signers: ethers.Signer[] = [];
   if (!accounts) {
@@ -23,15 +28,32 @@ const createSigners = (
     return [];
   }
 
-  if ((accounts as HardhatNetworkHDAccountsConfig)?.mnemonic) {
-    // @TODO
-    return [];
+  const accountsAsMnemonic = accounts as HardhatNetworkHDAccountsConfig;
+  if (accountsAsMnemonic?.mnemonic) {
+
+    const privateKeys = derivePrivateKeys(
+      accountsAsMnemonic.mnemonic,
+      accountsAsMnemonic.path,
+      accountsAsMnemonic.initialIndex,
+      accountsAsMnemonic.count
+    );
+
+    const wallets: ethers.Wallet[] = [];
+    for (let i = 0; i < privateKeys.length; i++) {
+      wallets.push(new ethers.Wallet(privateKeys[i], provider));
+    }
+
+    return wallets;
   }
 
-  for (const account of (accounts as HardhatNetworkAccountConfig[])) {
-    signers.push(
-      new ethers.Wallet(account.privateKey)
-    );
+  if ((accounts as HardhatNetworkAccountConfig[])[0]?.privateKey) {
+    for (const account of (accounts as HardhatNetworkAccountConfig[])) {
+      signers.push(new ethers.Wallet(account.privateKey, provider));
+    }
+  }
+
+  for (const account of (accounts as string[])) {
+    signers.push(new ethers.Wallet(account, provider));
   }
 
   return signers;
@@ -42,20 +64,16 @@ export const extractDataFromConfig = (
   networkId: string,
   config: HardhatUserConfig
 ): {
-  params: IgnitionParams,
-  customServices: IgnitionServices,
-  repos: IgnitionRepos,
-  moduleParams: { [name: string]: any },
+  params: IgnitionParams;
+  customServices: IgnitionServices;
+  repos: IgnitionRepos;
+  moduleParams: { [name: string]: any };
 } => {
-  if (
-    !config ||
-    !config.networks ||
-    !config.ignition
-  ) {
+  if (!config || !config.networks || !config.ignition) {
     return {
       params: {
         networkId,
-        networkName
+        networkName,
       },
       customServices: {},
       repos: {},
@@ -66,18 +84,20 @@ export const extractDataFromConfig = (
   const ignition = config.ignition;
 
   const networkUrl =
-    (networkConfig as HttpNetworkConfig)?.url ||
-    'http://localhost:8545';
+    (networkConfig as HttpNetworkConfig)?.url || 'http://localhost:8545';
 
-  const signer = createSigners(networkConfig?.accounts);
+  const provider = new ethers.providers.JsonRpcProvider(networkUrl, {
+    name: networkName,
+    chainId: +networkId
+  });
+  const signers = createSigners(networkConfig?.accounts, provider);
   const params: IgnitionParams = {
     networkName,
     networkId,
     localDeployment: networkName == 'localhost',
-    rpcProvider: new ethers.providers.JsonRpcProvider(networkUrl, networkId),
-    signers: signer,
-
-    logging: ignition?.logging,
+    rpcProvider: provider,
+    signers: signers,
+    logging: ignition?.logging || true,
     test: ignition?.test,
     parallelizeDeployment: ignition?.parallelizeDeployment,
     blockConfirmation: ignition?.blockConfirmation,
@@ -92,13 +112,13 @@ export const extractDataFromConfig = (
 
   const repos: IgnitionRepos = {
     resolver: ignition?.resolver,
-    registry: ignition?.registry
+    registry: ignition?.registry,
   };
 
   return {
     params,
     customServices,
     repos,
-    moduleParams: ignition?.moduleParams || {}
+    moduleParams: ignition?.moduleParams || {},
   };
 };

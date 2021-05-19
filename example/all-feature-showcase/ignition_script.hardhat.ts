@@ -6,6 +6,8 @@ const networkName = 'local';
 
 async function main() {
   const ign = hre.ignition;
+  await ign.init(true, false);
+
   await ign.deploy(await ExampleModule, networkName, true);
 }
 

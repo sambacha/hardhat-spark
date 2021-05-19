@@ -17,7 +17,7 @@ export class ModuleTypings {
     const bindings = module.getAllBindings();
     const actions = module.getAllActions();
     const events = module.getAllEvents();
-    const params = module.getOpts().params;
+    const params = module.getParams().params;
 
     const fileName = `${moduleName}.d.ts`;
     const filePath = path.resolve(deploymentPath, fileName);
