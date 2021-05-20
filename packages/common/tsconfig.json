@@ -8,7 +8,6 @@
     "lib"
   ],
   "include": [
-    "index.ts",
-    "src/**/*",
+    "typescript.ts",
   ]
 }

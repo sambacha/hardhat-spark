@@ -12,6 +12,6 @@
     "projects-scenarios/*/cache",
   ],
   "include": [
-    "test",
+    "test/**/*",
   ]
 }

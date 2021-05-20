@@ -10,7 +10,6 @@ import {
   IgnitionRepos,
   ModuleParams,
   Module,
-  GasPriceBackoff,
   IModuleRegistryResolver,
   INonceManager,
   ITransactionSigner,
@@ -35,16 +34,13 @@ export interface IHardhatIgnition {
 }
 
 export type HardhatIgnitionConfig = {
-  parallelizeDeployment?: boolean;
   logging?: boolean;
   test?: boolean;
-  blockConfirmation?: number;
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasProvider;
   nonceManager?: INonceManager;
   transactionSigner?: ITransactionSigner;
-  gasPriceBackoff?: GasPriceBackoff;
   moduleParams?: { [name: string]: any };
 };
 
@@ -60,10 +56,7 @@ export class HardhatIgnition implements IHardhatIgnition {
     this.ignitionCore = new IgnitionCore(params, services, repos, moduleParams);
   }
 
-  async init(
-    logging: boolean = true,
-    test: boolean = true
-  ): Promise<void> {
+  async init(logging: boolean = true, test: boolean = true): Promise<void> {
     this.ignitionCore.params.logging = logging;
     this.ignitionCore.params.test = test;
     await this.ignitionCore.mustInit(this.ignitionCore.params);
@@ -75,7 +68,7 @@ export class HardhatIgnition implements IHardhatIgnition {
     logging?: boolean,
     test?: boolean
   ): Promise<void> {
-    await this.ignitionCore.deploy(networkName, module, logging);
+    await this.ignitionCore.deploy(networkName, module, logging, test);
   }
 
   async diff(

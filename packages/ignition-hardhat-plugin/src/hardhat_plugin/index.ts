@@ -2,7 +2,13 @@ import * as path from 'path';
 import { extendEnvironment, task } from 'hardhat/config';
 import { lazyObject } from 'hardhat/plugins';
 import { ActionType } from 'hardhat/types';
-import { DeployArgs, DiffArgs, GenTypesArgs, Module, SystemCrawlingService } from 'ignition-core';
+import {
+  DeployArgs,
+  DiffArgs,
+  GenTypesArgs,
+  Module,
+  SystemCrawlingService,
+} from 'ignition-core';
 import './type_extentions';
 import { HardhatRuntimeEnvironment } from 'hardhat/types/runtime';
 import { HardhatIgnition } from '../index';
@@ -37,20 +43,29 @@ const deploy: ActionType<DeployArgs> = async (
   deployArgs: DeployArgs,
   env: HardhatRuntimeEnvironment
 ) => {
-  let filePath = deployArgs.moduleFilePath;
+  let filePath =
+    deployArgs.moduleFilePath ||
+    env.config.networks[env.network.name].deploymentFilePath;
   if (!filePath) {
-    const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
+    const systemCrawlingService = new SystemCrawlingService(
+      process.cwd(),
+      DEFAULT_DEPLOYMENT_FOLDER
+    );
     const deploymentModules = systemCrawlingService.crawlDeploymentModule();
-    const deploymentFileName = (await inquirer.prompt([{
-      name: 'deploymentFileName',
-      message: 'Deployments file:',
-      type: 'list',
-      choices: deploymentModules.map((v) => {
-        return {
-          name: v
-        };
-      }),
-    }])).deploymentFileName;
+    const deploymentFileName = (
+      await inquirer.prompt([
+        {
+          name: 'deploymentFileName',
+          message: 'Deployments file:',
+          type: 'list',
+          choices: deploymentModules.map((v) => {
+            return {
+              name: v,
+            };
+          }),
+        },
+      ])
+    ).deploymentFileName;
     try {
       filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
     } catch (e) {
@@ -63,7 +78,8 @@ const deploy: ActionType<DeployArgs> = async (
   for (const [, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
 
-    await env.ignition.deploy(module, deployArgs.networkName, deployArgs.logging);
+    const logging = deployArgs.logging || true;
+    await env.ignition.deploy(module, deployArgs.networkName, logging);
   }
 };
 
@@ -71,33 +87,41 @@ const diff: ActionType<DiffArgs> = async (
   diffArgs: DiffArgs,
   env: HardhatRuntimeEnvironment
 ) => {
-  let filePath = diffArgs.moduleFilePath;
+  let filePath =
+    diffArgs.moduleFilePath ||
+    env.config.networks[env.network.name].deploymentFilePath;
   if (!filePath) {
-    const systemCrawlingService = new SystemCrawlingService(process.cwd(), DEFAULT_DEPLOYMENT_FOLDER);
+    const systemCrawlingService = new SystemCrawlingService(
+      process.cwd(),
+      DEFAULT_DEPLOYMENT_FOLDER
+    );
     const deploymentModules = systemCrawlingService.crawlDeploymentModule();
-    const deploymentFileName = (await inquirer.prompt([{
-      name: 'deploymentFileName',
-      message: 'Deployments file:',
-      type: 'list',
-      choices: deploymentModules.map((v) => {
-        return {
-          name: v
-        };
-      }),
-    }])).deploymentFileName;
+    const deploymentFileName = (
+      await inquirer.prompt([
+        {
+          name: 'deploymentFileName',
+          message: 'Deployments file:',
+          type: 'list',
+          choices: deploymentModules.map((v) => {
+            return {
+              name: v,
+            };
+          }),
+        },
+      ])
+    ).deploymentFileName;
     try {
       filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
     } catch (e) {
       throw new NoDeploymentModuleError();
     }
   }
-  const modules = loadScript(
-    path.resolve(process.cwd(), filePath)
-  );
+  const modules = loadScript(path.resolve(process.cwd(), filePath));
   for (const [, moduleFunc] of Object.entries(modules)) {
     const module = (await moduleFunc) as Module;
 
-    await env.ignition.diff(module, diffArgs.networkName, diffArgs.logging);
+    const logging = diffArgs.logging || true;
+    await env.ignition.diff(module, diffArgs.networkName, logging);
   }
 };
 

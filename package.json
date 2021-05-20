@@ -18,6 +18,7 @@
     "url": "git+https://github.com/nomiclabs/hardhat-ignition.git"
   },
   "scripts": {
+    "compile": "wsrun --exclude-missing --stages compile",
     "build": "tsc -b packages/ignition-core packages/ignition-hardhat-plugin packages/ignition-test",
     "build-test": "tsc -b packages/ignition-core packages/ignition-test packages/e2e-tests",
     "install:examples": "./bin/install_example_node_modules.sh",

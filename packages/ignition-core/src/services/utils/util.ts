@@ -183,6 +183,8 @@ export async function errorHandling(
   if (errorReporter) {
     errorReporter.reportError(error);
   }
+
+  throw error;
 }
 
 export function copyValue(variableOne: any): any {

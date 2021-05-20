@@ -38,7 +38,7 @@ describe('ignition deploy', () => {
       test: true,
     },
     {},
-    {},
+    {}
   );
   before(async () => {
     await ignition.init();
@@ -377,19 +377,35 @@ async function runDeployCommand(
   }
 }
 
-async function loadModuleParams(ignition: IgnitionTests, projectLocation: string): Promise<void> {
+async function loadModuleParams(
+  ignition: IgnitionTests,
+  projectLocation: string
+): Promise<void> {
   let config: any = {};
   try {
-    const configFileJs = path.resolve(projectLocation, 'deployment', 'module.params.js');
+    const configFileJs = path.resolve(
+      projectLocation,
+      'deployment',
+      'module.params.js'
+    );
     config = await loadScript(configFileJs, true);
   } catch (e) {
     if (e.code == 'MODULE_NOT_FOUND') {
-      const configFileTs = path.resolve(projectLocation, 'deployment', 'module.params.ts');
+      const configFileTs = path.resolve(
+        projectLocation,
+        'deployment',
+        'module.params.ts'
+      );
       config = await loadScript(configFileTs, true);
     } else {
       throw e;
     }
   }
 
-  await ignition.reInit(ignition.core.params, ignition.core.customServices, ignition.core.repos, config.moduleParams);
+  await ignition.reInit(
+    ignition.core.params,
+    ignition.core.customServices,
+    ignition.core.repos,
+    config.moduleParams
+  );
 }

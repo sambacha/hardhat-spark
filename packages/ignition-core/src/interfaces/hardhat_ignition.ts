@@ -1746,7 +1746,9 @@ export class ModuleBuilder {
     params?: ModuleParams,
     signers: ethers.Signer[] | any[] = []
   ): Promise<ModuleBuilder> {
-    const moduleParams = params ? Object.assign(this.params, params) : this.params;
+    const moduleParams = params
+      ? Object.assign(this.params, params)
+      : this.params;
 
     if (m instanceof Promise) {
       m = await m;
@@ -1757,7 +1759,12 @@ export class ModuleBuilder {
       throw new ModuleIsAlreadyInitialized();
     }
 
-    moduleBuilder = await m.init(this.moduleSession, signers, this, moduleParams);
+    moduleBuilder = await m.init(
+      this.moduleSession,
+      signers,
+      this,
+      moduleParams
+    );
     const oldDepth =
       this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
     if (oldDepth.length >= 1) {

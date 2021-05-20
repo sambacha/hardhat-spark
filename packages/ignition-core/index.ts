@@ -1,82 +1,82 @@
-import { cli } from "cli-ux";
-import * as cls from "cls-hooked";
-import { Module } from "./src/interfaces/hardhat_ignition";
-import { checkIfExist } from "./src/services/utils/util";
-import { ModuleStateRepo } from "./src/services/modules/states/state_repo";
-import { ModuleResolver } from "./src/services/modules/module_resolver";
+import { cli } from 'cli-ux';
+import * as cls from 'cls-hooked';
+import { Module } from './src/interfaces/hardhat_ignition';
+import { checkIfExist } from './src/services/utils/util';
+import { ModuleStateRepo } from './src/services/modules/states/state_repo';
+import { ModuleResolver } from './src/services/modules/module_resolver';
 import {
   EthTxGenerator,
   EventTxExecutor,
   TransactionManager,
   TxExecutor,
-} from "./src/services/ethereum/transactions";
-import { ModuleState } from "./src/services/modules/states/module";
-import { ModuleTypings } from "./src/services/modules/typings";
-import { EmptyLogger, ILogging, Logging } from "./src/services/utils/logging";
-import { WalletWrapper } from "./src/services/ethereum/wallet/wrapper";
-import { ethers, providers, Wallet } from "ethers";
-import { GasPriceBackoff } from "./src/services/types/config";
+} from './src/services/ethereum/transactions';
+import { ModuleState } from './src/services/modules/states/module';
+import { ModuleTypings } from './src/services/modules/typings';
+import { EmptyLogger, ILogging } from './src/services/utils/logging';
+import { WalletWrapper } from './src/services/ethereum/wallet/wrapper';
+import { ethers } from 'ethers';
+import { GasPriceBackoff } from './src/services/types/config';
 import {
   EmptySigners,
   ServicesNotInitialized,
-} from "./src/services/types/errors";
-import { ModuleDeploymentSummaryService } from "./src/services/modules/module_deployment_summary";
+} from './src/services/types/errors';
+import { ModuleDeploymentSummaryService } from './src/services/modules/module_deployment_summary';
 import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
   DEFAULT_RPC_PROVIDER,
-} from "./src/services/utils/constants";
-import { OverviewLogger } from "./src/services/utils/logging/react-terminal";
-import { GlobalConfigService } from "./src/services/config";
-import { ErrorReporter } from "./src/services/utils/analytics";
-import { IErrorReporting } from "./src/services/utils/analytics";
-import { errorHandling } from "./src/services/utils/util";
-import { GasPriceCalculator } from "./src/services/ethereum/gas";
-import { EventHandler } from "./src/services/modules/events/handler";
-import { EthClient } from "./src/services/ethereum/client";
-import { IModuleRegistryResolver } from "./src/services/modules/states/registry";
-import { IGasProvider } from "./src/services/ethereum/gas";
+} from './src/services/utils/constants';
+import { OverviewLogger } from './src/services/utils/logging/react-terminal';
+import { GlobalConfigService } from './src/services/config';
+import { ErrorReporter } from './src/services/utils/analytics';
+import { IErrorReporting } from './src/services/utils/analytics';
+import { errorHandling } from './src/services/utils/util';
+import { GasPriceCalculator } from './src/services/ethereum/gas';
+import { EventHandler } from './src/services/modules/events/handler';
+import { EthClient } from './src/services/ethereum/client';
+import { IModuleRegistryResolver } from './src/services/modules/states/registry';
+import { IGasProvider } from './src/services/ethereum/gas';
 import {
   INonceManager,
   ITransactionSigner,
-} from "./src/services/ethereum/transactions";
+} from './src/services/ethereum/transactions';
 
-export * from "./src/interfaces/hardhat_ignition";
-export * from "./src/interfaces/helper/expectancy";
-export * from "./src/interfaces/helper/macros";
+export * from './src/interfaces/hardhat_ignition';
+export * from './src/interfaces/helper/expectancy';
+export * from './src/interfaces/helper/macros';
 
-export * from "./src/services/config";
-export * from "./src/services/types";
-export * from "./src/services/ethereum/compiler";
-export * from "./src/services/ethereum/gas";
-export * from "./src/services/ethereum/transactions";
-export * from "./src/services/ethereum/transactions/manager";
-export * from "./src/services/ethereum/wallet/wrapper";
-export * from "./src/services/modules/states/module";
-export * from "./src/services/modules/states/registry";
-export * from "./src/services/modules/states/registry/remote_bucket_storage";
-export * from "./src/services/modules/typings";
-export * from "./src/services/utils/util";
-export * from "./src/services/ethereum/gas/calculator";
-export * from "./src/services/ethereum/transactions/generator";
-export * from "./src/services/modules/states/state_repo";
-export * from "./src/services/modules/module_resolver";
-export * from "./src/services/modules/events/handler";
-export * from "./src/services/utils/logging";
-export * from "./src/services/types/migration";
-export * from "./src/services/modules/states/state_migration_service";
-export * from "./src/services/tutorial/tutorial_service";
-export * from "./src/services/tutorial/system_crawler";
-export * from "./src/services/tutorial/deployment_file_gen";
-export * from "./src/services/tutorial/deployment_file_repo";
-export * from "./src/services/modules/module_migration";
-export * from "./src/services/ethereum/client";
-export * from "./src/services/modules/module_usage";
-export * from "./src/services/modules/module_deployment_summary";
-export * from "./src/services/config";
-export * from "./src/services/types";
-export * from "./src/services/types/config";
-export * from "./src/services/utils/analytics/index";
+export * from './src/services/config';
+export * from './src/services/types';
+export * from './src/services/ethereum/compiler';
+export * from './src/services/ethereum/gas';
+export * from './src/services/ethereum/transactions';
+export * from './src/services/ethereum/transactions/manager';
+export * from './src/services/ethereum/wallet/wrapper';
+export * from './src/services/modules/states/module';
+export * from './src/services/modules/states/registry';
+export * from './src/services/modules/states/registry/remote_bucket_storage';
+export * from './src/services/modules/typings';
+export * from './src/services/utils/util';
+export * from './src/services/ethereum/gas/calculator';
+export * from './src/services/ethereum/transactions/generator';
+export * from './src/services/modules/states/state_repo';
+export * from './src/services/modules/module_resolver';
+export * from './src/services/modules/events/handler';
+export * from './src/services/utils/logging';
+export * from './src/services/types/migration';
+export * from './src/services/modules/states/state_migration_service';
+export * from './src/services/tutorial/tutorial_service';
+export * from './src/services/tutorial/system_crawler';
+export * from './src/services/tutorial/deployment_file_gen';
+export * from './src/services/tutorial/deployment_file_repo';
+export * from './src/services/modules/module_migration';
+export * from './src/services/ethereum/client';
+export * from './src/services/modules/module_usage';
+export * from './src/services/modules/module_deployment_summary';
+export * from './src/services/config';
+export * from './src/services/types';
+export * from './src/services/types/config';
+export * from './src/services/utils/analytics/index';
 
 export interface DiffArgs {
   moduleFilePath?: string;
@@ -252,18 +252,19 @@ export class IgnitionCore implements IIgnition {
     this._initialized = true;
   }
 
-  async deploy(networkName: string, module: Module, logging?: boolean) {
+  async deploy(
+    networkName: string,
+    module: Module,
+    logging?: boolean,
+    test?: boolean
+  ) {
     try {
       if (!this._initialized) {
-        await this.mustInit(
-          this.params,
-          this.customServices,
-          this.repos,
-        );
+        await this.mustInit(this.params, this.customServices, this.repos);
       }
 
-      if (logging) {
-        await this.reInitLogger();
+      if (this.params.logging != logging) {
+        await this.reInitLogger(!!logging);
       }
 
       if (
@@ -290,7 +291,7 @@ export class IgnitionCore implements IIgnition {
       }
 
       // ability to surface module's context when using subModule functionality
-      const moduleSession = cls.createNamespace("module");
+      const moduleSession = cls.createNamespace('module');
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
@@ -379,15 +380,11 @@ export class IgnitionCore implements IIgnition {
   async diff(networkName: string, module: Module, logging?: boolean) {
     try {
       if (!this._initialized) {
-        await this.mustInit(
-          this.params,
-          this.customServices,
-          this.repos,
-        );
+        await this.mustInit(this.params, this.customServices, this.repos);
       }
 
-      if (logging) {
-        await this.reInitLogger();
+      if (this.params.logging != logging) {
+        await this.reInitLogger(!!logging);
       }
 
       if (!this.moduleStateRepo || !this.moduleResolver) {
@@ -400,7 +397,7 @@ export class IgnitionCore implements IIgnition {
         return;
       }
 
-      const moduleSession = cls.createNamespace("module");
+      const moduleSession = cls.createNamespace('module');
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
@@ -436,19 +433,13 @@ export class IgnitionCore implements IIgnition {
       }
     } catch (err) {
       await errorHandling(err, this.logger, this.errorReporter);
-
-      throw err;
     }
   }
 
   async genTypes(module: Module, deploymentFolder: string) {
     try {
       if (!this._initialized) {
-        await this.mustInit(
-          this.params,
-          this.customServices,
-          this.repos,
-        );
+        await this.mustInit(this.params, this.customServices, this.repos);
       }
 
       if (!this.moduleTyping || !this.logger) {
@@ -458,7 +449,7 @@ export class IgnitionCore implements IIgnition {
       const signers = this.signers || [];
       const ignitionWallets = this.walletWrapper?.wrapSigners(signers) || [];
 
-      const moduleSession = cls.createNamespace("module");
+      const moduleSession = cls.createNamespace('module');
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
@@ -473,14 +464,12 @@ export class IgnitionCore implements IIgnition {
       this.logger.generatedTypes();
     } catch (err) {
       await errorHandling(err, this.logger, this.errorReporter);
-
-      throw err;
     }
   }
 
-  reInitLogger() {
-    this.params.logging = true;
-    this.logger = new OverviewLogger();
+  async reInitLogger(logging: boolean): Promise<void> {
+    this.params.logging = logging;
+    await this.mustInit(this.params, this.customServices, this.repos);
   }
 }
 
@@ -552,12 +541,6 @@ export async function defaultInputParams(
 
   const signers: ethers.Signer[] = params?.signers || [];
   if (signers.length == 0) {
-    // @todo
-    // const accounts = await provider.listAccounts();
-    // for (const account of accounts) {
-    //   const signer = provider.getSigner(account);
-    //   signers.push(signer);
-    // }
     throw new EmptySigners();
   }
 

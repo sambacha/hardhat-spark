@@ -13,6 +13,7 @@
     "dotenv": "^8.2.0"
   },
   "scripts": {
-    "ignition:deploy": "npx hardhat ignition:deploy"
+    "ignition:deploy": "npx hardhat ignition:deploy",
+    "ignition-scring:deploy": "npx hardhat run ignition_script.hardhat.ts"
   }
 }

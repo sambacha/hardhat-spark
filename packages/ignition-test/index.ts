@@ -24,7 +24,7 @@ export class IgnitionTests implements IIgnitionUsage {
     params: IgnitionParams,
     services: IgnitionServices,
     repos: IgnitionRepos,
-    moduleParams: ModuleParams = {},
+    moduleParams: ModuleParams = {}
   ) {
     this.networkName = params.networkName;
     params.test = true;
@@ -36,7 +36,7 @@ export class IgnitionTests implements IIgnitionUsage {
       this.core.params,
       this.core.customServices,
       this.core.repos,
-      this.core.moduleParams,
+      this.core.moduleParams
     );
   }
 
@@ -59,7 +59,7 @@ export class IgnitionTests implements IIgnitionUsage {
     params: IgnitionParams,
     services: IgnitionServices,
     repos: IgnitionRepos,
-    moduleParams: ModuleParams,
+    moduleParams: ModuleParams
   ) {
     await this.core.mustInit(params, services, repos, moduleParams);
   }

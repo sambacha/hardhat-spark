@@ -15,6 +15,6 @@ export class ConstantGasPrice implements IGasPriceCalculator {
   }
 
   async getCurrentPrice(): Promise<BigNumber> {
-    return ethers.utils.parseUnits('50', 'gwei');
+    return ethers.utils.parseUnits('50', 'gwei') as BigNumber;
   }
 }

@@ -102,10 +102,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     });
 
     req.on('sign', () => {
-      if (
-        !checkIfExist(req.httpRequest.headers['Authorization']) &&
-        checkIfExist(this.accessKey)
-      ) {
+      if (!req.httpRequest.headers['Authorization'] && this.accessKey) {
         req.httpRequest.headers[
           'Authorization'
         ] = `Credential=${this.accessKey}`;

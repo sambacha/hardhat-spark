@@ -30,7 +30,6 @@ const createSigners = (
 
   const accountsAsMnemonic = accounts as HardhatNetworkHDAccountsConfig;
   if (accountsAsMnemonic?.mnemonic) {
-
     const privateKeys = derivePrivateKeys(
       accountsAsMnemonic.mnemonic,
       accountsAsMnemonic.path,
@@ -47,12 +46,12 @@ const createSigners = (
   }
 
   if ((accounts as HardhatNetworkAccountConfig[])[0]?.privateKey) {
-    for (const account of (accounts as HardhatNetworkAccountConfig[])) {
+    for (const account of accounts as HardhatNetworkAccountConfig[]) {
       signers.push(new ethers.Wallet(account.privateKey, provider));
     }
   }
 
-  for (const account of (accounts as string[])) {
+  for (const account of accounts as string[]) {
     signers.push(new ethers.Wallet(account, provider));
   }
 
@@ -88,20 +87,20 @@ export const extractDataFromConfig = (
 
   const provider = new ethers.providers.JsonRpcProvider(networkUrl, {
     name: networkName,
-    chainId: +networkId
+    chainId: +networkId,
   });
   const signers = createSigners(networkConfig?.accounts, provider);
   const params: IgnitionParams = {
     networkName,
     networkId,
-    localDeployment: networkName == 'localhost',
+    localDeployment: networkConfig?.localDeployment,
     rpcProvider: provider,
     signers: signers,
     logging: ignition?.logging || true,
-    test: ignition?.test,
-    parallelizeDeployment: ignition?.parallelizeDeployment,
-    blockConfirmation: ignition?.blockConfirmation,
-    gasPriceBackoffMechanism: ignition?.gasPriceBackoff,
+    test: ignition?.test || false,
+    parallelizeDeployment: networkConfig?.parallelizeDeployment,
+    blockConfirmation: networkConfig?.blockConfirmation,
+    gasPriceBackoffMechanism: networkConfig?.gasPriceBackoff,
   };
 
   const customServices: IgnitionServices = {
