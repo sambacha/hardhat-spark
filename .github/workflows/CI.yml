@@ -103,5 +103,5 @@ jobs:
         run: |
           yarn hardhat:node &
           sleep 10 &&
-          curl http://localhost:8545 &&
+          curl http://127.0.0.1:8545 &&
           yarn test
