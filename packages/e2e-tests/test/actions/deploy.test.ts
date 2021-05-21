@@ -9,6 +9,7 @@ import { IgnitionTests } from 'ignition-test';
 import { loadStateFile } from '../utils/files';
 import { ethers } from 'ethers';
 import { loadScript } from 'common/typescript';
+import { execSync } from 'child_process';
 
 const networkId = '31337'; // hardhat localhost chainId
 const networkName = 'local'; // hardhat localhost chainId
@@ -364,6 +365,8 @@ async function runDeployCommand(
   projectLocation: string,
   projectFileName: string = moduleFileName
 ): Promise<void> {
+  execSync('npx hardhat compile');
+
   const deploymentFilePath = path.resolve(
     projectLocation,
     DEPLOYMENT_FOLDER,
