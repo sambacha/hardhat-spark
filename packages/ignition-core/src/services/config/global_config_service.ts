@@ -4,7 +4,10 @@ import { cli } from 'cli-ux';
 
 const IGNITION_GLOBAL_FILE_NAME = '.hardhat-ignition';
 
-const { HOME } = process.env;
+const {
+  CI,
+  HOME
+} = process.env;
 
 export class GlobalConfigService {
   private readonly homePath: string;
@@ -23,6 +26,10 @@ export class GlobalConfigService {
   }
 
   async mustConfirmConsent() {
+    if (CI == 'true') {
+      return;
+    }
+
     const globalFilePath = path.resolve(
       this.homePath,
       IGNITION_GLOBAL_FILE_NAME
@@ -40,6 +47,10 @@ export class GlobalConfigService {
   }
 
   checkConsent(): boolean {
+    if (CI == 'true') {
+      return false;
+    }
+
     const globalConfigFilePath = path.resolve(
       this.homePath,
       IGNITION_GLOBAL_FILE_NAME
@@ -48,8 +59,8 @@ export class GlobalConfigService {
       return false;
     }
 
-    const file = fs.readFileSync(globalConfigFilePath);
-    require('dotenv').config({ path: globalConfigFilePath });
+    fs.readFileSync(globalConfigFilePath);
+    require('dotenv').config({path: globalConfigFilePath});
     return process.env.IGNITION_ERROR_REPORTING == 'true';
   }
 }
