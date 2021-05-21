@@ -99,6 +99,6 @@ jobs:
       - name: Run tests
         run: |
           yarn hardhat:node &
-          sleep 2 &&
+          sleep 10 &&
           curl http://localhost:8545 &&
-          yarn test:ci
+          yarn test
