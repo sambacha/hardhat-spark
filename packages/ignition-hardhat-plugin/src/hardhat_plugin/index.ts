@@ -14,12 +14,11 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types/runtime';
 import { HardhatIgnition } from '../index';
 import { extractDataFromConfig } from '../utils/extractor';
 import { loadScript } from 'common/typescript';
-import { DEFAULT_DEPLOYMENT_FOLDER } from 'ignition-core/lib/services/utils/constants';
-import { NoDeploymentModuleError } from 'ignition-core/lib/services/types/errors';
 import inquirer from 'inquirer';
 
 const DEFAULT_NETWORK_NAME = 'local';
 export const PluginName = 'hardhat-ignition';
+const DEFAULT_DEPLOYMENT_FOLDER = 'deployments';
 
 extendEnvironment((env) => {
   const networkName =
@@ -69,7 +68,7 @@ const deploy: ActionType<DeployArgs> = async (
     try {
       filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
     } catch (e) {
-      throw new NoDeploymentModuleError();
+      throw e;
     }
   }
 
@@ -113,7 +112,7 @@ const diff: ActionType<DiffArgs> = async (
     try {
       filePath = path.resolve(DEFAULT_DEPLOYMENT_FOLDER, deploymentFileName);
     } catch (e) {
-      throw new NoDeploymentModuleError();
+      throw e;
     }
   }
   const modules = loadScript(path.resolve(process.cwd(), filePath));
