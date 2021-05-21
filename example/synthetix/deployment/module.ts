@@ -33,5 +33,5 @@ export const SynthetixModule = buildModule('SynthetixModule', async (m: ModuleBu
   await m.useModule(SynthetixIssuerSetup);
   await m.useModule(SynthetixDebtCacheSetup);
 
-  // @TODO validate once again if some synthetix functionality is missing
+  // @TODO validate if some synthetix functionality is missing
 }, moduleConfig);

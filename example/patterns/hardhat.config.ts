@@ -1,16 +1,10 @@
-import 'hardhat-deploy';
 import 'ignition-hardhat-plugin';
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: '0.5.2',
-  namedAccounts: {
-    deployer: {
-      default: 0,
-    }
-  },
+  solidity: '0.5.0',
   networks: {
     'local': {
       chainId: 31337,
@@ -22,10 +16,5 @@ module.exports = {
       localDeployment: true,
       blockConfirmation: 1,
     },
-    localhost: {
-      live: false,
-      saveDeployments: true,
-      tags: ['local'],
-    }
   },
 };

@@ -5,5 +5,8 @@
   "license": "MIT",
   "devDependencies": {
     "hardhat": "^2.0.10"
+  },
+  "scripts": {
+    "deploy": "npx hardhat ignition:deploy --network local"
   }
 }

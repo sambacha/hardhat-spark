@@ -68,7 +68,7 @@ export const extractDataFromConfig = (
   repos: IgnitionRepos;
   moduleParams: { [name: string]: any };
 } => {
-  if (!config || !config.networks || !config.ignition) {
+  if (!config || !config.networks) {
     return {
       params: {
         networkId,
@@ -80,7 +80,7 @@ export const extractDataFromConfig = (
     };
   }
   const networkConfig = config.networks[networkName];
-  const ignition = config.ignition;
+  const ignition = config?.ignition;
 
   const networkUrl =
     (networkConfig as HttpNetworkConfig)?.url || 'http://localhost:8545';

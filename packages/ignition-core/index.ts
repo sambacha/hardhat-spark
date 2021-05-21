@@ -191,7 +191,7 @@ export class IgnitionCore implements IIgnition {
     params?: IgnitionParams,
     services?: IgnitionServices,
     repos?: IgnitionRepos,
-    moduleParams: ModuleParams = {}
+    moduleParams?: ModuleParams
   ) {
     if (params) {
       this.params = params;
@@ -235,7 +235,6 @@ export class IgnitionCore implements IIgnition {
     this.rpcProvider = rpcProvider;
     this.signers = signers;
     this.logger = logger;
-    this.moduleParams = moduleParams;
 
     this.gasProvider = gasProvider;
     this.eventSession = eventSession;

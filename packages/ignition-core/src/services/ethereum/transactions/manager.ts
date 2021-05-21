@@ -124,7 +124,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
       );
     }
     if (checkIfExist(this.gasPriceBackoff)) {
-      if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
+      if (gasPrice.gt(this.gasPriceBackoff.maxGasPrice)) {
         this.prompter.gasPriceIsLarge(this.gasPriceBackoff.backoffTime);
         await delay(this.gasPriceBackoff.backoffTime);
         gasPrice = await this.fetchBackoffGasPrice(retries - 1);

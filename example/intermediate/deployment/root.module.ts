@@ -29,7 +29,7 @@ export const SomeModule = buildModule('SomeModule', async (m: ModuleBuilder, wal
 
   m.group(ERC20Two, mutatorEvent).afterDeploy(m, 'afterDeployAndChange', async () => {
     const totalSupply = ethers.BigNumber.from(10).pow(17);
-    await ERC20Two.deployed().mint(await wallets[1].getAddress(), totalSupply);
+    await ERC20Two.deployed().mint(await wallets[0].getAddress(), totalSupply);
 
     await expectFuncRead(totalSupply.toString(), ERC20Two.deployed().totalSupply);
   });
