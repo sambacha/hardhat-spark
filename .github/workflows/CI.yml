@@ -97,6 +97,8 @@ jobs:
       - name: Clean
         run: yarn clean
       - name: Run tests
+        env:
+          INFURA_KEY: ${{ secrets.INFURA_KEY }}
         run: |
           yarn hardhat:node &
           sleep 10 &&
