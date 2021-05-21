@@ -6,7 +6,7 @@ import('ignition-hardhat-plugin');
 require('dotenv').config({path: path.resolve(__dirname + '/.env')});
 
 const {
-  KOVAN_PRIV_KEY,
+  PRIVATE_KEY,
   INFURA_KEY,
 } = process.env;
 /**
@@ -19,7 +19,7 @@ module.exports = {
       chainId: 42,
       url: `https://kovan.infura.io/v3/${INFURA_KEY}`,
       accounts: [
-        KOVAN_PRIV_KEY as string,
+        PRIVATE_KEY as string,
       ],
       localDeployment: false,
       blockConfirmation: 2,

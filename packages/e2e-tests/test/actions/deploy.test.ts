@@ -11,8 +11,8 @@ import { ethers } from 'ethers';
 import { loadScript } from 'common/typescript';
 import { execSync } from 'child_process';
 
-const networkId = '31337'; // hardhat localhost chainId
-const networkName = 'local'; // hardhat localhost chainId
+const networkId = '31337';
+const networkName = 'local';
 const defaultProvider = new ethers.providers.JsonRpcProvider();
 
 // @TODO move this to tests

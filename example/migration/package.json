@@ -26,6 +26,6 @@
   },
   "devDependencies": {
     "hardhat": "^2.0.11",
-    "hardhat-deploy": "^0.7.0-beta.46"
+    "hardhat-deploy": "^0.7.9"
   }
 }
