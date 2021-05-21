@@ -99,6 +99,7 @@ jobs:
       - name: Run tests
         env:
           INFURA_KEY: ${{ secrets.INFURA_KEY }}
+          PRIVATE_KEY: ${{ secrets.KOVAN_PRIVATE_KEY }}
         run: |
           yarn hardhat:node &
           sleep 10 &&
