@@ -1,7 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
-  "include": [
-    "src/**/*",
-    "index.ts"
+  "extends": "../../config/typescript/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  "exclude": [
+    "./dist",
+    "./node_modules"
   ]
 }
