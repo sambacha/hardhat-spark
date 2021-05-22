@@ -55,7 +55,6 @@
     "@types/cls-hooked": "^4.3.1",
     "@types/fs-extra": "^9.0.11",
     "@types/mocha": "^5",
-    "@types/node": "^10",
     "@types/qs": "^6.9.6",
     "@types/react": "^17.0.5",
     "@types/uuid": "^8.3.0",
