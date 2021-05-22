@@ -1,17 +1,14 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../config/typescript/tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "composite": true
+    "outDir": "dist"
   },
   "exclude": [
-    "dist",
-    "node_modules",
+    "./dist",
+    "./node_modules",
     "projects-scenarios/*/node_modules",
     "projects-scenarios/*/artifacts",
-    "projects-scenarios/*/cache",
-  ],
-  "include": [
-    "test/**/*",
+    "projects-scenarios/*/cache"
   ]
 }
+
