@@ -1,7 +1,8 @@
-import * as path from 'path';
+import dotenv from "dotenv";
+import * as path from "path";
 
-require('dotenv').config({
-  path: path.resolve(__dirname + '../../../.env.local'),
+dotenv.config({
+  path: path.resolve(`${__dirname}../../../.env.local`),
 });
 
 let cachedIsTypescriptSupported: boolean | undefined;
@@ -27,8 +28,8 @@ export function isRunningWithTypescript(pathToFile: string): boolean {
 export function isTypescriptSupported() {
   if (cachedIsTypescriptSupported === undefined) {
     try {
-      require.resolve('typescript');
-      require.resolve('ts-node');
+      require.resolve("typescript");
+      require.resolve("ts-node");
       cachedIsTypescriptSupported = true;
     } catch {
       cachedIsTypescriptSupported = false;
@@ -39,36 +40,36 @@ export function isTypescriptSupported() {
 }
 
 export function loadTsNode(test?: boolean) {
-  if (process.env.IGNITION_ENV == 'development') {
+  if (process.env.IGNITION_ENV === "development") {
     return;
   }
 
   try {
-    require.resolve('typescript');
+    require.resolve("typescript");
   } catch (error) {
-    throw new Error('typescript is not installed.');
+    throw new Error("typescript is not installed.");
   }
 
   try {
-    require.resolve('ts-node');
+    require.resolve("ts-node");
   } catch (error) {
-    throw new Error('ts-node is not installed.');
+    throw new Error("ts-node is not installed.");
   }
 
-  if (test) {
-    require('ts-node/register/transpile-only');
+  if (test === true) {
+    require("ts-node/register/transpile-only");
     return;
   }
 
   if (process.env.TS_NODE_FILES === undefined) {
-    process.env.TS_NODE_FILES = 'true';
+    process.env.TS_NODE_FILES = "true";
   }
 
-  require('ts-node/register');
+  require("ts-node/register");
 }
 
-function isTypescriptFile(path: string): boolean {
-  return path.endsWith('.ts');
+function isTypescriptFile(filePath: string): boolean {
+  return filePath.endsWith(".ts");
 }
 
 export async function loadScript(
