@@ -13,7 +13,7 @@ import './type_extentions';
 import { HardhatRuntimeEnvironment } from 'hardhat/types/runtime';
 import { HardhatIgnition } from '../index';
 import { extractDataFromConfig } from '../utils/extractor';
-import { loadScript } from 'common/typescript';
+import { loadScript } from 'common';
 import inquirer from 'inquirer';
 
 const DEFAULT_NETWORK_NAME = 'local';

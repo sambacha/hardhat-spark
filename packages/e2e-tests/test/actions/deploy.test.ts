@@ -8,7 +8,7 @@ import {
 import { IgnitionTests } from 'ignition-test';
 import { loadStateFile } from '../utils/files';
 import { ethers } from 'ethers';
-import { loadScript } from 'common/typescript';
+import { loadScript } from 'common';
 import { execSync } from 'child_process';
 
 const networkId = '31337';

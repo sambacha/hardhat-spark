@@ -4,7 +4,7 @@ import * as path from 'path';
 import { DEPLOYMENT_FOLDER, Module } from 'ignition-core';
 import ux from 'cli-ux';
 import { loadStateFile } from '../utils/files';
-import { loadScript } from 'common/typescript';
+import { loadScript } from 'common';
 import { ethers } from 'ethers';
 
 const defaultModuleFileName = 'module.ts';
