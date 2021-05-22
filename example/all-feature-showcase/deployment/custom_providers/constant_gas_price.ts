@@ -1,4 +1,4 @@
-import { IGasPriceCalculator } from '@tenderly/hardhat-ignition';
+import { IGasPriceCalculator } from 'ignition-core';
 import { BigNumber } from '@ethersproject/bignumber';
 import { ethers } from 'ethers';
 
@@ -15,6 +15,6 @@ export class ConstantGasPrice implements IGasPriceCalculator {
   }
 
   async getCurrentPrice(): Promise<BigNumber> {
-    return ethers.utils.parseUnits('50', 'gwei');
+    return ethers.utils.parseUnits('50', 'gwei') as BigNumber;
   }
 }

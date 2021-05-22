@@ -1,4 +1,4 @@
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 
 export const SynthetixLibraries = buildModule('SynthetixLibraries', async (m: ModuleBuilder) => {
   m.library('SafeDecimalMath');

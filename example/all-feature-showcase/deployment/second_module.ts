@@ -1,9 +1,9 @@
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 // @ts-ignore
 import { ExampleModule } from './module';
 import { ethers } from 'ethers';
 
-export const ThirdExampleModule = buildModule('ThirdExampleModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
+export const ThirdExampleModule = buildModule('ThirdExampleModule', async (m: ModuleBuilder, wallets: ethers.Signer[]) => {
   await m.useModule(ExampleModule, undefined, wallets);
 
   m.contract('FourthExample', m.SecondExample);

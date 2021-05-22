@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
-    "@tenderly/hardhat-ignition": "file:../..",
     "hardhat": "^2.0.10"
+  },
+  "scripts": {
+    "deploy": "npx hardhat ignition:deploy --network local"
   }
 }

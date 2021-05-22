@@ -1,4 +1,4 @@
-import { ModuleBuilder, buildModule } from '@tenderly/hardhat-ignition';
+import { ModuleBuilder, buildModule } from 'ignition-core';
 
 export const FirstModule = buildModule('FirstModule', async (m: ModuleBuilder) => {
   const A = m.contract('A');

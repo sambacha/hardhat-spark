@@ -1,0 +1,9 @@
+{
+  "name": "hardhat-project",
+  "main": "index.js",
+  "devDependencies": {
+    "hardhat": "^2.0.10"
+  },
+  "version": "1.0.0",
+  "license": "MIT"
+}

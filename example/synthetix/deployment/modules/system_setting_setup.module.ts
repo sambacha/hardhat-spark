@@ -4,7 +4,7 @@ import {
   buildModule,
   checkIfExist,
   expectFuncRead,
-} from '@tenderly/hardhat-ignition';
+} from 'ignition-core';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';
 import { chainIdToNetwork, constants } from '../../util/constants';

@@ -1,4 +1,4 @@
-import { IGasPriceCalculator } from '@tenderly/hardhat-ignition';
+import { IGasPriceCalculator } from 'ignition-core';
 import { BigNumber } from '@ethersproject/bignumber';
 import axios from 'axios';
 

@@ -1,8 +1,8 @@
 require('dotenv').config({path: '../.env'});
-import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
+import { buildModule, ModuleBuilder } from 'ignition-core';
 import { ethers } from 'ethers';
 
-export const ERC20TornadoModule = buildModule('ERC20TornadoModule', async (m: ModuleBuilder, wallets: ethers.Wallet[]) => {
+export const ERC20TornadoModule = buildModule('ERC20TornadoModule', async (m: ModuleBuilder, signers: ethers.Signer[]) => {
   const token = m.ERC20_TOKEN;
   let mock;
   if (token === '') {
@@ -14,7 +14,7 @@ export const ERC20TornadoModule = buildModule('ERC20TornadoModule', async (m: Mo
     m.Verifier,
     m.TOKEN_AMOUNT,
     m.MERKLE_TREE_HEIGHT,
-    wallets[0].address,
+    await signers[0].getAddress(),
     mock ? mock : token,
   );
 

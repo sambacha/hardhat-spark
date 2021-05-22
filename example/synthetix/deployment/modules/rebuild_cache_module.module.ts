@@ -1,4 +1,4 @@
-import { checkIfExist, expectFuncRead, ContractBinding, ContractEvent, buildModule } from '@tenderly/hardhat-ignition';
+import { checkIfExist, expectFuncRead, ContractBinding, ContractEvent, buildModule } from 'ignition-core';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 
 // @ts-ignore

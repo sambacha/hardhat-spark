@@ -2,7 +2,7 @@ import {
   buildModule,
   ModuleBuilder,
   ModuleConfig
-} from '@tenderly/hardhat-ignition';
+} from 'ignition-core';
 import { SynthetixLibraries, SynthetixTemplates } from './modules/helper.module';
 import { SynthetixCore } from './modules/core.module';
 import { BinaryOptionsModule } from './modules/binary_options.module';
@@ -33,5 +33,5 @@ export const SynthetixModule = buildModule('SynthetixModule', async (m: ModuleBu
   await m.useModule(SynthetixIssuerSetup);
   await m.useModule(SynthetixDebtCacheSetup);
 
-  // @TODO validate once again if some synthetix functionality is missing
+  // @TODO validate if some synthetix functionality is missing
 }, moduleConfig);

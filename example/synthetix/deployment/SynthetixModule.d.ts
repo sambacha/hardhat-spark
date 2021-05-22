@@ -3,7 +3,7 @@ import {
   ContractBinding,
   StatefulEvent,
   Action,
-} from '@tenderly/hardhat-ignition';
+} from 'ignition-core';
 
 export declare class SynthetixModuleBuilder extends ModuleBuilder {
   SafeDecimalMath: ContractBinding;

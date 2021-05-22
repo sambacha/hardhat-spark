@@ -3,21 +3,15 @@
     "declaration": true,
     "importHelpers": true,
     "module": "commonjs",
-    "outDir": "lib",
-    "rootDir": "src",
+    "outDir": "dist",
     "target": "es2017",
     "esModuleInterop": true,
     "jsx": "react",
     "skipLibCheck": true,
-    "strict": true,
+    "strict": true
   },
   "exclude": [
     "node_modules",
-    "./node_modules",
-    "./node_modules/@types/node/index.d.ts",
-    "lib"
-  ],
-  "include": [
-    "src/**/*"
+    "dist"
   ]
 }

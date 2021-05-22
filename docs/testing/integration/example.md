@@ -1,7 +1,7 @@
 # Integration testing
 
 This a simple example of one single integration test. We explain basic process and idea on how to test hardhat-ignition
-deployment. If you want to see more example you can go to [here](../../../test/commands/deploy_command.test.ts).
+deployment. If you want to see more example you can go to [here](../../../packages/e2e-tests/actions/deploy_command.test.ts).
 
 ## Code Example
 

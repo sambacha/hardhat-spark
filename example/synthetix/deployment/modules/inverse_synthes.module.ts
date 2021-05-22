@@ -1,4 +1,4 @@
-import { buildModule } from '@tenderly/hardhat-ignition';
+import { buildModule } from 'ignition-core';
 import path from 'path';
 import { toBytes32 } from '../../util/util';
 import * as web3utils from 'web3-utils';

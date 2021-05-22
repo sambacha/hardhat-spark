@@ -1,4 +1,4 @@
-import { ContractEvent, buildModule } from '@tenderly/hardhat-ignition';
+import { ContractEvent, buildModule } from 'ignition-core';
 import * as web3utils from 'web3-utils';
 import { DEFAULTS } from '../../util/constants';
 import { SynthetixModuleBuilder } from '../SynthetixModule';
