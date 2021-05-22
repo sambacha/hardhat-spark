@@ -1,10 +1,10 @@
-import { ContractBinding } from '../../interfaces/hardhat_ignition';
-import { JsonFragment } from '../types/artifacts/abi';
-import { handleTypes } from '../types/checker';
-import { AbiMismatch, MissingContractMetadata } from '../types/errors';
-import { checkIfExist } from '../utils/util';
+import { ContractBinding } from "../../interfaces/hardhat_ignition";
+import { JsonFragment } from "../types/artifacts/abi";
+import { handleTypes } from "../types/checker";
+import { AbiMismatch, MissingContractMetadata } from "../types/errors";
+import { checkIfExist } from "../utils/util";
 
-const CONSTRUCTOR_TYPE = 'constructor';
+const CONSTRUCTOR_TYPE = "constructor";
 
 export class ModuleValidator {
   constructor() {}

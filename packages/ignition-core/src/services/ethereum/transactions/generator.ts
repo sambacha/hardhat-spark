@@ -1,13 +1,13 @@
-import { ContractBinding } from '../../../interfaces/hardhat_ignition';
-import { checkIfExist, delay } from '../../utils/util';
-import { BigNumber, ethers, providers } from 'ethers';
-import { ModuleState } from '../../modules/states/module';
-import { SingleContractLinkReference } from '../../types/artifacts/libraries';
-import { CliError, GasPriceBackoffError } from '../../types/errors';
-import { IGasCalculator, IGasPriceCalculator } from '../gas';
-import { INonceManager, ITransactionSigner } from './index';
-import { GasPriceBackoff } from '../../types/config';
-import { ILogging } from '../../utils/logging';
+import { ContractBinding } from "../../../interfaces/hardhat_ignition";
+import { checkIfExist, delay } from "../../utils/util";
+import { BigNumber, ethers, providers } from "ethers";
+import { ModuleState } from "../../modules/states/module";
+import { SingleContractLinkReference } from "../../types/artifacts/libraries";
+import { CliError, GasPriceBackoffError } from "../../types/errors";
+import { IGasCalculator, IGasPriceCalculator } from "../gas";
+import { INonceManager, ITransactionSigner } from "./index";
+import { GasPriceBackoff } from "../../types/config";
+import { ILogging } from "../../utils/logging";
 
 export type TxMetaData = {
   gasPrice?: BigNumber;

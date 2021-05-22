@@ -1,10 +1,10 @@
-import fs from 'fs';
-import fse from 'fs-extra';
-import * as path from 'path';
+import fs from "fs";
+import fse from "fs-extra";
+import * as path from "path";
 
-const CONTRACTS_FOLDER = 'contracts';
-const DEPLOYMENT_FOLDER = 'deployment';
-const PACKAGE_DISTRIBUTION_FOLDER_NAME = 'dist';
+const CONTRACTS_FOLDER = "contracts";
+const DEPLOYMENT_FOLDER = "deployment";
+const PACKAGE_DISTRIBUTION_FOLDER_NAME = "dist";
 
 export class ModulePackagingService {
   private readonly currentDir: string;
@@ -28,8 +28,8 @@ export class ModulePackagingService {
 
   async initializePackageDistributionFolder() {
     const currentPackageFile = fs.readFileSync(
-      path.resolve(this.currentDir, 'package.json'),
-      'utf-8'
+      path.resolve(this.currentDir, "package.json"),
+      "utf-8"
     );
     const packageJson = JSON.parse(currentPackageFile);
 
@@ -37,7 +37,7 @@ export class ModulePackagingService {
     packageJson.version = this.packageVersion;
 
     fs.writeFileSync(
-      path.resolve(this.currentDistFolder, 'package.json'),
+      path.resolve(this.currentDistFolder, "package.json"),
       JSON.stringify(packageJson, undefined, 4)
     );
   }

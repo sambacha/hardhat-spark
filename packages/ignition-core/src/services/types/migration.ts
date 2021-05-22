@@ -1,20 +1,20 @@
-import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
+import { TransactionReceipt } from "@ethersproject/abstract-provider";
+import { ContractBindingMetaData } from "../../interfaces/hardhat_ignition";
 
 export type ModuleFile = string;
 export type ModuleStateBindings = { [name: string]: ContractBindingMetaData };
 
-export const USAGE_FUNC = 'buildUsage';
-export const MODULE_FUNC = 'buildModule';
+export const USAGE_FUNC = "buildUsage";
+export const MODULE_FUNC = "buildModule";
 
 export enum FileGenerationType {
-  'usage' = 'usage',
-  'module' = 'module',
+  "usage" = "usage",
+  "module" = "module",
 }
 
 export enum Migration {
-  'truffle' = 'truffle',
-  'hardhatDeploy' = 'hardhatDeploy',
+  "truffle" = "truffle",
+  "hardhatDeploy" = "hardhatDeploy",
 }
 
 export type Build = TruffleBuild | HardhatBuild;

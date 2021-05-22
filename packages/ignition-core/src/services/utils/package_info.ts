@@ -1,6 +1,6 @@
-import findUp from 'find-up';
-import fsExtra from 'fs-extra';
-import path from 'path';
+import findUp from "find-up";
+import fsExtra from "fs-extra";
+import path from "path";
 
 export function getPackageJsonPath(): string {
   return findClosestPackageJson(__filename)!;
@@ -21,12 +21,12 @@ export interface PackageJson {
 }
 
 export function findClosestPackageJson(file: string): string | undefined {
-  return findUp.sync('package.json', { cwd: path.dirname(file) });
+  return findUp.sync("package.json", { cwd: path.dirname(file) });
 }
 
 export async function getPackageJson(): Promise<PackageJson> {
   const root = getPackageRoot();
-  return fsExtra.readJSON(path.join(root, 'package.json'));
+  return fsExtra.readJSON(path.join(root, "package.json"));
 }
 
 export function getIgnitionVersion(): string | undefined {

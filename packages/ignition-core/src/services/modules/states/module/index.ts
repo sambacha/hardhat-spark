@@ -2,17 +2,17 @@ import {
   ContractBinding,
   ContractBindingMetaData,
   StatefulEvent,
-} from '../../../../interfaces/hardhat_ignition';
+} from "../../../../interfaces/hardhat_ignition";
 
-export * from './file_system';
-export * from './memory';
+export * from "./file_system";
+export * from "./memory";
 
 export type ModuleState = { [p: string]: ContractBinding | StatefulEvent };
 export type ModuleStateFile = {
   [p: string]: ContractBindingMetaData | StatefulEvent;
 };
-export const STATE_DIR_NAME = '.hardhat-ignition';
-export const STATE_NAME = 'deployed_module_state.json';
+export const STATE_DIR_NAME = ".hardhat-ignition";
+export const STATE_NAME = "deployed_module_state.json";
 
 export interface IModuleState {
   getModuleState(

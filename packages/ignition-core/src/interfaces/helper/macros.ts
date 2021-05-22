@@ -2,10 +2,10 @@ import {
   ContractBinding,
   ContractEvent,
   ModuleBuilder,
-} from '../hardhat_ignition';
-import { expectFuncRead, expectSlotRead } from './expectancy';
-import { ethers } from 'ethers';
-import { checkIfExist } from '../../services/utils/util';
+} from "../hardhat_ignition";
+import { expectFuncRead, expectSlotRead } from "./expectancy";
+import { ethers } from "ethers";
+import { checkIfExist } from "../../services/utils/util";
 
 /**
  * sendAfterDeploy is fastest way to set new value and validate if the same value is correctly set. It
@@ -94,9 +94,9 @@ export const filler = (
   value?: ethers.BigNumberish | any
 ): void => {
   if (!value) {
-    value = ethers.utils.parseUnits('1', 'ether') as ethers.BigNumber;
+    value = ethers.utils.parseUnits("1", "ether") as ethers.BigNumber;
   }
-  m.onStart('on start distribute ethers to all accounts', async () => {
+  m.onStart("on start distribute ethers to all accounts", async () => {
     for (let i = 0; i < wallets.length; i++) {
       await rootWallet.sendTransaction({
         from: await rootWallet.getAddress(),

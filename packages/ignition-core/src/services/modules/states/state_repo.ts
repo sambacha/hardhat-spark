@@ -9,17 +9,17 @@ import {
   MetaDataEvent,
   ModuleEvent,
   StatefulEvent,
-} from '../../../interfaces/hardhat_ignition';
-import { CliError } from '../../types/errors';
+} from "../../../interfaces/hardhat_ignition";
+import { CliError } from "../../types/errors";
 import {
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
-} from '@ethersproject/abstract-provider';
-import { checkIfExist } from '../../utils/util';
-import { FileSystemModuleState } from './module/file_system';
-import { IModuleState, ModuleState, ModuleStateFile } from './module';
-import { MemoryModuleState } from './module/memory';
+} from "@ethersproject/abstract-provider";
+import { checkIfExist } from "../../utils/util";
+import { FileSystemModuleState } from "./module/file_system";
+import { IModuleState, ModuleState, ModuleStateFile } from "./module";
+import { MemoryModuleState } from "./module/memory";
 
 export class ModuleStateRepo {
   // @ts-ignore
@@ -42,8 +42,8 @@ export class ModuleStateRepo {
     this.stateRepo = testEnv
       ? new MemoryModuleState()
       : new FileSystemModuleState(currentPath);
-    this.currentModuleName = '';
-    this.currentEventName = '';
+    this.currentModuleName = "";
+    this.currentEventName = "";
     this.test = testEnv;
   }
 
@@ -53,7 +53,7 @@ export class ModuleStateRepo {
 
   clear() {
     if (!this.test) {
-      throw new CliError('Module state repo is not suitable for memory clear');
+      throw new CliError("Module state repo is not suitable for memory clear");
     }
 
     (this.stateRepo as MemoryModuleState).clear();
@@ -97,7 +97,7 @@ export class ModuleStateRepo {
     moduleStates[currEventName] = currentEvent;
 
     await this.storeNewState(this.currentModuleName, moduleStates);
-    this.currentEventName = '';
+    this.currentEventName = "";
   }
 
   async finishCurrentModuleEvent(
@@ -135,20 +135,20 @@ export class ModuleStateRepo {
     moduleState[currEventName] = currentEvent;
 
     await this.storeNewState(this.currentModuleName, moduleState);
-    this.currentEventName = '';
+    this.currentEventName = "";
   }
 
   async getEventTransactionData(
     bindingName: string,
     eventName?: string
   ): Promise<EventTransactionData> {
-    if (this.currentModuleName == '') {
-      throw new CliError('Current module name is not set');
+    if (this.currentModuleName == "") {
+      throw new CliError("Current module name is not set");
     }
     const currEventName = eventName ? eventName : this.currentEventName;
 
     if (!checkIfExist(currEventName)) {
-      throw new CliError('Current event name is not set');
+      throw new CliError("Current event name is not set");
     }
 
     const currentState = await this.getStateIfExist(this.currentModuleName);
@@ -173,14 +173,14 @@ export class ModuleStateRepo {
     contractOutput?: TransactionReceipt,
     eventName?: string
   ): Promise<void> {
-    if (this.currentModuleName == '') {
-      throw new CliError('Current module name is not set');
+    if (this.currentModuleName == "") {
+      throw new CliError("Current module name is not set");
     }
 
     const currEventName = eventName ? eventName : this.currentEventName;
 
     if (!checkIfExist(currEventName)) {
-      throw new CliError('Current event name is not set');
+      throw new CliError("Current event name is not set");
     }
 
     const currentState = await this.getStateIfExist(this.currentModuleName);
@@ -218,8 +218,8 @@ export class ModuleStateRepo {
   }
 
   async storeSingleBinding(singleElement: ContractBinding): Promise<void> {
-    if (this.currentModuleName == '') {
-      throw new CliError('Current module name is not set');
+    if (this.currentModuleName == "") {
+      throw new CliError("Current module name is not set");
     }
     const currentState = await this.getStateIfExist(this.currentModuleName);
 

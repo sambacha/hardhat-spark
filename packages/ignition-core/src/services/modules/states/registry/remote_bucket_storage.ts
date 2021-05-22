@@ -2,9 +2,9 @@ import {
   IModuleRegistryResolver,
   ModuleRegistryResolver,
   REGISTRY_NAME,
-} from './index';
-import AWS from 'aws-sdk';
-import { checkIfExist } from '../../../utils/util';
+} from "./index";
+import AWS from "aws-sdk";
+import { checkIfExist } from "../../../utils/util";
 
 export class RemoteBucketStorage implements IModuleRegistryResolver {
   private s3: AWS.S3;
@@ -17,9 +17,9 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     endpoint: string,
     region: string,
     bucketName: string,
-    accessKey: string = '',
-    secretAccessKey: string = '',
-    version: string = 'v0.0.1'
+    accessKey: string = "",
+    secretAccessKey: string = "",
+    version: string = "v0.0.1"
   ) {
     this.bucketName = bucketName;
     this.accessKey = accessKey;
@@ -31,7 +31,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
       credentials: new AWS.Credentials({
         accessKeyId: accessKey,
         secretAccessKey: secretAccessKey,
-        sessionToken: '',
+        sessionToken: "",
       }),
       endpoint: endpoint,
     });
@@ -50,7 +50,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
       return this.registryFile[this.version][bindingName];
     } catch (err) {
       if (err.statusCode == 404) {
-        return '';
+        return "";
       }
 
       throw err;
@@ -63,7 +63,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     bindingName: string,
     contractAddress: string
   ): Promise<boolean> {
-    if (contractAddress == '') {
+    if (contractAddress == "") {
       return true;
     }
 
@@ -101,25 +101,25 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
       Key: `${moduleName}_${networkId}_${REGISTRY_NAME}`,
     });
 
-    req.on('sign', () => {
-      if (!req.httpRequest.headers['Authorization'] && this.accessKey) {
+    req.on("sign", () => {
+      if (!req.httpRequest.headers["Authorization"] && this.accessKey) {
         req.httpRequest.headers[
-          'Authorization'
+          "Authorization"
         ] = `Credential=${this.accessKey}`;
 
         return;
       }
 
-      if (this.accessKey == '') {
-        delete req.httpRequest.headers['Authorization'];
-        req.httpRequest.headers['public-read'] = 'public-read';
+      if (this.accessKey == "") {
+        delete req.httpRequest.headers["Authorization"];
+        req.httpRequest.headers["public-read"] = "public-read";
 
         return;
       }
 
-      req.httpRequest.headers['Authorization'] = req.httpRequest.headers[
-        'Authorization'
-      ].replace('Credential=/', `Credential=${this.accessKey}`);
+      req.httpRequest.headers["Authorization"] = req.httpRequest.headers[
+        "Authorization"
+      ].replace("Credential=/", `Credential=${this.accessKey}`);
     });
 
     const object = await req.promise();

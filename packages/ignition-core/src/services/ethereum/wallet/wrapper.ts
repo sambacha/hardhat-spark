@@ -1,11 +1,11 @@
-import { Namespace } from 'cls-hooked';
-import { ethers } from 'ethers';
-import { IgnitionSigner } from '../../../interfaces/hardhat_ignition';
-import { ModuleStateRepo } from '../../modules/states/state_repo';
-import { INonceManager } from '../transactions';
-import { IGasCalculator, IGasPriceCalculator } from '../gas';
-import { ILogging } from '../../utils/logging';
-import { EventTxExecutor } from '../transactions';
+import { Namespace } from "cls-hooked";
+import { ethers } from "ethers";
+import { IgnitionSigner } from "../../../interfaces/hardhat_ignition";
+import { ModuleStateRepo } from "../../modules/states/state_repo";
+import { INonceManager } from "../transactions";
+import { IGasCalculator, IGasPriceCalculator } from "../gas";
+import { ILogging } from "../../utils/logging";
+import { EventTxExecutor } from "../transactions";
 
 export class WalletWrapper {
   private readonly eventSession: Namespace;

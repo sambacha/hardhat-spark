@@ -12,12 +12,12 @@ import {
   ModuleEventFn,
   OnChangeEvent,
   StatefulEvent,
-} from '../../../interfaces/hardhat_ignition';
-import { checkIfExist } from '../../utils/util';
-import { ModuleStateRepo } from '../states/state_repo';
-import { ModuleState } from '../states/module';
-import { CliError, EventExecutionError } from '../../types/errors';
-import { ILogging } from '../../utils/logging';
+} from "../../../interfaces/hardhat_ignition";
+import { checkIfExist } from "../../utils/util";
+import { ModuleStateRepo } from "../states/state_repo";
+import { ModuleState } from "../states/module";
+import { CliError, EventExecutionError } from "../../types/errors";
+import { ILogging } from "../../utils/logging";
 
 export class EventHandler {
   private readonly moduleState: ModuleStateRepo;
@@ -48,7 +48,7 @@ export class EventHandler {
     for (const dependencyName of deps) {
       if (!checkIfExist(moduleState[dependencyName])) {
         throw new CliError(
-          'Module state element that is part of event dependency is not contract.'
+          "Module state element that is part of event dependency is not contract."
         );
       }
 
@@ -56,7 +56,7 @@ export class EventHandler {
         !checkIfExist((moduleState[dependencyName] as ContractBinding).name) ||
         !checkIfExist((moduleState[dependencyName] as ContractBinding).args)
       ) {
-        throw new CliError('Desired contract is not yet been compiled.');
+        throw new CliError("Desired contract is not yet been compiled.");
       }
 
       if (
@@ -254,7 +254,7 @@ export class EventHandler {
         checkIfExist((moduleState[dependencyName] as ContractBinding).bytecode)
       ) {
         throw new CliError(
-          'Module state element that is part of event dependency is not contract.'
+          "Module state element that is part of event dependency is not contract."
         );
       }
 
@@ -317,7 +317,7 @@ export class EventHandler {
         checkIfExist((moduleState[dependencyName] as ContractBinding)?.bytecode)
       ) {
         throw new CliError(
-          'Module state element that is part of event dependency is not contract.'
+          "Module state element that is part of event dependency is not contract."
         );
       }
 
@@ -327,7 +327,7 @@ export class EventHandler {
         ) ||
         !checkIfExist((moduleState[dependencyName] as ContractBinding).abi)
       ) {
-        throw new CliError('Desired contract is not yet been compiled.');
+        throw new CliError("Desired contract is not yet been compiled.");
       }
 
       if (

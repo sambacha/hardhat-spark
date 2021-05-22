@@ -1,37 +1,37 @@
-import chalk from 'chalk';
-import { extractObjectInfo } from '../utils/util';
-import * as path from 'path';
+import chalk from "chalk";
+import { extractObjectInfo } from "../utils/util";
+import * as path from "path";
 import {
   BaseEvent,
   ContractBinding,
   ContractBindingMetaData,
   EventType,
   StatefulEvent,
-} from '../../interfaces/hardhat_ignition';
-import { ParamType } from '@ethersproject/abi';
-import { ethers } from 'ethers';
+} from "../../interfaces/hardhat_ignition";
+import { ParamType } from "@ethersproject/abi";
+import { ethers } from "ethers";
 
 const EVENT_HOOK_DEFINITION_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const EVENT_LIFECYCLE_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const CONTACT_DEFINITION_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const MODULE_GROUPING_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const CONFIG_SCRIPT_DOCS =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const DEPLOYMENT_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const MACRO_HELPER_DOCS =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const EVENT_HOOK_DEPS_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 
 export enum ERROR_CODES {
-  NO_NETWORK = 'NO_NETWORK',
+  NO_NETWORK = "NO_NETWORK",
 }
 
 export function handleMappedErrorCodes(
@@ -98,7 +98,7 @@ export class CliError extends Error {
 
   constructor(message: string) {
     super();
-    this.message = 'CLI error - ' + message;
+    this.message = "CLI error - " + message;
   }
 }
 
@@ -170,7 +170,7 @@ export class ContractNotCompiledError extends UserError {
     moduleName: string
   ) {
     super(`Contract is not compiled correctly.
-${chalk.bold('Library')} data is missing for ${chalk.bold(
+${chalk.bold("Library")} data is missing for ${chalk.bold(
       contractName
     )} contract inside module ${chalk.bold(moduleName)}.
 
@@ -204,7 +204,7 @@ export class ContractNotDeployedError extends UserError {
 If you want to use this contract inside of the event hook ${chalk.bold(
       eventName
     )}, you can utilize ${chalk.bold(
-      'm.group()'
+      "m.group()"
     )} to specify it as a dependency.
 Here is the link to the documentation: ${MODULE_GROUPING_DOCS_LINK}`);
   }
@@ -386,9 +386,9 @@ export class GasPriceBackoffError extends UserError {
     )} wei.
 
 Ignition will wait for ${chalk.bold(
-      (numberOfRetries * backoffTime) / 1000 + 's'
+      (numberOfRetries * backoffTime) / 1000 + "s"
     )} and check the network gas price again. Current total wait time is ${chalk.bold(
-      (numberOfRetries * backoffTime) / 1000 + 's'
+      (numberOfRetries * backoffTime) / 1000 + "s"
     )}.
 `);
   }
@@ -417,7 +417,7 @@ export class EventUsageIsNotDeployed extends UserError {
     super(`The event ${chalk.bold(currentEvent.name)} is using ${chalk(
       eventUsage
     )} event, but the ${eventUsage} event still has ${chalk.bold(
-      'not yet been executed'
+      "not yet been executed"
     )}.
 
 Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK}
@@ -430,7 +430,7 @@ export class EventDependencyNotDeployedError extends UserError {
     super(`The event ${chalk.bold(eventName)} is depending on ${chalk(
       dep
     )} event, but the ${dep} event still has ${chalk.bold(
-      'not yet been executed'
+      "not yet been executed"
     )}.
 
 Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK}
@@ -459,7 +459,7 @@ export class MissingContractMetadata extends UserError {
     )}.
 
 Currently they are ${chalk.bold(
-      'missing'
+      "missing"
     )}, try to recompile them or manually fix the issue.
 `);
   }
@@ -468,7 +468,7 @@ Currently they are ${chalk.bold(
 export class NoNetworkError extends UserError {
   constructor(error: Error, rpcProvider: string) {
     super(`Ignition could ${chalk.bold(
-      'NOT DETECT'
+      "NOT DETECT"
     )} a running node at ${chalk.bold(rpcProvider)}.
 
 Please check if node is running and if you have configured rpc correctly.

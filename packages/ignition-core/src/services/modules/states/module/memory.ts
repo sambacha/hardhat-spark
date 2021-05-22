@@ -3,9 +3,9 @@ import {
   IModuleStateCleanup,
   ModuleState,
   ModuleStateFile,
-} from './index';
-import { ModuleStateRepo } from '../state_repo';
-import { checkIfExist, copyValue } from '../../../utils/util';
+} from "./index";
+import { ModuleStateRepo } from "../state_repo";
+import { checkIfExist, copyValue } from "../../../utils/util";
 
 export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
   private state: {

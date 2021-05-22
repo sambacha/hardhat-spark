@@ -4,11 +4,11 @@ import {
   ModuleStateFile,
   STATE_DIR_NAME,
   STATE_NAME,
-} from './index';
-import path from 'path';
-import fs from 'fs';
-import { ModuleStateRepo } from '../state_repo';
-import { Mutex } from '../../../utils/mutex/simple_mutex';
+} from "./index";
+import path from "path";
+import fs from "fs";
+import { ModuleStateRepo } from "../state_repo";
+import { Mutex } from "../../../utils/mutex/simple_mutex";
 
 export class FileSystemModuleState implements IModuleState {
   private mutex: Mutex;
@@ -41,7 +41,7 @@ export class FileSystemModuleState implements IModuleState {
     return (
       JSON.parse(
         fs.readFileSync(dir, {
-          encoding: 'utf-8',
+          encoding: "utf-8",
         })
       ) || {}
     );

@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { cli } from 'cli-ux';
+import * as fs from "fs";
+import * as path from "path";
+import { cli } from "cli-ux";
 import {
   FileGenerationType,
   HardhatBuild,
@@ -8,11 +8,11 @@ import {
   ModuleFile,
   ModuleStateBindings,
   USAGE_FUNC,
-} from '../types/migration';
-import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
-import { CliError } from '../types/errors';
+} from "../types/migration";
+import { ContractBindingMetaData } from "../../interfaces/hardhat_ignition";
+import { CliError } from "../types/errors";
 
-const HARDHAT_CHAIN_ID_FILENAME = '.chainId';
+const HARDHAT_CHAIN_ID_FILENAME = ".chainId";
 
 export function parseSolFiles(
   sourcePath: string,
@@ -30,14 +30,14 @@ export function parseSolFiles(
       );
     }
 
-    if (name.slice(name.length - 3, name.length) == 'sol') {
-      const content = fs.readFileSync(path.resolve(sourcePath, name), 'utf-8');
+    if (name.slice(name.length - 3, name.length) == "sol") {
+      const content = fs.readFileSync(path.resolve(sourcePath, name), "utf-8");
       if (contractNames.length > 0) {
         result.push(content);
         return [];
       }
 
-      if (new RegExp(contractNames.join('|')).test(content)) {
+      if (new RegExp(contractNames.join("|")).test(content)) {
         result.push(content);
       }
 
@@ -65,14 +65,14 @@ export function parseFiles(
         result
       );
     }
-    if (path.parse(fileName).ext != '.json') {
+    if (path.parse(fileName).ext != ".json") {
       return;
     }
 
     if (contractNames.length == 0) {
       const content = fs.readFileSync(
         path.resolve(sourcePath, fileName),
-        'utf-8'
+        "utf-8"
       );
 
       result.push(content);
@@ -83,7 +83,7 @@ export function parseFiles(
     if (contractNames.includes(actualFileName)) {
       const content = fs.readFileSync(
         path.resolve(sourcePath, fileName),
-        'utf-8'
+        "utf-8"
       );
 
       result.push(content);
@@ -109,8 +109,8 @@ export function searchModuleFilesName(
       );
     }
     if (
-      !path.parse(fileName).base.includes('module') ||
-      fileName.includes('.log')
+      !path.parse(fileName).base.includes("module") ||
+      fileName.includes(".log")
     ) {
       return;
     }
@@ -128,12 +128,12 @@ export function searchBuilds(currentPath: string, results: any[]): object[] {
     if (fs.lstatSync(path.resolve(currentPath, fileName)).isDirectory()) {
       return searchBuilds(path.resolve(currentPath, fileName), results);
     }
-    if (path.parse(fileName).ext != '.json') {
+    if (path.parse(fileName).ext != ".json") {
       return;
     }
 
     const content = fs.readFileSync(path.resolve(currentPath, fileName), {
-      encoding: 'utf-8',
+      encoding: "utf-8",
     });
     let jsonContent;
     try {
@@ -161,7 +161,7 @@ export function searchBuildsAndNetworks(
   if (filenames.includes(HARDHAT_CHAIN_ID_FILENAME)) {
     newChainId = fs.readFileSync(
       path.resolve(currentPath, HARDHAT_CHAIN_ID_FILENAME),
-      { encoding: 'utf-8' }
+      { encoding: "utf-8" }
     );
   }
 
@@ -174,12 +174,12 @@ export function searchBuildsAndNetworks(
       );
     }
 
-    if (path.parse(fileName).ext != '.json') {
+    if (path.parse(fileName).ext != ".json") {
       return;
     }
 
     const content = fs.readFileSync(path.resolve(currentPath, fileName), {
-      encoding: 'utf-8',
+      encoding: "utf-8",
     });
     let jsonContent: HardhatBuild;
     try {
@@ -211,7 +211,7 @@ export function generateModuleFile(
       buildName = MODULE_FUNC;
       break;
     default:
-      throw new CliError('File type generation is not valid.');
+      throw new CliError("File type generation is not valid.");
   }
 
   let file = `import { ${buildName}, ModuleBuilder } from '@tenderly/hardhat-ignition';
@@ -220,7 +220,7 @@ export const ${moduleName} = ${buildName}('${moduleName}', async (m: ModuleBuild
 
   file += genTemplates(moduleStateBindings);
 
-  file += '\n';
+  file += "\n";
 
   for (const [, element] of Object.entries(moduleStateBindings)) {
     if (element.library) {

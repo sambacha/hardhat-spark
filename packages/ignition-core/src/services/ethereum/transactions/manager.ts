@@ -1,16 +1,16 @@
-import { checkIfExist, delay } from '../../utils/util';
-import { TransactionRequest } from '@ethersproject/abstract-provider';
-import { INonceManager, ITransactionSigner } from './index';
-import { BigNumber, providers } from 'ethers';
-import { IGasCalculator, IGasPriceCalculator } from '../gas';
-import { ethers } from 'ethers';
+import { checkIfExist, delay } from "../../utils/util";
+import { TransactionRequest } from "@ethersproject/abstract-provider";
+import { INonceManager, ITransactionSigner } from "./index";
+import { BigNumber, providers } from "ethers";
+import { IGasCalculator, IGasPriceCalculator } from "../gas";
+import { ethers } from "ethers";
 import {
   GasPriceBackoffError,
   NoNetworkError,
   TransactionFailed,
-} from '../../types/errors';
-import { GasPriceBackoff } from '../../types/config';
-import { ILogging } from '../../utils/logging';
+} from "../../types/errors";
+import { GasPriceBackoff } from "../../types/config";
+import { ILogging } from "../../utils/logging";
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };

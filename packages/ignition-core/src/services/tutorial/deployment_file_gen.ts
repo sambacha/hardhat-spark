@@ -1,12 +1,12 @@
-import { DeploymentFileRepo } from './deployment_file_repo';
+import { DeploymentFileRepo } from "./deployment_file_repo";
 import {
   CONTRACT_DESC,
   EVENT_DESC,
   MODULE_NAME_DESC,
   TEMPLATE_DESC,
-} from './tutorial_desc';
-import { checkIfExist } from '../utils/util';
-import { EventType } from '../../interfaces/hardhat_ignition';
+} from "./tutorial_desc";
+import { checkIfExist } from "../utils/util";
+import { EventType } from "../../interfaces/hardhat_ignition";
 
 export class DeploymentFileGenerator {
   private deploymentFileRepo: DeploymentFileRepo;
@@ -112,7 +112,7 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
 
     for (const contractBindingName of Object.keys(this.contracts)) {
       const args = this.contracts[contractBindingName]?.constructorArgs.join(
-        ', '
+        ", "
       );
       if (checkIfExist(this.templates[contractBindingName])) {
         if (args) {
@@ -140,7 +140,7 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
 `;
 
     for (const [eventName, event] of Object.entries(this.events)) {
-      const functionArgs = event.contractFunctionArgs.join(', ');
+      const functionArgs = event.contractFunctionArgs.join(", ");
       fileContent += `
   /*
   ${EVENT_DESC}

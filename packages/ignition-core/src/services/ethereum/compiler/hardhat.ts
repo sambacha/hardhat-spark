@@ -1,22 +1,22 @@
-import { Compiler } from './index';
-import { execSync } from 'child_process';
-import * as path from 'path';
-import { parseFiles } from '../../utils/files';
-import { JsonFragment } from '../../types/artifacts/abi';
-import { Artifact } from 'hardhat/src/types/artifacts';
-import { LinkReferences } from '../../types/artifacts/libraries';
-import { checkIfExist } from '../../utils/util';
+import { Compiler } from "./index";
+import { execSync } from "child_process";
+import * as path from "path";
+import { parseFiles } from "../../utils/files";
+import { JsonFragment } from "../../types/artifacts/abi";
+import { Artifact } from "hardhat/src/types/artifacts";
+import { LinkReferences } from "../../types/artifacts/libraries";
+import { checkIfExist } from "../../utils/util";
 
 export class HardhatCompiler extends Compiler {
   compile(): void {
-    execSync('npx hardhat compile');
+    execSync("npx hardhat compile");
   }
 
   extractBytecode(contractNames: string[]): { [name: string]: string } {
     try {
       const bytecodes: { [name: string]: string } = {};
 
-      const dir = path.resolve(process.cwd(), 'artifacts', 'contracts');
+      const dir = path.resolve(process.cwd(), "artifacts", "contracts");
       const buildArtifacts = parseFiles(dir, contractNames, []);
       for (const artifact of buildArtifacts) {
         const art = JSON.parse(artifact);
@@ -36,7 +36,7 @@ export class HardhatCompiler extends Compiler {
     try {
       const ABIs: { [p: string]: JsonFragment[] } = {};
 
-      const dir = path.resolve(process.cwd(), 'artifacts', 'contracts');
+      const dir = path.resolve(process.cwd(), "artifacts", "contracts");
       const buildArtifacts = parseFiles(dir, contractNames, []);
       for (const artifact of buildArtifacts) {
         const art = JSON.parse(artifact);
@@ -54,7 +54,7 @@ export class HardhatCompiler extends Compiler {
     try {
       const libraries: { [p: string]: any } = {};
 
-      const dir = path.resolve(process.cwd(), 'artifacts', 'contracts');
+      const dir = path.resolve(process.cwd(), "artifacts", "contracts");
       const buildArtifacts = parseFiles(dir, contractNames, []);
       for (const artifact of buildArtifacts) {
         const art = JSON.parse(artifact) as Artifact;

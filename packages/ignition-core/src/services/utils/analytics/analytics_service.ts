@@ -1,32 +1,32 @@
-import * as Sentry from '@sentry/node';
-import { GlobalConfigService } from '../../config/global_config_service';
-import path from 'path';
-import { getIgnitionVersion } from '../package_info';
-import qs from 'qs';
+import * as Sentry from "@sentry/node";
+import { GlobalConfigService } from "../../config/global_config_service";
+import path from "path";
+import { getIgnitionVersion } from "../package_info";
+import qs from "qs";
 // @ts-ignore
-import uuid from 'uuid/v4';
-import fetch from 'node-fetch';
-import { checkIfExist, getUserAgent, getUserType } from '../util';
-import { readAnalyticsId } from './analytics_util';
+import uuid from "uuid/v4";
+import fetch from "node-fetch";
+import { checkIfExist, getUserAgent, getUserType } from "../util";
+import { readAnalyticsId } from "./analytics_util";
 import {
   readFirstLegacyAnalyticsId,
   readSecondLegacyAnalyticsId,
   writeAnalyticsId,
-} from 'hardhat/internal/util/global-dir';
-import { IErrorReporting } from './index';
+} from "hardhat/internal/util/global-dir";
+import { IErrorReporting } from "./index";
 
-require('dotenv').config({
-  path: path.resolve(__dirname + '../../.env.local'),
+require("dotenv").config({
+  path: path.resolve(__dirname + "../../.env.local"),
 });
 
 const SENTRY_DSN =
-  'https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032';
+  "https://1b449353cf874d1d8dcba1e1f4fab394@o193824.ingest.sentry.io/5714032";
 
-const GOOGLE_ANALYTICS_URL = 'https://www.google-analytics.com/collect';
-const GA_TRACKING_ID = 'UA-125013494-5';
+const GOOGLE_ANALYTICS_URL = "https://www.google-analytics.com/collect";
+const GA_TRACKING_ID = "UA-125013494-5";
 
 interface RawAnalytics {
-  v: '1';
+  v: "1";
   tid: string;
   cid: string;
   dp: string;
@@ -48,7 +48,7 @@ export class ErrorReporter implements IErrorReporting {
   constructor(globalConfigService: GlobalConfigService) {
     this.userType = getUserType();
 
-    if (process.env.IGNITION_ENV == 'development') {
+    if (process.env.IGNITION_ENV == "development") {
       return;
     }
 
@@ -64,11 +64,11 @@ export class ErrorReporter implements IErrorReporting {
       tracesSampleRate: 1.0,
       release: `hardhat-ignition@${ignitionVersion}`,
     });
-    Sentry.setExtra('nodeVersion', process.version);
+    Sentry.setExtra("nodeVersion", process.version);
   }
 
   reportError(err: Error) {
-    if (process.env.IGNITION_ENV == 'development') {
+    if (process.env.IGNITION_ENV == "development") {
       return;
     }
 
@@ -85,18 +85,18 @@ export class ErrorReporter implements IErrorReporting {
     }
 
     return {
-      v: '1',
-      t: 'pageview',
+      v: "1",
+      t: "pageview",
       tid: GA_TRACKING_ID,
-      cid: this.clientId || '',
+      cid: this.clientId || "",
       dp: `/task/${taskName}`,
-      dh: 'cli.ignition.hardhat.org',
+      dh: "cli.ignition.hardhat.org",
       ua: getUserAgent(),
       cs: this.userType,
-      cm: 'User Type',
-      cd1: 'hardhat-ignition',
+      cm: "User Type",
+      cd1: "hardhat-ignition",
       cd2: this.userType,
-      cd3: (await getIgnitionVersion()) || '',
+      cd3: (await getIgnitionVersion()) || "",
     };
   }
 
@@ -105,7 +105,7 @@ export class ErrorReporter implements IErrorReporting {
 
     await fetch(GOOGLE_ANALYTICS_URL, {
       body: hitPayload,
-      method: 'POST',
+      method: "POST",
     });
   }
 

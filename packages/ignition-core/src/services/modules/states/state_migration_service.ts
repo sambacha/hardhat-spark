@@ -3,20 +3,20 @@ import {
   HardhatBuild,
   Migration,
   TruffleBuild,
-} from '../../types/migration';
-import { checkIfExist } from '../../utils/util';
-import { IModuleState, ModuleStateFile } from './module';
+} from "../../types/migration";
+import { checkIfExist } from "../../utils/util";
+import { IModuleState, ModuleStateFile } from "./module";
 import {
   ContractBindingMetaData,
   Deployed,
   TxData,
-} from '../../../interfaces/hardhat_ignition';
-import { searchBuilds, searchBuildsAndNetworks } from '../../utils/files';
-import { CliError } from '../../types/errors';
-import path from 'path';
+} from "../../../interfaces/hardhat_ignition";
+import { searchBuilds, searchBuildsAndNetworks } from "../../utils/files";
+import { CliError } from "../../types/errors";
+import path from "path";
 
-const TRUFFLE_BUILD_DIR_NAME = 'build';
-const HARDHAT_DEPLOYMENTS_DIR_NAME = 'deployments';
+const TRUFFLE_BUILD_DIR_NAME = "build";
+const HARDHAT_DEPLOYMENTS_DIR_NAME = "deployments";
 
 export class StateMigrationService {
   private readonly moduleState: IModuleState;
@@ -53,7 +53,7 @@ export class StateMigrationService {
           []
         ) as HardhatBuild[];
       default:
-        throw new CliError('Migration type not found, please check.');
+        throw new CliError("Migration type not found, please check.");
     }
   }
 

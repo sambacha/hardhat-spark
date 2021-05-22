@@ -1,7 +1,7 @@
-import { generateErrorMessage, ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import { cli } from 'cli-ux';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+import { generateErrorMessage, ILogging } from "./index";
+import { ModuleState } from "../../modules/states/module";
+import { cli } from "cli-ux";
+import { EventType } from "../../../interfaces/hardhat_ignition";
 
 export class JsonLogger implements ILogging {
   private currentModuleName: string | undefined;
@@ -11,7 +11,7 @@ export class JsonLogger implements ILogging {
   alreadyDeployed(elementName: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Already deployed',
+        name: "Already deployed",
         fields: {
           elementName,
         },
@@ -22,7 +22,7 @@ export class JsonLogger implements ILogging {
   bindingExecution(bindingName: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Started deploying binding',
+        name: "Started deploying binding",
         fields: {
           bindingName,
         },
@@ -35,7 +35,7 @@ export class JsonLogger implements ILogging {
 
     cli.error(
       JSON.stringify({
-        name: 'Error',
+        name: "Error",
         fields: {
           message,
           stack,
@@ -47,7 +47,7 @@ export class JsonLogger implements ILogging {
   eventExecution(eventName: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Started executing event',
+        name: "Started executing event",
         fields: {
           eventName,
         },
@@ -58,7 +58,7 @@ export class JsonLogger implements ILogging {
   executeContractFunction(contractFunction: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Started executing contract function',
+        name: "Started executing contract function",
         fields: {
           contractFunction,
         },
@@ -69,7 +69,7 @@ export class JsonLogger implements ILogging {
   executeWalletTransfer(from: string, to: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Executed wallet transaction',
+        name: "Executed wallet transaction",
         fields: {
           from,
           to,
@@ -81,7 +81,7 @@ export class JsonLogger implements ILogging {
   finishModuleDeploy(): void {
     cli.info(
       JSON.stringify({
-        name: 'Finished module deployment',
+        name: "Finished module deployment",
         fields: {
           moduleName: this.currentModuleName,
         },
@@ -92,7 +92,7 @@ export class JsonLogger implements ILogging {
   finishedBindingExecution(bindingName: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Finished binding deployment',
+        name: "Finished binding deployment",
         fields: {
           bindingName,
         },
@@ -103,7 +103,7 @@ export class JsonLogger implements ILogging {
   finishedEventExecution(eventName: string, eventType: EventType): void {
     cli.info(
       JSON.stringify({
-        name: 'Finished event execution',
+        name: "Finished event execution",
         fields: {
           eventName,
           eventType,
@@ -115,7 +115,7 @@ export class JsonLogger implements ILogging {
   finishedExecutionOfContractFunction(functionName: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Finished execution of contract function',
+        name: "Finished execution of contract function",
         fields: {
           functionName,
         },
@@ -126,7 +126,7 @@ export class JsonLogger implements ILogging {
   finishedExecutionOfWalletTransfer(from: string, to: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Finished execution of wallet transaction',
+        name: "Finished execution of wallet transaction",
         fields: {
           from,
           to,
@@ -138,7 +138,7 @@ export class JsonLogger implements ILogging {
   nothingToDeploy(): void {
     cli.info(
       JSON.stringify({
-        name: 'Nothing to deploy',
+        name: "Nothing to deploy",
         fields: {
           moduleName: this.currentModuleName,
         },
@@ -157,7 +157,7 @@ export class JsonLogger implements ILogging {
   promptSignedTransaction(tx: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Singed tx',
+        name: "Singed tx",
         fields: {
           singedTx: tx,
         },
@@ -168,7 +168,7 @@ export class JsonLogger implements ILogging {
   sendingTx(elementName: string, functionName?: string): void {
     cli.info(
       JSON.stringify({
-        name: 'Sending transaction for contract',
+        name: "Sending transaction for contract",
         fields: {
           elementName: elementName,
           functionName: functionName,
@@ -177,10 +177,10 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  sentTx(elementName: string, functionName: string = 'CREATE'): void {
+  sentTx(elementName: string, functionName: string = "CREATE"): void {
     cli.info(
       JSON.stringify({
-        name: 'Sent transaction for contract',
+        name: "Sent transaction for contract",
         fields: {
           elementName: elementName,
           functionName: functionName,
@@ -192,7 +192,7 @@ export class JsonLogger implements ILogging {
   startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
     cli.info(
       JSON.stringify({
-        name: 'Started module deployment',
+        name: "Started module deployment",
         fields: {
           moduleName,
         },
@@ -204,11 +204,11 @@ export class JsonLogger implements ILogging {
   transactionConfirmation(
     confirmationNumber: number,
     elementName: string,
-    functionName: string = 'CREATE'
+    functionName: string = "CREATE"
   ): void {
     cli.info(
       JSON.stringify({
-        name: 'Transaction confirmation',
+        name: "Transaction confirmation",
         fields: {
           confirmationNumber,
           elementName,
@@ -225,7 +225,7 @@ export class JsonLogger implements ILogging {
   generatedTypes(): void {
     cli.info(
       JSON.stringify({
-        name: 'Successfully generated module types',
+        name: "Successfully generated module types",
       })
     );
   }
@@ -243,7 +243,7 @@ export class JsonLogger implements ILogging {
   gasPriceIsLarge(backoffTime: number) {
     cli.info(
       JSON.stringify({
-        name: 'Gas price is too large, waiting to gets lower.',
+        name: "Gas price is too large, waiting to gets lower.",
         fields: backoffTime,
       })
     );

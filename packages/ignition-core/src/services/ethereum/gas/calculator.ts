@@ -1,8 +1,8 @@
-import { checkIfExist } from '../../utils/util';
-import { providers } from 'ethers';
-import { TransactionRequest } from '@ethersproject/abstract-provider';
-import { BigNumber } from '@ethersproject/bignumber';
-import { BytesLike, IGasProvider } from './index';
+import { checkIfExist } from "../../utils/util";
+import { providers } from "ethers";
+import { TransactionRequest } from "@ethersproject/abstract-provider";
+import { BigNumber } from "@ethersproject/bignumber";
+import { BytesLike, IGasProvider } from "./index";
 
 export class GasPriceCalculator implements IGasProvider {
   private readonly ethers: providers.JsonRpcProvider;

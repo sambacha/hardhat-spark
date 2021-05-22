@@ -1,13 +1,13 @@
-import { generateErrorMessage, ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import * as path from 'path';
-import * as fs from 'fs';
-import { DEPLOYMENT_FOLDER } from '../../tutorial/tutorial_service';
-import { ILogObject, Logger } from 'tslog';
-import { EventType } from '../../../interfaces/hardhat_ignition';
-import { ModuleContextMissingInLogger } from '../../types/errors';
+import { generateErrorMessage, ILogging } from "./index";
+import { ModuleState } from "../../modules/states/module";
+import * as path from "path";
+import * as fs from "fs";
+import { DEPLOYMENT_FOLDER } from "../../tutorial/tutorial_service";
+import { ILogObject, Logger } from "tslog";
+import { EventType } from "../../../interfaces/hardhat_ignition";
+import { ModuleContextMissingInLogger } from "../../types/errors";
 
-const FOLDER_NAME = '.log';
+const FOLDER_NAME = ".log";
 
 export class FileLogging implements ILogging {
   private fullLogPath: string;
@@ -37,7 +37,7 @@ export class FileLogging implements ILogging {
     };
 
     const logger: Logger = new Logger({
-      type: 'hidden',
+      type: "hidden",
     });
     logger.attachTransport(
       {
@@ -49,7 +49,7 @@ export class FileLogging implements ILogging {
         error: logToTransport,
         fatal: logToTransport,
       },
-      'debug'
+      "debug"
     );
     this.errorLogger = logger;
 
@@ -66,7 +66,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('Element has already been deployed', {
+    this.logger[this.moduleName].info("Element has already been deployed", {
       moduleName: this.moduleName,
       elementName,
     });
@@ -76,7 +76,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('Started contract binding execution', {
+    this.logger[this.moduleName].info("Started contract binding execution", {
       moduleName: this.moduleName,
       bindingName,
     });
@@ -85,7 +85,7 @@ export class FileLogging implements ILogging {
   logError(error: Error): void {
     const { message, stack } = generateErrorMessage(error);
 
-    this.errorLogger.error('Error', {
+    this.errorLogger.error("Error", {
       message: message,
       errorName: error.name,
       stack: stack,
@@ -96,7 +96,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('Started event execution', {
+    this.logger[this.moduleName].info("Started event execution", {
       moduleName: this.moduleName,
       eventName,
     });
@@ -106,7 +106,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('Executing contract function', {
+    this.logger[this.moduleName].info("Executing contract function", {
       moduleName: this.moduleName,
       contractFunction,
     });
@@ -116,7 +116,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('Executing contract function', {
+    this.logger[this.moduleName].info("Executing contract function", {
       moduleName: this.moduleName,
       address,
       to,
@@ -127,7 +127,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('finished module deployment', {
+    this.logger[this.moduleName].info("finished module deployment", {
       moduleName,
     });
   }
@@ -136,7 +136,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('finished contract binding deployment', {
+    this.logger[this.moduleName].info("finished contract binding deployment", {
       moduleName: this.moduleName,
       bindingName,
     });
@@ -146,7 +146,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('finished event hook execution', {
+    this.logger[this.moduleName].info("finished event hook execution", {
       moduleName: this.moduleName,
       eventName,
       eventType,
@@ -158,7 +158,7 @@ export class FileLogging implements ILogging {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info(
-      'finished execution of contract function',
+      "finished execution of contract function",
       {
         moduleName: this.moduleName,
         functionName,
@@ -170,7 +170,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('finished execution of wallet transfer', {
+    this.logger[this.moduleName].info("finished execution of wallet transfer", {
       moduleName: this.moduleName,
       from,
       to,
@@ -181,7 +181,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('finished module usage generation', {
+    this.logger[this.moduleName].info("finished module usage generation", {
       moduleName,
     });
   }
@@ -190,7 +190,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('gas price is to large', {
+    this.logger[this.moduleName].info("gas price is to large", {
       moduleName: this.moduleName,
       backoffTime,
     });
@@ -200,14 +200,14 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('generated types');
+    this.logger[this.moduleName].info("generated types");
   }
 
   nothingToDeploy(): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('nothing to deploy', {
+    this.logger[this.moduleName].info("nothing to deploy", {
       moduleName: this.moduleName,
     });
   }
@@ -216,7 +216,7 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('running parallelization');
+    this.logger[this.moduleName].info("running parallelization");
   }
 
   promptContinueDeployment(): Promise<void> {
@@ -231,27 +231,27 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('singed tx', {
+    this.logger[this.moduleName].info("singed tx", {
       moduleName: this.moduleName,
       signedTransaction: tx,
     });
   }
 
-  sendingTx(elementName: string, functionName: string = 'CREATE'): void {
+  sendingTx(elementName: string, functionName: string = "CREATE"): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('sending transaction', {
+    this.logger[this.moduleName].info("sending transaction", {
       elementName,
       functionName: functionName,
     });
   }
 
-  sentTx(elementName: string, functionName: string = 'CREATE'): void {
+  sentTx(elementName: string, functionName: string = "CREATE"): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('sent transaction', {
+    this.logger[this.moduleName].info("sent transaction", {
       elementName,
       functionName: functionName,
     });
@@ -278,7 +278,7 @@ export class FileLogging implements ILogging {
     };
 
     const logger: Logger = new Logger({
-      type: 'hidden',
+      type: "hidden",
     });
     logger.attachTransport(
       {
@@ -290,7 +290,7 @@ export class FileLogging implements ILogging {
         error: logToTransport,
         fatal: logToTransport,
       },
-      'debug'
+      "debug"
     );
     this.moduleName = moduleName;
     this.logger[this.moduleName] = logger;
@@ -300,7 +300,7 @@ export class FileLogging implements ILogging {
       fs.mkdirSync(dirPath);
     }
 
-    this.logger[this.moduleName].info('started module deployment', moduleName);
+    this.logger[this.moduleName].info("started module deployment", moduleName);
   }
 
   startingModuleUsageGeneration(moduleName: string): void {
@@ -308,7 +308,7 @@ export class FileLogging implements ILogging {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info(
-      'started module usage generation',
+      "started module usage generation",
       moduleName
     );
   }
@@ -316,12 +316,12 @@ export class FileLogging implements ILogging {
   transactionConfirmation(
     confirmationNumber: number,
     elementName: string,
-    functionName: string = 'CREATE'
+    functionName: string = "CREATE"
   ): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('transaction confirmation', {
+    this.logger[this.moduleName].info("transaction confirmation", {
       confirmationNumber,
       elementName,
       functionName,
@@ -332,18 +332,18 @@ export class FileLogging implements ILogging {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('received transaction receipt');
+    this.logger[this.moduleName].info("received transaction receipt");
   }
 
   waitTransactionConfirmation(): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
-    this.logger[this.moduleName].info('wait for transaction confirmation');
+    this.logger[this.moduleName].info("wait for transaction confirmation");
   }
 
   wrongNetwork(): Promise<boolean> {
-    this.errorLogger.error('Contracts are missing on the network.');
+    this.errorLogger.error("Contracts are missing on the network.");
 
     return Promise.resolve(true);
   }

@@ -1,10 +1,10 @@
 export type ModuleRegistryResolver = {
   [version: string]: { [bindingName: string]: string };
 };
-export const REGISTRY_NAME = 'module_registry.json';
+export const REGISTRY_NAME = "module_registry.json";
 
-export * from './file_system';
-export * from './remote_bucket_storage';
+export * from "./file_system";
+export * from "./remote_bucket_storage";
 
 export interface IModuleRegistryResolver {
   resolveContract(

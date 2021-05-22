@@ -1,18 +1,18 @@
-import * as path from 'path';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
+import * as path from "path";
+import { cli } from "cli-ux";
+import chalk from "chalk";
 import {
   CONSTRUCTOR_ARGS,
   CONTRACT_DUPLICATES,
   CONTRACT_NAME_DESC,
-} from './tutorial_desc';
-import { checkIfExist } from '../utils/util';
-import { DeploymentFileGenerator } from './deployment_file_gen';
-import { SystemCrawlingService } from './system_crawler';
-import * as inquirer from 'inquirer';
+} from "./tutorial_desc";
+import { checkIfExist } from "../utils/util";
+import { DeploymentFileGenerator } from "./deployment_file_gen";
+import { SystemCrawlingService } from "./system_crawler";
+import * as inquirer from "inquirer";
 
-export const DEPLOYMENT_FOLDER = './deployment';
-export const DEPLOYMENT_FILE = './tutorial.module.ts';
+export const DEPLOYMENT_FOLDER = "./deployment";
+export const DEPLOYMENT_FILE = "./tutorial.module.ts";
 
 type ContractName = string;
 
@@ -48,7 +48,7 @@ export class TutorialService {
 
     while (true) {
       let yes = await cli.confirm(
-        'Do you want to deploy a smart contract?(yes/no)'
+        "Do you want to deploy a smart contract?(yes/no)"
       );
       if (!yes) {
         break;
@@ -58,9 +58,9 @@ export class TutorialService {
       const contractName = (
         await inquirer.prompt([
           {
-            name: 'contractName',
-            message: 'Contract name:',
-            type: 'list',
+            name: "contractName",
+            message: "Contract name:",
+            type: "list",
             choices: contracts.map((v) => {
               return {
                 name: v,
@@ -80,7 +80,7 @@ export class TutorialService {
       let constructorArgs = await cli.prompt(CONSTRUCTOR_ARGS, {
         required: false,
       });
-      constructorArgs = constructorArgs.split(',');
+      constructorArgs = constructorArgs.split(",");
 
       this.deploymentFileGenerator.newContract(
         contractName,
@@ -89,7 +89,7 @@ export class TutorialService {
       );
 
       yes = await cli.confirm(
-        'Do you wish to execute any contract function after contract deployment?(yes/no)'
+        "Do you wish to execute any contract function after contract deployment?(yes/no)"
       );
       await this.handleContractFuncExecution(contractName, bindingName, yes);
     }
@@ -120,9 +120,9 @@ export class TutorialService {
           const functionName = (
             await inquirer.prompt([
               {
-                name: 'functionName',
-                message: 'Function name:',
-                type: 'list',
+                name: "functionName",
+                message: "Function name:",
+                type: "list",
                 choices: contractFunctionNames.map((v) => {
                   return {
                     name: v.name,
@@ -135,7 +135,7 @@ export class TutorialService {
           let functionArgs = await cli.prompt(`Contract function arguments?`, {
             required: false,
           });
-          functionArgs = functionArgs?.split(',');
+          functionArgs = functionArgs?.split(",");
 
           this.deploymentFileGenerator.newContractInvocation(
             contractName,
@@ -145,12 +145,12 @@ export class TutorialService {
           );
         } else {
           cli.info(
-            'Contract dont have any callable function... please continue'
+            "Contract dont have any callable function... please continue"
           );
         }
 
         const yes = await cli.confirm(
-          'Any more contract functions to be executed?(yes/no)'
+          "Any more contract functions to be executed?(yes/no)"
         );
         if (
           !(await this.handleContractFuncExecution(

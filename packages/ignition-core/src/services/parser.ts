@@ -1,4 +1,4 @@
-import { parseSolFiles } from './utils/files';
+import { parseSolFiles } from "./utils/files";
 
 export default class Parser {
   private readonly sourcePath: string;

@@ -1,6 +1,6 @@
-import { ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+import { ILogging } from "./index";
+import { ModuleState } from "../../modules/states/module";
+import { EventType } from "../../../interfaces/hardhat_ignition";
 
 export class EmptyLogger implements ILogging {
   constructor() {}

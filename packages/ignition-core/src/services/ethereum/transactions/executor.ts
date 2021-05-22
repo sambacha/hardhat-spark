@@ -13,19 +13,19 @@ import {
   OnChangeEvent,
   StatefulEvent,
   TransactionData,
-} from '../../../interfaces/hardhat_ignition';
-import { ILogging } from '../../utils/logging';
-import { ModuleStateRepo } from '../../modules/states/state_repo';
-import { checkIfExist } from '../../utils/util';
-import { EthTxGenerator } from './generator';
-import { BigNumber, providers } from 'ethers';
-import { defaultAbiCoder as abiCoder } from '@ethersproject/abi';
+} from "../../../interfaces/hardhat_ignition";
+import { ILogging } from "../../utils/logging";
+import { ModuleStateRepo } from "../../modules/states/state_repo";
+import { checkIfExist } from "../../utils/util";
+import { EthTxGenerator } from "./generator";
+import { BigNumber, providers } from "ethers";
+import { defaultAbiCoder as abiCoder } from "@ethersproject/abi";
 import {
   TransactionReceipt,
   TransactionResponse,
-} from '@ethersproject/abstract-provider';
-import { JsonFragment, JsonFragmentType } from '../../types/artifacts/abi';
-import { EventHandler } from '../../modules/events/handler';
+} from "@ethersproject/abstract-provider";
+import { JsonFragment, JsonFragmentType } from "../../types/artifacts/abi";
+import { EventHandler } from "../../modules/events/handler";
 import {
   CliError,
   ContractTypeMismatch,
@@ -33,16 +33,16 @@ import {
   MissingAbiInContractError,
   NoContractBindingDataInModuleState,
   TransactionFailed,
-} from '../../types/errors';
-import { ModuleState } from '../../modules/states/module';
-import { IModuleRegistryResolver } from '../../modules/states/registry';
-import { ModuleResolver } from '../../modules/module_resolver';
-import { Batcher } from '../../modules/events/batcher';
-import { Namespace } from 'cls-hooked';
-import { EventTxExecutor } from './event_executor';
-import { clsNamespaces } from '../../utils/continuation_local_storage';
+} from "../../types/errors";
+import { ModuleState } from "../../modules/states/module";
+import { IModuleRegistryResolver } from "../../modules/states/registry";
+import { ModuleResolver } from "../../modules/module_resolver";
+import { Batcher } from "../../modules/events/batcher";
+import { Namespace } from "cls-hooked";
+import { EventTxExecutor } from "./event_executor";
+import { clsNamespaces } from "../../utils/continuation_local_storage";
 
-const CONSTRUCTOR_TYPE = 'constructor';
+const CONSTRUCTOR_TYPE = "constructor";
 
 export class TxExecutor {
   private readonly networkId: string;
@@ -739,7 +739,7 @@ export class TxExecutor {
     // constructor params validation
     for (let i = 0; i < constructorFragmentInputs?.length; i++) {
       switch (typeof binding.args[i]) {
-        case 'object': {
+        case "object": {
           if (binding.args[i]?._isBigNumber) {
             const value = binding.args[i].toString();
 
@@ -748,7 +748,7 @@ export class TxExecutor {
             break;
           }
 
-          if (binding.args[i]?.type == 'BigNumber') {
+          if (binding.args[i]?.type == "BigNumber") {
             const value = BigNumber.from(binding.args[i].hex).toString();
 
             values.push(value);
@@ -763,14 +763,14 @@ export class TxExecutor {
           }
 
           if (
-            'contract ' + binding.args[i].name !=
+            "contract " + binding.args[i].name !=
               constructorFragmentInputs[i].internalType &&
-            'address' != constructorFragmentInputs[i].type
+            "address" != constructorFragmentInputs[i].type
           ) {
             throw new ContractTypeMismatch(
               `Unsupported type for - ${binding.name} \n provided: ${
                 binding.args[i].name
-              } \n expected: ${constructorFragmentInputs[i].internalType || ''}`
+              } \n expected: ${constructorFragmentInputs[i].internalType || ""}`
             );
           }
 
@@ -801,14 +801,14 @@ export class TxExecutor {
 
           break;
         }
-        case 'number': {
+        case "number": {
           values.push(binding.args[i]);
           types.push(constructorFragmentInputs[i].type);
 
           break;
         }
-        case 'string': {
-          if (constructorFragmentInputs[i].type == 'bytes') {
+        case "string": {
+          if (constructorFragmentInputs[i].type == "bytes") {
             values.push(Buffer.from(binding.args[i]));
             types.push(constructorFragmentInputs[i].type);
             break;
@@ -819,7 +819,7 @@ export class TxExecutor {
 
           break;
         }
-        case 'boolean': {
+        case "boolean": {
           values.push(binding.args[i]);
           types.push(constructorFragmentInputs[i].type);
 

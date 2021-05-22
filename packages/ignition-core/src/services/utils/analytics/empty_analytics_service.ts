@@ -1,4 +1,4 @@
-import { IErrorReporting } from './index';
+import { IErrorReporting } from "./index";
 
 export class EmptyAnalyticsService implements IErrorReporting {
   constructor() {}

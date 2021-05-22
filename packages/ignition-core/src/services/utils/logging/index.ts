@@ -1,43 +1,43 @@
-import { ModuleState } from '../../modules/states/module';
+import { ModuleState } from "../../modules/states/module";
 import {
   CliError,
   handleMappedErrorCodes,
   UserError,
-} from '../../types/errors';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
-import { checkIfExist } from '../util';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+} from "../../types/errors";
+import { cli } from "cli-ux";
+import chalk from "chalk";
+import { checkIfExist } from "../util";
+import { EventType } from "../../../interfaces/hardhat_ignition";
 
-export * from './empty_logging';
-export * from './file_logging';
-export * from './json_logging';
-export * from './simple_logging';
-export * from './streamlined_logger';
-export * from './react-terminal/ui/layout/terminal';
-export * from './react-terminal/ui/layout/confirmation_question';
+export * from "./empty_logging";
+export * from "./file_logging";
+export * from "./json_logging";
+export * from "./simple_logging";
+export * from "./streamlined_logger";
+export * from "./react-terminal/ui/layout/terminal";
+export * from "./react-terminal/ui/layout/confirmation_question";
 
 export enum Logging {
-  'empty' = 'empty',
-  'overview' = 'overview',
-  'simple' = 'simple',
-  'json' = 'json',
-  'streamlined' = 'streamlined',
+  "empty" = "empty",
+  "overview" = "overview",
+  "simple" = "simple",
+  "json" = "json",
+  "streamlined" = "streamlined",
 }
 
 export enum StateElementStatus {
-  'NOT_EXECUTED' = 'not executed',
-  'STARTED' = 'started',
-  'SUCCESSFUL' = 'successful',
-  'DEPLOYED' = 'already executed/deployed',
-  'FAILED' = 'failed',
+  "NOT_EXECUTED" = "not executed",
+  "STARTED" = "started",
+  "SUCCESSFUL" = "successful",
+  "DEPLOYED" = "already executed/deployed",
+  "FAILED" = "failed",
 }
 
 export enum TransactionStatus {
-  'EMPTY' = 0,
-  'CONTRACT_TRANSACTION_SENT' = 1,
-  'WAITING_FOR_CONFIRMATION' = 2,
-  'TRANSACTION_CONFIRMED' = 3,
+  "EMPTY" = 0,
+  "CONTRACT_TRANSACTION_SENT" = 1,
+  "WAITING_FOR_CONFIRMATION" = 2,
+  "TRANSACTION_CONFIRMED" = 3,
 }
 
 export interface ILogging {
@@ -87,7 +87,7 @@ export function generateErrorMessage(
   stack: any;
 } {
   let stack;
-  if (cli.config.outputLevel == 'debug') {
+  if (cli.config.outputLevel == "debug") {
     stack = error.stack;
   }
 

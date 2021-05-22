@@ -2,16 +2,16 @@ import {
   IModuleRegistryResolver,
   ModuleRegistryResolver,
   REGISTRY_NAME,
-} from './index';
-import path from 'path';
-import fs from 'fs';
-import { checkIfExist } from '../../../utils/util';
+} from "./index";
+import path from "path";
+import fs from "fs";
+import { checkIfExist } from "../../../utils/util";
 
 export class FileSystemRegistry implements IModuleRegistryResolver {
   private readonly version: string;
   private readonly registryPath: string;
 
-  constructor(registryDir: string, version: string = 'v0.0.1') {
+  constructor(registryDir: string, version: string = "v0.0.1") {
     this.version = version;
 
     const dir = path.resolve(registryDir);
@@ -73,7 +73,7 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
 
     return (JSON.parse(
       fs.readFileSync(dir, {
-        encoding: 'utf-8',
+        encoding: "utf-8",
       })
     ) || {}) as ModuleRegistryResolver;
   }

@@ -1,6 +1,6 @@
-import { JsonFragment } from '../../types/artifacts/abi';
+import { JsonFragment } from "../../types/artifacts/abi";
 
-export * from './hardhat';
+export * from "./hardhat";
 
 export abstract class Compiler {
   abstract compile(): void;

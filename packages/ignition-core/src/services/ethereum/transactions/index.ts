@@ -1,9 +1,9 @@
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 
-export * from './manager';
-export * from './generator';
-export * from './executor';
-export * from './event_executor';
+export * from "./manager";
+export * from "./generator";
+export * from "./executor";
+export * from "./event_executor";
 
 export interface INonceManager {
   getAndIncrementTransactionCount(walletAddress: string): Promise<number>;

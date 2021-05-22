@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 
 export class EthClient {
   private readonly provider: ethers.providers.JsonRpcProvider;

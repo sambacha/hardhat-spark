@@ -1,27 +1,27 @@
-import { ModuleStateRepo } from './states/state_repo';
-import { ModuleStateFile } from './states/module';
+import { ModuleStateRepo } from "./states/state_repo";
+import { ModuleStateFile } from "./states/module";
 import {
   ContractBindingMetaData,
   ContractInput,
   StatefulEvent,
   TxData,
-} from '../../interfaces/hardhat_ignition';
-import { BigNumber, ethers } from 'ethers';
-import { checkIfExist } from '../utils/util';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
-import { getIgnitionVersion } from '../utils/package_info';
+} from "../../interfaces/hardhat_ignition";
+import { BigNumber, ethers } from "ethers";
+import { checkIfExist } from "../utils/util";
+import { cli } from "cli-ux";
+import chalk from "chalk";
+import { getIgnitionVersion } from "../utils/package_info";
 import {
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
-} from '@ethersproject/abstract-provider';
+} from "@ethersproject/abstract-provider";
 
 export enum SummaryType {
-  'EMPTY' = 'EMPTY',
-  'JSON' = 'JSON',
-  'SIMPLE' = 'SIMPLE',
-  'ALL' = 'ALL',
+  "EMPTY" = "EMPTY",
+  "JSON" = "JSON",
+  "SIMPLE" = "SIMPLE",
+  "ALL" = "ALL",
 }
 
 type SummaryDataOption = {

@@ -1,6 +1,6 @@
-import { BigNumber } from '@ethersproject/bignumber';
+import { BigNumber } from "@ethersproject/bignumber";
 
-export * from './calculator';
+export * from "./calculator";
 
 export type Bytes = ArrayLike<number>;
 

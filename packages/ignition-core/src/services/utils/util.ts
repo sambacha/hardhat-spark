@@ -3,22 +3,22 @@ import {
   ContractInput,
   ModuleBuilder,
   StatefulEvent,
-} from '../../interfaces/hardhat_ignition';
-import { CliError, handleMappedErrorCodes, UserError } from '../types/errors';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
-import * as os from 'os';
-import { ILogging } from './logging';
-import { IErrorReporting } from './analytics';
+} from "../../interfaces/hardhat_ignition";
+import { CliError, handleMappedErrorCodes, UserError } from "../types/errors";
+import { cli } from "cli-ux";
+import chalk from "chalk";
+import * as os from "os";
+import { ILogging } from "./logging";
+import { IErrorReporting } from "./analytics";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export function checkIfExist(object: any): boolean {
-  return object != undefined && typeof object != 'undefined';
+  return object != undefined && typeof object != "undefined";
 }
 
 export function checkIfFuncExist(func: any): boolean {
-  return typeof func === 'function';
+  return typeof func === "function";
 }
 
 export function checkIfSameInputs(
@@ -72,9 +72,9 @@ export function arrayEquals(a: any[], b: any[]) {
 }
 
 export function removeLastPathElement(path: string) {
-  const pathElements = path.split('/');
+  const pathElements = path.split("/");
   pathElements.pop();
-  return pathElements.join('/');
+  return pathElements.join("/");
 }
 
 export async function checkMutex(
@@ -83,7 +83,7 @@ export async function checkMutex(
   retries: number
 ) {
   if (retries === 0) {
-    throw new Error('Maximum number of retries reached.');
+    throw new Error("Maximum number of retries reached.");
   }
 
   if (mutex) {
@@ -96,19 +96,19 @@ export async function checkMutex(
 
 function getOperatingSystem(): string {
   switch (os.type()) {
-    case 'Windows_NT':
-      return '(Windows NT 6.1; Win64; x64)';
-    case 'Darwin':
-      return '(Macintosh; Intel Mac OS X 10_13_6)';
-    case 'Linux':
-      return '(X11; Linux x86_64)';
+    case "Windows_NT":
+      return "(Windows NT 6.1; Win64; x64)";
+    case "Darwin":
+      return "(Macintosh; Intel Mac OS X 10_13_6)";
+    case "Linux":
+      return "(X11; Linux x86_64)";
     default:
-      return '(Unknown)';
+      return "(Unknown)";
   }
 }
 
 export function getUserType(): string {
-  return 'Developer'; // @TODO add CI here after we add integration
+  return "Developer"; // @TODO add CI here after we add integration
 }
 
 export function getUserAgent(): string {
@@ -150,7 +150,7 @@ export function extractObjectInfo(obj: any): string {
     return obj.deployMetaData.contractAddress;
   }
 
-  return '';
+  return "";
 }
 
 export async function errorHandling(
@@ -168,14 +168,14 @@ export async function errorHandling(
   if (checkIfExist(error?.code)) {
     // @ts-ignore
     cli.info(handleMappedErrorCodes(error.code, error));
-    if (cli.config.outputLevel == 'debug' && error?.stack) {
+    if (cli.config.outputLevel == "debug" && error?.stack) {
       cli.debug(error?.stack);
     }
     return;
   }
 
   cli.info(error.message);
-  if (cli.config.outputLevel == 'debug' && error?.stack) {
+  if (cli.config.outputLevel == "debug" && error?.stack) {
     cli.debug(error.stack);
   }
 

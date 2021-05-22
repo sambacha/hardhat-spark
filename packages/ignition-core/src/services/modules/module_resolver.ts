@@ -7,12 +7,12 @@ import {
   ContractEvent,
   ContractBindingMetaData,
   EventsDepRef,
-} from '../../interfaces/hardhat_ignition';
-import { checkIfExist, isSameBytecode } from '../utils/util';
-import { cli } from 'cli-ux';
-import { ethers } from 'ethers';
-import { ILogging } from '../utils/logging';
-import { EthTxGenerator, EventTxExecutor } from '../ethereum/transactions';
+} from "../../interfaces/hardhat_ignition";
+import { checkIfExist, isSameBytecode } from "../utils/util";
+import { cli } from "cli-ux";
+import { ethers } from "ethers";
+import { ILogging } from "../utils/logging";
+import { EthTxGenerator, EventTxExecutor } from "../ethereum/transactions";
 import {
   CliError,
   ContractNotCompiledError,
@@ -21,12 +21,12 @@ import {
   ModuleAndModuleStateMismatchElementNameError,
   ModuleStateMismatchError,
   UsageEventNotFound,
-} from '../types/errors';
-import { ModuleState, ModuleStateFile } from './states/module';
-import { ModuleStateRepo } from './states/state_repo';
-import { SingleContractLinkReference } from '../types/artifacts/libraries';
-import { Namespace } from 'cls-hooked';
-import { EthClient } from '../ethereum/client';
+} from "../types/errors";
+import { ModuleState, ModuleStateFile } from "./states/module";
+import { ModuleStateRepo } from "./states/state_repo";
+import { SingleContractLinkReference } from "../types/artifacts/libraries";
+import { Namespace } from "cls-hooked";
+import { EthClient } from "../ethereum/client";
 
 export class ModuleResolver {
   private readonly signer: ethers.Signer;
@@ -158,8 +158,8 @@ export class ModuleResolver {
         if (
           !isSameBytecode(oldModuleElement.bytecode, newModuleElement.bytecode)
         ) {
-          cli.info('~', 'Contract: ', newModuleElement.name);
-          printArgs(newModuleElement.args, '  ');
+          cli.info("~", "Contract: ", newModuleElement.name);
+          printArgs(newModuleElement.args, "  ");
         }
 
         i++;
@@ -180,9 +180,9 @@ export class ModuleResolver {
           newEvent.name != oldEvent.name ||
           !oldModuleElement.executed
         ) {
-          cli.info('~', 'Event', newModuleElement.event.name);
-          printArgs(newEvent.deps, '  ');
-          printEvents(newEvent.eventDeps, '  ');
+          cli.info("~", "Event", newModuleElement.event.name);
+          printArgs(newEvent.deps, "  ");
+          printEvents(newEvent.eventDeps, "  ");
         }
       }
 
@@ -197,8 +197,8 @@ export class ModuleResolver {
       if (checkIfExist(newModuleElement?.bytecode)) {
         newModuleElement = newModuleElement as ContractBinding;
 
-        cli.info('+', 'Contract', newModuleElement.name);
-        printArgs(newModuleElement.args, '  ');
+        cli.info("+", "Contract", newModuleElement.name);
+        printArgs(newModuleElement.args, "  ");
 
         i++;
         continue;
@@ -206,11 +206,11 @@ export class ModuleResolver {
 
       newModuleElement = newModuleElement as StatefulEvent;
       if (checkIfExist(newModuleElement?.event)) {
-        cli.info('+', 'Event', newModuleElement.event.name);
+        cli.info("+", "Event", newModuleElement.event.name);
         const newEvent = newModuleElement.event as ContractEvent;
 
-        printArgs(newEvent.deps, '  ');
-        printEvents(newEvent.eventDeps, '  ');
+        printArgs(newEvent.deps, "  ");
+        printEvents(newEvent.eventDeps, "  ");
       }
 
       i++;
@@ -293,7 +293,7 @@ export class ModuleResolver {
           const code = await this.ethClient.getCode(
             stateFileElement?.deployMetaData?.contractAddress
           );
-          if (!checkIfExist(code) || code == '0x') {
+          if (!checkIfExist(code) || code == "0x") {
             userAlwaysDeploy = await this.prompter.wrongNetwork();
             if (!userAlwaysDeploy) {
               moduleStateFile = {};
@@ -616,7 +616,7 @@ export class ModuleResolver {
         for (const bindingName of deps) {
           if (!checkIfExist(moduleState[bindingName])) {
             throw new UsageEventNotFound(
-              'Event that you are trying to use is not present in module.'
+              "Event that you are trying to use is not present in module."
             );
           }
         }
@@ -837,8 +837,8 @@ function printArgs(args: any[], indent: string): void {
     for (const arg of args) {
       // @TODO: use cli-ux tree instead
       if (checkIfExist(arg.name)) {
-        cli.info(indent + '└── Contract: ' + arg.name);
-        return printArgs(arg.args, indent + '  ');
+        cli.info(indent + "└── Contract: " + arg.name);
+        return printArgs(arg.args, indent + "  ");
       }
     }
   }
@@ -852,7 +852,7 @@ function printEvents(events: string[], indent: string) {
   }
 
   for (const eventName of events) {
-    cli.info(indent + '└── Event: - ' + eventName);
+    cli.info(indent + "└── Event: - " + eventName);
   }
 }
 

@@ -7,13 +7,13 @@ import {
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent,
-} from '../../../interfaces/hardhat_ignition';
-import { checkIfExist } from '../../utils/util';
+} from "../../../interfaces/hardhat_ignition";
+import { checkIfExist } from "../../utils/util";
 import {
   CliError,
   EventDependencyNotDeployedError,
   EventUsageIsNotDeployed,
-} from '../../types/errors';
+} from "../../types/errors";
 
 export class Batcher {
   static async handleAfterDeployEvent(
@@ -85,7 +85,7 @@ export class Batcher {
         this.handleAfterDeployEvents(event, element, batches, elementsBatches);
         break;
       default:
-        throw new CliError('Event type not found');
+        throw new CliError("Event type not found");
     }
   }
 

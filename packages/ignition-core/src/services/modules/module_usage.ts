@@ -1,16 +1,16 @@
-import { ModuleStateRepo } from './states/state_repo';
-import { ModuleStateFile } from './states/module';
-import { ContractBindingMetaData } from '../../interfaces/hardhat_ignition';
-import { checkIfExist, removeLastPathElement } from '../utils/util';
-import { CliError } from '../types/errors';
-import fs from 'fs';
-import * as path from 'path';
-import { generateModuleFile } from '../utils/files';
+import { ModuleStateRepo } from "./states/state_repo";
+import { ModuleStateFile } from "./states/module";
+import { ContractBindingMetaData } from "../../interfaces/hardhat_ignition";
+import { checkIfExist, removeLastPathElement } from "../utils/util";
+import { CliError } from "../types/errors";
+import fs from "fs";
+import * as path from "path";
+import { generateModuleFile } from "../utils/files";
 import {
   FileGenerationType,
   ModuleFile,
   ModuleStateBindings,
-} from '../types/migration';
+} from "../types/migration";
 
 export class ModuleUsage {
   private readonly fileLocation: string;
@@ -28,7 +28,7 @@ export class ModuleUsage {
     moduleStateFile: ModuleStateFile
   ): ModuleStateBindings {
     if (checkIfExist(this.moduleName)) {
-      throw new CliError('Usage generation has not been concluded.');
+      throw new CliError("Usage generation has not been concluded.");
     }
     this.moduleName = moduleName;
     const rawUsage: ModuleStateBindings = {};
@@ -46,7 +46,7 @@ export class ModuleUsage {
 
   generateUsageFile(moduleRawUsage: ModuleStateBindings): ModuleFile {
     if (!this.moduleName || !checkIfExist(this.moduleName)) {
-      throw new CliError('Module name is missing.');
+      throw new CliError("Module name is missing.");
     }
 
     return generateModuleFile(

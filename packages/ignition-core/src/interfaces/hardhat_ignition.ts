@@ -1,28 +1,28 @@
-import { ModuleStateRepo } from '../services/modules/states/state_repo';
-import { HardhatCompiler } from '../services/ethereum/compiler/hardhat';
+import { ModuleStateRepo } from "../services/modules/states/state_repo";
+import { HardhatCompiler } from "../services/ethereum/compiler/hardhat";
 import {
   checkIfExist,
   checkIfSameInputs,
   checkIfSuitableForInstantiating,
   copyValue,
   isSameBytecode,
-} from '../services/utils/util';
-import { ModuleValidator } from '../services/modules/module_validator';
+} from "../services/utils/util";
+import { ModuleValidator } from "../services/modules/module_validator";
 import {
   JsonFragment,
   JsonFragmentType,
-} from '../services/types/artifacts/abi';
+} from "../services/types/artifacts/abi";
 import {
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
-} from '@ethersproject/abstract-provider';
-import { cli } from 'cli-ux';
-import { CallOverrides, ethers } from 'ethers';
-import { ContractFunction } from '@ethersproject/contracts';
-import { FunctionFragment } from '@ethersproject/abi';
-import { EthTxGenerator } from '../services/ethereum/transactions/generator';
-import { ILogging } from '../services/utils/logging';
+} from "@ethersproject/abstract-provider";
+import { cli } from "cli-ux";
+import { CallOverrides, ethers } from "ethers";
+import { ContractFunction } from "@ethersproject/contracts";
+import { FunctionFragment } from "@ethersproject/abi";
+import { EthTxGenerator } from "../services/ethereum/transactions/generator";
+import { ILogging } from "../services/utils/logging";
 import {
   ArgumentLengthInvalid,
   BindingsConflict,
@@ -37,22 +37,22 @@ import {
   ShouldRedeployAlreadyDefinedError,
   TemplateNotFound,
   WalletTransactionNotInEventError,
-} from '../services/types/errors';
-import { IModuleRegistryResolver } from '../services/modules/states/registry';
+} from "../services/types/errors";
+import { IModuleRegistryResolver } from "../services/modules/states/registry";
 import {
   LinkReferences,
   SingleContractLinkReference,
-} from '../services/types/artifacts/libraries';
-import { IGasCalculator, IGasPriceCalculator } from '../services/ethereum/gas';
+} from "../services/types/artifacts/libraries";
+import { IGasCalculator, IGasPriceCalculator } from "../services/ethereum/gas";
 import {
   INonceManager,
   ITransactionSigner,
-} from '../services/ethereum/transactions';
-import { EventTxExecutor } from '../services/ethereum/transactions';
-import { Namespace } from 'cls-hooked';
-import { Deferrable } from '@ethersproject/properties';
-import { clsNamespaces } from '../services/utils/continuation_local_storage';
-import { ModuleParams } from '../index';
+} from "../services/ethereum/transactions";
+import { EventTxExecutor } from "../services/ethereum/transactions";
+import { Namespace } from "cls-hooked";
+import { Deferrable } from "@ethersproject/properties";
+import { clsNamespaces } from "../services/utils/continuation_local_storage";
+import { ModuleParams } from "../index";
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -92,16 +92,16 @@ export type DeployReturn = {
 export type DeployFn = () => Promise<DeployReturn>;
 
 export enum EventType {
-  'OnChangeEvent' = 'OnChangeEvent',
-  'BeforeDeployEvent' = 'BeforeDeployEvent',
-  'AfterDeployEvent' = 'AfterDeployEvent',
-  'AfterCompileEvent' = 'AfterCompileEvent',
-  'BeforeCompileEvent' = 'BeforeCompileEvent',
-  'OnStart' = 'OnStart',
-  'OnFail' = 'OnFail',
-  'OnCompletion' = 'OnCompletion',
-  'OnSuccess' = 'OnSuccess',
-  'Deploy' = 'Deploy',
+  "OnChangeEvent" = "OnChangeEvent",
+  "BeforeDeployEvent" = "BeforeDeployEvent",
+  "AfterDeployEvent" = "AfterDeployEvent",
+  "AfterCompileEvent" = "AfterCompileEvent",
+  "BeforeCompileEvent" = "BeforeCompileEvent",
+  "OnStart" = "OnStart",
+  "OnFail" = "OnFail",
+  "OnCompletion" = "OnCompletion",
+  "OnSuccess" = "OnSuccess",
+  "Deploy" = "Deploy",
 }
 
 export type BaseEvent = {
@@ -287,7 +287,7 @@ export class GroupedDependencies {
   exclude(...elementName: string[]): GroupedDependencies {
     const newBindings = this.dependencies.filter((target) => {
       const fullExpr = new RegExp(
-        elementName.map((elementName: string) => elementName).join('|')
+        elementName.map((elementName: string) => elementName).join("|")
       );
 
       return !fullExpr.test(target.name);
@@ -341,7 +341,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeDeployEvent'],
+      EventType["BeforeDeployEvent"],
       this.dependencies,
       usages,
       this.moduleSession
@@ -375,7 +375,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterDeployEvent'],
+      EventType["AfterDeployEvent"],
       this.dependencies,
       usages,
       this.moduleSession
@@ -409,7 +409,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeCompileEvent'],
+      EventType["BeforeCompileEvent"],
       this.dependencies,
       usages,
       this.moduleSession
@@ -443,7 +443,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterCompileEvent'],
+      EventType["AfterCompileEvent"],
       this.dependencies,
       usages,
       this.moduleSession
@@ -477,7 +477,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['OnChangeEvent'],
+      EventType["OnChangeEvent"],
       this.dependencies,
       usages,
       this.moduleSession
@@ -515,7 +515,7 @@ export class ContractBinding extends Binding {
   public subModuleNameDepth: string[];
   public subModule: string;
 
-  public bytecode: string = '';
+  public bytecode: string = "";
   public abi: JsonFragment[] | undefined;
   public library: boolean = false;
   public libraries: SingleContractLinkReference | undefined;
@@ -617,7 +617,7 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      const eventName = this.eventSession?.get(clsNamespaces.EVENT_NAME) || '';
+      const eventName = this.eventSession?.get(clsNamespaces.EVENT_NAME) || "";
       throw new ContractNotDeployedError(
         this.name,
         this.contractName,
@@ -744,7 +744,7 @@ export class ContractBinding extends Binding {
   ): ContractBinding {
     const getFunctionName = opts?.getterFunc
       ? opts.getterFunc
-      : 'get' + createFuncName.substr(5);
+      : "get" + createFuncName.substr(5);
     const getFunctionArgs = opts?.getterArgs ? opts.getterArgs : [];
 
     const child = m.contract(childName);
@@ -802,7 +802,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeDeployEvent'],
+      EventType["BeforeDeployEvent"],
       [this],
       usages,
       this.moduleSession
@@ -842,7 +842,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterDeployEvent'],
+      EventType["AfterDeployEvent"],
       [this],
       usages,
       this.moduleSession
@@ -893,7 +893,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeCompileEvent'],
+      EventType["BeforeCompileEvent"],
       [this],
       usages,
       this.moduleSession
@@ -932,7 +932,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterCompileEvent'],
+      EventType["AfterCompileEvent"],
       [this],
       usages,
       this.moduleSession
@@ -971,7 +971,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['OnChangeEvent'],
+      EventType["OnChangeEvent"],
       [this],
       usages,
       this.moduleSession
@@ -1192,10 +1192,10 @@ export class ContractInstance {
         ) {
           this.prompter.contractFunctionAlreadyExecuted(fragment.name, ...args);
           cli.info(
-            'Contract function already executed: ',
+            "Contract function already executed: ",
             fragment.name,
             ...args,
-            '... skipping'
+            "... skipping"
           );
 
           this.contractBinding.contractTxProgress = ++contractTxIterator;
@@ -1370,7 +1370,7 @@ export class IgnitionSigner {
         throw new WalletTransactionNotInEventError();
       }
 
-      await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
+      await this.prompter.sendingTx(currentEventName, "raw wallet transaction");
 
       let ignitionTransaction;
       try {
@@ -1382,7 +1382,7 @@ export class IgnitionSigner {
       }
 
       const txResp = await this._signer.sendTransaction(ignitionTransaction);
-      this.prompter.sentTx(currentEventName, 'raw wallet transaction');
+      this.prompter.sentTx(currentEventName, "raw wallet transaction");
       await this.moduleStateRepo.storeEventTransactionData(
         address,
         undefined,
@@ -1449,7 +1449,7 @@ export class ContractBindingMetaData {
   public name: string;
   public contractName: string;
   public args: Arguments;
-  public bytecode: string = '';
+  public bytecode: string = "";
   public abi: JsonFragment[] | undefined;
   public libraries: SingleContractLinkReference | undefined;
   public txData: TransactionData | undefined;
@@ -1548,7 +1548,7 @@ export class ModuleBuilder {
    */
   contract(name: string, ...args: Arguments): ContractBinding {
     if (checkIfExist(this.bindings[name])) {
-      cli.info('Contract already bind to the module - ', name); // @TODO add typed error
+      cli.info("Contract already bind to the module - ", name); // @TODO add typed error
       cli.exit(0);
     }
 
@@ -1668,7 +1668,7 @@ export class ModuleBuilder {
   getParam(name: string): any {
     if (!checkIfExist(this.params)) {
       throw new CliError(
-        'This module doesnt have params, check if you are deploying right module!'
+        "This module doesnt have params, check if you are deploying right module!"
       );
     }
 
@@ -1775,7 +1775,7 @@ export class ModuleBuilder {
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
 
-    const networkId = process.env.IGNITION_NETWORK_ID || '';
+    const networkId = process.env.IGNITION_NETWORK_ID || "";
     const resolver = await m.getRegistry();
 
     for (const [eventName, event] of Object.entries(events)) {

@@ -1,30 +1,30 @@
-import { generateErrorMessage, ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import { SingleBar } from 'cli-progress';
-import cli from 'cli-ux';
-import chalk from 'chalk';
-import { checkIfExist } from '../util';
+import { generateErrorMessage, ILogging } from "./index";
+import { ModuleState } from "../../modules/states/module";
+import { SingleBar } from "cli-progress";
+import cli from "cli-ux";
+import chalk from "chalk";
+import { checkIfExist } from "../util";
 import {
   CliError,
   DeniedConfirmation,
   ModuleContextMissingInLogger,
-} from '../../types/errors';
-import { FileLogging } from './file_logging';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+} from "../../types/errors";
+import { FileLogging } from "./file_logging";
+import { EventType } from "../../../interfaces/hardhat_ignition";
 
 export enum StateElementStatus {
-  'NOT_EXECUTED' = 'not executed',
-  'RUNNING' = 'running',
-  'SUCCESSFUL' = 'successful',
-  'DEPLOYED' = 'already executed/deployed',
-  'FAILED' = 'failed',
+  "NOT_EXECUTED" = "not executed",
+  "RUNNING" = "running",
+  "SUCCESSFUL" = "successful",
+  "DEPLOYED" = "already executed/deployed",
+  "FAILED" = "failed",
 }
 
 enum DescActionList {
-  'SKIPPED' = 'skipped',
-  'SUCCESSFUL' = 'SUCCESSFUL',
-  'CREATE' = 'create',
-  'LOWER_GAS_PRICE' = 'waiting for lower gas price',
+  "SKIPPED" = "skipped",
+  "SUCCESSFUL" = "SUCCESSFUL",
+  "CREATE" = "create",
+  "LOWER_GAS_PRICE" = "waiting for lower gas price",
 }
 
 export class SimpleOverviewLogger extends FileLogging implements ILogging {
@@ -52,15 +52,15 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   async parallelizationExperimental() {
     cli.info(
       chalk.yellow(
-        'WARNING: This feature is experimental, please avoid using it while deploying to production'
+        "WARNING: This feature is experimental, please avoid using it while deploying to production"
       )
     );
-    cli.confirm('Confirm you are willing to continue');
+    cli.confirm("Confirm you are willing to continue");
     const yes = await cli.confirm(
-      'Do you wish to continue with deployment of this module? (Y/n)'
+      "Do you wish to continue with deployment of this module? (Y/n)"
     );
     if (!yes) {
-      throw new DeniedConfirmation('Confirmation has been declined.');
+      throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
@@ -76,22 +76,22 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     super.startModuleDeploy(moduleName, moduleState);
 
     this.currentModuleName = moduleName;
-    cli.info(chalk.bold('\n\nDeploy module - ', chalk.green(moduleName)));
+    cli.info(chalk.bold("\n\nDeploy module - ", chalk.green(moduleName)));
 
     this.moduleBars[moduleName] = new SingleBar({
       clearOnComplete: false,
       synchronousUpdate: true,
       fps: 100,
       format: `# ${chalk.bold(
-        '{module}'
+        "{module}"
       )} | {percentage}% | {value}/{total} | Current element: ${chalk.bold(
-        '{element}'
+        "{element}"
       )} -> status: {status} | Action: {action}`,
     });
     this.moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
       module: this.currentModuleName,
-      element: 'N/A',
-      status: 'N/A',
+      element: "N/A",
+      status: "N/A",
     });
   }
 
@@ -146,7 +146,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
-      action: 'N/A',
+      action: "N/A",
     });
   }
 
@@ -159,11 +159,11 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: this.currentModuleName,
       status: StateElementStatus.SUCCESSFUL,
-      action: 'N/A',
+      action: "N/A",
     });
     this.moduleBars[this.currentModuleName].stop();
 
-    this.currentModuleName = '';
+    this.currentModuleName = "";
 
     cli.info(summary);
   }
@@ -188,7 +188,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
       module: this.currentModuleName,
       element: elementName,
       status: StateElementStatus.SUCCESSFUL,
-      action: 'N/A',
+      action: "N/A",
     });
   }
 
@@ -199,7 +199,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   nothingToDeploy(): void {
     super.nothingToDeploy();
     cli.info(
-      'State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.'
+      "State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how."
     );
     cli.exit(0);
   }
@@ -220,14 +220,14 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     return;
   }
 
-  sendingTx(eventName: string, functionName: string = 'CREATE'): void {
+  sendingTx(eventName: string, functionName: string = "CREATE"): void {
     super.sendingTx(eventName, functionName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
     }
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
       throw new CliError(
-        'Current module not found when trying to log transactions'
+        "Current module not found when trying to log transactions"
       );
     }
 
@@ -239,7 +239,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  sentTx(eventName: string, functionName: string = 'CREATE'): void {
+  sentTx(eventName: string, functionName: string = "CREATE"): void {
     super.sentTx(eventName, functionName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -247,7 +247,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
       throw new CliError(
-        'Current module not found when trying to log transactions'
+        "Current module not found when trying to log transactions"
       );
     }
 
@@ -262,7 +262,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   transactionConfirmation(
     confirmationNumber: number,
     eventName: string,
-    functionName: string = 'CREATE'
+    functionName: string = "CREATE"
   ): void {
     super.transactionConfirmation(confirmationNumber, eventName, functionName);
 
@@ -271,7 +271,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     }
     if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
       throw new CliError(
-        'Current module not found when trying to log transactions'
+        "Current module not found when trying to log transactions"
       );
     }
 
@@ -298,7 +298,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   generatedTypes(): void {
     super.generatedTypes();
     cli.info(
-      'Successfully generated module types, look under your deployments folder for .d.ts file.'
+      "Successfully generated module types, look under your deployments folder for .d.ts file."
     );
   }
 
@@ -313,7 +313,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   async wrongNetwork(): Promise<boolean> {
     super.wrongNetwork();
     return await cli.confirm(
-      'Contracts are missing on the network, do you wish to continue? (Y/n)'
+      "Contracts are missing on the network, do you wish to continue? (Y/n)"
     );
   }
 

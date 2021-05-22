@@ -1,6 +1,6 @@
-import path from 'path';
-import fs from 'fs';
-import { Module } from '../../../interfaces/hardhat_ignition';
+import path from "path";
+import fs from "fs";
+import { Module } from "../../../interfaces/hardhat_ignition";
 
 export class ModuleTypings {
   constructor() {}

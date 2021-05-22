@@ -1,11 +1,11 @@
-import { ContractFunction } from '@ethersproject/contracts';
-import { checkIfExist } from '../../services/utils/util';
+import { ContractFunction } from "@ethersproject/contracts";
+import { checkIfExist } from "../../services/utils/util";
 import {
   UnexpectedValueError,
   ValueMismatch,
-} from '../../services/types/errors';
-import { ethers } from 'ethers';
-import { ContractBinding } from '../hardhat_ignition';
+} from "../../services/types/errors";
+import { ethers } from "ethers";
+import { ContractBinding } from "../hardhat_ignition";
 
 /**
  * This function is checking if `get_StorageAt` call for `slot` in `contract` is same as `expectedValue`.
@@ -33,7 +33,7 @@ export async function expectSlotRead(
 
   if (expectedValue._isContractBinding) {
     const address = expectedValue.deployMetaData.contractAddress.toLowerCase();
-    const slotAddress = '0x' + value.substr(26);
+    const slotAddress = "0x" + value.substr(26);
 
     if (slotAddress == address) {
       return true;

@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 export class DeploymentFileRepo {
   private deploymentPath: string | undefined;
@@ -23,7 +23,7 @@ export class DeploymentFileRepo {
     fs.writeFileSync(
       path.resolve(this.deploymentPath, this.deploymentFile),
       fileContent,
-      { encoding: 'utf8' }
+      { encoding: "utf8" }
     );
   }
 }

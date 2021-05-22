@@ -1,6 +1,6 @@
-import { ModuleStateFile } from './module';
-import { checkIfExist } from '../../utils/util';
-import { BindingsConflict } from '../../types/errors';
+import { ModuleStateFile } from "./module";
+import { checkIfExist } from "../../utils/util";
+import { BindingsConflict } from "../../types/errors";
 
 export class StateResolver {
   static mergeStates(

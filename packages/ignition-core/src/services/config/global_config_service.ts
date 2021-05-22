@@ -1,13 +1,10 @@
-import * as path from 'path';
-import fs from 'fs';
-import { cli } from 'cli-ux';
+import * as path from "path";
+import fs from "fs";
+import { cli } from "cli-ux";
 
-const IGNITION_GLOBAL_FILE_NAME = '.hardhat-ignition';
+const IGNITION_GLOBAL_FILE_NAME = ".hardhat-ignition";
 
-const {
-  CI,
-  HOME
-} = process.env;
+const { CI, HOME } = process.env;
 
 export class GlobalConfigService {
   private readonly homePath: string;
@@ -26,7 +23,7 @@ export class GlobalConfigService {
   }
 
   async mustConfirmConsent() {
-    if (CI == 'true') {
+    if (CI == "true") {
       return;
     }
 
@@ -38,7 +35,7 @@ export class GlobalConfigService {
       return;
     }
     const confirm = await cli.confirm(
-      'We are gathering some error reporting data, do you want to opt in? (Y/n)'
+      "We are gathering some error reporting data, do you want to opt in? (Y/n)"
     );
 
     fs.writeFileSync(globalFilePath, `IGNITION_ERROR_REPORTING=${confirm}`);
@@ -47,7 +44,7 @@ export class GlobalConfigService {
   }
 
   checkConsent(): boolean {
-    if (CI == 'true') {
+    if (CI == "true") {
       return false;
     }
 
@@ -60,7 +57,7 @@ export class GlobalConfigService {
     }
 
     fs.readFileSync(globalConfigFilePath);
-    require('dotenv').config({path: globalConfigFilePath});
-    return process.env.IGNITION_ERROR_REPORTING == 'true';
+    require("dotenv").config({ path: globalConfigFilePath });
+    return process.env.IGNITION_ERROR_REPORTING == "true";
   }
 }
