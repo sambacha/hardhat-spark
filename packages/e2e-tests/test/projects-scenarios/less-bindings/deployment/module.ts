@@ -1,10 +1,10 @@
-import { ModuleBuilder, buildModule } from 'ignition-core';
+import { buildModule, ModuleBuilder } from "ignition-core";
 
 export const ExampleModule = buildModule(
-  'ExampleModule',
+  "ExampleModule",
   async (m: ModuleBuilder) => {
     // Bind contracts for deployment.
-    m.contract('Example');
+    m.contract("Example");
     // m.contract('SecondExample');
   }
 );
