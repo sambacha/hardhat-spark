@@ -1,20 +1,20 @@
-import * as path from 'path';
 import {
   IgnitionCore,
-  IIgnitionUsage,
-  ModuleStateFile,
-  Module,
   IgnitionParams,
-  IgnitionServices,
   IgnitionRepos,
+  IgnitionServices,
+  IIgnitionUsage,
+  Module,
   ModuleParams,
-} from 'ignition-core';
+  ModuleStateFile,
+} from "ignition-core";
+import * as path from "path";
 
-export type ConfigFlags = {
+export interface ConfigFlags {
   networkId: string;
   networkName: string;
   rpcProvider?: string;
-};
+}
 
 export class IgnitionTests implements IIgnitionUsage {
   public readonly networkName: string;
@@ -31,7 +31,7 @@ export class IgnitionTests implements IIgnitionUsage {
     this.core = new IgnitionCore(params, services, repos, moduleParams);
   }
 
-  async init() {
+  public async init() {
     await this.core.mustInit(
       this.core.params,
       this.core.customServices,
@@ -40,22 +40,22 @@ export class IgnitionTests implements IIgnitionUsage {
     );
   }
 
-  cleanup() {
+  public cleanup() {
     // @ts-ignore
     this.core.moduleStateRepo.clear();
   }
 
-  async setStateFile(moduleName: string, stateFile: ModuleStateFile) {
+  public async setStateFile(moduleName: string, stateFile: ModuleStateFile) {
     // @ts-ignore
     await this.core.moduleStateRepo.storeNewState(moduleName, stateFile);
   }
 
-  async getStateFile(moduleName: string): Promise<ModuleStateFile> {
+  public async getStateFile(moduleName: string): Promise<ModuleStateFile> {
     // @ts-ignore
     return this.core.moduleStateRepo.getStateIfExist(moduleName);
   }
 
-  async reInit(
+  public async reInit(
     params: IgnitionParams,
     services: IgnitionServices,
     repos: IgnitionRepos,
@@ -64,11 +64,11 @@ export class IgnitionTests implements IIgnitionUsage {
     await this.core.mustInit(params, services, repos, moduleParams);
   }
 
-  async deploy(m: Module): Promise<void> {
+  public async deploy(m: Module): Promise<void> {
     await this.core.deploy(this.networkName, m, false);
   }
 
-  async diff(m: Module): Promise<void> {
+  public async diff(m: Module): Promise<void> {
     await this.core.diff(this.networkName, m, false);
   }
 }
