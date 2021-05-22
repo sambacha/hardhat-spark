@@ -1,82 +1,82 @@
 import { cli } from 'cli-ux';
 import * as cls from 'cls-hooked';
-import { Module } from './src/interfaces/hardhat_ignition';
-import { checkIfExist } from './src/services/utils/util';
-import { ModuleStateRepo } from './src/services/modules/states/state_repo';
-import { ModuleResolver } from './src/services/modules/module_resolver';
+import { Module } from './interfaces/hardhat_ignition';
+import { checkIfExist } from './services/utils/util';
+import { ModuleStateRepo } from './services/modules/states/state_repo';
+import { ModuleResolver } from './services/modules/module_resolver';
 import {
   EthTxGenerator,
   EventTxExecutor,
   TransactionManager,
   TxExecutor,
-} from './src/services/ethereum/transactions';
-import { ModuleState } from './src/services/modules/states/module';
-import { ModuleTypings } from './src/services/modules/typings';
-import { EmptyLogger, ILogging } from './src/services/utils/logging';
-import { WalletWrapper } from './src/services/ethereum/wallet/wrapper';
+} from './services/ethereum/transactions';
+import { ModuleState } from './services/modules/states/module';
+import { ModuleTypings } from './services/modules/typings';
+import { EmptyLogger, ILogging } from './services/utils/logging';
+import { WalletWrapper } from './services/ethereum/wallet/wrapper';
 import { ethers } from 'ethers';
-import { GasPriceBackoff } from './src/services/types/config';
+import { GasPriceBackoff } from './services/types/config';
 import {
   EmptySigners,
   ServicesNotInitialized,
-} from './src/services/types/errors';
-import { ModuleDeploymentSummaryService } from './src/services/modules/module_deployment_summary';
+} from './services/types/errors';
+import { ModuleDeploymentSummaryService } from './services/modules/module_deployment_summary';
 import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
   DEFAULT_RPC_PROVIDER,
-} from './src/services/utils/constants';
-import { OverviewLogger } from './src/services/utils/logging/react-terminal';
-import { GlobalConfigService } from './src/services/config';
-import { ErrorReporter } from './src/services/utils/analytics';
-import { IErrorReporting } from './src/services/utils/analytics';
-import { errorHandling } from './src/services/utils/util';
-import { GasPriceCalculator } from './src/services/ethereum/gas';
-import { EventHandler } from './src/services/modules/events/handler';
-import { EthClient } from './src/services/ethereum/client';
-import { IModuleRegistryResolver } from './src/services/modules/states/registry';
-import { IGasProvider } from './src/services/ethereum/gas';
+} from './services/utils/constants';
+import { OverviewLogger } from './services/utils/logging/react-terminal';
+import { GlobalConfigService } from './services/config';
+import { ErrorReporter } from './services/utils/analytics';
+import { IErrorReporting } from './services/utils/analytics';
+import { errorHandling } from './services/utils/util';
+import { GasPriceCalculator } from './services/ethereum/gas';
+import { EventHandler } from './services/modules/events/handler';
+import { EthClient } from './services/ethereum/client';
+import { IModuleRegistryResolver } from './services/modules/states/registry';
+import { IGasProvider } from './services/ethereum/gas';
 import {
   INonceManager,
   ITransactionSigner,
-} from './src/services/ethereum/transactions';
+} from './services/ethereum/transactions';
 
-export * from './src/interfaces/hardhat_ignition';
-export * from './src/interfaces/helper/expectancy';
-export * from './src/interfaces/helper/macros';
+export * from './interfaces/hardhat_ignition';
+export * from './interfaces/helper/expectancy';
+export * from './interfaces/helper/macros';
 
-export * from './src/services/config';
-export * from './src/services/types';
-export * from './src/services/ethereum/compiler';
-export * from './src/services/ethereum/gas';
-export * from './src/services/ethereum/transactions';
-export * from './src/services/ethereum/transactions/manager';
-export * from './src/services/ethereum/wallet/wrapper';
-export * from './src/services/modules/states/module';
-export * from './src/services/modules/states/registry';
-export * from './src/services/modules/states/registry/remote_bucket_storage';
-export * from './src/services/modules/typings';
-export * from './src/services/utils/util';
-export * from './src/services/ethereum/gas/calculator';
-export * from './src/services/ethereum/transactions/generator';
-export * from './src/services/modules/states/state_repo';
-export * from './src/services/modules/module_resolver';
-export * from './src/services/modules/events/handler';
-export * from './src/services/utils/logging';
-export * from './src/services/types/migration';
-export * from './src/services/modules/states/state_migration_service';
-export * from './src/services/tutorial/tutorial_service';
-export * from './src/services/tutorial/system_crawler';
-export * from './src/services/tutorial/deployment_file_gen';
-export * from './src/services/tutorial/deployment_file_repo';
-export * from './src/services/modules/module_migration';
-export * from './src/services/ethereum/client';
-export * from './src/services/modules/module_usage';
-export * from './src/services/modules/module_deployment_summary';
-export * from './src/services/config';
-export * from './src/services/types';
-export * from './src/services/types/config';
-export * from './src/services/utils/analytics/index';
+export * from './services/config';
+export * from './services/types';
+export * from './services/ethereum/compiler';
+export * from './services/ethereum/gas';
+export * from './services/ethereum/transactions';
+export * from './services/ethereum/transactions/manager';
+export * from './services/ethereum/wallet/wrapper';
+export * from './services/modules/states/module';
+export * from './services/modules/states/registry';
+export * from './services/modules/states/registry/remote_bucket_storage';
+export * from './services/modules/typings';
+export * from './services/utils/util';
+export * from './services/ethereum/gas/calculator';
+export * from './services/ethereum/transactions/generator';
+export * from './services/modules/states/state_repo';
+export * from './services/modules/module_resolver';
+export * from './services/modules/events/handler';
+export * from './services/utils/logging';
+export * from './services/types/migration';
+export * from './services/modules/states/state_migration_service';
+export * from './services/tutorial/tutorial_service';
+export * from './services/tutorial/system_crawler';
+export * from './services/tutorial/deployment_file_gen';
+export * from './services/tutorial/deployment_file_repo';
+export * from './services/modules/module_migration';
+export * from './services/ethereum/client';
+export * from './services/modules/module_usage';
+export * from './services/modules/module_deployment_summary';
+export * from './services/config';
+export * from './services/types';
+export * from './services/types/config';
+export * from './services/utils/analytics';
 
 export interface DiffArgs {
   moduleFilePath?: string;

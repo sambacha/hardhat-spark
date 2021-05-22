@@ -52,7 +52,7 @@ import { EventTxExecutor } from '../services/ethereum/transactions';
 import { Namespace } from 'cls-hooked';
 import { Deferrable } from '@ethersproject/properties';
 import { clsNamespaces } from '../services/utils/continuation_local_storage';
-import { ModuleParams } from '../../index';
+import { ModuleParams } from '../index';
 
 export type AutoBinding = any | Binding | ContractBinding;
 
