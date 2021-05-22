@@ -3,7 +3,7 @@ extension:
 timeout: 10000
 jobs: 1
 require:
-  - '../../node_modules/ts-node/register'
+  - 'ts-node/register'
 recursive: true
 exit: true
 forbid-only: true
