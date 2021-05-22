@@ -1,13 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../config/typescript/tsconfig.json",
   "compilerOptions": {
-    "outDir": "lib",
-    "jsx": "react"
+    "outDir": "dist"
   },
   "exclude": [
-    "lib"
-  ],
-  "include": [
-    "typescript.ts",
+    "./dist",
+    "./node_modules"
   ]
 }
