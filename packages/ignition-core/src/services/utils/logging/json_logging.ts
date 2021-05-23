@@ -1,14 +1,16 @@
-import { generateErrorMessage, ILogging } from "./index";
-import { ModuleState } from "../../modules/states/module";
 import { cli } from "cli-ux";
+
 import { EventType } from "../../../interfaces/hardhat_ignition";
+import { ModuleState } from "../../modules/states/module";
+
+import { generateErrorMessage, ILogging } from "./index";
 
 export class JsonLogger implements ILogging {
   private currentModuleName: string | undefined;
 
   constructor() {}
 
-  alreadyDeployed(elementName: string): void {
+  public alreadyDeployed(elementName: string): void {
     cli.info(
       JSON.stringify({
         name: "Already deployed",
@@ -19,7 +21,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  bindingExecution(bindingName: string): void {
+  public bindingExecution(bindingName: string): void {
     cli.info(
       JSON.stringify({
         name: "Started deploying binding",
@@ -30,7 +32,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  logError(error: Error): void {
+  public logError(error: Error): void {
     const { message, stack } = generateErrorMessage(error);
 
     cli.error(
@@ -44,7 +46,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  eventExecution(eventName: string): void {
+  public eventExecution(eventName: string): void {
     cli.info(
       JSON.stringify({
         name: "Started executing event",
@@ -55,7 +57,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  executeContractFunction(contractFunction: string): void {
+  public executeContractFunction(contractFunction: string): void {
     cli.info(
       JSON.stringify({
         name: "Started executing contract function",
@@ -66,7 +68,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  executeWalletTransfer(from: string, to: string): void {
+  public executeWalletTransfer(from: string, to: string): void {
     cli.info(
       JSON.stringify({
         name: "Executed wallet transaction",
@@ -78,7 +80,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishModuleDeploy(): void {
+  public finishModuleDeploy(): void {
     cli.info(
       JSON.stringify({
         name: "Finished module deployment",
@@ -89,7 +91,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishedBindingExecution(bindingName: string): void {
+  public finishedBindingExecution(bindingName: string): void {
     cli.info(
       JSON.stringify({
         name: "Finished binding deployment",
@@ -100,7 +102,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
+  public finishedEventExecution(eventName: string, eventType: EventType): void {
     cli.info(
       JSON.stringify({
         name: "Finished event execution",
@@ -112,7 +114,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishedExecutionOfContractFunction(functionName: string): void {
+  public finishedExecutionOfContractFunction(functionName: string): void {
     cli.info(
       JSON.stringify({
         name: "Finished execution of contract function",
@@ -123,7 +125,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {
     cli.info(
       JSON.stringify({
         name: "Finished execution of wallet transaction",
@@ -135,7 +137,7 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  nothingToDeploy(): void {
+  public nothingToDeploy(): void {
     cli.info(
       JSON.stringify({
         name: "Nothing to deploy",
@@ -146,15 +148,15 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  promptContinueDeployment(): Promise<void> {
+  public promptContinueDeployment(): Promise<void> {
     return Promise.resolve();
   }
 
-  promptExecuteTx(): Promise<void> {
+  public promptExecuteTx(): Promise<void> {
     return Promise.resolve();
   }
 
-  promptSignedTransaction(tx: string): void {
+  public promptSignedTransaction(tx: string): void {
     cli.info(
       JSON.stringify({
         name: "Singed tx",
@@ -165,31 +167,34 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  sendingTx(elementName: string, functionName?: string): void {
+  public sendingTx(elementName: string, functionName?: string): void {
     cli.info(
       JSON.stringify({
         name: "Sending transaction for contract",
         fields: {
-          elementName: elementName,
-          functionName: functionName,
+          elementName,
+          functionName,
         },
       })
     );
   }
 
-  sentTx(elementName: string, functionName: string = "CREATE"): void {
+  public sentTx(elementName: string, functionName: string = "CREATE"): void {
     cli.info(
       JSON.stringify({
         name: "Sent transaction for contract",
         fields: {
-          elementName: elementName,
-          functionName: functionName,
+          elementName,
+          functionName,
         },
       })
     );
   }
 
-  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
+  public startModuleDeploy(
+    moduleName: string,
+    moduleStates: ModuleState
+  ): void {
     cli.info(
       JSON.stringify({
         name: "Started module deployment",
@@ -201,7 +206,7 @@ export class JsonLogger implements ILogging {
     this.currentModuleName = moduleName;
   }
 
-  transactionConfirmation(
+  public transactionConfirmation(
     confirmationNumber: number,
     elementName: string,
     functionName: string = "CREATE"
@@ -218,11 +223,11 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  transactionReceipt(): void {}
+  public transactionReceipt(): void {}
 
-  waitTransactionConfirmation(): void {}
+  public waitTransactionConfirmation(): void {}
 
-  generatedTypes(): void {
+  public generatedTypes(): void {
     cli.info(
       JSON.stringify({
         name: "Successfully generated module types",
@@ -230,17 +235,17 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishedModuleUsageGeneration(moduleName: string) {}
+  public finishedModuleUsageGeneration(moduleName: string) {}
 
-  startingModuleUsageGeneration(moduleName: string) {}
+  public startingModuleUsageGeneration(moduleName: string) {}
 
-  async parallelizationExperimental() {}
+  public async parallelizationExperimental() {}
 
-  wrongNetwork(): Promise<boolean> {
+  public wrongNetwork(): Promise<boolean> {
     return Promise.resolve(true);
   }
 
-  gasPriceIsLarge(backoffTime: number) {
+  public gasPriceIsLarge(backoffTime: number) {
     cli.info(
       JSON.stringify({
         name: "Gas price is too large, waiting to gets lower.",
@@ -249,11 +254,11 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  finishModuleResolving(): void {}
+  public finishModuleResolving(): void {}
 
-  startModuleResolving(): void {}
+  public startModuleResolving(): void {}
 
-  contractFunctionAlreadyExecuted(
+  public contractFunctionAlreadyExecuted(
     contractFunction: string,
     ...args: any[]
   ): void {}

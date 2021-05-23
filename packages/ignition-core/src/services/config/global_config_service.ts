@@ -1,6 +1,6 @@
-import * as path from "path";
-import fs from "fs";
 import { cli } from "cli-ux";
+import fs from "fs";
+import * as path from "path";
 
 const IGNITION_GLOBAL_FILE_NAME = ".hardhat-ignition";
 
@@ -22,7 +22,7 @@ export class GlobalConfigService {
     }
   }
 
-  async mustConfirmConsent() {
+  public async mustConfirmConsent() {
     if (CI == "true") {
       return;
     }
@@ -43,7 +43,7 @@ export class GlobalConfigService {
     return confirm;
   }
 
-  checkConsent(): boolean {
+  public checkConsent(): boolean {
     if (CI == "true") {
       return false;
     }

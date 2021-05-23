@@ -1,20 +1,22 @@
-import { ContractBinding } from "../../../interfaces/hardhat_ignition";
-import { checkIfExist, delay } from "../../utils/util";
 import { BigNumber, ethers, providers } from "ethers";
+
+import { ContractBinding } from "../../../interfaces/hardhat_ignition";
 import { ModuleState } from "../../modules/states/module";
 import { SingleContractLinkReference } from "../../types/artifacts/libraries";
-import { CliError, GasPriceBackoffError } from "../../types/errors";
-import { IGasCalculator, IGasPriceCalculator } from "../gas";
-import { INonceManager, ITransactionSigner } from "./index";
 import { GasPriceBackoff } from "../../types/config";
+import { CliError, GasPriceBackoffError } from "../../types/errors";
 import { ILogging } from "../../utils/logging";
+import { checkIfExist, delay } from "../../utils/util";
+import { IGasCalculator, IGasPriceCalculator } from "../gas";
 
-export type TxMetaData = {
-  gasPrice?: BigNumber;
-  nonce?: number;
-};
+import {
+  INonceManager,
+  ITransactionGenerator,
+  ITransactionSigner,
+  TxMetaData,
+} from "./index";
 
-export class EthTxGenerator implements INonceManager, ITransactionSigner {
+export class EthTxGenerator implements ITransactionGenerator {
   private gasPriceCalculator: IGasPriceCalculator;
   private gasCalculator: IGasCalculator;
   private readonly provider: providers.JsonRpcProvider;
@@ -50,19 +52,19 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     this.gasPriceBackoff = gasPriceBackoff;
   }
 
-  changeGasPriceCalculator(newGasPriceCalculator: IGasPriceCalculator) {
+  public changeGasPriceCalculator(newGasPriceCalculator: IGasPriceCalculator) {
     this.gasPriceCalculator = newGasPriceCalculator;
   }
 
-  changeNonceManager(newNonceManager: INonceManager) {
+  public changeNonceManager(newNonceManager: INonceManager) {
     this.nonceManager = newNonceManager;
   }
 
-  changeTransactionSigner(newTransactionSigner: ITransactionSigner) {
+  public changeTransactionSigner(newTransactionSigner: ITransactionSigner) {
     this.transactionSigner = newTransactionSigner;
   }
 
-  async initTx(moduleState: ModuleState): Promise<ModuleState> {
+  public async initTx(moduleState: ModuleState): Promise<ModuleState> {
     for (const [stateElementName, stateElement] of Object.entries(
       moduleState
     )) {
@@ -84,7 +86,7 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     return moduleState;
   }
 
-  addLibraryAddresses(
+  public addLibraryAddresses(
     bytecode: string,
     binding: ContractBinding,
     moduleState: ModuleState
@@ -112,11 +114,11 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     return bytecode;
   }
 
-  async fetchTxData(walletAddress: string): Promise<TxMetaData> {
+  public async fetchTxData(walletAddress: string): Promise<TxMetaData> {
     let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
 
     if (this.gasPriceBackoff && checkIfExist(this.gasPriceBackoff)) {
-      gasPrice = await this.fetchBackoffGasPrice(
+      gasPrice = await this._fetchBackoffGasPrice(
         this.gasPriceBackoff.numberOfRetries
       );
     }
@@ -129,7 +131,27 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
     };
   }
 
-  private async fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
+  public async generateSingedTx(
+    value: number,
+    data: string,
+    signer?: ethers.Signer | undefined
+  ): Promise<string> {
+    return this.transactionSigner.generateSingedTx(value, data, signer);
+  }
+
+  public getAndIncrementTransactionCount(
+    walletAddress: string
+  ): Promise<number> {
+    return this.nonceManager.getAndIncrementTransactionCount(walletAddress);
+  }
+
+  public async getCurrentTransactionCount(
+    walletAddress: string
+  ): Promise<number> {
+    return this.nonceManager.getCurrentTransactionCount(walletAddress);
+  }
+
+  private async _fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
     let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
     if (!this.gasPriceBackoff) {
       return gasPrice as BigNumber;
@@ -147,26 +169,10 @@ export class EthTxGenerator implements INonceManager, ITransactionSigner {
       if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
         this.prompter.gasPriceIsLarge(this.gasPriceBackoff.backoffTime);
         await delay(this.gasPriceBackoff.backoffTime);
-        gasPrice = await this.fetchBackoffGasPrice(retries - 1);
+        gasPrice = await this._fetchBackoffGasPrice(retries - 1);
       }
     }
 
     return gasPrice as BigNumber;
-  }
-
-  async generateSingedTx(
-    value: number,
-    data: string,
-    signer?: ethers.Signer | undefined
-  ): Promise<string> {
-    return this.transactionSigner.generateSingedTx(value, data, signer);
-  }
-
-  getAndIncrementTransactionCount(walletAddress: string): Promise<number> {
-    return this.nonceManager.getAndIncrementTransactionCount(walletAddress);
-  }
-
-  async getCurrentTransactionCount(walletAddress: string): Promise<number> {
-    return this.nonceManager.getCurrentTransactionCount(walletAddress);
   }
 }

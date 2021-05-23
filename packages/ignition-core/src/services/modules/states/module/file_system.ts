@@ -1,3 +1,9 @@
+import fs from "fs";
+import path from "path";
+
+import { Mutex } from "../../../utils/mutex/simple_mutex";
+import { ModuleStateRepo } from "../repo/state_repo";
+
 import {
   IModuleState,
   ModuleState,
@@ -5,10 +11,6 @@ import {
   STATE_DIR_NAME,
   STATE_NAME,
 } from "./index";
-import path from "path";
-import fs from "fs";
-import { ModuleStateRepo } from "../state_repo";
-import { Mutex } from "../../../utils/mutex/simple_mutex";
 
 export class FileSystemModuleState implements IModuleState {
   private mutex: Mutex;
@@ -25,7 +27,7 @@ export class FileSystemModuleState implements IModuleState {
     this.mutex = new Mutex();
   }
 
-  async getModuleState(
+  public async getModuleState(
     networkName: string,
     moduleName: string
   ): Promise<ModuleStateFile> {
@@ -47,12 +49,12 @@ export class FileSystemModuleState implements IModuleState {
     );
   }
 
-  async storeStates(
+  public async storeStates(
     networkName: string,
     moduleName: string,
     moduleStates: ModuleState | null
   ): Promise<boolean> {
-    if (moduleStates == undefined) {
+    if (moduleStates === undefined) {
       return true;
     }
 
@@ -77,7 +79,7 @@ export class FileSystemModuleState implements IModuleState {
     return true;
   }
 
-  checkIfSet(moduleName: string, networkName: string): boolean {
+  public checkIfSet(moduleName: string, networkName: string): boolean {
     const dir = path.resolve(
       this.statePath,
       moduleName,

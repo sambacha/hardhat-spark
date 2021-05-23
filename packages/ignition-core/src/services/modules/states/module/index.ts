@@ -4,13 +4,14 @@ import {
   StatefulEvent,
 } from "../../../../interfaces/hardhat_ignition";
 
-export * from "./file_system";
-export * from "./memory";
+export interface ModuleState {
+  [p: string]: ContractBinding | StatefulEvent;
+}
 
-export type ModuleState = { [p: string]: ContractBinding | StatefulEvent };
-export type ModuleStateFile = {
+export interface ModuleStateFile {
   [p: string]: ContractBindingMetaData | StatefulEvent;
-};
+}
+
 export const STATE_DIR_NAME = ".hardhat-ignition";
 export const STATE_NAME = "deployed_module_state.json";
 
@@ -19,11 +20,13 @@ export interface IModuleState {
     networkName: string,
     moduleName: string
   ): Promise<ModuleStateFile>;
+
   storeStates(
     networkName: string,
     moduleName: string,
     moduleState: ModuleState | ModuleStateFile | null
   ): Promise<boolean>;
+
   checkIfSet(moduleName: string, networkName: string): boolean;
 }
 

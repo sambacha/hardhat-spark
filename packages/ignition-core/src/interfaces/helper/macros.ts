@@ -1,11 +1,13 @@
+import { ethers } from "ethers";
+
+import { checkIfExist } from "../../services/utils/util";
 import {
   ContractBinding,
   ContractEvent,
   ModuleBuilder,
 } from "../hardhat_ignition";
+
 import { expectFuncRead, expectSlotRead } from "./expectancy";
-import { ethers } from "ethers";
-import { checkIfExist } from "../../services/utils/util";
 
 /**
  * sendAfterDeploy is fastest way to set new value and validate if the same value is correctly set. It
@@ -28,7 +30,7 @@ export const sendAfterDeploy = (
     getterFunc?: string;
     getterArgs?: any[];
     expectedValue?: any;
-    deps?: (ContractBinding | ContractEvent)[];
+    deps?: Array<ContractBinding | ContractEvent>;
     slot?: string;
   }
 ): ContractEvent => {
@@ -45,7 +47,7 @@ export const sendAfterDeploy = (
     deps.push(...opts.deps);
   }
 
-  const usages: (ContractBinding | ContractEvent)[] = [];
+  const usages: Array<ContractBinding | ContractEvent> = [];
   for (const arg of setterArgs) {
     if (arg?._isContractBinding || checkIfExist(arg?.eventType)) {
       usages.push(arg);
@@ -101,7 +103,7 @@ export const filler = (
       await rootWallet.sendTransaction({
         from: await rootWallet.getAddress(),
         to: await wallets[i].getAddress(),
-        value: value,
+        value,
         gasLimit: 21000,
       });
     }

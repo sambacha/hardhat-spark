@@ -1,11 +1,12 @@
-import path from "path";
 import fs from "fs";
+import path from "path";
+
 import { Module } from "../../../interfaces/hardhat_ignition";
 
 export class ModuleTypings {
   constructor() {}
 
-  generate(
+  public generate(
     deploymentPath: string,
     moduleName: string,
     module: Module | undefined

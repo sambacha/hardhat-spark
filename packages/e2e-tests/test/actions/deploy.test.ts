@@ -231,10 +231,7 @@ describe("ignition deploy", () => {
   // });
 });
 
-async function runExamples(
-  ignition: IgnitionTests,
-  skipSynthethix: boolean = false
-) {
+function runExamples(ignition: IgnitionTests, skipSynthethix: boolean = false) {
   it("should be able to run - examples/all-feature-showcase", async () => {
     const projectFileName = "all-feature-showcase";
     const projectLocation = path.resolve(

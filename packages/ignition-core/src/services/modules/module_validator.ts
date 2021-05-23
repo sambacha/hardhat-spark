@@ -9,7 +9,7 @@ const CONSTRUCTOR_TYPE = "constructor";
 export class ModuleValidator {
   constructor() {}
 
-  validate(
+  public validate(
     bindings: { [name: string]: ContractBinding },
     ABIs: { [name: string]: JsonFragment[] }
   ): void {

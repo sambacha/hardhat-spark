@@ -1,51 +1,53 @@
 import { cli } from "cli-ux";
 import * as cls from "cls-hooked";
-import { Module } from "./interfaces/hardhat_ignition";
-import { checkIfExist } from "./services/utils/util";
-import { ModuleStateRepo } from "./services/modules/states/state_repo";
-import { ModuleResolver } from "./services/modules/module_resolver";
-import {
-  EthTxGenerator,
-  EventTxExecutor,
-  TransactionManager,
-  TxExecutor,
-} from "./services/ethereum/transactions";
-import { ModuleState } from "./services/modules/states/module";
-import { ModuleTypings } from "./services/modules/typings";
-import { EmptyLogger, ILogging } from "./services/utils/logging";
-import { WalletWrapper } from "./services/ethereum/wallet/wrapper";
 import { ethers } from "ethers";
+
+import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
+import { GlobalConfigService } from "./services/config";
+import { EthClient } from "./services/ethereum/client";
+import { IGasProvider } from "./services/ethereum/gas";
+import { GasPriceCalculator } from "./services/ethereum/gas/calculator";
+import {
+  INonceManager,
+  ITransactionSigner,
+} from "./services/ethereum/transactions";
+import { EventTxExecutor } from "./services/ethereum/transactions/event_executor";
+import { TxExecutor } from "./services/ethereum/transactions/executor";
+import { EthTxGenerator } from "./services/ethereum/transactions/generator";
+import { TransactionManager } from "./services/ethereum/transactions/manager";
+import { WalletWrapper } from "./services/ethereum/wallet/wrapper";
+import { EventHandler } from "./services/modules/events/handler";
+import { ModuleDeploymentSummaryService } from "./services/modules/module_deployment_summary";
+import { ModuleResolver } from "./services/modules/module_resolver";
+import { ModuleState } from "./services/modules/states/module";
+import { FileSystemModuleState } from "./services/modules/states/module/file_system";
+import { MemoryModuleState } from "./services/modules/states/module/memory";
+import { IModuleRegistryResolver } from "./services/modules/states/registry";
+import { ModuleStateRepo } from "./services/modules/states/repo/state_repo";
+import { ModuleTypings } from "./services/modules/typings";
 import { GasPriceBackoff } from "./services/types/config";
 import { EmptySigners, ServicesNotInitialized } from "./services/types/errors";
-import { ModuleDeploymentSummaryService } from "./services/modules/module_deployment_summary";
+import { IErrorReporting } from "./services/utils/analytics";
+import { ErrorReporter } from "./services/utils/analytics/analytics_service";
 import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
   DEFAULT_RPC_PROVIDER,
 } from "./services/utils/constants";
+import { ILogging } from "./services/utils/logging";
+import { EmptyLogger } from "./services/utils/logging/empty_logging";
 import { OverviewLogger } from "./services/utils/logging/react-terminal";
-import { GlobalConfigService } from "./services/config";
-import { ErrorReporter } from "./services/utils/analytics";
-import { IErrorReporting } from "./services/utils/analytics";
-import { errorHandling } from "./services/utils/util";
-import { GasPriceCalculator } from "./services/ethereum/gas";
-import { EventHandler } from "./services/modules/events/handler";
-import { EthClient } from "./services/ethereum/client";
-import { IModuleRegistryResolver } from "./services/modules/states/registry";
-import { IGasProvider } from "./services/ethereum/gas";
-import {
-  INonceManager,
-  ITransactionSigner,
-} from "./services/ethereum/transactions";
+import { checkIfExist, errorHandling } from "./services/utils/util";
 
 export * from "./interfaces/hardhat_ignition";
+export * from "./interfaces/module_builders";
 export * from "./interfaces/helper/expectancy";
 export * from "./interfaces/helper/macros";
 
 export * from "./services/config";
 export * from "./services/types";
 export * from "./services/ethereum/compiler";
-export * from "./services/ethereum/gas";
+export * from "./services/ethereum/compiler/hardhat";
 export * from "./services/ethereum/transactions";
 export * from "./services/ethereum/transactions/manager";
 export * from "./services/ethereum/wallet/wrapper";
@@ -54,9 +56,12 @@ export * from "./services/modules/states/registry";
 export * from "./services/modules/states/registry/remote_bucket_storage";
 export * from "./services/modules/typings";
 export * from "./services/utils/util";
+export * from "./services/ethereum/gas";
 export * from "./services/ethereum/gas/calculator";
 export * from "./services/ethereum/transactions/generator";
-export * from "./services/modules/states/state_repo";
+export * from "./services/ethereum/transactions/executor";
+export * from "./services/ethereum/transactions/event_executor";
+export * from "./services/modules/states/repo";
 export * from "./services/modules/module_resolver";
 export * from "./services/modules/events/handler";
 export * from "./services/utils/logging";
@@ -117,45 +122,42 @@ export interface IIgnitionUsage {
   diff(module: Module, logging?: boolean, test?: boolean): Promise<void>;
 }
 
-export type IgnitionParams = {
+export interface IgnitionParams {
   networkName: string;
   networkId: string;
   rpcProvider?: ethers.providers.JsonRpcProvider;
-  signers?: Array<ethers.Signer>;
+  signers?: ethers.Signer[];
   logging?: boolean;
   parallelizeDeployment?: boolean;
   localDeployment?: boolean;
   blockConfirmation?: number;
   gasPriceBackoffMechanism?: GasPriceBackoff;
   test?: boolean;
-};
+}
 
-export type IgnitionServices = {
+export interface IgnitionServices {
   gasPriceProvider?: IGasProvider;
   nonceManager?: INonceManager;
   transactionSigner?: ITransactionSigner;
-};
+}
 
-export type IgnitionRepos = {
+export interface IgnitionRepos {
   registry?: IModuleRegistryResolver;
   resolver?: IModuleRegistryResolver;
-};
-
-export type ModuleParams = { [name: string]: any };
+}
 
 export class IgnitionCore implements IIgnition {
-  private _initialized: boolean = false;
-
   public params: IgnitionParams;
   public customServices: IgnitionServices;
   public repos: IgnitionRepos;
   public moduleParams: ModuleParams;
+  private _initialized: boolean = false;
 
   private networkName: string | undefined;
   private networkId: string | undefined;
   private gasPriceBackoff: GasPriceBackoff | undefined;
   private rpcProvider: ethers.providers.JsonRpcProvider | undefined;
-  private signers: Array<ethers.Signer> | undefined;
+  private signers: ethers.Signer[] | undefined;
   private logger: ILogging | undefined;
 
   private gasProvider: IGasProvider | undefined;
@@ -184,7 +186,7 @@ export class IgnitionCore implements IIgnition {
     this.moduleParams = moduleParams;
   }
 
-  async mustInit(
+  public async mustInit(
     params?: IgnitionParams,
     services?: IgnitionServices,
     repos?: IgnitionRepos,
@@ -248,7 +250,7 @@ export class IgnitionCore implements IIgnition {
     this._initialized = true;
   }
 
-  async deploy(
+  public async deploy(
     networkName: string,
     module: Module,
     logging?: boolean,
@@ -259,7 +261,7 @@ export class IgnitionCore implements IIgnition {
         await this.mustInit(this.params, this.customServices, this.repos);
       }
 
-      if (this.params.logging != logging) {
+      if (this.params.logging !== logging) {
         await this.reInitLogger(!!logging);
       }
 
@@ -373,13 +375,13 @@ export class IgnitionCore implements IIgnition {
     }
   }
 
-  async diff(networkName: string, module: Module, logging?: boolean) {
+  public async diff(networkName: string, module: Module, logging?: boolean) {
     try {
       if (!this._initialized) {
         await this.mustInit(this.params, this.customServices, this.repos);
       }
 
-      if (this.params.logging != logging) {
+      if (this.params.logging !== logging) {
         await this.reInitLogger(!!logging);
       }
 
@@ -432,7 +434,7 @@ export class IgnitionCore implements IIgnition {
     }
   }
 
-  async genTypes(module: Module, deploymentFolder: string) {
+  public async genTypes(module: Module, deploymentFolder: string) {
     try {
       if (!this._initialized) {
         await this.mustInit(this.params, this.customServices, this.repos);
@@ -463,7 +465,7 @@ export class IgnitionCore implements IIgnition {
     }
   }
 
-  async reInitLogger(logging: boolean): Promise<void> {
+  public async reInitLogger(logging: boolean): Promise<void> {
     this.params.logging = logging;
     await this.mustInit(this.params, this.customServices, this.repos);
   }
@@ -481,7 +483,7 @@ export async function defaultInputParams(
   logger: ILogging;
   parallelizeDeployment: boolean;
   errorReporter: IErrorReporting;
-  signers: Array<ethers.Signer>;
+  signers: ethers.Signer[];
   isLocalDeployment: boolean;
 }> {
   const globalConfigService = new GlobalConfigService();
@@ -536,7 +538,7 @@ export async function defaultInputParams(
   }
 
   const signers: ethers.Signer[] = params?.signers || [];
-  if (signers.length == 0) {
+  if (signers.length === 0) {
     throw new EmptySigners();
   }
 
@@ -572,16 +574,18 @@ export async function setupServicesAndEnvironment(
   const gasProvider = new GasPriceCalculator(rpcProvider);
   const eventSession = cls.createNamespace("event");
 
+  const testEnv = params?.test || false;
   const moduleStateRepo = new ModuleStateRepo(
     networkName,
     currentPath,
     false,
-    params?.test || false
+    testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath),
+    testEnv
   );
   const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
 
   process.env.IGNITION_NETWORK_ID = String(networkId);
-  if (signers.length == 0) {
+  if (signers.length === 0) {
     throw new EmptySigners();
   }
 

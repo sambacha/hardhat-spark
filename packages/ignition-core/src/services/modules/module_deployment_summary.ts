@@ -1,21 +1,21 @@
-import { ModuleStateRepo } from "./states/state_repo";
-import { ModuleStateFile } from "./states/module";
+import {
+  TransactionReceipt,
+  TransactionRequest,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider";
+import chalk from "chalk";
+import { BigNumber, ethers } from "ethers";
+
 import {
   ContractBindingMetaData,
   ContractInput,
   StatefulEvent,
   TxData,
 } from "../../interfaces/hardhat_ignition";
-import { BigNumber, ethers } from "ethers";
 import { checkIfExist } from "../utils/util";
-import { cli } from "cli-ux";
-import chalk from "chalk";
-import { getIgnitionVersion } from "../utils/package_info";
-import {
-  TransactionReceipt,
-  TransactionRequest,
-  TransactionResponse,
-} from "@ethersproject/abstract-provider";
+
+import { ModuleStateFile } from "./states/module";
+import { ModuleStateRepo } from "./states/repo/state_repo";
 
 export enum SummaryType {
   "EMPTY" = "EMPTY",
@@ -24,7 +24,7 @@ export enum SummaryType {
   "ALL" = "ALL",
 }
 
-type SummaryDataOption = {
+interface SummaryDataOption {
   time: boolean;
   totalEthers: boolean;
   totalGas: boolean;
@@ -32,7 +32,7 @@ type SummaryDataOption = {
   numberOfContract: boolean;
   numberOfEvents: boolean;
   numberOfTransactions: boolean;
-};
+}
 
 const summaryDataOptions: { [type: string]: SummaryDataOption } = {
   EMPTY: {
@@ -76,16 +76,11 @@ export class ModuleDeploymentSummaryService {
     this.startTime = new Date();
   }
 
-  private endTimer() {
-    const endTime = new Date();
-    return (endTime.getTime() - this.startTime.getTime()) / 1000;
-  }
-
-  async showSummary(
+  public async showSummary(
     moduleName: string,
     oldModuleState: ModuleStateFile
   ): Promise<string> {
-    const elapsedTime = this.endTimer();
+    const elapsedTime = this._endTimer();
     const currentModuleState = await this.moduleStateRepo.getStateIfExist(
       moduleName
     );
@@ -101,7 +96,7 @@ export class ModuleDeploymentSummaryService {
         input: Array<
           ContractInput | TxData | TransactionResponse | TransactionRequest
         >;
-        output: Array<TransactionReceipt>;
+        output: TransactionReceipt[];
       } = {
         input: [],
         output: [],
@@ -206,5 +201,10 @@ Spent ${chalk.bold(
 
 Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}.$timestamp.log
 `;
+  }
+
+  private _endTimer() {
+    const endTime = new Date();
+    return (endTime.getTime() - this.startTime.getTime()) / 1000;
   }
 }

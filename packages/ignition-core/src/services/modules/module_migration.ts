@@ -1,21 +1,26 @@
-import { ModuleStateFile } from "./states/module";
-import { checkIfExist } from "../utils/util";
-import { ContractBindingMetaData } from "../../interfaces/hardhat_ignition";
-import { generateModuleFile } from "../utils/files";
-import { FileGenerationType, ModuleStateBindings } from "../types/migration";
-import path from "path";
 import fs from "fs";
+import path from "path";
+
+import {
+  ContractBindingMetaData,
+  ModuleStateBindings,
+} from "../../interfaces/hardhat_ignition";
+import { FileGenerationType } from "../types/migration";
+import { generateModuleFile } from "../utils/sol_files";
+import { checkIfExist } from "../utils/util";
+
+import { ModuleStateFile } from "./states/module";
 
 const DEFAULT_MODULE_FOLDER = "deployment";
 
 export class ModuleMigrationService {
-  private readonly currentPath: string;
+  private readonly _currentPath: string;
 
   constructor(currentPath: string) {
-    this.currentPath = currentPath;
+    this._currentPath = currentPath;
   }
 
-  mapModuleStateFileToContractBindingsMetaData(moduleStateFiles: {
+  public mapModuleStateFileToContractBindingsMetaData(moduleStateFiles: {
     [network: string]: ModuleStateFile;
   }): ModuleStateBindings {
     const unifiedStateFile: ModuleStateBindings = {};
@@ -38,7 +43,7 @@ export class ModuleMigrationService {
     return unifiedStateFile;
   }
 
-  generateModuleFile(
+  public generateModuleFile(
     moduleName: string,
     moduleStateBindings: ModuleStateBindings
   ): string {
@@ -49,9 +54,9 @@ export class ModuleMigrationService {
     );
   }
 
-  storeModuleFile(moduleFile: string, moduleName: string) {
+  public storeModuleFile(moduleFile: string, moduleName: string) {
     const stateDir = path.resolve(
-      this.currentPath,
+      this._currentPath,
       DEFAULT_MODULE_FOLDER,
       `${moduleName}.module.ts`
     );

@@ -1,20 +1,21 @@
 import { Namespace } from "cls-hooked";
 import { ethers } from "ethers";
+
 import { IgnitionSigner } from "../../../interfaces/hardhat_ignition";
-import { ModuleStateRepo } from "../../modules/states/state_repo";
-import { INonceManager } from "../transactions";
-import { IGasCalculator, IGasPriceCalculator } from "../gas";
+import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
 import { ILogging } from "../../utils/logging";
-import { EventTxExecutor } from "../transactions";
+import { IGasCalculator, IGasPriceCalculator } from "../gas";
+import { INonceManager } from "../transactions";
+import { EventTxExecutor } from "../transactions/event_executor";
 
 export class WalletWrapper {
-  private readonly eventSession: Namespace;
-  private readonly moduleStateRepo: ModuleStateRepo;
-  private readonly nonceManager: INonceManager;
-  private readonly gasPriceCalculator: IGasPriceCalculator;
-  private readonly gasCalculator: IGasCalculator;
-  private readonly prompter: ILogging;
-  private readonly eventTxExecutor: EventTxExecutor;
+  private readonly _eventSession: Namespace;
+  private readonly _moduleStateRepo: ModuleStateRepo;
+  private readonly _nonceManager: INonceManager;
+  private readonly _gasPriceCalculator: IGasPriceCalculator;
+  private readonly _gasCalculator: IGasCalculator;
+  private readonly _prompter: ILogging;
+  private readonly _eventTxExecutor: EventTxExecutor;
 
   constructor(
     eventSession: Namespace,
@@ -25,28 +26,28 @@ export class WalletWrapper {
     prompter: ILogging,
     eventTxExecutor: EventTxExecutor
   ) {
-    this.eventSession = eventSession;
-    this.nonceManager = nonceManager;
-    this.gasPriceCalculator = gasPriceCalculator;
-    this.gasCalculator = gasCalculator;
-    this.moduleStateRepo = moduleStateRepo;
-    this.prompter = prompter;
-    this.eventTxExecutor = eventTxExecutor;
+    this._eventSession = eventSession;
+    this._nonceManager = nonceManager;
+    this._gasPriceCalculator = gasPriceCalculator;
+    this._gasCalculator = gasCalculator;
+    this._moduleStateRepo = moduleStateRepo;
+    this._prompter = prompter;
+    this._eventTxExecutor = eventTxExecutor;
   }
 
-  wrapSigners(signers: ethers.Signer[]): IgnitionSigner[] {
+  public wrapSigners(signers: ethers.Signer[]): IgnitionSigner[] {
     const ignitionWallets = [];
     for (const signer of signers) {
       ignitionWallets.push(
         new IgnitionSigner(
           signer,
-          this.eventSession,
-          this.nonceManager,
-          this.gasPriceCalculator,
-          this.gasCalculator,
-          this.moduleStateRepo,
-          this.prompter,
-          this.eventTxExecutor
+          this._eventSession,
+          this._nonceManager,
+          this._gasPriceCalculator,
+          this._gasCalculator,
+          this._moduleStateRepo,
+          this._prompter,
+          this._eventTxExecutor
         )
       );
     }

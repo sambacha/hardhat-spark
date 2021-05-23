@@ -7,17 +7,17 @@ export class KeyMutex {
     this._lock = {};
   }
 
-  isLocked(key: string) {
+  public isLocked(key: string) {
     return this._lock[key] != undefined;
   }
 
-  acquireQueued(key: string) {
+  public acquireQueued(key: string) {
     const q = Promise.resolve(this._lock[key]).then(() => release);
     const release = this._acquire(key);
     return q;
   }
 
-  _acquire(key: string) {
+  public _acquire(key: string) {
     let release: any;
     const lock = (this._lock[key] = new Promise((resolve) => {
       release = resolve;

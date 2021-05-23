@@ -1,16 +1,14 @@
-import { checkIfExist, delay } from "../../utils/util";
 import { TransactionRequest } from "@ethersproject/abstract-provider";
-import { INonceManager, ITransactionSigner } from "./index";
 import { BigNumber, providers } from "ethers";
-import { IGasCalculator, IGasPriceCalculator } from "../gas";
 import { ethers } from "ethers";
-import {
-  GasPriceBackoffError,
-  NoNetworkError,
-  TransactionFailed,
-} from "../../types/errors";
+
 import { GasPriceBackoff } from "../../types/config";
+import { GasPriceBackoffError } from "../../types/errors";
 import { ILogging } from "../../utils/logging";
+import { checkIfExist, delay } from "../../utils/util";
+import { IGasCalculator, IGasPriceCalculator } from "../gas";
+
+import { INonceManager, ITransactionSigner } from "./index";
 
 export class TransactionManager implements ITransactionSigner, INonceManager {
   private readonly nonceMap: { [address: string]: number };
@@ -41,7 +39,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     this.prompter = prompter;
   }
 
-  async getAndIncrementTransactionCount(
+  public async getAndIncrementTransactionCount(
     walletAddress: string
   ): Promise<number> {
     if (!checkIfExist(this.nonceMap[walletAddress])) {
@@ -54,7 +52,9 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     return this.nonceMap[walletAddress]++;
   }
 
-  async getCurrentTransactionCount(walletAddress: string): Promise<number> {
+  public async getCurrentTransactionCount(
+    walletAddress: string
+  ): Promise<number> {
     if (this.nonceMap[walletAddress]) {
       this.nonceMap[walletAddress] = await this.provider.getTransactionCount(
         walletAddress
@@ -64,7 +64,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     return this.nonceMap[walletAddress];
   }
 
-  async generateSingedTx(
+  public async generateSingedTx(
     value: number,
     data: string,
     signer?: ethers.Signer | undefined
@@ -89,10 +89,10 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     }
     const tx: TransactionRequest = {
       from: address,
-      value: value,
-      gasPrice: gasPrice,
+      value,
+      gasPrice,
       gasLimit: gas,
-      data: data,
+      data,
       chainId: +this.networkId,
     };
 
@@ -108,7 +108,7 @@ export class TransactionManager implements ITransactionSigner, INonceManager {
     return this.signer.signTransaction(tx);
   }
 
-  async fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
+  public async fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
     let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
 
     if (!this.gasPriceBackoff) {

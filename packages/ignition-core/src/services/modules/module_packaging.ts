@@ -26,7 +26,7 @@ export class ModulePackagingService {
     this.packageVersion = packageVersion;
   }
 
-  async initializePackageDistributionFolder() {
+  public async initializePackageDistributionFolder() {
     const currentPackageFile = fs.readFileSync(
       path.resolve(this.currentDir, "package.json"),
       "utf-8"
@@ -42,14 +42,14 @@ export class ModulePackagingService {
     );
   }
 
-  async copyAllContracts() {
+  public async copyAllContracts() {
     fse.copySync(
       path.resolve(this.currentDir, CONTRACTS_FOLDER),
       path.resolve(this.currentDistFolder, CONTRACTS_FOLDER)
     );
   }
 
-  async copyAllDeploymentModules() {
+  public async copyAllDeploymentModules() {
     fse.copySync(
       path.resolve(this.currentDir, DEPLOYMENT_FOLDER),
       path.resolve(this.currentDistFolder, DEPLOYMENT_FOLDER)

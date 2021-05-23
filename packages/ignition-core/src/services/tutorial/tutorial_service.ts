@@ -1,15 +1,17 @@
-import * as path from "path";
-import { cli } from "cli-ux";
 import chalk from "chalk";
+import { cli } from "cli-ux";
+import * as inquirer from "inquirer";
+import * as path from "path";
+
+import { checkIfExist } from "../utils/util";
+
+import { DeploymentFileGenerator } from "./deployment_file_gen";
+import { SystemCrawlingService } from "./system_crawler";
 import {
   CONSTRUCTOR_ARGS,
   CONTRACT_DUPLICATES,
   CONTRACT_NAME_DESC,
 } from "./tutorial_desc";
-import { checkIfExist } from "../utils/util";
-import { DeploymentFileGenerator } from "./deployment_file_gen";
-import { SystemCrawlingService } from "./system_crawler";
-import * as inquirer from "inquirer";
 
 export const DEPLOYMENT_FOLDER = "./deployment";
 export const DEPLOYMENT_FILE = "./tutorial.module.ts";
@@ -31,18 +33,18 @@ export class TutorialService {
     this.contractNames = {};
   }
 
-  setDeploymentPath(rootPath: string) {
+  public setDeploymentPath(rootPath: string) {
     this.deploymentFileGenerator.setDeploymentPath(
       path.resolve(rootPath, DEPLOYMENT_FOLDER),
       DEPLOYMENT_FILE
     );
   }
 
-  setModuleName(moduleName: string) {
+  public setModuleName(moduleName: string) {
     this.deploymentFileGenerator.initEmptyModule(moduleName);
   }
 
-  async start() {
+  public async start() {
     // crawl for all contracts in
     const contracts = this.systemCrawlingService.crawlSolidityContractsNames();
 
@@ -102,7 +104,7 @@ export class TutorialService {
     );
   }
 
-  async handleContractFuncExecution(
+  public async handleContractFuncExecution(
     contractName: string,
     bindingName: string,
     yes: boolean

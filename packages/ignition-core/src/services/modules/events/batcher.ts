@@ -8,15 +8,15 @@ import {
   OnChangeEvent,
   StatefulEvent,
 } from "../../../interfaces/hardhat_ignition";
-import { checkIfExist } from "../../utils/util";
 import {
   CliError,
   EventDependencyNotDeployedError,
   EventUsageIsNotDeployed,
 } from "../../types/errors";
+import { checkIfExist } from "../../utils/util";
 
 export class Batcher {
-  static async handleAfterDeployEvent(
+  public static async handleAfterDeployEvent(
     event: AfterDeployEvent,
     element: StatefulEvent,
     batches: any[],
@@ -25,7 +25,7 @@ export class Batcher {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleOnChangeEvent(
+  public static async handleOnChangeEvent(
     event: OnChangeEvent,
     element: StatefulEvent,
     batches: any[],
@@ -34,7 +34,7 @@ export class Batcher {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleBeforeCompileEvent(
+  public static async handleBeforeCompileEvent(
     event: BeforeCompileEvent,
     element: StatefulEvent,
     batches: any[],
@@ -43,7 +43,7 @@ export class Batcher {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleCompiledEvent(
+  public static async handleCompiledEvent(
     event: BeforeDeployEvent,
     element: StatefulEvent,
     batches: any[],
@@ -52,7 +52,7 @@ export class Batcher {
     this.baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleModuleEvent(
+  public static async handleModuleEvent(
     event: ModuleEvent,
     element: StatefulEvent,
     batches: any[]
@@ -171,7 +171,7 @@ export class Batcher {
 
     for (const usage of event.usage) {
       if (!checkIfExist(elementsBatches[usage])) {
-        throw new EventUsageIsNotDeployed(event, usage);
+        throw new EventUsageIsNotDeployed(event.name, usage);
       }
 
       if (elementsBatches[usage] > deepestDepNumber) {
@@ -201,7 +201,7 @@ export class Batcher {
 
     for (const eventUsage of event.eventUsage) {
       if (!checkIfExist(elementsBatches[eventUsage])) {
-        throw new EventUsageIsNotDeployed(event, eventUsage);
+        throw new EventUsageIsNotDeployed(event.name, eventUsage);
       }
 
       if (elementsBatches[eventUsage] > deepestDepNumber) {

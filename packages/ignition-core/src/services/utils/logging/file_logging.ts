@@ -1,11 +1,13 @@
-import { generateErrorMessage, ILogging } from "./index";
-import { ModuleState } from "../../modules/states/module";
-import * as path from "path";
 import * as fs from "fs";
-import { DEPLOYMENT_FOLDER } from "../../tutorial/tutorial_service";
+import * as path from "path";
 import { ILogObject, Logger } from "tslog";
+
 import { EventType } from "../../../interfaces/hardhat_ignition";
+import { ModuleState } from "../../modules/states/module";
+import { DEPLOYMENT_FOLDER } from "../../tutorial/tutorial_service";
 import { ModuleContextMissingInLogger } from "../../types/errors";
+
+import { generateErrorMessage, ILogging } from "./index";
 
 const FOLDER_NAME = ".log";
 
@@ -62,7 +64,7 @@ export class FileLogging implements ILogging {
     }
   }
 
-  alreadyDeployed(elementName: string): void {
+  public alreadyDeployed(elementName: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -72,7 +74,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  bindingExecution(bindingName: string): void {
+  public bindingExecution(bindingName: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -82,17 +84,17 @@ export class FileLogging implements ILogging {
     });
   }
 
-  logError(error: Error): void {
+  public logError(error: Error): void {
     const { message, stack } = generateErrorMessage(error);
 
     this.errorLogger.error("Error", {
-      message: message,
+      message,
       errorName: error.name,
-      stack: stack,
+      stack,
     });
   }
 
-  eventExecution(eventName: string): void {
+  public eventExecution(eventName: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -102,7 +104,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  executeContractFunction(contractFunction: string): void {
+  public executeContractFunction(contractFunction: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -112,7 +114,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  executeWalletTransfer(address: string, to: string): void {
+  public executeWalletTransfer(address: string, to: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -123,7 +125,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  finishModuleDeploy(moduleName: string, summary: string): void {
+  public finishModuleDeploy(moduleName: string, summary: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -132,7 +134,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  finishedBindingExecution(bindingName: string): void {
+  public finishedBindingExecution(bindingName: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -142,7 +144,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
+  public finishedEventExecution(eventName: string, eventType: EventType): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -153,7 +155,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  finishedExecutionOfContractFunction(functionName: string): void {
+  public finishedExecutionOfContractFunction(functionName: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -166,7 +168,7 @@ export class FileLogging implements ILogging {
     );
   }
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -177,7 +179,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  finishedModuleUsageGeneration(moduleName: string) {
+  public finishedModuleUsageGeneration(moduleName: string) {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -186,7 +188,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  gasPriceIsLarge(backoffTime: number) {
+  public gasPriceIsLarge(backoffTime: number) {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -196,14 +198,14 @@ export class FileLogging implements ILogging {
     });
   }
 
-  generatedTypes(): void {
+  public generatedTypes(): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info("generated types");
   }
 
-  nothingToDeploy(): void {
+  public nothingToDeploy(): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -212,22 +214,22 @@ export class FileLogging implements ILogging {
     });
   }
 
-  parallelizationExperimental() {
+  public parallelizationExperimental() {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info("running parallelization");
   }
 
-  promptContinueDeployment(): Promise<void> {
+  public promptContinueDeployment(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  promptExecuteTx(): Promise<void> {
+  public promptExecuteTx(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  promptSignedTransaction(tx: string): void {
+  public promptSignedTransaction(tx: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -237,27 +239,30 @@ export class FileLogging implements ILogging {
     });
   }
 
-  sendingTx(elementName: string, functionName: string = "CREATE"): void {
+  public sendingTx(elementName: string, functionName: string = "CREATE"): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info("sending transaction", {
       elementName,
-      functionName: functionName,
+      functionName,
     });
   }
 
-  sentTx(elementName: string, functionName: string = "CREATE"): void {
+  public sentTx(elementName: string, functionName: string = "CREATE"): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info("sent transaction", {
       elementName,
-      functionName: functionName,
+      functionName,
     });
   }
 
-  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
+  public startModuleDeploy(
+    moduleName: string,
+    moduleStates: ModuleState
+  ): void {
     const timestamp = Math.trunc(new Date().getTime() / 1000);
 
     const currentDir = process.cwd();
@@ -303,7 +308,7 @@ export class FileLogging implements ILogging {
     this.logger[this.moduleName].info("started module deployment", moduleName);
   }
 
-  startingModuleUsageGeneration(moduleName: string): void {
+  public startingModuleUsageGeneration(moduleName: string): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
@@ -313,7 +318,7 @@ export class FileLogging implements ILogging {
     );
   }
 
-  transactionConfirmation(
+  public transactionConfirmation(
     confirmationNumber: number,
     elementName: string,
     functionName: string = "CREATE"
@@ -328,31 +333,31 @@ export class FileLogging implements ILogging {
     });
   }
 
-  transactionReceipt(): void {
+  public transactionReceipt(): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info("received transaction receipt");
   }
 
-  waitTransactionConfirmation(): void {
+  public waitTransactionConfirmation(): void {
     if (!this.moduleName) {
       throw new ModuleContextMissingInLogger();
     }
     this.logger[this.moduleName].info("wait for transaction confirmation");
   }
 
-  wrongNetwork(): Promise<boolean> {
+  public wrongNetwork(): Promise<boolean> {
     this.errorLogger.error("Contracts are missing on the network.");
 
     return Promise.resolve(true);
   }
 
-  finishModuleResolving(moduleName: string): void {}
+  public finishModuleResolving(moduleName: string): void {}
 
-  startModuleResolving(moduleName: string): void {}
+  public startModuleResolving(moduleName: string): void {}
 
-  contractFunctionAlreadyExecuted(
+  public contractFunctionAlreadyExecuted(
     contractFunction: string,
     ...args: any[]
   ): void {}

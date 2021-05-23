@@ -7,12 +7,15 @@ export class DeploymentFileRepo {
 
   constructor() {}
 
-  setDeploymentPath(deploymentPath: string, deploymentFile: string): void {
+  public setDeploymentPath(
+    deploymentPath: string,
+    deploymentFile: string
+  ): void {
     this.deploymentPath = deploymentPath;
     this.deploymentFile = deploymentFile;
   }
 
-  storeNewDeployment(fileContent: string): void {
+  public storeNewDeployment(fileContent: string): void {
     if (!this.deploymentPath || !this.deploymentFile) {
       return;
     }

@@ -1,28 +1,22 @@
-import {
-  ContractBinding,
-  ContractInput,
-  ModuleBuilder,
-  StatefulEvent,
-} from "../../interfaces/hardhat_ignition";
-import { CliError, handleMappedErrorCodes, UserError } from "../types/errors";
 import { cli } from "cli-ux";
-import chalk from "chalk";
 import * as os from "os";
-import { ILogging } from "./logging";
+
+import { handleMappedErrorCodes } from "../types/errors";
+
 import { IErrorReporting } from "./analytics";
+import { ILogging } from "./logging";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export function checkIfExist(object: any): boolean {
-  return object != undefined && typeof object != "undefined";
-}
-
-export function checkIfFuncExist(func: any): boolean {
-  return typeof func === "function";
+  return object !== undefined && typeof object !== "undefined";
 }
 
 export function checkIfSameInputs(
-  input: ContractInput,
+  input: {
+    functionName: string;
+    inputs: any[];
+  },
   fragmentName: string,
   args: any[]
 ): boolean {
@@ -46,20 +40,7 @@ export function isSameBytecode(
     bytecodeTwo.length - metaDataLengthTwo
   );
 
-  return formattedBytecodeOne == formattedBytecodeTwo;
-}
-
-export function checkIfSuitableForInstantiating(
-  contractBinding: ContractBinding
-): boolean {
-  return (
-    checkIfExist(contractBinding?.deployMetaData.contractAddress) &&
-    checkIfExist(contractBinding?.abi) &&
-    checkIfExist(contractBinding?.signer) &&
-    checkIfExist(contractBinding?.prompter) &&
-    checkIfExist(contractBinding?.txGenerator) &&
-    checkIfExist(contractBinding?.moduleStateRepo)
-  );
+  return formattedBytecodeOne === formattedBytecodeTwo;
 }
 
 export function arrayEquals(a: any[], b: any[]) {
@@ -115,44 +96,6 @@ export function getUserAgent(): string {
   return `Node/${process.version} ${getOperatingSystem()}`;
 }
 
-export function moduleBuilderStatefulDiff(
-  oldModuleBuilder: ModuleBuilder,
-  newModuleBuilder: ModuleBuilder
-): ([string, ContractBinding][] | [string, StatefulEvent][])[] {
-  const oldBindings = oldModuleBuilder.getAllBindings();
-  const oldEvents = oldModuleBuilder.getAllEvents();
-
-  const newBindings = newModuleBuilder.getAllBindings();
-  const newEvents = newModuleBuilder.getAllEvents();
-
-  const bindingsDiff = Object.entries(newBindings).splice(
-    0,
-    Object.entries(oldBindings).length
-  );
-  const eventsDiff = Object.entries(newEvents).splice(
-    0,
-    Object.entries(oldEvents).length
-  );
-
-  return [bindingsDiff, eventsDiff];
-}
-
-export function extractObjectInfo(obj: any): string {
-  if (obj._isBigNumber) {
-    return obj.toString();
-  }
-
-  if (obj._isContractBinding) {
-    return `${obj.name}(${obj.deployMetaData.contractAddress})`;
-  }
-
-  if (obj._isContractBindingMetaData) {
-    return obj.deployMetaData.contractAddress;
-  }
-
-  return "";
-}
-
 export async function errorHandling(
   error: Error,
   logger?: ILogging,
@@ -168,14 +111,14 @@ export async function errorHandling(
   if (checkIfExist(error?.code)) {
     // @ts-ignore
     cli.info(handleMappedErrorCodes(error.code, error));
-    if (cli.config.outputLevel == "debug" && error?.stack) {
+    if (cli.config.outputLevel === "debug" && error?.stack) {
       cli.debug(error?.stack);
     }
     return;
   }
 
   cli.info(error.message);
-  if (cli.config.outputLevel == "debug" && error?.stack) {
+  if (cli.config.outputLevel === "debug" && error?.stack) {
     cli.debug(error.stack);
   }
 

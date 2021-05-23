@@ -1,10 +1,12 @@
+import AWS from "aws-sdk";
+
+import { checkIfExist } from "../../../utils/util";
+
 import {
   IModuleRegistryResolver,
   ModuleRegistryResolver,
   REGISTRY_NAME,
 } from "./index";
-import AWS from "aws-sdk";
-import { checkIfExist } from "../../../utils/util";
 
 export class RemoteBucketStorage implements IModuleRegistryResolver {
   private s3: AWS.S3;
@@ -27,17 +29,17 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     this.registryFile = {};
 
     this.s3 = new AWS.S3({
-      region: region,
+      region,
       credentials: new AWS.Credentials({
         accessKeyId: accessKey,
-        secretAccessKey: secretAccessKey,
+        secretAccessKey,
         sessionToken: "",
       }),
-      endpoint: endpoint,
+      endpoint,
     });
   }
 
-  async resolveContract(
+  public async resolveContract(
     networkId: string,
     moduleName: string,
     bindingName: string
@@ -57,7 +59,7 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     }
   }
 
-  async setAddress(
+  public async setAddress(
     networkId: string,
     moduleName: string,
     bindingName: string,
@@ -102,24 +104,23 @@ export class RemoteBucketStorage implements IModuleRegistryResolver {
     });
 
     req.on("sign", () => {
-      if (!req.httpRequest.headers["Authorization"] && this.accessKey) {
-        req.httpRequest.headers[
-          "Authorization"
-        ] = `Credential=${this.accessKey}`;
+      if (!req.httpRequest.headers.Authorization && this.accessKey) {
+        req.httpRequest.headers.Authorization = `Credential=${this.accessKey}`;
 
         return;
       }
 
       if (this.accessKey == "") {
-        delete req.httpRequest.headers["Authorization"];
+        delete req.httpRequest.headers.Authorization;
         req.httpRequest.headers["public-read"] = "public-read";
 
         return;
       }
 
-      req.httpRequest.headers["Authorization"] = req.httpRequest.headers[
-        "Authorization"
-      ].replace("Credential=/", `Credential=${this.accessKey}`);
+      req.httpRequest.headers.Authorization = req.httpRequest.headers.Authorization.replace(
+        "Credential=/",
+        `Credential=${this.accessKey}`
+      );
     });
 
     const object = await req.promise();

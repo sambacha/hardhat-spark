@@ -1,11 +1,13 @@
+import fs from "fs";
+import path from "path";
+
+import { checkIfExist } from "../../../utils/util";
+
 import {
   IModuleRegistryResolver,
   ModuleRegistryResolver,
   REGISTRY_NAME,
 } from "./index";
-import path from "path";
-import fs from "fs";
-import { checkIfExist } from "../../../utils/util";
 
 export class FileSystemRegistry implements IModuleRegistryResolver {
   private readonly version: string;
@@ -22,7 +24,7 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
     this.registryPath = dir;
   }
 
-  async resolveContract(
+  public async resolveContract(
     networkId: string,
     moduleName: string,
     bindingName: string
@@ -35,7 +37,7 @@ export class FileSystemRegistry implements IModuleRegistryResolver {
     return stateObject[this.version][bindingName];
   }
 
-  async setAddress(
+  public async setAddress(
     networkId: string,
     moduleName: string,
     bindingName: string,

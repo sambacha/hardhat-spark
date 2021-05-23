@@ -1,8 +1,6 @@
 import { TransactionReceipt } from "@ethersproject/abstract-provider";
-import { ContractBindingMetaData } from "../../interfaces/hardhat_ignition";
 
 export type ModuleFile = string;
-export type ModuleStateBindings = { [name: string]: ContractBindingMetaData };
 
 export const USAGE_FUNC = "buildUsage";
 export const MODULE_FUNC = "buildModule";
@@ -19,21 +17,21 @@ export enum Migration {
 
 export type Build = TruffleBuild | HardhatBuild;
 
-export type HardhatBuild = {
+export interface HardhatBuild {
   contractName: string;
   address: string;
-  abi: Array<object>;
+  abi: object[];
   transactionHash: string;
   receipt: TransactionReceipt;
   args: any[];
   bytecode: string;
   deployedBytecode: string;
   networkId: string;
-};
+}
 
-export type TruffleBuild = {
+export interface TruffleBuild {
   contractName: string;
-  abi: Array<object>;
+  abi: object[];
   metadata: string;
   bytecode: string;
   networks: {
@@ -43,4 +41,4 @@ export type TruffleBuild = {
       transactionHash: string;
     };
   };
-};
+}

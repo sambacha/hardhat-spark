@@ -1,10 +1,11 @@
 import { ContractFunction } from "@ethersproject/contracts";
-import { checkIfExist } from "../../services/utils/util";
+import { ethers } from "ethers";
+
 import {
   UnexpectedValueError,
   ValueMismatch,
 } from "../../services/types/errors";
-import { ethers } from "ethers";
+import { checkIfExist } from "../../services/utils/util";
 import { ContractBinding } from "../hardhat_ignition";
 
 /**

@@ -1,5 +1,6 @@
-import { CliError, ConfigScriptNotCompiledCorrectly } from "../types/errors";
 import * as path from "path";
+
+import { CliError, ConfigScriptNotCompiledCorrectly } from "../types/errors";
 
 require("dotenv").config({
   path: path.resolve(__dirname + "../../../../.env.local"),

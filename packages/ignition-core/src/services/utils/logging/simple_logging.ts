@@ -1,16 +1,18 @@
-import { generateErrorMessage, ILogging } from "./index";
-import { ModuleState } from "../../modules/states/module";
+import chalk from "chalk";
 import { SingleBar } from "cli-progress";
 import cli from "cli-ux";
-import chalk from "chalk";
-import { checkIfExist } from "../util";
+
+import { EventType } from "../../../interfaces/hardhat_ignition";
+import { ModuleState } from "../../modules/states/module";
 import {
   CliError,
   DeniedConfirmation,
   ModuleContextMissingInLogger,
 } from "../../types/errors";
+import { checkIfExist } from "../util";
+
 import { FileLogging } from "./file_logging";
-import { EventType } from "../../../interfaces/hardhat_ignition";
+import { generateErrorMessage, ILogging } from "./index";
 
 export enum StateElementStatus {
   "NOT_EXECUTED" = "not executed",
@@ -39,7 +41,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     this.moduleBars = {};
   }
 
-  gasPriceIsLarge(backoffTime: number) {
+  public gasPriceIsLarge(backoffTime: number) {
     super.gasPriceIsLarge(backoffTime);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -49,7 +51,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  async parallelizationExperimental() {
+  public async parallelizationExperimental() {
     cli.info(
       chalk.yellow(
         "WARNING: This feature is experimental, please avoid using it while deploying to production"
@@ -64,15 +66,15 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     }
   }
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {
     super.finishedExecutionOfWalletTransfer(from, to);
   }
 
-  executeWalletTransfer(address: string, to: string): void {
+  public executeWalletTransfer(address: string, to: string): void {
     super.finishedExecutionOfWalletTransfer(address, to);
   }
 
-  startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
+  public startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
     super.startModuleDeploy(moduleName, moduleState);
 
     this.currentModuleName = moduleName;
@@ -95,7 +97,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  alreadyDeployed(elementName: string): void {
+  public alreadyDeployed(elementName: string): void {
     super.alreadyDeployed(elementName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -109,7 +111,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  bindingExecution(bindingName: string): void {
+  public bindingExecution(bindingName: string): void {
     super.bindingExecution(bindingName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -122,7 +124,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  logError(error: Error): void {
+  public logError(error: Error): void {
     super.logError(error);
     if (!this?.currentModuleName) {
       return;
@@ -137,7 +139,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     cli.info(message);
   }
 
-  eventExecution(eventName: string): void {
+  public eventExecution(eventName: string): void {
     super.eventExecution(eventName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -150,7 +152,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  finishModuleDeploy(moduleName: string, summary: string): void {
+  public finishModuleDeploy(moduleName: string, summary: string): void {
     super.finishModuleDeploy(moduleName, summary);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -168,35 +170,23 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     cli.info(summary);
   }
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
+  public finishedEventExecution(eventName: string, eventType: EventType): void {
     super.finishedEventExecution(eventName, eventType);
 
     this.handleElementCompletion(eventName);
   }
 
-  finishedBindingExecution(bindingName: string): void {
+  public finishedBindingExecution(bindingName: string): void {
     super.finishedBindingExecution(bindingName);
 
     this.handleElementCompletion(bindingName);
   }
 
-  private handleElementCompletion(elementName: string): void {
-    if (!this?.currentModuleName) {
-      throw new ModuleContextMissingInLogger();
-    }
-    this.moduleBars[this.currentModuleName].increment({
-      module: this.currentModuleName,
-      element: elementName,
-      status: StateElementStatus.SUCCESSFUL,
-      action: "N/A",
-    });
-  }
-
-  finishedExecutionOfContractFunction(functionName: string): void {
+  public finishedExecutionOfContractFunction(functionName: string): void {
     super.finishedExecutionOfContractFunction(functionName);
   }
 
-  nothingToDeploy(): void {
+  public nothingToDeploy(): void {
     super.nothingToDeploy();
     cli.info(
       "State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how."
@@ -204,23 +194,23 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     cli.exit(0);
   }
 
-  promptContinueDeployment(): Promise<void> {
+  public promptContinueDeployment(): Promise<void> {
     // overview will not have confirmations
     return Promise.resolve();
   }
 
-  promptExecuteTx(): Promise<void> {
+  public promptExecuteTx(): Promise<void> {
     // overview will not have metadata
     return Promise.resolve();
   }
 
-  promptSignedTransaction(tx: string): void {
+  public promptSignedTransaction(tx: string): void {
     super.promptSignedTransaction(tx);
     // overview will not have metadata
     return;
   }
 
-  sendingTx(eventName: string, functionName: string = "CREATE"): void {
+  public sendingTx(eventName: string, functionName: string = "CREATE"): void {
     super.sendingTx(eventName, functionName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -239,7 +229,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  sentTx(eventName: string, functionName: string = "CREATE"): void {
+  public sentTx(eventName: string, functionName: string = "CREATE"): void {
     super.sentTx(eventName, functionName);
     if (!this?.currentModuleName) {
       throw new ModuleContextMissingInLogger();
@@ -259,7 +249,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  transactionConfirmation(
+  public transactionConfirmation(
     confirmationNumber: number,
     eventName: string,
     functionName: string = "CREATE"
@@ -283,41 +273,53 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     });
   }
 
-  transactionReceipt(): void {
+  public transactionReceipt(): void {
     super.transactionReceipt();
   }
 
-  waitTransactionConfirmation(): void {
+  public waitTransactionConfirmation(): void {
     super.waitTransactionConfirmation();
   }
 
-  executeContractFunction(contractFunction: string): void {
+  public executeContractFunction(contractFunction: string): void {
     super.executeContractFunction(contractFunction);
   }
 
-  generatedTypes(): void {
+  public generatedTypes(): void {
     super.generatedTypes();
     cli.info(
       "Successfully generated module types, look under your deployments folder for .d.ts file."
     );
   }
 
-  finishedModuleUsageGeneration(moduleName: string) {
+  public finishedModuleUsageGeneration(moduleName: string) {
     super.finishedModuleUsageGeneration(moduleName);
   }
 
-  startingModuleUsageGeneration(moduleName: string) {
+  public startingModuleUsageGeneration(moduleName: string) {
     super.startingModuleUsageGeneration(moduleName);
   }
 
-  async wrongNetwork(): Promise<boolean> {
+  public async wrongNetwork(): Promise<boolean> {
     super.wrongNetwork();
-    return await cli.confirm(
+    return cli.confirm(
       "Contracts are missing on the network, do you wish to continue? (Y/n)"
     );
   }
 
-  startModuleResolving(): void {}
+  public startModuleResolving(): void {}
 
-  finishModuleResolving(): void {}
+  public finishModuleResolving(): void {}
+
+  private handleElementCompletion(elementName: string): void {
+    if (!this?.currentModuleName) {
+      throw new ModuleContextMissingInLogger();
+    }
+    this.moduleBars[this.currentModuleName].increment({
+      module: this.currentModuleName,
+      element: elementName,
+      status: StateElementStatus.SUCCESSFUL,
+      action: "N/A",
+    });
+  }
 }

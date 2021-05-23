@@ -1,18 +1,15 @@
-import { Compiler } from "./index";
-import { execSync } from "child_process";
-import * as path from "path";
-import { parseFiles } from "../../utils/files";
-import { JsonFragment } from "../../types/artifacts/abi";
 import { Artifact } from "hardhat/src/types/artifacts";
+import * as path from "path";
+
+import { JsonFragment } from "../../types/artifacts/abi";
 import { LinkReferences } from "../../types/artifacts/libraries";
+import { parseFiles } from "../../utils/files";
 import { checkIfExist } from "../../utils/util";
 
-export class HardhatCompiler extends Compiler {
-  compile(): void {
-    execSync("npx hardhat compile");
-  }
+import { ICompiler } from "./index";
 
-  extractBytecode(contractNames: string[]): { [name: string]: string } {
+export class HardhatCompiler implements ICompiler {
+  public extractBytecode(contractNames: string[]): { [name: string]: string } {
     try {
       const bytecodes: { [name: string]: string } = {};
 
@@ -30,7 +27,7 @@ export class HardhatCompiler extends Compiler {
     }
   }
 
-  extractContractInterface(
+  public extractContractInterface(
     contractNames: string[]
   ): { [p: string]: JsonFragment[] } {
     try {
@@ -50,7 +47,7 @@ export class HardhatCompiler extends Compiler {
     }
   }
 
-  extractContractLibraries(contractNames: string[]): LinkReferences {
+  public extractContractLibraries(contractNames: string[]): LinkReferences {
     try {
       const libraries: { [p: string]: any } = {};
 

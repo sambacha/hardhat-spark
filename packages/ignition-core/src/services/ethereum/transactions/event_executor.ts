@@ -1,18 +1,18 @@
-import { ContractFunction } from "@ethersproject/contracts";
-import { checkIfExist } from "../../utils/util";
-import { CliError } from "../../types/errors";
 import {
   TransactionReceipt,
   TransactionResponse,
 } from "@ethersproject/abstract-provider";
+import { ContractFunction } from "@ethersproject/contracts";
 import { Namespace } from "cls-hooked";
-import { KeyMutex } from "../../utils/mutex/key_mutex";
-import { ModuleStateRepo } from "../../modules/states/state_repo";
+
+import { IModuleStateRepo } from "../../modules/states/repo";
+import { CliError } from "../../types/errors";
 import { clsNamespaces } from "../../utils/continuation_local_storage";
-import { ContractInstance } from "../../../interfaces/hardhat_ignition";
+import { KeyMutex } from "../../utils/mutex/key_mutex";
+import { checkIfExist } from "../../utils/util";
 
 export class EventTxExecutor {
-  private readonly moduleStateRepo: ModuleStateRepo;
+  private readonly moduleStateRepo: IModuleStateRepo;
   private eventSession: Namespace;
   private readonly rootEvents: {
     [eventName: string]: {
@@ -20,14 +20,14 @@ export class EventTxExecutor {
       contractBindingName: string;
       func: ContractFunction;
       resolveFunc: Function | undefined;
-      args: Array<any> | undefined;
+      args: any[] | undefined;
     };
   };
   private currentNumber: number;
 
   private mutex: KeyMutex;
 
-  constructor(eventSession: Namespace, moduleStateRepo: ModuleStateRepo) {
+  constructor(eventSession: Namespace, moduleStateRepo: IModuleStateRepo) {
     this.rootEvents = {};
     this.eventSession = eventSession;
     this.currentNumber = 0;
@@ -36,14 +36,11 @@ export class EventTxExecutor {
     this.moduleStateRepo = moduleStateRepo;
   }
 
-  add(
+  public add(
     eventName: string,
     senderAddress: string,
     contractBindingName: string,
-    fn: (
-      this: ContractInstance,
-      ...args: Array<any>
-    ) => Promise<TransactionResponse | TransactionReceipt>
+    fn: ContractFunction
   ) {
     if (checkIfExist(this.rootEvents[eventName])) {
       throw new CliError(
@@ -54,16 +51,16 @@ export class EventTxExecutor {
     this.rootEvents[eventName] = {
       func: fn,
       sender: senderAddress,
-      contractBindingName: contractBindingName,
+      contractBindingName,
       args: undefined,
       resolveFunc: undefined,
     };
     this.currentNumber++;
   }
 
-  async executeSingle(
+  public async executeSingle(
     eventName: string,
-    ...args: Array<any>
+    ...args: any[]
   ): Promise<TransactionResponse> {
     this.rootEvents[eventName].args = args;
 
@@ -78,7 +75,7 @@ export class EventTxExecutor {
   }
 
   // this should be executed inside transaction executor.
-  async executeAll(): Promise<void> {
+  public async executeAll(): Promise<void> {
     const executionOrdering: { [address: string]: any } = {};
 
     for (const [eventName, rootEvent] of Object.entries(this.rootEvents)) {
@@ -105,7 +102,7 @@ export class EventTxExecutor {
 
   private async executeSenderContractFunctions(
     sender: string,
-    array: Array<any>
+    array: any[]
   ): Promise<void> {
     for (const singleElement of array) {
       const args = singleElement.event.args;

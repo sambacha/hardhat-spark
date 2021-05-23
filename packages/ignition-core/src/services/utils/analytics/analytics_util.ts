@@ -1,6 +1,6 @@
-import * as path from "path";
 import type envPathsT from "env-paths";
 import fs from "fs-extra";
+import * as path from "path";
 
 function generatePathsSync(packageName = "hardhat") {
   const envPaths: typeof envPathsT = require("env-paths");

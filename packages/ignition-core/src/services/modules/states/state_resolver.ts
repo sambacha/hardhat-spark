@@ -1,9 +1,10 @@
-import { ModuleStateFile } from "./module";
-import { checkIfExist } from "../../utils/util";
 import { BindingsConflict } from "../../types/errors";
+import { checkIfExist } from "../../utils/util";
+
+import { ModuleStateFile } from "./module";
 
 export class StateResolver {
-  static mergeStates(
+  public static mergeStates(
     mainModuleState: ModuleStateFile,
     newModuleState: ModuleStateFile
   ): ModuleStateFile {

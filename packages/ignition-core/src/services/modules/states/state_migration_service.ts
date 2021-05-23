@@ -1,19 +1,21 @@
+import path from "path";
+
+import {
+  ContractBindingMetaData,
+  Deployed,
+  TxData,
+} from "../../../interfaces/hardhat_ignition";
+import { CliError } from "../../types/errors";
 import {
   Build,
   HardhatBuild,
   Migration,
   TruffleBuild,
 } from "../../types/migration";
+import { searchBuilds, searchBuildsAndNetworks } from "../../utils/sol_files";
 import { checkIfExist } from "../../utils/util";
+
 import { IModuleState, ModuleStateFile } from "./module";
-import {
-  ContractBindingMetaData,
-  Deployed,
-  TxData,
-} from "../../../interfaces/hardhat_ignition";
-import { searchBuilds, searchBuildsAndNetworks } from "../../utils/files";
-import { CliError } from "../../types/errors";
-import path from "path";
 
 const TRUFFLE_BUILD_DIR_NAME = "build";
 const HARDHAT_DEPLOYMENTS_DIR_NAME = "deployments";
@@ -43,7 +45,7 @@ export class StateMigrationService {
     }
   }
 
-  searchBuild(): Build[] {
+  public searchBuild(): Build[] {
     switch (this.stateMigrationType) {
       case Migration.truffle:
         return searchBuilds(this.artifactsPath, []) as TruffleBuild[];
@@ -57,7 +59,7 @@ export class StateMigrationService {
     }
   }
 
-  extractValidBuilds(builds: Build[]): Build[] {
+  public extractValidBuilds(builds: Build[]): Build[] {
     switch (this.stateMigrationType) {
       case Migration.truffle: {
         const validBuilds: TruffleBuild[] = [];
@@ -91,7 +93,7 @@ export class StateMigrationService {
     }
   }
 
-  mapBuildsToStateFile(
+  public mapBuildsToStateFile(
     validBuilds: Build[]
   ): { [networkId: string]: ModuleStateFile } {
     switch (this.stateMigrationType) {
@@ -178,7 +180,7 @@ export class StateMigrationService {
     }
   }
 
-  async storeNewStateFiles(
+  public async storeNewStateFiles(
     moduleName: string,
     stateFiles: { [networkId: string]: ModuleStateFile }
   ) {

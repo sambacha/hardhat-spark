@@ -1,3 +1,6 @@
+import { EventType } from "../../interfaces/hardhat_ignition";
+import { checkIfExist } from "../utils/util";
+
 import { DeploymentFileRepo } from "./deployment_file_repo";
 import {
   CONTRACT_DESC,
@@ -5,8 +8,6 @@ import {
   MODULE_NAME_DESC,
   TEMPLATE_DESC,
 } from "./tutorial_desc";
-import { checkIfExist } from "../utils/util";
-import { EventType } from "../../interfaces/hardhat_ignition";
 
 export class DeploymentFileGenerator {
   private deploymentFileRepo: DeploymentFileRepo;
@@ -38,11 +39,11 @@ export class DeploymentFileGenerator {
     this.events = {};
   }
 
-  setDeploymentPath(deploymentPath: string, deploymentFile: string) {
+  public setDeploymentPath(deploymentPath: string, deploymentFile: string) {
     this.deploymentFileRepo.setDeploymentPath(deploymentPath, deploymentFile);
   }
 
-  initEmptyModule(moduleName: string) {
+  public initEmptyModule(moduleName: string) {
     this.moduleName = moduleName;
 
     const fileContent = this.generateModuleFile();
@@ -50,10 +51,14 @@ export class DeploymentFileGenerator {
     this.deploymentFileRepo.storeNewDeployment(fileContent);
   }
 
-  newContract(contractName: string, bindingName: string, ...args: any[]) {
+  public newContract(
+    contractName: string,
+    bindingName: string,
+    ...args: any[]
+  ) {
     if (contractName != bindingName) {
       this.templates[bindingName] = {
-        contractName: contractName,
+        contractName,
       };
     }
 
@@ -66,7 +71,7 @@ export class DeploymentFileGenerator {
     this.deploymentFileRepo.storeNewDeployment(fileContent);
   }
 
-  newContractInvocation(
+  public newContractInvocation(
     contractName: string,
     bindingName: string,
     functionName: string,
@@ -74,7 +79,7 @@ export class DeploymentFileGenerator {
   ) {
     const eventName = `${EventType.AfterDeployEvent}${contractName}${functionName}`;
     this.events[eventName] = {
-      bindingName: bindingName,
+      bindingName,
       contractFunction: functionName,
       contractFunctionArgs: functionArgs,
     };

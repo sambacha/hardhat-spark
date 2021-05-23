@@ -27,8 +27,8 @@ import { ethers } from "ethers";
 //   params?: { [name: string]: any };
 // };
 
-export type GasPriceBackoff = {
+export interface GasPriceBackoff {
   maxGasPrice: ethers.BigNumberish | any;
   backoffTime: number;
   numberOfRetries: number;
-};
+}

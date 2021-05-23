@@ -1,15 +1,7 @@
-import chalk from "chalk";
-import { extractObjectInfo } from "../utils/util";
-import * as path from "path";
-import {
-  BaseEvent,
-  ContractBinding,
-  ContractBindingMetaData,
-  EventType,
-  StatefulEvent,
-} from "../../interfaces/hardhat_ignition";
 import { ParamType } from "@ethersproject/abi";
+import chalk from "chalk";
 import { ethers } from "ethers";
+import * as path from "path";
 
 const EVENT_HOOK_DEFINITION_DOCS_LINK =
   "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
@@ -94,11 +86,9 @@ export class UserError extends Error {
 
 export class CliError extends Error {
   public _isCliError: boolean = true;
-  public message: string;
 
   constructor(message: string) {
-    super();
-    this.message = "CLI error - " + message;
+    super(message);
   }
 }
 
@@ -107,7 +97,7 @@ export class ServicesNotInitialized extends UserError {
     super(
       `Some services are not initialized inside the ignition.
 
-This is internal issue, please open github issue if this happend to you.`
+This is internal issue, please open github issue if this happened to you.`
     );
   }
 }
@@ -255,13 +245,10 @@ If you are not sure how to write ignition config, here is detailed documentation
 }
 
 export class ModuleAndModuleStateMismatchElementError extends UserError {
-  constructor(
-    moduleElement: StatefulEvent,
-    stateFileModuleElement: ContractBinding
-  ) {
+  constructor(moduleElementName: string, stateFileModuleElementName: string) {
     super(`Seems like ${chalk.bold(
-      moduleElement.event.name
-    )} is not the same type as ${chalk.bold(stateFileModuleElement.name)}.
+      moduleElementName
+    )} is not the same type as ${chalk.bold(stateFileModuleElementName)}.
 
 This can be caused if you have added a contract or an event in the middle of module dependency resolving.
 Here is a link to the detailed description of the module resolving process: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}`);
@@ -284,8 +271,8 @@ Here is a link to the detailed description of the module resolving process, it c
 export class ModuleAndModuleStateEventTypeMismatchError extends UserError {
   constructor(
     currentEventName: string,
-    resolvedModuleStateElementEventType: EventType,
-    stateFileElementEventType: EventType
+    resolvedModuleStateElementEventType: string,
+    stateFileElementEventType: string
   ) {
     super(`You have changed the event hook type for the ${chalk.bold(
       currentEventName
@@ -324,7 +311,7 @@ Trying to call a contract function with invalid number of arguments for the ${ch
 
 The function interface is looking like this:
 ${functionName}(${args.map((v: ParamType, index) => {
-      if (index == arguments.length - 1) {
+      if (index === arguments.length - 1) {
         return `${v.type}`;
       }
 
@@ -413,8 +400,8 @@ If you are not sure how to define deployment file location in config script you 
 }
 
 export class EventUsageIsNotDeployed extends UserError {
-  constructor(currentEvent: BaseEvent, eventUsage: string) {
-    super(`The event ${chalk.bold(currentEvent.name)} is using ${chalk(
+  constructor(currentEventName: string, eventUsage: string) {
+    super(`The event ${chalk.bold(currentEventName)} is using ${chalk(
       eventUsage
     )} event, but the ${eventUsage} event still has ${chalk.bold(
       "not yet been executed"
@@ -439,11 +426,11 @@ Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK
 }
 
 export class ModuleStateMismatchError extends UserError {
-  constructor(stateFileElement: ContractBindingMetaData, event: StatefulEvent) {
+  constructor(stateFileElementName: string, eventName: string) {
     super(`Seems like ${chalk.bold(
-      event.event.name
+      eventName
     )} event is not the same type as the ${chalk.bold(
-      stateFileElement.name
+      stateFileElementName
     )} contract binding.
 
 This can be caused if you have added a contract or an event in the middle of module dependency resolving.
@@ -600,4 +587,20 @@ export class MissingContractAddressInStateFile extends UserError {
   constructor(message: string) {
     super(message);
   }
+}
+
+function extractObjectInfo(obj: any): string {
+  if (obj._isBigNumber) {
+    return obj.toString();
+  }
+
+  if (obj._isContractBinding) {
+    return `${obj.name}(${obj.deployMetaData.contractAddress})`;
+  }
+
+  if (obj._isContractBindingMetaData) {
+    return obj.deployMetaData.contractAddress;
+  }
+
+  return "";
 }
