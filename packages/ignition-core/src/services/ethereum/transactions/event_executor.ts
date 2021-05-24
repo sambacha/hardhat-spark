@@ -1,6 +1,4 @@
-import {
-  TransactionResponse,
-} from "@ethersproject/abstract-provider";
+import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { ContractFunction } from "@ethersproject/contracts";
 import { Namespace } from "cls-hooked";
 
@@ -92,14 +90,14 @@ export class EventTxExecutor {
 
     const allSenders = [];
     for (const [sender, array] of Object.entries(executionOrdering)) {
-      allSenders.push(this.executeSenderContractFunctions(sender, array));
+      allSenders.push(this._executeSenderContractFunctions(sender, array));
     }
     await Promise.all(allSenders);
 
     this.currentNumber = 0;
   }
 
-  private async executeSenderContractFunctions(
+  private async _executeSenderContractFunctions(
     sender: string,
     array: any[]
   ): Promise<void> {

@@ -30,6 +30,7 @@ import { IModuleValidator } from "./services/modules/validator";
 import { ModuleValidator } from "./services/modules/validator/module_validator";
 import { GasPriceBackoff } from "./services/types/config";
 import { EmptySigners, ServicesNotInitialized } from "./services/types/errors";
+import { ModuleState } from "./services/types/module";
 import { IErrorReporting } from "./services/utils/analytics";
 import { ErrorReporter } from "./services/utils/analytics/analytics_service";
 import {
@@ -41,7 +42,6 @@ import { ILogging } from "./services/utils/logging";
 import { EmptyLogger } from "./services/utils/logging/empty_logging";
 import { OverviewLogger } from "./services/utils/logging/react-terminal";
 import { checkIfExist, errorHandling } from "./services/utils/util";
-import { ModuleState } from './services/types/module';
 
 export * from "./interfaces/hardhat_ignition";
 export * from "./interfaces/module_builders";

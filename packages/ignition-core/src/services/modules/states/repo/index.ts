@@ -1,11 +1,6 @@
 import { TransactionReceipt } from "@ethersproject/abstract-provider";
 
-import {
-  ContractBinding,
-  ContractInput,
-  EventTransactionData,
-  EventType,
-} from "../../../../interfaces/hardhat_ignition";
+import { JsonFragmentType } from "../../../types/artifacts/abi";
 import { ModuleState, ModuleStateFile } from "../../../types/module";
 
 export interface IModuleStateRepo {
@@ -33,21 +28,30 @@ export interface IModuleStateRepo {
   finishCurrentModuleEvent(
     moduleName: string,
     moduleState: ModuleState,
-    eventType: EventType,
+    eventType: string,
     eventName?: string
   ): Promise<void>;
 
   getEventTransactionData(
     bindingName: string,
     eventName?: string
-  ): Promise<EventTransactionData>;
+  ): Promise<{
+    contractInput: Array<{
+      functionName: string;
+      inputs: JsonFragmentType[];
+    }>;
+    contractOutput: TransactionReceipt[];
+  }>;
 
   storeEventTransactionData(
     bindingName: string,
-    contractInput?: ContractInput,
+    contractInput?: {
+      functionName: string;
+      inputs: JsonFragmentType[];
+    },
     contractOutput?: TransactionReceipt,
     eventName?: string
   ): Promise<void>;
 
-  storeSingleBinding(singleElement: ContractBinding): Promise<void>;
+  storeSingleBinding(singleElement: any): Promise<void>;
 }

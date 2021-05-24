@@ -1,9 +1,9 @@
 import { cli } from "cli-ux";
 
 import { EventType } from "../../../interfaces/hardhat_ignition";
+import { ModuleState } from "../../types/module";
 
 import { generateErrorMessage, ILogging } from "./index";
-import { ModuleState } from '../../types/module';
 
 export class JsonLogger implements ILogging {
   private currentModuleName: string | undefined;

@@ -6,7 +6,7 @@ import {
   handleMappedErrorCodes,
   UserError,
 } from "../../types/errors";
-import { ModuleState } from '../../types/module';
+import { ModuleState } from "../../types/module";
 
 export enum Logging {
   "empty" = "empty",
