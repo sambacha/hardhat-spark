@@ -1,14 +1,12 @@
 import chalk from "chalk";
 import { cli } from "cli-ux";
 
-import { EventType } from "../../../interfaces/hardhat_ignition";
-import { ModuleState } from "../../modules/states/module";
 import {
   CliError,
   handleMappedErrorCodes,
   UserError,
 } from "../../types/errors";
-import { checkIfExist } from "../util";
+import { ModuleState } from '../../types/module';
 
 export enum Logging {
   "empty" = "empty",
@@ -49,7 +47,7 @@ export interface ILogging {
   bindingExecution(bindingName: string): void;
   finishedBindingExecution(bindingName: string): void;
   eventExecution(eventName: string): void;
-  finishedEventExecution(eventName: string, eventType: EventType): void;
+  finishedEventExecution(eventName: string, eventType: string): void;
   executeContractFunction(contractFunction: string): void;
   contractFunctionAlreadyExecuted(
     contractFunction: string,
@@ -80,7 +78,7 @@ export function generateErrorMessage(
   stack: any;
 } {
   let stack;
-  if (cli.config.outputLevel == "debug") {
+  if (cli.config.outputLevel === "debug") {
     stack = error.stack;
   }
 
@@ -92,7 +90,7 @@ export function generateErrorMessage(
   }
 
   // @ts-ignore
-  if (checkIfExist(error?.code)) {
+  if (error?.code) {
     // @TODO (filip) map all codes with meaningful message
     return {
       // @ts-ignore

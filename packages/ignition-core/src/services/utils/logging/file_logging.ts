@@ -3,9 +3,9 @@ import * as path from "path";
 import { ILogObject, Logger } from "tslog";
 
 import { EventType } from "../../../interfaces/hardhat_ignition";
-import { ModuleState } from "../../modules/states/module";
 import { DEPLOYMENT_FOLDER } from "../../tutorial/tutorial_service";
 import { ModuleContextMissingInLogger } from "../../types/errors";
+import { ModuleState } from "../../types/module";
 
 import { generateErrorMessage, ILogging } from "./index";
 

@@ -1,7 +1,7 @@
 import { BigNumber, ethers } from "ethers";
 
-import { ContractBinding } from "../../../interfaces/hardhat_ignition";
-import { ModuleState } from "../../modules/states/module";
+import { SingleContractLinkReference } from "../../types/artifacts/libraries";
+import { ModuleState } from "../../types/module";
 import { IGasPriceCalculator } from "../gas";
 
 export interface TxMetaData {
@@ -28,7 +28,7 @@ export interface ITransactionGenerator
   fetchTxData(walletAddress: string): Promise<TxMetaData>;
   addLibraryAddresses(
     bytecode: string,
-    binding: ContractBinding,
+    libraries: SingleContractLinkReference | undefined,
     moduleState: ModuleState
   ): string;
   initTx(moduleState: ModuleState): Promise<ModuleState>;

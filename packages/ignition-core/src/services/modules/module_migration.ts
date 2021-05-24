@@ -6,10 +6,9 @@ import {
   ModuleStateBindings,
 } from "../../interfaces/hardhat_ignition";
 import { FileGenerationType } from "../types/migration";
+import { ModuleStateFile } from "../types/module";
 import { generateModuleFile } from "../utils/sol_files";
 import { checkIfExist } from "../utils/util";
-
-import { ModuleStateFile } from "./states/module";
 
 const DEFAULT_MODULE_FOLDER = "deployment";
 

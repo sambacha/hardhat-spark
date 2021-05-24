@@ -1,12 +1,5 @@
-import { HardhatCompiler } from "../../services/ethereum/compiler/hardhat";
-import { ModuleValidator } from "../../services/modules/module_validator";
-import { JsonFragment } from "../../services/types/artifacts/abi";
-import { LinkReferences } from "../../services/types/artifacts/libraries";
-import { MissingContractMetadata } from "../../services/types/errors";
-import { checkIfExist } from "../../services/utils/util";
 import {
   Module,
-  ModuleBuilder,
   ModuleBuilderFn,
   ModuleConfig,
 } from "../hardhat_ignition";
@@ -42,53 +35,4 @@ export function buildModule(
   moduleConfig?: ModuleConfig | undefined
 ): Module {
   return new Module(moduleName, fn, moduleConfig);
-}
-
-export async function handleModule(
-  moduleBuilder: ModuleBuilder,
-  moduleName: string,
-  isUsage: boolean,
-  isSubModule: boolean
-): Promise<ModuleBuilder> {
-  const compiler = new HardhatCompiler();
-  const moduleValidator = new ModuleValidator();
-
-  const contractBuildNames: string[] = [];
-  const moduleBuilderBindings = moduleBuilder.getAllBindings();
-  for (const [, bind] of Object.entries(moduleBuilderBindings)) {
-    contractBuildNames.push(bind.contractName);
-  }
-
-  const bytecodes: { [name: string]: string } = compiler.extractBytecode(
-    contractBuildNames
-  );
-  const abi: {
-    [name: string]: JsonFragment[];
-  } = compiler.extractContractInterface(contractBuildNames);
-  const libraries: LinkReferences = compiler.extractContractLibraries(
-    contractBuildNames
-  );
-
-  if (!isUsage) {
-    moduleValidator.validate(moduleBuilderBindings, abi);
-  }
-
-  for (const [bindingName, binding] of Object.entries(moduleBuilderBindings)) {
-    if (
-      !checkIfExist(bytecodes[binding.contractName]) ||
-      !checkIfExist(libraries[binding.contractName])
-    ) {
-      throw new MissingContractMetadata(
-        `Contract metadata are missing for ${bindingName}`
-      );
-    }
-
-    moduleBuilderBindings[bindingName].bytecode =
-      bytecodes[binding.contractName];
-    moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
-    moduleBuilderBindings[bindingName].libraries =
-      libraries[binding.contractName];
-  }
-
-  return moduleBuilder;
 }

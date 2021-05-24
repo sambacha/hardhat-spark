@@ -25,10 +25,10 @@ import {
   ModuleStateMismatchError,
   UsageEventNotFound,
 } from "../types/errors";
+import { ModuleState, ModuleStateFile } from "../types/module";
 import { ILogging } from "../utils/logging";
 import { checkIfExist, isSameBytecode } from "../utils/util";
 
-import { ModuleState, ModuleStateFile } from "./states/module";
 import { ModuleStateRepo } from "./states/repo/state_repo";
 
 export class ModuleResolver {

@@ -9,8 +9,8 @@ import {
   ContractEvent,
   StatefulEvent,
 } from "../../../../../../interfaces/hardhat_ignition";
+import { ElementStatus, ElementWithStatus } from "../../../../../types/logger";
 import { checkIfExist } from "../../../../util";
-import { ElementStatus, ElementWithStatus } from "../../index";
 
 export const TerminalLayout = ({
   showDeployment,
@@ -84,7 +84,7 @@ function ModuleElements({
   const formattedModuleElements = Object.values(
     moduleElementsWithStatus
   ).filter((elementWithStatus: ElementWithStatus) => {
-    if (elementWithStatus.status != ElementStatus.EMPTY) {
+    if (elementWithStatus.status !== ElementStatus.EMPTY) {
       return true;
     }
   });

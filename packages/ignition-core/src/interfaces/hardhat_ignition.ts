@@ -10,7 +10,7 @@ import { cli } from "cli-ux";
 import { Namespace } from "cls-hooked";
 import { CallOverrides, ethers } from "ethers";
 
-import { HardhatCompiler } from "../services/ethereum/compiler/hardhat";
+import { ICompiler } from "../services/ethereum/compiler";
 import { IGasCalculator, IGasPriceCalculator } from "../services/ethereum/gas";
 import {
   INonceManager,
@@ -20,11 +20,15 @@ import {
 import { EventTxExecutor } from "../services/ethereum/transactions/event_executor";
 import { IModuleRegistryResolver } from "../services/modules/states/registry";
 import { IModuleStateRepo } from "../services/modules/states/repo";
+import { IModuleValidator } from "../services/modules/validator";
 import {
   JsonFragment,
   JsonFragmentType,
 } from "../services/types/artifacts/abi";
-import { SingleContractLinkReference } from "../services/types/artifacts/libraries";
+import {
+  LinkReferences,
+  SingleContractLinkReference,
+} from "../services/types/artifacts/libraries";
 import {
   ArgumentLengthInvalid,
   BindingsConflict,
@@ -33,6 +37,7 @@ import {
   DeploymentFileError,
   EventDoesntExistError,
   EventNameExistsError,
+  MissingContractMetadata,
   MissingToAddressInWalletTransferTransaction,
   ModuleIsAlreadyInitialized,
   ShouldRedeployAlreadyDefinedError,
@@ -47,8 +52,6 @@ import {
   copyValue,
   isSameBytecode,
 } from "../services/utils/util";
-
-import { handleModule } from "./module_builders";
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -724,24 +727,6 @@ export class ContractBinding extends Binding {
   }
 
   /**
-   * Fetching bytecode, abi and libraries metadata from artifacts and injecting them into contract object inside module
-   * builder for use.
-   */
-  public fetchAllContractMetadata() {
-    const compiler = new HardhatCompiler();
-
-    this.bytecode = compiler.extractBytecode([this.contractName])[
-      this.contractName
-    ];
-    this.abi = compiler.extractContractInterface([this.contractName])[
-      this.contractName
-    ];
-    this.libraries = compiler.extractContractLibraries([this.contractName])[
-      this.contractName
-    ];
-  }
-
-  /**
    * This functions is setting library flag to true, in order for hardhat-ignition to know how to resolve library usage.
    */
   public setLibrary() {
@@ -1286,7 +1271,7 @@ export class ContractInstance {
         this.prompter.finishedExecutionOfContractFunction(fragment.name);
 
         return tx;
-      }.bind(this);
+      };
 
       const currentEventAbstraction = this.eventSession.get(
         clsNamespaces.EVENT_NAME
@@ -1520,8 +1505,15 @@ export class ModuleBuilder {
 
   private readonly subModules: ModuleBuilder[];
   private readonly moduleSession: Namespace;
+  private compiler: ICompiler;
+  private moduleValidator: IModuleValidator;
 
-  constructor(moduleSession: Namespace, params?: ModuleParams) {
+  constructor(
+    moduleSession: Namespace,
+    compiler: ICompiler,
+    moduleValidator: IModuleValidator,
+    params?: ModuleParams
+  ) {
     this.bindings = {};
     this.actions = {};
     this.templates = {};
@@ -1540,6 +1532,8 @@ export class ModuleBuilder {
     }
     this.subModules = [];
     this.moduleSession = moduleSession;
+    this.compiler = compiler;
+    this.moduleValidator = moduleValidator;
   }
 
   /**
@@ -1763,6 +1757,8 @@ export class ModuleBuilder {
 
     moduleBuilder = await m.init(
       this.moduleSession,
+      this.compiler,
+      this.moduleValidator,
       signers,
       this,
       moduleParams
@@ -1990,6 +1986,8 @@ export class Module {
 
   public async init(
     moduleSession: Namespace,
+    compiler: ICompiler,
+    moduleValidator: IModuleValidator,
     signers: ethers.Signer[],
     m?: ModuleBuilder,
     moduleParams?: ModuleParams
@@ -1997,7 +1995,14 @@ export class Module {
     if (moduleParams && checkIfExist(moduleParams)) {
       this.params = moduleParams;
     }
-    let moduleBuilder = m ? m : new ModuleBuilder(moduleSession, moduleParams);
+    let moduleBuilder = m
+      ? m
+      : new ModuleBuilder(
+          moduleSession,
+          compiler,
+          moduleValidator,
+          moduleParams
+        );
     if (moduleParams) {
       moduleBuilder.setParam(moduleParams);
     }
@@ -2024,6 +2029,8 @@ export class Module {
     }
     moduleBuilder = await handleModule(
       moduleBuilder,
+      compiler,
+      moduleValidator,
       this.name,
       this.isUsage,
       !!m
@@ -2118,4 +2125,52 @@ function checkIfSuitableForInstantiating(
     checkIfExist(contractBinding?.txGenerator) &&
     checkIfExist(contractBinding?.moduleStateRepo)
   );
+}
+
+export async function handleModule(
+  moduleBuilder: ModuleBuilder,
+  compiler: ICompiler,
+  moduleValidator: IModuleValidator,
+  moduleName: string,
+  isUsage: boolean,
+  isSubModule: boolean
+): Promise<ModuleBuilder> {
+  const contractBuildNames: string[] = [];
+  const moduleBuilderBindings = moduleBuilder.getAllBindings();
+  for (const [, bind] of Object.entries(moduleBuilderBindings)) {
+    contractBuildNames.push(bind.contractName);
+  }
+
+  const bytecodes: { [name: string]: string } = compiler.extractBytecode(
+    contractBuildNames
+  );
+  const abi: {
+    [name: string]: JsonFragment[];
+  } = compiler.extractContractInterface(contractBuildNames);
+  const libraries: LinkReferences = compiler.extractContractLibraries(
+    contractBuildNames
+  );
+
+  if (!isUsage) {
+    moduleValidator.validate(moduleBuilderBindings, abi);
+  }
+
+  for (const [bindingName, binding] of Object.entries(moduleBuilderBindings)) {
+    if (
+      !checkIfExist(bytecodes[binding.contractName]) ||
+      !checkIfExist(libraries[binding.contractName])
+    ) {
+      throw new MissingContractMetadata(
+        `Contract metadata are missing for ${bindingName}`
+      );
+    }
+
+    moduleBuilderBindings[bindingName].bytecode =
+      bytecodes[binding.contractName];
+    moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
+    moduleBuilderBindings[bindingName].libraries =
+      libraries[binding.contractName];
+  }
+
+  return moduleBuilder;
 }

@@ -12,9 +12,9 @@ import {
   StatefulEvent,
   TxData,
 } from "../../interfaces/hardhat_ignition";
+import { ModuleStateFile } from "../types/module";
 import { checkIfExist } from "../utils/util";
 
-import { ModuleStateFile } from "./states/module";
 import { ModuleStateRepo } from "./states/repo/state_repo";
 
 export enum SummaryType {

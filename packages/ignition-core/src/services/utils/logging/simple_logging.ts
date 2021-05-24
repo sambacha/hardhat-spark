@@ -3,12 +3,12 @@ import { SingleBar } from "cli-progress";
 import cli from "cli-ux";
 
 import { EventType } from "../../../interfaces/hardhat_ignition";
-import { ModuleState } from "../../modules/states/module";
 import {
   CliError,
   DeniedConfirmation,
   ModuleContextMissingInLogger,
 } from "../../types/errors";
+import { ModuleState } from "../../types/module";
 import { checkIfExist } from "../util";
 
 import { FileLogging } from "./file_logging";

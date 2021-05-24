@@ -1,12 +1,8 @@
+import { ModuleState, ModuleStateFile } from "../../../types/module";
 import { checkIfExist, copyValue } from "../../../utils/util";
 import { ModuleStateRepo } from "../repo/state_repo";
 
-import {
-  IModuleState,
-  IModuleStateCleanup,
-  ModuleState,
-  ModuleStateFile,
-} from "./index";
+import { IModuleState, IModuleStateCleanup } from "./index";
 
 export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
   private _state: {

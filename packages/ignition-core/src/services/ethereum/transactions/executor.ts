@@ -25,7 +25,6 @@ import {
 import { Batcher } from "../../modules/events/batcher";
 import { EventHandler } from "../../modules/events/handler";
 import { ModuleResolver } from "../../modules/module_resolver";
-import { ModuleState } from "../../modules/states/module";
 import { IModuleRegistryResolver } from "../../modules/states/registry";
 import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
 import { JsonFragment, JsonFragmentType } from "../../types/artifacts/abi";
@@ -37,6 +36,7 @@ import {
   NoContractBindingDataInModuleState,
   TransactionFailed,
 } from "../../types/errors";
+import { ModuleState } from "../../types/module";
 import { clsNamespaces } from "../../utils/continuation_local_storage";
 import { ILogging } from "../../utils/logging";
 import { checkIfExist } from "../../utils/util";
@@ -838,7 +838,7 @@ export class TxExecutor {
     bytecode = bytecode + abiCoder.encode(types, values).substring(2);
     bytecode = await this.txGenerator.addLibraryAddresses(
       bytecode,
-      binding,
+      binding.libraries,
       moduleState
     );
 

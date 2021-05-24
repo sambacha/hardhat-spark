@@ -1,16 +1,11 @@
 import fs from "fs";
 import path from "path";
 
+import { ModuleState, ModuleStateFile } from "../../../types/module";
 import { Mutex } from "../../../utils/mutex/simple_mutex";
 import { ModuleStateRepo } from "../repo/state_repo";
 
-import {
-  IModuleState,
-  ModuleState,
-  ModuleStateFile,
-  STATE_DIR_NAME,
-  STATE_NAME,
-} from "./index";
+import { IModuleState, STATE_DIR_NAME, STATE_NAME } from "./index";
 
 export class FileSystemModuleState implements IModuleState {
   private mutex: Mutex;

@@ -12,13 +12,9 @@ import {
   StatefulEvent,
 } from "../../../../interfaces/hardhat_ignition";
 import { CliError } from "../../../types/errors";
+import { ModuleState, ModuleStateFile } from "../../../types/module";
 import { checkIfExist } from "../../../utils/util";
-import {
-  IModuleState,
-  IModuleStateCleanup,
-  ModuleState,
-  ModuleStateFile,
-} from "../module";
+import { IModuleState, IModuleStateCleanup } from "../module";
 
 import { IModuleStateRepo } from "./index";
 

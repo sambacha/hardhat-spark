@@ -16,7 +16,7 @@ export function handleTypes(
         break;
       }
 
-      if (value.type == "BigNumber") {
+      if (value.type === "BigNumber") {
         value = BigNumber.from(value.hex);
         handleString(bindingName, (value as BigNumber).toString(), type);
         break;

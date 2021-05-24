@@ -5,6 +5,8 @@ import { ethers } from "ethers";
 import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
 import { GlobalConfigService } from "./services/config";
 import { EthClient } from "./services/ethereum/client";
+import { ICompiler } from "./services/ethereum/compiler";
+import { HardhatCompiler } from "./services/ethereum/compiler/hardhat";
 import { IGasProvider } from "./services/ethereum/gas";
 import { GasPriceCalculator } from "./services/ethereum/gas/calculator";
 import {
@@ -19,12 +21,13 @@ import { WalletWrapper } from "./services/ethereum/wallet/wrapper";
 import { EventHandler } from "./services/modules/events/handler";
 import { ModuleDeploymentSummaryService } from "./services/modules/module_deployment_summary";
 import { ModuleResolver } from "./services/modules/module_resolver";
-import { ModuleState } from "./services/modules/states/module";
 import { FileSystemModuleState } from "./services/modules/states/module/file_system";
 import { MemoryModuleState } from "./services/modules/states/module/memory";
 import { IModuleRegistryResolver } from "./services/modules/states/registry";
 import { ModuleStateRepo } from "./services/modules/states/repo/state_repo";
 import { ModuleTypings } from "./services/modules/typings";
+import { IModuleValidator } from "./services/modules/validator";
+import { ModuleValidator } from "./services/modules/validator/module_validator";
 import { GasPriceBackoff } from "./services/types/config";
 import { EmptySigners, ServicesNotInitialized } from "./services/types/errors";
 import { IErrorReporting } from "./services/utils/analytics";
@@ -38,6 +41,7 @@ import { ILogging } from "./services/utils/logging";
 import { EmptyLogger } from "./services/utils/logging/empty_logging";
 import { OverviewLogger } from "./services/utils/logging/react-terminal";
 import { checkIfExist, errorHandling } from "./services/utils/util";
+import { ModuleState } from './services/types/module';
 
 export * from "./interfaces/hardhat_ignition";
 export * from "./interfaces/module_builders";
@@ -173,6 +177,8 @@ export class IgnitionCore implements IIgnition {
 
   private errorReporter: IErrorReporting | undefined;
   private moduleTyping: ModuleTypings | undefined;
+  private readonly compiler: ICompiler;
+  private readonly moduleValidator: IModuleValidator;
 
   constructor(
     params: IgnitionParams,
@@ -184,6 +190,10 @@ export class IgnitionCore implements IIgnition {
     this.customServices = services;
     this.repos = repos;
     this.moduleParams = moduleParams;
+
+    // @TODO move to mustInit eventually
+    this.compiler = new HardhatCompiler();
+    this.moduleValidator = new ModuleValidator();
   }
 
   public async mustInit(
@@ -293,6 +303,8 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
+          this.compiler,
+          this.moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
           {
@@ -399,6 +411,8 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
+          this.compiler,
+          this.moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
           {
@@ -451,6 +465,8 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
+          this.compiler,
+          this.moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
           this.moduleParams

@@ -1,5 +1,4 @@
 import {
-  TransactionReceipt,
   TransactionResponse,
 } from "@ethersproject/abstract-provider";
 import { ContractFunction } from "@ethersproject/contracts";

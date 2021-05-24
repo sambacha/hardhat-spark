@@ -99,10 +99,10 @@ export const filler = (
     value = ethers.utils.parseUnits("1", "ether") as ethers.BigNumber;
   }
   m.onStart("on start distribute ethers to all accounts", async () => {
-    for (let i = 0; i < wallets.length; i++) {
+    for (const wallet of wallets) {
       await rootWallet.sendTransaction({
         from: await rootWallet.getAddress(),
-        to: await wallets[i].getAddress(),
+        to: await wallet.getAddress(),
         value,
         gasLimit: 21000,
       });

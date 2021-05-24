@@ -1,15 +1,12 @@
 import chalk from "chalk";
 import { cli } from "cli-ux";
 import { render } from "ink";
-import React, { FC, ReactNode } from "react";
+import React, { ReactNode } from "react";
 
-import {
-  ContractBinding,
-  EventType,
-  StatefulEvent,
-} from "../../../../interfaces/hardhat_ignition";
-import { ModuleState } from "../../../modules/states/module";
+import { EventType } from "../../../../interfaces/hardhat_ignition";
 import { ModuleContextMissingInLogger } from "../../../types/errors";
+import { ElementStatus, ElementWithStatus } from "../../../types/logger";
+import { ModuleState } from "../../../types/module";
 import { getIgnitionVersion } from "../../package_info";
 import { checkIfExist } from "../../util";
 import { FileLogging } from "../file_logging";
@@ -17,17 +14,6 @@ import { generateErrorMessage, ILogging } from "../index";
 
 import { ConfirmationQuestion } from "./ui/layout/confirmation_question";
 import { TerminalLayout } from "./ui/layout/terminal";
-
-export enum ElementStatus {
-  "EMPTY" = "EMPTY",
-  "IN_PROGRESS" = "IN_PROGRESS",
-  "SUCCESSFULLY" = "SUCCESSFULLY",
-}
-
-export interface ElementWithStatus {
-  element: ContractBinding | StatefulEvent;
-  status: ElementStatus;
-}
 
 // @ts-ignore
 export class OverviewLogger extends FileLogging implements ILogging {
@@ -109,7 +95,7 @@ export class OverviewLogger extends FileLogging implements ILogging {
 
     if (!checkIfExist(this.moduleName)) {
       cli.info(chalk.red(errorMessage));
-      if (cli.config.outputLevel == "debug") {
+      if (cli.config.outputLevel === "debug") {
         cli.info(errorStack);
       }
 
@@ -209,7 +195,7 @@ export class OverviewLogger extends FileLogging implements ILogging {
 
   public finishedEventExecution(eventName: string, eventType: EventType): void {
     super.finishedEventExecution(eventName, eventType);
-    if (eventType == EventType.OnFail) {
+    if (eventType === EventType.OnFail) {
       return;
     }
 

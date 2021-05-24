@@ -7,10 +7,10 @@ import {
 } from "../../interfaces/hardhat_ignition";
 import { CliError } from "../types/errors";
 import { FileGenerationType, ModuleFile } from "../types/migration";
+import { ModuleStateFile } from "../types/module";
 import { generateModuleFile } from "../utils/sol_files";
 import { checkIfExist, removeLastPathElement } from "../utils/util";
 
-import { ModuleStateFile } from "./states/module";
 import { ModuleStateRepo } from "./states/repo/state_repo";
 
 export class ModuleUsage {

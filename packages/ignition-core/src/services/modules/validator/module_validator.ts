@@ -1,12 +1,14 @@
-import { ContractBinding } from "../../interfaces/hardhat_ignition";
-import { JsonFragment } from "../types/artifacts/abi";
-import { handleTypes } from "../types/checker";
-import { AbiMismatch, MissingContractMetadata } from "../types/errors";
-import { checkIfExist } from "../utils/util";
+import { ContractBinding } from "../../../interfaces/hardhat_ignition";
+import { JsonFragment } from "../../types/artifacts/abi";
+import { handleTypes } from "../../types/checker";
+import { AbiMismatch, MissingContractMetadata } from "../../types/errors";
+import { checkIfExist } from "../../utils/util";
+
+import { IModuleValidator } from "./index";
 
 const CONSTRUCTOR_TYPE = "constructor";
 
-export class ModuleValidator {
+export class ModuleValidator implements IModuleValidator {
   constructor() {}
 
   public validate(
@@ -19,9 +21,9 @@ export class ModuleValidator {
       }
 
       const abis = ABIs[binding.contractName];
-      let ABI = {} as JsonFragment;
+      let ABI: JsonFragment = {};
       for (const abi of abis) {
-        if (abi.type == CONSTRUCTOR_TYPE) {
+        if (abi.type === CONSTRUCTOR_TYPE) {
           ABI = abi;
         }
       }
@@ -29,7 +31,7 @@ export class ModuleValidator {
       const abiInputs = ABI.inputs || [];
       const abiInputsLength = ABI.inputs?.length || 0;
       if (
-        binding.args.length != abiInputsLength &&
+        binding.args.length !== abiInputsLength &&
         !binding?.deployMetaData?.deploymentSpec?.deployFn
       ) {
         throw new AbiMismatch(

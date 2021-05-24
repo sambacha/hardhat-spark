@@ -8,7 +8,6 @@ import {
   ModuleParams,
   ModuleStateFile,
 } from "ignition-core";
-import * as path from "path";
 
 export interface ConfigFlags {
   networkId: string;
@@ -51,7 +50,6 @@ export class IgnitionTests implements IIgnitionUsage {
   }
 
   public async getStateFile(moduleName: string): Promise<ModuleStateFile> {
-    // @ts-ignore
     return this.core.moduleStateRepo.getStateIfExist(moduleName);
   }
 

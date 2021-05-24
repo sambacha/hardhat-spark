@@ -2,14 +2,11 @@ import { TransactionReceipt } from "@ethersproject/abstract-provider";
 
 import {
   ContractBinding,
-  ContractBindingMetaData,
   ContractInput,
-  Deployed,
   EventTransactionData,
   EventType,
-  StatefulEvent,
 } from "../../../../interfaces/hardhat_ignition";
-import { ModuleState, ModuleStateFile } from "../module";
+import { ModuleState, ModuleStateFile } from "../../../types/module";
 
 export interface IModuleStateRepo {
   initStateRepo(moduleName: string): void;

@@ -12,10 +12,11 @@ import {
   Migration,
   TruffleBuild,
 } from "../../types/migration";
+import { ModuleStateFile } from "../../types/module";
 import { searchBuilds, searchBuildsAndNetworks } from "../../utils/sol_files";
 import { checkIfExist } from "../../utils/util";
 
-import { IModuleState, ModuleStateFile } from "./module";
+import { IModuleState } from "./module";
 
 const TRUFFLE_BUILD_DIR_NAME = "build";
 const HARDHAT_DEPLOYMENTS_DIR_NAME = "deployments";

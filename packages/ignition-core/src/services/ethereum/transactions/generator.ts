@@ -1,10 +1,10 @@
 import { BigNumber, ethers, providers } from "ethers";
 
 import { ContractBinding } from "../../../interfaces/hardhat_ignition";
-import { ModuleState } from "../../modules/states/module";
 import { SingleContractLinkReference } from "../../types/artifacts/libraries";
 import { GasPriceBackoff } from "../../types/config";
 import { CliError, GasPriceBackoffError } from "../../types/errors";
+import { ModuleState } from "../../types/module";
 import { ILogging } from "../../utils/logging";
 import { checkIfExist, delay } from "../../utils/util";
 import { IGasCalculator, IGasPriceCalculator } from "../gas";
@@ -88,10 +88,12 @@ export class EthTxGenerator implements ITransactionGenerator {
 
   public addLibraryAddresses(
     bytecode: string,
-    binding: ContractBinding,
+    libraries: SingleContractLinkReference | undefined,
     moduleState: ModuleState
   ): string {
-    const libraries = binding.libraries as SingleContractLinkReference;
+    if (!libraries) {
+      return bytecode;
+    }
 
     for (const [libraryName, libraryOccurrences] of Object.entries(libraries)) {
       const contractAddress = (moduleState[libraryName] as ContractBinding)

@@ -14,9 +14,9 @@ import {
   StatefulEvent,
 } from "../../../interfaces/hardhat_ignition";
 import { CliError, EventExecutionError } from "../../types/errors";
+import { ModuleState } from "../../types/module";
 import { ILogging } from "../../utils/logging";
 import { checkIfExist } from "../../utils/util";
-import { ModuleState } from "../states/module";
 import { ModuleStateRepo } from "../states/repo/state_repo";
 
 export class EventHandler {
