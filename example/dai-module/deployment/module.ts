@@ -1,4 +1,3 @@
-// @ts-ignore
 import { DaiModule } from './dai_module';
 import { buildModule, ModuleBuilder } from 'ignition-core';
 

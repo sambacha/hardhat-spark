@@ -83,6 +83,7 @@ export * from "./services/config";
 export * from "./services/types";
 export * from "./services/types/config";
 export * from "./services/utils/analytics";
+export * from "./services/types/module";
 
 export interface DiffArgs {
   moduleFilePath?: string;
@@ -155,8 +156,9 @@ export class IgnitionCore implements IIgnition {
   public customServices: IgnitionServices;
   public repos: IgnitionRepos;
   public moduleParams: ModuleParams;
-  private _initialized: boolean = false;
+  public moduleStateRepo: ModuleStateRepo | undefined;
 
+  private _initialized: boolean = false;
   private networkName: string | undefined;
   private networkId: string | undefined;
   private gasPriceBackoff: GasPriceBackoff | undefined;
@@ -166,7 +168,6 @@ export class IgnitionCore implements IIgnition {
 
   private gasProvider: IGasProvider | undefined;
   private eventSession: cls.Namespace | undefined;
-  private moduleStateRepo: ModuleStateRepo | undefined;
   private moduleResolver: ModuleResolver | undefined;
   private txGenerator: EthTxGenerator | undefined;
   private txExecutor: TxExecutor | undefined;

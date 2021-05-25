@@ -1,7 +1,6 @@
 import { checkIfExist, expectFuncRead, ContractBinding, ContractEvent, buildModule } from 'ignition-core';
 import { splitArrayIntoChunks, toBytes32 } from '../../util/util';
 
-// @ts-ignore
 import { SynthetixModuleBuilder } from '../SynthetixModule';
 
 export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async (m: SynthetixModuleBuilder) => {
@@ -41,7 +40,6 @@ export const SynthetixRebuildCache = buildModule('SynthetixRebuildCache', async 
     const addressesToCache = contractsWithRebuildableCache.map((
       {
         deployMetaData: {
-          // @ts-ignore
           contractAddress
         }
       }) => {

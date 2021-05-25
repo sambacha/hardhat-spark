@@ -72,7 +72,7 @@ export interface ILogging {
 }
 
 export function generateErrorMessage(
-  error: Error
+  error: any
 ): {
   message: string;
   stack: any;
@@ -89,11 +89,9 @@ export function generateErrorMessage(
     };
   }
 
-  // @ts-ignore
   if (error?.code) {
     // @TODO (filip) map all codes with meaningful message
     return {
-      // @ts-ignore
       message: handleMappedErrorCodes(error?.code, error),
       stack,
     };

@@ -212,7 +212,6 @@ describe("ignition deploy", () => {
   });
 
   describe("ignition deploy - examples - sync", () => {
-    // TODO: This is an async call, and tests must be defined synchronously
     runExamples(ignition);
   });
 
@@ -334,19 +333,13 @@ async function runDeployCommand(
   projectLocation: string,
   projectFileName: string = moduleFileName
 ): Promise<void> {
-  // TODO: Remove this
-  execSync("npx hardhat compile");
-
   const deploymentFilePath = path.resolve(
     projectLocation,
     DEPLOYMENT_FOLDER,
     projectFileName
   );
   const modules = await loadScript(deploymentFilePath, true);
-  for (const [, moduleFunc] of Object.entries(modules)) {
-    // TODO: What's this await here? Is the module returning promises?
-    const module = (await moduleFunc) as Module;
-
+  for (const [, module] of Object.entries(modules)) {
     await ignition.deploy(module);
   }
 }

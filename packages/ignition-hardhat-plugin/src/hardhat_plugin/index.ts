@@ -7,7 +7,6 @@ import {
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
-  Module,
   SystemCrawlingService,
 } from "ignition-core";
 import inquirer from "inquirer";
@@ -59,7 +58,7 @@ const deploy: ActionType<DeployArgs> = async (
           name: "deploymentFileName",
           message: "Deployments file:",
           type: "list",
-          choices: deploymentModules.map((v) => {
+          choices: deploymentModules.map((v: string) => {
             return {
               name: v,
             };
@@ -76,10 +75,7 @@ const deploy: ActionType<DeployArgs> = async (
 
   const modulePath = path.resolve(process.cwd(), filePath);
   const modules = await loadScript(modulePath);
-  for (const [, moduleFunc] of Object.entries(modules)) {
-    // TODO: See the other comments about this
-    const module = (await moduleFunc) as Module;
-
+  for (const [, module] of Object.entries(modules)) {
     const logging = deployArgs.logging ?? true;
     await env.ignition.deploy(module, deployArgs.networkName, logging);
   }
@@ -104,7 +100,7 @@ const diff: ActionType<DiffArgs> = async (
           name: "deploymentFileName",
           message: "Deployments file:",
           type: "list",
-          choices: deploymentModules.map((v) => {
+          choices: deploymentModules.map((v: string) => {
             return {
               name: v,
             };
@@ -119,10 +115,7 @@ const diff: ActionType<DiffArgs> = async (
     }
   }
   const modules = loadScript(path.resolve(process.cwd(), filePath));
-  for (const [, moduleFunc] of Object.entries(modules)) {
-    // TODO: See the other comments about this
-    const module = (await moduleFunc) as Module;
-
+  for (const [, module] of Object.entries(modules)) {
     const logging = diffArgs.logging ?? true;
     await env.ignition.diff(module, diffArgs.networkName, logging);
   }
@@ -135,10 +128,7 @@ const genTypes: ActionType<GenTypesArgs> = async (
   const modules = loadScript(
     path.resolve(process.cwd(), genTypesArgs.deploymentFolder)
   );
-  for (const [, moduleFunc] of Object.entries(modules)) {
-    // TODO: See the other comments about this
-    const module = (await moduleFunc) as Module;
-
+  for (const [, module] of Object.entries(modules)) {
     await env.ignition.genTypes(module, genTypesArgs.deploymentFolder);
   }
 };

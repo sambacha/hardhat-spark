@@ -97,7 +97,7 @@ export function getUserAgent(): string {
 }
 
 export async function errorHandling(
-  error: Error,
+  error: any,
   logger?: ILogging,
   errorReporter?: IErrorReporting
 ) {
@@ -107,9 +107,7 @@ export async function errorHandling(
     return;
   }
 
-  // @ts-ignore
   if (checkIfExist(error?.code)) {
-    // @ts-ignore
     cli.info(handleMappedErrorCodes(error.code, error));
     if (cli.config.outputLevel === "debug" && error?.stack) {
       cli.debug(error?.stack);

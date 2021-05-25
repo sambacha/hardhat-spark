@@ -15,7 +15,6 @@ import { generateErrorMessage, ILogging } from "../index";
 import { ConfirmationQuestion } from "./ui/layout/confirmation_question";
 import { TerminalLayout } from "./ui/layout/terminal";
 
-// @ts-ignore
 export class OverviewLogger extends FileLogging implements ILogging {
   private readonly rerender: {
     [moduleName: string]: (node: ReactNode) => void;
@@ -29,8 +28,6 @@ export class OverviewLogger extends FileLogging implements ILogging {
   private numberOfExecutedElements: number = 0;
   private totalNumberOfElements: number = 0;
   private moduleElements: { [key: string]: ElementWithStatus } = {};
-
-  private moduleName: string | undefined;
 
   constructor() {
     super();

@@ -104,7 +104,7 @@ export class ModuleDeploymentSummaryService {
       if ((element as StatefulEvent)._isStatefulEvent) {
         element = element as StatefulEvent;
         const oldElement = oldModuleState[elementName] as StatefulEvent;
-        if (oldElement?.executed == element?.executed) {
+        if (oldElement?.executed === element?.executed) {
           continue;
         }
 
@@ -114,7 +114,6 @@ export class ModuleDeploymentSummaryService {
 
         numberOfEvents = numberOfEvents.add(1);
         for (const [, txObject] of Object.entries(element.txData)) {
-          // @ts-ignore
           transactionReceiptList.input.push(...txObject.contractInput);
           transactionReceiptList.output.push(...txObject.contractOutput);
         }
@@ -126,7 +125,7 @@ export class ModuleDeploymentSummaryService {
           elementName
         ] as ContractBindingMetaData;
         if (
-          oldElement?.deployMetaData?.contractAddress ==
+          oldElement?.deployMetaData?.contractAddress ===
           element?.deployMetaData?.contractAddress
         ) {
           continue;
@@ -160,12 +159,8 @@ export class ModuleDeploymentSummaryService {
           let inputGasPrice;
           let outputGasUsed = BigNumber.from(0);
           if (singleTxOutput && singleTxOutput.gasUsed) {
-            // @ts-ignore
-            if (!singleTxOutput.gasUsed?.hex) {
+            if (singleTxOutput.gasUsed?._hex) {
               outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
-            } else {
-              // @ts-ignore
-              outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
             }
           }
 

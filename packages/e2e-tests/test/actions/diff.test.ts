@@ -189,10 +189,7 @@ async function runDiffCommand(
   );
 
   const modules = await loadScript(deploymentFilePath, true);
-  for (const [, moduleFunc] of Object.entries(modules)) {
-    // TODO: Is this a promise?
-    const module = (await moduleFunc) as Module;
-
+  for (const [, module] of Object.entries(modules)) {
     await ignition.diff(module);
   }
 }

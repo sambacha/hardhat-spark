@@ -12,8 +12,9 @@ import { generateErrorMessage, ILogging } from "./index";
 const FOLDER_NAME = ".log";
 
 export class FileLogging implements ILogging {
+  protected moduleName: string | undefined;
+
   private fullLogPath: string;
-  private moduleName: string | undefined;
   private readonly errorLogger: Logger;
   private readonly logger: { [moduleName: string]: Logger };
 

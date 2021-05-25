@@ -4,6 +4,7 @@ import {
   StatefulEvent,
 } from "../../interfaces/hardhat_ignition";
 
+// @TODO move this in a meaningful place once we separate hardhat_ignition.ts
 export interface ModuleState {
   [p: string]: ContractBinding | StatefulEvent;
 }

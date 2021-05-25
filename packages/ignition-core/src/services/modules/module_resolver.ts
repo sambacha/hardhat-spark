@@ -477,10 +477,8 @@ export class ModuleResolver {
         newModuleStates[Object.keys(newModuleStates)[i]];
 
       if (
-        // @ts-ignore
-        checkIfExist(oldModuleElement?.bytecode) &&
-        // @ts-ignore
-        checkIfExist(newModuleElement?.bytecode)
+        checkIfExist((oldModuleElement as ContractBindingMetaData)?.bytecode) &&
+        checkIfExist((newModuleElement as ContractBinding)?.bytecode)
       ) {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
         newModuleElement = newModuleElement as ContractBinding;
@@ -543,7 +541,6 @@ export class ModuleResolver {
       let newModuleElement: ContractBinding | StatefulEvent =
         newModuleStates[Object.keys(newModuleStates)[i]];
 
-      // @ts-ignore
       if (
         (oldModuleElement as ContractBindingMetaData)?.bytecode &&
         (newModuleElement as ContractBinding)?.bytecode
@@ -589,8 +586,7 @@ export class ModuleResolver {
       let newModuleElement: ContractBinding | StatefulEvent =
         newModuleStates[Object.keys(newModuleStates)[i]];
 
-      // @ts-ignore
-      if (checkIfExist(newModuleElement?.bytecode)) {
+      if ((newModuleElement as ContractBinding)?.bytecode) {
         newModuleElement = newModuleElement as ContractBinding;
 
         cli.info("+", "Contract", newModuleElement.name);

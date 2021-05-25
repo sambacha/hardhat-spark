@@ -44,8 +44,7 @@ In a case that want to run a local rpc node, execute $ npx hardhat node
 `);
     }
     case ethers.errors.SERVER_ERROR: {
-      // @ts-ignore
-      return chalk.red(`${error.error.message}
+      return chalk.red(`${error.message}
 
 If you are running a local rpc node you can check node logs for more error information`);
     }

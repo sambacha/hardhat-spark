@@ -2,7 +2,7 @@ export class Mutex {
   private _lock: any;
 
   public isLocked() {
-    return this._lock != undefined;
+    return this._lock !== undefined;
   }
 
   public acquireQueued() {
@@ -17,7 +17,7 @@ export class Mutex {
       release = resolve;
     }));
     return () => {
-      if (this._lock == lock) {
+      if (this._lock === lock) {
         this._lock = undefined;
       }
       release();

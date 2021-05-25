@@ -40,12 +40,10 @@ export class IgnitionTests implements IIgnitionUsage {
   }
 
   public cleanup() {
-    // @ts-ignore
     this.core.moduleStateRepo.clear();
   }
 
   public async setStateFile(moduleName: string, stateFile: ModuleStateFile) {
-    // @ts-ignore
     await this.core.moduleStateRepo.storeNewState(moduleName, stateFile);
   }
 
