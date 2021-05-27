@@ -7,6 +7,7 @@ import {
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
+  Module,
   SystemCrawlingService,
 } from "ignition-core";
 import inquirer from "inquirer";
@@ -75,7 +76,7 @@ const deploy: ActionType<DeployArgs> = async (
 
   const modulePath = path.resolve(process.cwd(), filePath);
   const modules = await loadScript(modulePath);
-  for (const [, module] of Object.entries(modules)) {
+  for (const [, module] of Object.entries<Module>(modules)) {
     const logging = deployArgs.logging ?? true;
     await env.ignition.deploy(module, deployArgs.networkName, logging);
   }
