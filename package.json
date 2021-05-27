@@ -9,15 +9,14 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build": "tsc -b packages/common packages/ignition-core packages/ignition-hardhat-plugin packages/ignition-test",
-    "build-test": "tsc -b packages/ignition-core packages/ignition-test packages/e2e-tests",
+    "build": "wsrun --exclude-missing --serial build",
     "install:examples": "./bin/install_example_node_modules.sh",
     "install:tests": "./bin/install_tests_projects_node_modules.sh",
     "test": "npx ts-node scripts/run-tests.ts",
     "hardhat:node": "cd example/synthetix && npx hardhat node",
     "lint": "wsrun --exclude-missing --serial lint",
     "lint:fix": "wsrun --exclude-missing --stages lint:fix",
-    "clean": "wsrun --exclude-missing clean"
+    "clean": "wsrun --exclude-missing --serial clean"
   },
   "devDependencies": {
     "typescript": "~4.0.3",
