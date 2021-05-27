@@ -159,27 +159,27 @@ export class IgnitionCore implements IIgnition {
   public moduleStateRepo: ModuleStateRepo | undefined;
 
   private _initialized: boolean = false;
-  private networkName: string | undefined;
-  private networkId: string | undefined;
-  private gasPriceBackoff: GasPriceBackoff | undefined;
-  private rpcProvider: ethers.providers.JsonRpcProvider | undefined;
-  private signers: ethers.Signer[] | undefined;
-  private logger: ILogging | undefined;
+  private _networkName: string | undefined;
+  private _networkId: string | undefined;
+  private _gasPriceBackoff: GasPriceBackoff | undefined;
+  private _rpcProvider: ethers.providers.JsonRpcProvider | undefined;
+  private _signers: ethers.Signer[] | undefined;
+  private _logger: ILogging | undefined;
 
-  private gasProvider: IGasProvider | undefined;
-  private eventSession: cls.Namespace | undefined;
-  private moduleResolver: ModuleResolver | undefined;
-  private txGenerator: EthTxGenerator | undefined;
-  private txExecutor: TxExecutor | undefined;
-  private walletWrapper: WalletWrapper | undefined;
-  private moduleDeploymentSummaryService:
+  private _gasProvider: IGasProvider | undefined;
+  private _eventSession: cls.Namespace | undefined;
+  private _moduleResolver: ModuleResolver | undefined;
+  private _txGenerator: EthTxGenerator | undefined;
+  private _txExecutor: TxExecutor | undefined;
+  private _walletWrapper: WalletWrapper | undefined;
+  private _moduleDeploymentSummaryService:
     | ModuleDeploymentSummaryService
     | undefined;
 
-  private errorReporter: IErrorReporting | undefined;
-  private moduleTyping: ModuleTypings | undefined;
-  private readonly compiler: ICompiler;
-  private readonly moduleValidator: IModuleValidator;
+  private _errorReporter: IErrorReporting | undefined;
+  private _moduleTyping: ModuleTypings | undefined;
+  private readonly _compiler: ICompiler;
+  private readonly _moduleValidator: IModuleValidator;
 
   constructor(
     params: IgnitionParams,
@@ -193,8 +193,8 @@ export class IgnitionCore implements IIgnition {
     this.moduleParams = moduleParams;
 
     // @TODO move to mustInit eventually
-    this.compiler = new HardhatCompiler();
-    this.moduleValidator = new ModuleValidator();
+    this._compiler = new HardhatCompiler();
+    this._moduleValidator = new ModuleValidator();
   }
 
   public async mustInit(
@@ -203,16 +203,16 @@ export class IgnitionCore implements IIgnition {
     repos?: IgnitionRepos,
     moduleParams?: ModuleParams
   ) {
-    if (params) {
+    if (params !== undefined) {
       this.params = params;
     }
-    if (services) {
+    if (services !== undefined) {
       this.customServices = services;
     }
-    if (repos) {
+    if (repos !== undefined) {
       this.repos = repos;
     }
-    if (moduleParams) {
+    if (moduleParams !== undefined) {
       this.moduleParams = moduleParams;
     }
     const {
@@ -239,24 +239,24 @@ export class IgnitionCore implements IIgnition {
       this.repos
     );
 
-    this.networkName = this.params.networkName;
-    this.networkId = networkId;
-    this.gasPriceBackoff = gasPriceBackoff;
-    this.rpcProvider = rpcProvider;
-    this.signers = signers;
-    this.logger = logger;
+    this._networkName = this.params.networkName;
+    this._networkId = networkId;
+    this._gasPriceBackoff = gasPriceBackoff;
+    this._rpcProvider = rpcProvider;
+    this._signers = signers;
+    this._logger = logger;
 
-    this.gasProvider = gasProvider;
-    this.eventSession = eventSession;
+    this._gasProvider = gasProvider;
+    this._eventSession = eventSession;
     this.moduleStateRepo = moduleStateRepo;
-    this.moduleResolver = moduleResolver;
-    this.txGenerator = txGenerator;
-    this.txExecutor = txExecutor;
-    this.walletWrapper = walletWrapper;
-    this.moduleDeploymentSummaryService = moduleDeploymentSummaryService;
+    this._moduleResolver = moduleResolver;
+    this._txGenerator = txGenerator;
+    this._txExecutor = txExecutor;
+    this._walletWrapper = walletWrapper;
+    this._moduleDeploymentSummaryService = moduleDeploymentSummaryService;
 
-    this.errorReporter = errorReporter;
-    this.moduleTyping = moduleTyping;
+    this._errorReporter = errorReporter;
+    this._moduleTyping = moduleTyping;
 
     this._initialized = true;
   }
@@ -273,23 +273,23 @@ export class IgnitionCore implements IIgnition {
       }
 
       if (this.params.logging !== logging) {
-        await this.reInitLogger(!!logging);
+        await this.reInitLogger(logging !== undefined);
       }
 
       if (
-        !this.moduleStateRepo ||
-        !this.logger ||
-        !this.txGenerator ||
-        !this.moduleResolver ||
-        !this.txExecutor ||
-        !this.moduleDeploymentSummaryService
+        this.moduleStateRepo === undefined ||
+        this._logger === undefined ||
+        this._txGenerator === undefined ||
+        this._moduleResolver === undefined ||
+        this._txExecutor === undefined ||
+        this._moduleDeploymentSummaryService === undefined
       ) {
         throw new ServicesNotInitialized();
       }
 
       // wrapping ether.Wallet in order to support state file storage
-      const signers = this.signers || [];
-      const ignitionWallets = this.walletWrapper?.wrapSigners(signers);
+      const signers = this._signers ?? [];
+      const ignitionWallets = this._walletWrapper?.wrapSigners(signers);
 
       const moduleName = module.name;
 
@@ -304,12 +304,12 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this.compiler,
-          this.moduleValidator,
+          this._compiler,
+          this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
           {
-            params: this.moduleParams || {},
+            params: this.moduleParams ?? {},
           }
         );
       });
@@ -320,46 +320,49 @@ export class IgnitionCore implements IIgnition {
         moduleName
       );
 
-      this.logger.startModuleResolving(moduleName);
+      this._logger.startModuleResolving(moduleName);
       // resolving contract and events dependencies and determining execution order
-      const moduleState: ModuleState | null = await this.moduleResolver.resolve(
+      const moduleState: ModuleState | null = await this._moduleResolver.resolve(
         module.getAllBindings(),
         module.getAllEvents(),
         module.getAllModuleEvents(),
         stateFileRegistry
       );
-      this.logger.finishModuleResolving(moduleName);
+      this._logger.finishModuleResolving(moduleName);
 
       // setting up custom functionality
       if (
-        module.getCustomGasPriceProvider() &&
-        this.customServices.gasPriceProvider
+        module.getCustomGasPriceProvider() !== undefined &&
+        this.customServices.gasPriceProvider !== undefined
       ) {
-        this.txGenerator.changeGasPriceCalculator(
+        this._txGenerator.changeGasPriceCalculator(
           this.customServices.gasPriceProvider
         );
       }
 
-      if (module.getCustomNonceManager() && this.customServices.nonceManager) {
-        this.txGenerator.changeNonceManager(this.customServices.nonceManager);
+      if (
+        module.getCustomNonceManager() !== undefined &&
+        this.customServices.nonceManager !== undefined
+      ) {
+        this._txGenerator.changeNonceManager(this.customServices.nonceManager);
       }
 
       if (
-        module.getCustomTransactionSigner() &&
-        this.customServices.transactionSigner
+        module.getCustomTransactionSigner() !== undefined &&
+        this.customServices.transactionSigner !== undefined
       ) {
-        this.txGenerator.changeTransactionSigner(
+        this._txGenerator.changeTransactionSigner(
           this.customServices.transactionSigner
         );
       }
 
-      const initializedTxModuleState = await this.txGenerator.initTx(
+      const initializedTxModuleState = await this._txGenerator.initTx(
         moduleState
       );
-      await this.logger.promptContinueDeployment();
+      await this._logger.promptContinueDeployment();
 
       try {
-        await this.txExecutor.execute(
+        await this._txExecutor.execute(
           moduleName,
           initializedTxModuleState,
           this.repos.registry,
@@ -367,7 +370,7 @@ export class IgnitionCore implements IIgnition {
           module.getModuleConfig()
         );
       } catch (error) {
-        await this.txExecutor.executeModuleEvents(
+        await this._txExecutor.executeModuleEvents(
           moduleName,
           moduleState,
           module.getAllModuleEvents().onFail
@@ -376,13 +379,13 @@ export class IgnitionCore implements IIgnition {
         throw error;
       }
 
-      const summary = await this.moduleDeploymentSummaryService.showSummary(
+      const summary = await this._moduleDeploymentSummaryService.showSummary(
         moduleName,
         stateFileRegistry
       );
-      this.logger.finishModuleDeploy(moduleName, summary);
+      this._logger.finishModuleDeploy(moduleName, summary);
     } catch (err) {
-      await errorHandling(err, this.logger, this.errorReporter);
+      await errorHandling(err, this._logger, this._errorReporter);
 
       throw err;
     }
@@ -395,14 +398,17 @@ export class IgnitionCore implements IIgnition {
       }
 
       if (this.params.logging !== logging) {
-        await this.reInitLogger(!!logging);
+        await this.reInitLogger(logging !== undefined);
       }
 
-      if (!this.moduleStateRepo || !this.moduleResolver) {
+      if (
+        this.moduleStateRepo === undefined ||
+        this._moduleResolver === undefined
+      ) {
         throw new ServicesNotInitialized();
       }
-      const signers = this.signers || [];
-      const ignitionWallets = this.walletWrapper?.wrapSigners(signers) || [];
+      const signers = this._signers ?? [];
+      const ignitionWallets = this._walletWrapper?.wrapSigners(signers) ?? [];
       const moduleName = module.name;
       if (module.isInitialized()) {
         return;
@@ -412,12 +418,12 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this.compiler,
-          this.moduleValidator,
+          this._compiler,
+          this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
           {
-            params: this.moduleParams || {},
+            params: this.moduleParams ?? {},
           }
         );
       });
@@ -427,7 +433,7 @@ export class IgnitionCore implements IIgnition {
         moduleName
       );
 
-      const moduleState: ModuleState | null = await this.moduleResolver.resolve(
+      const moduleState: ModuleState | null = await this._moduleResolver.resolve(
         module.getAllBindings(),
         module.getAllEvents(),
         module.getAllModuleEvents(),
@@ -438,14 +444,14 @@ export class IgnitionCore implements IIgnition {
       }
 
       // @TODO migrate this to be an object
-      if (this.moduleResolver.checkIfDiff(stateFileRegistry, moduleState)) {
+      if (this._moduleResolver.checkIfDiff(stateFileRegistry, moduleState)) {
         cli.info(`\nModule: ${moduleName}`);
-        this.moduleResolver.printDiffParams(stateFileRegistry, moduleState);
+        this._moduleResolver.printDiffParams(stateFileRegistry, moduleState);
       } else {
         cli.info(`Nothing changed from last revision - ${moduleName}`);
       }
     } catch (err) {
-      await errorHandling(err, this.logger, this.errorReporter);
+      await errorHandling(err, this._logger, this._errorReporter);
     }
   }
 
@@ -455,30 +461,30 @@ export class IgnitionCore implements IIgnition {
         await this.mustInit(this.params, this.customServices, this.repos);
       }
 
-      if (!this.moduleTyping || !this.logger) {
+      if (this._moduleTyping === undefined || this._logger === undefined) {
         throw new ServicesNotInitialized();
       }
 
-      const signers = this.signers || [];
-      const ignitionWallets = this.walletWrapper?.wrapSigners(signers) || [];
+      const signers = this._signers ?? [];
+      const ignitionWallets = this._walletWrapper?.wrapSigners(signers) ?? [];
 
       const moduleSession = cls.createNamespace("module");
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this.compiler,
-          this.moduleValidator,
+          this._compiler,
+          this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
           this.moduleParams
         );
       });
 
-      this.moduleTyping.generate(deploymentFolder, module.name, module);
+      this._moduleTyping.generate(deploymentFolder, module.name, module);
 
-      this.logger.generatedTypes();
+      this._logger.generatedTypes();
     } catch (err) {
-      await errorHandling(err, this.logger, this.errorReporter);
+      await errorHandling(err, this._logger, this._errorReporter);
     }
   }
 
@@ -507,17 +513,17 @@ export async function defaultInputParams(
   await globalConfigService.mustConfirmConsent();
   const errorReporter = new ErrorReporter(globalConfigService);
 
-  let networkName = params?.networkName || DEFAULT_NETWORK_NAME;
+  let networkName = params?.networkName ?? DEFAULT_NETWORK_NAME;
 
   let isLocalDeployment = true;
-  let parallelizeDeployment = params?.parallelizeDeployment || false;
+  let parallelizeDeployment = params?.parallelizeDeployment ?? false;
   let gasPriceBackoff: GasPriceBackoff | undefined;
   if (!checkIfExist(networkName)) {
     networkName = DEFAULT_NETWORK_NAME;
   }
 
   let networkId: string = DEFAULT_NETWORK_ID;
-  if (params?.networkId) {
+  if (params?.networkId !== undefined) {
     networkId = params?.networkId as string;
   }
   if (!checkIfExist(networkId)) {
@@ -526,35 +532,35 @@ export async function defaultInputParams(
   process.env.IGNITION_NETWORK_ID = String(networkId);
   let provider = new ethers.providers.JsonRpcProvider();
   process.env.IGNITION_RPC_PROVIDER = DEFAULT_RPC_PROVIDER;
-  if (params?.rpcProvider) {
+  if (params?.rpcProvider !== undefined) {
     provider = params.rpcProvider;
     process.env.IGNITION_RPC_PROVIDER = String(params?.rpcProvider);
   }
 
-  if (params?.blockConfirmation) {
+  if (params?.blockConfirmation !== undefined) {
     process.env.BLOCK_CONFIRMATION_NUMBER = String(params.blockConfirmation);
   }
 
-  if (params?.localDeployment) {
-    isLocalDeployment = params?.localDeployment || true;
+  if (params?.localDeployment !== undefined) {
+    isLocalDeployment = params?.localDeployment ?? true;
   }
 
-  if (params?.gasPriceBackoffMechanism) {
+  if (params?.gasPriceBackoffMechanism !== undefined) {
     gasPriceBackoff = params?.gasPriceBackoffMechanism as GasPriceBackoff;
   }
 
-  if (params?.parallelizeDeployment) {
+  if (params?.parallelizeDeployment !== undefined) {
     parallelizeDeployment = true;
   }
 
   let logger: OverviewLogger | EmptyLogger;
-  if (params?.logging) {
+  if (params?.logging !== undefined) {
     logger = new OverviewLogger();
   } else {
     logger = new EmptyLogger();
   }
 
-  const signers: ethers.Signer[] = params?.signers || [];
+  const signers: ethers.Signer[] = params?.signers ?? [];
   if (signers.length === 0) {
     throw new EmptySigners();
   }
@@ -591,7 +597,7 @@ export async function setupServicesAndEnvironment(
   const gasProvider = new GasPriceCalculator(rpcProvider);
   const eventSession = cls.createNamespace("event");
 
-  const testEnv = params?.test || false;
+  const testEnv = params?.test ?? false;
   const moduleStateRepo = new ModuleStateRepo(
     networkName,
     currentPath,

@@ -22,7 +22,7 @@ export class Batcher {
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
   public static async handleOnChangeEvent(
@@ -31,7 +31,7 @@ export class Batcher {
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
   public static async handleBeforeCompileEvent(
@@ -40,7 +40,7 @@ export class Batcher {
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
   public static async handleCompiledEvent(
@@ -49,7 +49,7 @@ export class Batcher {
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
   public static async handleModuleEvent(
@@ -57,10 +57,10 @@ export class Batcher {
     element: StatefulEvent,
     batches: any[]
   ) {
-    this.moduleEventHandling(element, batches);
+    this._moduleEventHandling(element, batches);
   }
 
-  private static moduleEventHandling(element: StatefulEvent, batches: any[]) {
+  private static _moduleEventHandling(element: StatefulEvent, batches: any[]) {
     if (!checkIfExist(batches[0])) {
       batches[0] = [];
     }
@@ -68,7 +68,7 @@ export class Batcher {
     batches[0].push(element);
   }
 
-  private static baseEventHandling(
+  private static _baseEventHandling(
     event: BaseEvent,
     element: StatefulEvent,
     batches: any[],
@@ -78,18 +78,23 @@ export class Batcher {
       case EventType.BeforeCompileEvent:
       case EventType.AfterCompileEvent:
       case EventType.BeforeDeployEvent:
-        this.handleBeforeDeployEvents(event, element, batches, elementsBatches);
+        this._handleBeforeDeployEvents(
+          event,
+          element,
+          batches,
+          elementsBatches
+        );
         break;
       case EventType.OnChangeEvent:
       case EventType.AfterDeployEvent:
-        this.handleAfterDeployEvents(event, element, batches, elementsBatches);
+        this._handleAfterDeployEvents(event, element, batches, elementsBatches);
         break;
       default:
         throw new CliError("Event type not found");
     }
   }
 
-  private static handleBeforeDeployEvents(
+  private static _handleBeforeDeployEvents(
     event: BaseEvent,
     element: StatefulEvent,
     batches: any[],
@@ -161,7 +166,7 @@ export class Batcher {
     elementsBatches[event.name] = batchNumber;
   }
 
-  private static handleAfterDeployEvents(
+  private static _handleAfterDeployEvents(
     event: BaseEvent,
     element: StatefulEvent,
     batches: any[],

@@ -22,23 +22,23 @@ const TRUFFLE_BUILD_DIR_NAME = "build";
 const HARDHAT_DEPLOYMENTS_DIR_NAME = "deployments";
 
 export class StateMigrationService {
-  private readonly moduleState: IModuleState;
-  private readonly stateMigrationType: Migration;
-  private readonly artifactsPath: string;
+  private readonly _moduleState: IModuleState;
+  private readonly _stateMigrationType: Migration;
+  private readonly _artifactsPath: string;
 
   constructor(moduleState: IModuleState, stateMigrationType: Migration) {
-    this.moduleState = moduleState;
-    this.stateMigrationType = stateMigrationType;
+    this._moduleState = moduleState;
+    this._stateMigrationType = stateMigrationType;
 
-    switch (this.stateMigrationType) {
+    switch (this._stateMigrationType) {
       case Migration.truffle:
-        this.artifactsPath = path.resolve(
+        this._artifactsPath = path.resolve(
           process.cwd(),
           TRUFFLE_BUILD_DIR_NAME
         );
         break;
       case Migration.hardhatDeploy:
-        this.artifactsPath = path.resolve(
+        this._artifactsPath = path.resolve(
           process.cwd(),
           HARDHAT_DEPLOYMENTS_DIR_NAME
         );
@@ -47,12 +47,12 @@ export class StateMigrationService {
   }
 
   public searchBuild(): Build[] {
-    switch (this.stateMigrationType) {
+    switch (this._stateMigrationType) {
       case Migration.truffle:
-        return searchBuilds(this.artifactsPath, []) as TruffleBuild[];
+        return searchBuilds(this._artifactsPath, []) as TruffleBuild[];
       case Migration.hardhatDeploy:
         return searchBuildsAndNetworks(
-          this.artifactsPath,
+          this._artifactsPath,
           []
         ) as HardhatBuild[];
       default:
@@ -61,7 +61,7 @@ export class StateMigrationService {
   }
 
   public extractValidBuilds(builds: Build[]): Build[] {
-    switch (this.stateMigrationType) {
+    switch (this._stateMigrationType) {
       case Migration.truffle: {
         const validBuilds: TruffleBuild[] = [];
         for (let buildFile of builds) {
@@ -97,7 +97,7 @@ export class StateMigrationService {
   public mapBuildsToStateFile(
     validBuilds: Build[]
   ): { [networkId: string]: ModuleStateFile } {
-    switch (this.stateMigrationType) {
+    switch (this._stateMigrationType) {
       case Migration.truffle: {
         const stateObject: { [networkId: string]: ModuleStateFile } = {};
 
@@ -187,7 +187,7 @@ export class StateMigrationService {
     stateFiles: { [networkId: string]: ModuleStateFile }
   ) {
     for (const [networkId, stateFile] of Object.entries(stateFiles)) {
-      await this.moduleState.storeStates(networkId, moduleName, stateFile);
+      await this._moduleState.storeStates(networkId, moduleName, stateFile);
     }
   }
 }

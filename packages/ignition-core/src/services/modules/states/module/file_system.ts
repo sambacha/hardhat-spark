@@ -8,8 +8,8 @@ import { ModuleStateRepo } from "../repo/state_repo";
 import { IModuleState, STATE_DIR_NAME, STATE_NAME } from "./index";
 
 export class FileSystemModuleState implements IModuleState {
-  private mutex: Mutex;
-  private readonly statePath: string;
+  private _mutex: Mutex;
+  private readonly _statePath: string;
 
   constructor(currentProjectPath: string) {
     const dir = path.resolve(currentProjectPath, STATE_DIR_NAME);
@@ -17,9 +17,9 @@ export class FileSystemModuleState implements IModuleState {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
-    this.statePath = dir;
+    this._statePath = dir;
 
-    this.mutex = new Mutex();
+    this._mutex = new Mutex();
   }
 
   public async getModuleState(
@@ -27,7 +27,7 @@ export class FileSystemModuleState implements IModuleState {
     moduleName: string
   ): Promise<ModuleStateFile> {
     const dir = path.resolve(
-      this.statePath,
+      this._statePath,
       moduleName,
       `${networkName}_${STATE_NAME}`
     );
@@ -40,7 +40,7 @@ export class FileSystemModuleState implements IModuleState {
         fs.readFileSync(dir, {
           encoding: "utf-8",
         })
-      ) || {}
+      ) ?? {}
     );
   }
 
@@ -53,7 +53,7 @@ export class FileSystemModuleState implements IModuleState {
       return true;
     }
 
-    const moduleDir = path.resolve(this.statePath, moduleName);
+    const moduleDir = path.resolve(this._statePath, moduleName);
     const metaData = ModuleStateRepo.convertStatesToMetaData(moduleStates);
     if (!fs.existsSync(moduleDir)) {
       fs.mkdirSync(moduleDir);
@@ -61,7 +61,7 @@ export class FileSystemModuleState implements IModuleState {
 
     const stateDir = path.resolve(moduleDir, `${networkName}_${STATE_NAME}`);
     const jsonMetaData = JSON.stringify(metaData, undefined, 4);
-    const release = await this.mutex.acquireQueued();
+    const release = await this._mutex.acquireQueued();
     try {
       fs.writeFileSync(stateDir, jsonMetaData);
     } catch (e) {
@@ -76,7 +76,7 @@ export class FileSystemModuleState implements IModuleState {
 
   public checkIfSet(moduleName: string, networkName: string): boolean {
     const dir = path.resolve(
-      this.statePath,
+      this._statePath,
       moduleName,
       `${networkName}_${STATE_NAME}`
     );

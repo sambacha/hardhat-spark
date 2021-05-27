@@ -232,7 +232,7 @@ export class ModuleResolver {
     }
 
     // in case custom deployFn is provided with their deps, resolve them first
-    for (const deployDeps of binding?.deployMetaData?.deploymentSpec?.deps ||
+    for (const deployDeps of binding?.deployMetaData?.deploymentSpec?.deps ??
       []) {
       const deployDepsBinding = bindings[deployDeps.name];
       if (!checkIfExist(deployDepsBinding)) {
@@ -425,13 +425,13 @@ export class ModuleResolver {
     moduleState[eventName] = events[eventName];
   }
 
-  private readonly signer: ethers.Signer;
-  private readonly prompter: ILogging;
-  private readonly txGenerator: ITransactionGenerator;
-  private readonly moduleStateRepo: ModuleStateRepo;
-  private readonly eventTxExecutor: EventTxExecutor;
-  private readonly eventSession: Namespace;
-  private readonly ethClient: EthClient;
+  private readonly _signer: ethers.Signer;
+  private readonly _prompter: ILogging;
+  private readonly _txGenerator: ITransactionGenerator;
+  private readonly _moduleStateRepo: ModuleStateRepo;
+  private readonly _eventTxExecutor: EventTxExecutor;
+  private readonly _eventSession: Namespace;
+  private readonly _ethClient: EthClient;
 
   constructor(
     provider: ethers.providers.JsonRpcProvider,
@@ -443,13 +443,13 @@ export class ModuleResolver {
     eventSession: Namespace,
     ethereumClient: EthClient
   ) {
-    this.signer = signer;
-    this.prompter = prompter;
-    this.txGenerator = txGenerator;
-    this.moduleStateRepo = moduleStateRepo;
-    this.eventTxExecutor = eventTxExecutor;
-    this.eventSession = eventSession;
-    this.ethClient = ethereumClient;
+    this._signer = signer;
+    this._prompter = prompter;
+    this._txGenerator = txGenerator;
+    this._moduleStateRepo = moduleStateRepo;
+    this._eventTxExecutor = eventTxExecutor;
+    this._eventSession = eventSession;
+    this._ethClient = ethereumClient;
   }
 
   public checkIfDiff(
@@ -542,8 +542,8 @@ export class ModuleResolver {
         newModuleStates[Object.keys(newModuleStates)[i]];
 
       if (
-        (oldModuleElement as ContractBindingMetaData)?.bytecode &&
-        (newModuleElement as ContractBinding)?.bytecode
+        (oldModuleElement as ContractBindingMetaData)?.bytecode !== undefined &&
+        (newModuleElement as ContractBinding)?.bytecode !== undefined
       ) {
         oldModuleElement = oldModuleElement as ContractBindingMetaData;
         newModuleElement = newModuleElement as ContractBinding;
@@ -586,7 +586,7 @@ export class ModuleResolver {
       let newModuleElement: ContractBinding | StatefulEvent =
         newModuleStates[Object.keys(newModuleStates)[i]];
 
-      if ((newModuleElement as ContractBinding)?.bytecode) {
+      if ((newModuleElement as ContractBinding)?.bytecode !== undefined) {
         newModuleElement = newModuleElement as ContractBinding;
 
         cli.info("+", "Contract", newModuleElement.name);
@@ -680,38 +680,39 @@ export class ModuleResolver {
         // check if network has code at specific address
         if (
           userAlwaysDeploy === undefined &&
-          stateFileElement.deployMetaData.contractAddress
+          stateFileElement.deployMetaData.contractAddress !== undefined
         ) {
-          const code = await this.ethClient.getCode(
+          const code = await this._ethClient.getCode(
             stateFileElement?.deployMetaData?.contractAddress
           );
           if (!checkIfExist(code) || code === "0x") {
-            userAlwaysDeploy = await this.prompter.wrongNetwork();
+            userAlwaysDeploy = await this._prompter.wrongNetwork();
             if (!userAlwaysDeploy) {
               moduleStateFile = {};
             }
           }
         }
         if (
-          userAlwaysDeploy ||
+          userAlwaysDeploy !== undefined ||
           resolvedModuleStateElement.forceFlag ||
           !isSameBytecode(
             stateFileElement.bytecode,
             resolvedModuleStateElement.bytecode
           ) ||
-          (!!resolvedModuleStateElement.deployMetaData.shouldRedeploy &&
+          (resolvedModuleStateElement.deployMetaData.shouldRedeploy !==
+            undefined &&
             resolvedModuleStateElement.deployMetaData.shouldRedeploy(
               resolvedModuleStateElement
             )) ||
           !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
         ) {
           resolvedModuleStateElement.signer = (this
-            .signer as unknown) as ethers.Signer;
-          resolvedModuleStateElement.prompter = this.prompter;
-          resolvedModuleStateElement.txGenerator = this.txGenerator;
-          resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
-          resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
-          resolvedModuleStateElement.eventSession = this.eventSession;
+            ._signer as unknown) as ethers.Signer;
+          resolvedModuleStateElement.prompter = this._prompter;
+          resolvedModuleStateElement.txGenerator = this._txGenerator;
+          resolvedModuleStateElement.moduleStateRepo = this._moduleStateRepo;
+          resolvedModuleStateElement.eventTxExecutor = this._eventTxExecutor;
+          resolvedModuleStateElement.eventSession = this._eventSession;
 
           resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
@@ -735,12 +736,12 @@ export class ModuleResolver {
           stateFileElement.deployMetaData;
         resolvedModuleStateElement.txData = stateFileElement.txData;
         resolvedModuleStateElement.signer = (this
-          .signer as unknown) as ethers.Signer;
-        resolvedModuleStateElement.prompter = this.prompter;
-        resolvedModuleStateElement.txGenerator = this.txGenerator;
-        resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
-        resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
-        resolvedModuleStateElement.eventSession = this.eventSession;
+          ._signer as unknown) as ethers.Signer;
+        resolvedModuleStateElement.prompter = this._prompter;
+        resolvedModuleStateElement.txGenerator = this._txGenerator;
+        resolvedModuleStateElement.moduleStateRepo = this._moduleStateRepo;
+        resolvedModuleStateElement.eventTxExecutor = this._eventTxExecutor;
+        resolvedModuleStateElement.eventSession = this._eventSession;
 
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
 
@@ -755,7 +756,7 @@ export class ModuleResolver {
 
       stateFileElement = (stateFileElement as unknown) as StatefulEvent;
       if (
-        !userAlwaysDeploy &&
+        userAlwaysDeploy !== undefined &&
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {
@@ -798,12 +799,12 @@ export class ModuleResolver {
         resolvedModuleStateElement = resolvedModuleStateElement as ContractBinding;
 
         resolvedModuleStateElement.signer = (this
-          .signer as unknown) as ethers.Signer;
-        resolvedModuleStateElement.prompter = this.prompter;
-        resolvedModuleStateElement.txGenerator = this.txGenerator;
-        resolvedModuleStateElement.moduleStateRepo = this.moduleStateRepo;
-        resolvedModuleStateElement.eventTxExecutor = this.eventTxExecutor;
-        resolvedModuleStateElement.eventSession = this.eventSession;
+          ._signer as unknown) as ethers.Signer;
+        resolvedModuleStateElement.prompter = this._prompter;
+        resolvedModuleStateElement.txGenerator = this._txGenerator;
+        resolvedModuleStateElement.moduleStateRepo = this._moduleStateRepo;
+        resolvedModuleStateElement.eventTxExecutor = this._eventTxExecutor;
+        resolvedModuleStateElement.eventSession = this._eventSession;
 
         resolvedModuleState[moduleElementName] = resolvedModuleStateElement;
       }

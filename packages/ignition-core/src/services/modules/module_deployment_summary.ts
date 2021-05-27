@@ -65,15 +65,15 @@ const summaryDataOptions: { [type: string]: SummaryDataOption } = {
 };
 
 export class ModuleDeploymentSummaryService {
-  private readonly moduleStateRepo: ModuleStateRepo;
-  private startTime: Date;
+  private readonly _moduleStateRepo: ModuleStateRepo;
+  private _startTime: Date;
 
   constructor(
     moduleStateRepo: ModuleStateRepo,
     summaryType: SummaryType = SummaryType.SIMPLE
   ) {
-    this.moduleStateRepo = moduleStateRepo;
-    this.startTime = new Date();
+    this._moduleStateRepo = moduleStateRepo;
+    this._startTime = new Date();
   }
 
   public async showSummary(
@@ -81,7 +81,7 @@ export class ModuleDeploymentSummaryService {
     oldModuleState: ModuleStateFile
   ): Promise<string> {
     const elapsedTime = this._endTimer();
-    const currentModuleState = await this.moduleStateRepo.getStateIfExist(
+    const currentModuleState = await this._moduleStateRepo.getStateIfExist(
       moduleName
     );
 
@@ -131,19 +131,19 @@ export class ModuleDeploymentSummaryService {
           continue;
         }
 
-        if (!element.deployMetaData.contractAddress) {
+        if (element.deployMetaData.contractAddress === undefined) {
           continue;
         }
 
-        if (!checkIfExist(element.txData?.output)) {
+        if (checkIfExist(element.txData?.output) === undefined) {
           continue;
         }
 
         numberOfContracts = numberOfContracts.add(1);
 
-        if (element.txData) {
+        if (element.txData !== undefined) {
           transactionReceiptList.input.push(element.txData.input);
-          if (element.txData.output) {
+          if (element.txData.output !== undefined) {
             transactionReceiptList.output.push(element.txData.output);
           }
         }
@@ -159,7 +159,7 @@ export class ModuleDeploymentSummaryService {
           let inputGasPrice;
           let outputGasUsed = BigNumber.from(0);
           if (singleTxOutput && singleTxOutput.gasUsed) {
-            if (singleTxOutput.gasUsed?._hex) {
+            if (singleTxOutput.gasUsed?._hex !== undefined) {
               outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
             }
           }
@@ -200,6 +200,6 @@ Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}
 
   private _endTimer() {
     const endTime = new Date();
-    return (endTime.getTime() - this.startTime.getTime()) / 1000;
+    return (endTime.getTime() - this._startTime.getTime()) / 1000;
   }
 }

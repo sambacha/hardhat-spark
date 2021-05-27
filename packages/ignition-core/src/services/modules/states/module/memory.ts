@@ -23,11 +23,11 @@ export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
     networkName: string,
     moduleName: string
   ): Promise<ModuleStateFile> {
-    if (!this._state[networkName]) {
+    if (this._state[networkName] === undefined) {
       this._state[networkName] = {};
       return {};
     }
-    if (!this._state[networkName][moduleName]) {
+    if (this._state[networkName][moduleName] === undefined) {
       this._state[networkName][moduleName] = {};
       return {};
     }
@@ -45,10 +45,10 @@ export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
       return true;
     }
 
-    if (!this._state[networkName]) {
+    if (this._state[networkName] === undefined) {
       this._state[networkName] = {};
     }
-    if (!this._state[networkName][moduleName]) {
+    if (this._state[networkName][moduleName] === undefined) {
       this._state[networkName][moduleName] = {};
     }
     this._state[networkName][moduleName] = copyValue(

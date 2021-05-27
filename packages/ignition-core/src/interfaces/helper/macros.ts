@@ -34,30 +34,27 @@ export const sendAfterDeploy = (
     slot?: string;
   }
 ): ContractEvent => {
-  const eventName = opts?.eventName
-    ? opts.eventName
-    : `mutator${setterFunc}${setter.name}`;
+  const eventName = opts?.eventName ?? `mutator${setterFunc}${setter.name}`;
   const getFunc = setterFunc.substring(3);
-  const getterFunc = opts?.getterFunc
-    ? opts.getterFunc
-    : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
+  const getterFunc =
+    opts?.getterFunc ?? `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
 
   const deps = [];
-  if (opts?.deps) {
+  if (opts?.deps !== undefined) {
     deps.push(...opts.deps);
   }
 
   const usages: Array<ContractBinding | ContractEvent> = [];
   for (const arg of setterArgs) {
-    if (arg?._isContractBinding || checkIfExist(arg?.eventType)) {
+    if (arg?._isContractBinding !== undefined || checkIfExist(arg?.eventType)) {
       usages.push(arg);
     }
   }
 
   const value = setterArgs.pop();
   const keys = setterArgs;
-  const getterArgs = opts?.getterArgs ? opts.getterArgs : keys;
-  const expectedValue = opts?.expectedValue ? opts.expectedValue : value;
+  const getterArgs = opts?.getterArgs ?? keys;
+  const expectedValue = opts?.expectedValue ?? value;
 
   return m.group(setter, ...deps).afterDeploy(
     m,
@@ -65,7 +62,7 @@ export const sendAfterDeploy = (
     async (): Promise<void> => {
       await setter.deployed()[`${setterFunc}`](...keys, value);
 
-      if (opts?.slot) {
+      if (opts?.slot !== undefined) {
         await expectSlotRead(expectedValue, setter.deployed(), opts.slot);
         return;
       }

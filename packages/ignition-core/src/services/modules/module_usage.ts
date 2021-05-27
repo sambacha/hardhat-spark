@@ -14,24 +14,24 @@ import { checkIfExist, removeLastPathElement } from "../utils/util";
 import { ModuleStateRepo } from "./states/repo/state_repo";
 
 export class ModuleUsage {
-  private readonly fileLocation: string;
-  private moduleName: string | undefined;
-  private moduleStateRepo: ModuleStateRepo;
+  private readonly _fileLocation: string;
+  private _moduleName: string | undefined;
+  private _moduleStateRepo: ModuleStateRepo;
 
   constructor(deploymentFilePath: string, moduleStateRepo: ModuleStateRepo) {
     // strip file name and store them separately
-    this.moduleStateRepo = moduleStateRepo;
-    this.fileLocation = removeLastPathElement(deploymentFilePath);
+    this._moduleStateRepo = moduleStateRepo;
+    this._fileLocation = removeLastPathElement(deploymentFilePath);
   }
 
   public generateRawUsage(
     moduleName: string,
     moduleStateFile: ModuleStateFile
   ): ModuleStateBindings {
-    if (checkIfExist(this.moduleName)) {
+    if (checkIfExist(this._moduleName)) {
       throw new CliError("Usage generation has not been concluded.");
     }
-    this.moduleName = moduleName;
+    this._moduleName = moduleName;
     const rawUsage: ModuleStateBindings = {};
     for (let [elementName, element] of Object.entries(moduleStateFile)) {
       element = element as ContractBindingMetaData;
@@ -46,12 +46,12 @@ export class ModuleUsage {
   }
 
   public generateUsageFile(moduleRawUsage: ModuleStateBindings): ModuleFile {
-    if (!this.moduleName || !checkIfExist(this.moduleName)) {
+    if (this._moduleName === undefined || !checkIfExist(this._moduleName)) {
       throw new CliError("Module name is missing.");
     }
 
     return generateModuleFile(
-      this.moduleName,
+      this._moduleName,
       moduleRawUsage,
       FileGenerationType.usage
     );
@@ -59,11 +59,11 @@ export class ModuleUsage {
 
   public storeUsageFile(moduleRawUsage: ModuleFile) {
     const stateDir = path.resolve(
-      this.fileLocation,
-      `${this.moduleName}.usage.ts`
+      this._fileLocation,
+      `${this._moduleName}.usage.ts`
     );
     fs.writeFileSync(stateDir, moduleRawUsage);
 
-    this.moduleName = undefined;
+    this._moduleName = undefined;
   }
 }

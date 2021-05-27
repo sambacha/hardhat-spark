@@ -17,16 +17,16 @@ import {
 } from "./index";
 
 export class EthTxGenerator implements ITransactionGenerator {
-  private gasPriceCalculator: IGasPriceCalculator;
-  private gasCalculator: IGasCalculator;
-  private readonly provider: providers.JsonRpcProvider;
-  private readonly signer: ethers.Signer;
-  private readonly networkId: string;
-  private nonceMap: { [address: string]: number };
-  private nonceManager: INonceManager;
-  private transactionSigner: ITransactionSigner;
-  private readonly prompter: ILogging;
-  private readonly gasPriceBackoff: GasPriceBackoff | undefined;
+  private _gasPriceCalculator: IGasPriceCalculator;
+  private _gasCalculator: IGasCalculator;
+  private readonly _provider: providers.JsonRpcProvider;
+  private readonly _signer: ethers.Signer;
+  private readonly _networkId: string;
+  private _nonceMap: { [address: string]: number };
+  private _nonceManager: INonceManager;
+  private _transactionSigner: ITransactionSigner;
+  private readonly _prompter: ILogging;
+  private readonly _gasPriceBackoff: GasPriceBackoff | undefined;
 
   constructor(
     signer: ethers.Signer,
@@ -39,29 +39,29 @@ export class EthTxGenerator implements ITransactionGenerator {
     prompter: ILogging,
     gasPriceBackoff?: GasPriceBackoff
   ) {
-    this.provider = provider;
+    this._provider = provider;
 
-    this.signer = signer;
-    this.gasPriceCalculator = gasPriceCalculator;
-    this.gasCalculator = gasCalculator;
-    this.networkId = networkId;
-    this.nonceMap = {};
-    this.nonceManager = nonceManager;
-    this.transactionSigner = transactionSigner;
-    this.prompter = prompter;
-    this.gasPriceBackoff = gasPriceBackoff;
+    this._signer = signer;
+    this._gasPriceCalculator = gasPriceCalculator;
+    this._gasCalculator = gasCalculator;
+    this._networkId = networkId;
+    this._nonceMap = {};
+    this._nonceManager = nonceManager;
+    this._transactionSigner = transactionSigner;
+    this._prompter = prompter;
+    this._gasPriceBackoff = gasPriceBackoff;
   }
 
   public changeGasPriceCalculator(newGasPriceCalculator: IGasPriceCalculator) {
-    this.gasPriceCalculator = newGasPriceCalculator;
+    this._gasPriceCalculator = newGasPriceCalculator;
   }
 
   public changeNonceManager(newNonceManager: INonceManager) {
-    this.nonceManager = newNonceManager;
+    this._nonceManager = newNonceManager;
   }
 
   public changeTransactionSigner(newTransactionSigner: ITransactionSigner) {
-    this.transactionSigner = newTransactionSigner;
+    this._transactionSigner = newTransactionSigner;
   }
 
   public async initTx(moduleState: ModuleState): Promise<ModuleState> {
@@ -75,7 +75,7 @@ export class EthTxGenerator implements ITransactionGenerator {
 
         moduleState[stateElementName].txData = {
           input: {
-            from: await this.signer.getAddress(),
+            from: await this._signer.getAddress(),
             input: (stateElement as ContractBinding).bytecode as string,
           },
           output: undefined,
@@ -91,7 +91,7 @@ export class EthTxGenerator implements ITransactionGenerator {
     libraries: SingleContractLinkReference | undefined,
     moduleState: ModuleState
   ): string {
-    if (!libraries) {
+    if (libraries === undefined) {
       return bytecode;
     }
 
@@ -117,17 +117,20 @@ export class EthTxGenerator implements ITransactionGenerator {
   }
 
   public async fetchTxData(walletAddress: string): Promise<TxMetaData> {
-    let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
+    let gasPrice = await this._gasPriceCalculator.getCurrentPrice();
 
-    if (this.gasPriceBackoff && checkIfExist(this.gasPriceBackoff)) {
+    if (
+      this._gasPriceBackoff !== undefined &&
+      checkIfExist(this._gasPriceBackoff)
+    ) {
       gasPrice = await this._fetchBackoffGasPrice(
-        this.gasPriceBackoff.numberOfRetries
+        this._gasPriceBackoff.numberOfRetries
       );
     }
 
     return {
       gasPrice: gasPrice as BigNumber,
-      nonce: await this.nonceManager.getAndIncrementTransactionCount(
+      nonce: await this._nonceManager.getAndIncrementTransactionCount(
         walletAddress
       ),
     };
@@ -138,39 +141,39 @@ export class EthTxGenerator implements ITransactionGenerator {
     data: string,
     signer?: ethers.Signer | undefined
   ): Promise<string> {
-    return this.transactionSigner.generateSingedTx(value, data, signer);
+    return this._transactionSigner.generateSingedTx(value, data, signer);
   }
 
   public getAndIncrementTransactionCount(
     walletAddress: string
   ): Promise<number> {
-    return this.nonceManager.getAndIncrementTransactionCount(walletAddress);
+    return this._nonceManager.getAndIncrementTransactionCount(walletAddress);
   }
 
   public async getCurrentTransactionCount(
     walletAddress: string
   ): Promise<number> {
-    return this.nonceManager.getCurrentTransactionCount(walletAddress);
+    return this._nonceManager.getCurrentTransactionCount(walletAddress);
   }
 
   private async _fetchBackoffGasPrice(retries: number): Promise<BigNumber> {
-    let gasPrice = await this.gasPriceCalculator.getCurrentPrice();
-    if (!this.gasPriceBackoff) {
+    let gasPrice = await this._gasPriceCalculator.getCurrentPrice();
+    if (this._gasPriceBackoff === undefined) {
       return gasPrice as BigNumber;
     }
 
     if (retries <= 0) {
       throw new GasPriceBackoffError(
-        this.gasPriceBackoff.maxGasPrice.toString(),
+        this._gasPriceBackoff.maxGasPrice.toString(),
         gasPrice.toString(),
-        this.gasPriceBackoff.numberOfRetries,
-        this.gasPriceBackoff.backoffTime
+        this._gasPriceBackoff.numberOfRetries,
+        this._gasPriceBackoff.backoffTime
       );
     }
-    if (checkIfExist(this.gasPriceBackoff)) {
-      if (gasPrice > this.gasPriceBackoff.maxGasPrice) {
-        this.prompter.gasPriceIsLarge(this.gasPriceBackoff.backoffTime);
-        await delay(this.gasPriceBackoff.backoffTime);
+    if (checkIfExist(this._gasPriceBackoff)) {
+      if (gasPrice > this._gasPriceBackoff.maxGasPrice) {
+        this._prompter.gasPriceIsLarge(this._gasPriceBackoff.backoffTime);
+        await delay(this._gasPriceBackoff.backoffTime);
         gasPrice = await this._fetchBackoffGasPrice(retries - 1);
       }
     }

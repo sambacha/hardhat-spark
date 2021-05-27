@@ -7,14 +7,14 @@ const IGNITION_GLOBAL_FILE_NAME = ".hardhat-ignition";
 const { CI, HOME } = process.env;
 
 export class GlobalConfigService {
-  private readonly homePath: string;
+  private readonly _homePath: string;
 
   constructor() {
-    this.homePath = HOME as string;
+    this._homePath = HOME as string;
 
     // check if file exist if it doesn't ask for consent and store it
     const globalConfigFilePath = path.resolve(
-      this.homePath,
+      this._homePath,
       IGNITION_GLOBAL_FILE_NAME
     );
     if (!fs.existsSync(globalConfigFilePath)) {
@@ -23,12 +23,12 @@ export class GlobalConfigService {
   }
 
   public async mustConfirmConsent() {
-    if (CI == "true") {
+    if (CI === "true") {
       return;
     }
 
     const globalFilePath = path.resolve(
-      this.homePath,
+      this._homePath,
       IGNITION_GLOBAL_FILE_NAME
     );
     if (fs.existsSync(globalFilePath)) {
@@ -44,12 +44,12 @@ export class GlobalConfigService {
   }
 
   public checkConsent(): boolean {
-    if (CI == "true") {
+    if (CI === "true") {
       return false;
     }
 
     const globalConfigFilePath = path.resolve(
-      this.homePath,
+      this._homePath,
       IGNITION_GLOBAL_FILE_NAME
     );
     if (!fs.existsSync(globalConfigFilePath)) {
@@ -58,6 +58,6 @@ export class GlobalConfigService {
 
     fs.readFileSync(globalConfigFilePath);
     require("dotenv").config({ path: globalConfigFilePath });
-    return process.env.IGNITION_ERROR_REPORTING == "true";
+    return process.env.IGNITION_ERROR_REPORTING === "true";
   }
 }

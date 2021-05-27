@@ -353,8 +353,9 @@ export class EventHandler {
   }
 
   private async _executeEvent(eventName: string, fn: EventFn) {
-    await this._moduleState.setSingleEventName(eventName);
+    this._moduleState.setSingleEventName(eventName);
     try {
+      // TODO: Why there's an await here if fn doesn't return a promise?
       await fn();
     } catch (e) {
       if (e._isUserError || e._isCliError) {

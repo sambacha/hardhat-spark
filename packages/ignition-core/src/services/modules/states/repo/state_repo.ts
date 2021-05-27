@@ -57,7 +57,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
 
     deployed.deploymentSpec = {
       deployFn: deployMetaData.deploymentSpec?.deployFn,
-      deps: (deployed.deploymentSpec?.deps || [])?.map(
+      deps: (deployed.deploymentSpec?.deps ?? [])?.map(
         (element: ContractBinding | ContractBindingMetaData) => {
           return ModuleStateRepo.convertBindingToMetaData(element);
         }
@@ -73,7 +73,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
     const metaData: {
       [p: string]: ContractBindingMetaData | StatefulEvent;
     } = {};
-    if (!moduleState) {
+    if (moduleState === null) {
       return metaData;
     }
 
@@ -196,7 +196,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
     moduleStates: ModuleState,
     eventName?: string
   ): Promise<void> {
-    const currEventName = eventName ? eventName : this.currentEventName;
+    const currEventName = eventName ?? this.currentEventName;
     const currentState = await this.getStateIfExist(moduleName);
     const currentEvent = currentState[currEventName] as StatefulEvent;
     if (!checkIfExist(currentEvent)) {
@@ -218,7 +218,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
     eventType: EventType,
     eventName?: string
   ): Promise<void> {
-    const currEventName = eventName ? eventName : this.currentEventName;
+    const currEventName = eventName ?? this.currentEventName;
     const currentState = await this.getStateIfExist(moduleName);
     let currentEvent = currentState[currEventName] as StatefulEvent;
 
@@ -257,7 +257,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
     if (this.currentModuleName === "") {
       throw new CliError("Current module name is not set");
     }
-    const currEventName = eventName ? eventName : this.currentEventName;
+    const currEventName = eventName ?? this.currentEventName;
 
     if (!checkIfExist(currEventName)) {
       throw new CliError("Current event name is not set");
@@ -289,7 +289,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
       throw new CliError("Current module name is not set");
     }
 
-    const currEventName = eventName ? eventName : this.currentEventName;
+    const currEventName = eventName ?? this.currentEventName;
 
     if (!checkIfExist(currEventName)) {
       throw new CliError("Current event name is not set");
@@ -318,10 +318,10 @@ export class ModuleStateRepo implements IModuleStateRepo {
     }
 
     // @TODO check if input/output is already present
-    if (contractInput) {
+    if (contractInput !== undefined) {
       currentEvent.txData[bindingName].contractInput.push(contractInput);
     }
-    if (contractOutput) {
+    if (contractOutput !== undefined) {
       currentEvent.txData[bindingName].contractOutput.push(contractOutput);
     }
 

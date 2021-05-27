@@ -28,15 +28,15 @@ export class ModuleValidator implements IModuleValidator {
         }
       }
 
-      const abiInputs = ABI.inputs || [];
-      const abiInputsLength = ABI.inputs?.length || 0;
+      const abiInputs = ABI.inputs ?? [];
+      const abiInputsLength = ABI.inputs?.length ?? 0;
       if (
         binding.args.length !== abiInputsLength &&
         binding?.deployMetaData?.deploymentSpec?.deployFn !== undefined
       ) {
         throw new AbiMismatch(
           name,
-          String(ABI.inputs?.length || 0),
+          String(ABI.inputs?.length ?? 0),
           String(binding.args.length)
         );
       }
