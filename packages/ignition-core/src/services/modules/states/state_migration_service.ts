@@ -156,6 +156,9 @@ export class StateMigrationService {
             stateObject[validBuild.networkId] = {};
           }
 
+          const txData: TxData = {
+            from: validBuild.receipt.from,
+          };
           stateObject[validBuild.networkId][
             elementName
           ] = new ContractBindingMetaData(
@@ -168,9 +171,7 @@ export class StateMigrationService {
             undefined,
             {
               output: validBuild.receipt,
-              input: {
-                from: validBuild.receipt.from,
-              } as TxData,
+              input: txData,
             },
             deployMetaData
           );

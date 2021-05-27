@@ -11,7 +11,7 @@ export class ModuleTypings {
     moduleName: string,
     module: Module | undefined
   ) {
-    if (module == undefined) {
+    if (module === undefined) {
       return;
     }
 

@@ -40,15 +40,26 @@ export class IgnitionTests implements IIgnitionUsage {
   }
 
   public cleanup() {
-    this.core.moduleStateRepo.clear();
+    if (!this.core.moduleParams) {
+      return;
+    }
+
+    this.core.moduleStateRepo?.clear();
   }
 
   public async setStateFile(moduleName: string, stateFile: ModuleStateFile) {
-    await this.core.moduleStateRepo.storeNewState(moduleName, stateFile);
+    if (!this.core.moduleStateRepo) {
+      return;
+    }
+    await this.core.moduleStateRepo?.storeNewState(moduleName, stateFile);
   }
 
   public async getStateFile(moduleName: string): Promise<ModuleStateFile> {
-    return this.core.moduleStateRepo.getStateIfExist(moduleName);
+    if (!this.core.moduleStateRepo) {
+      return {};
+    }
+
+    return this.core.moduleStateRepo?.getStateIfExist(moduleName);
   }
 
   public async reInit(

@@ -4,7 +4,7 @@ import { Namespace } from "cls-hooked";
 
 import { IModuleStateRepo } from "../../modules/states/repo";
 import { CliError } from "../../types/errors";
-import { clsNamespaces } from "../../utils/continuation_local_storage";
+import { ClsNamespaces } from "../../utils/continuation_local_storage";
 import { KeyMutex } from "../../utils/mutex/key_mutex";
 import { checkIfExist } from "../../utils/util";
 
@@ -116,7 +116,7 @@ export class EventTxExecutor {
         if (!checkIfExist(tx?.confirmations) || tx?.confirmations == 0) {
           transactionReceipt = await tx.wait(1);
 
-          if (!this.eventSession.get(clsNamespaces.PARALLELIZE)) {
+          if (!this.eventSession.get(ClsNamespaces.PARALLELIZE)) {
             const blockConfirmation = +(
               process.env.BLOCK_CONFIRMATION_NUMBER || 1
             );

@@ -27,11 +27,9 @@ export function handleTypes(
         break;
       }
 
-      if ("contract " + value.name != internalType && "address" != type) {
+      if (`contract ${value.name}` !== internalType && "address" !== type) {
         throw new ContractTypeMismatch(
-          `Unsupported type for - ${bindingName}\n provided: ${
-            value.name
-          }\n expected: ${internalType || ""}`
+          `Unsupported type for - ${bindingName}\n provided: ${value.name}\n expected: ${internalType}`
         );
       }
       break;
@@ -39,9 +37,7 @@ export function handleTypes(
     case "number": {
       if (!type.includes("int")) {
         throw new ContractTypeMismatch(
-          `Unsupported type for - ${bindingName} \n provided: number \n expected: ${
-            type || ""
-          }`
+          `Unsupported type for - ${bindingName} \n provided: number \n expected: ${type}`
         );
       }
 
@@ -55,9 +51,7 @@ export function handleTypes(
     case "boolean": {
       if (!type.includes("bool")) {
         throw new ContractTypeMismatch(
-          `Unsupported type for - ${bindingName} \n provided: bool \n expected: ${
-            type || ""
-          }`
+          `Unsupported type for - ${bindingName} \n provided: bool \n expected: ${type}`
         );
       }
       break;
@@ -77,12 +71,12 @@ export function handleTypes(
 
 function handleString(bindingName: string, value: string, type: string): void {
   // string
-  if (type == "string") {
+  if (type === "string") {
     return;
   }
 
   // bytes
-  if (type == "bytes" || type == "bytes32") {
+  if (type === "bytes" || type === "bytes32") {
     return;
   }
 
@@ -128,12 +122,12 @@ function handleArray(
 }
 
 function handleInt(bindingName: string, value: BigNumber, type: string) {
-  if (value.lt(0) && type.includes("uint")) {
-    throw new ContractTypeMismatch(
-      `Unsupported type for - ${bindingName} \n provided: negative number \n expected: ${
-        type || ""
-      }`
-    );
+  if (value.lt(0)) {
+    if (type.includes("uint")) {
+      throw new ContractTypeMismatch(
+        `Unsupported type for - ${bindingName} \n provided: negative number \n expected: ${type}`
+      );
+    }
   }
 
   const bits = type.substring(type.lastIndexOf("int") + 3);
@@ -144,9 +138,7 @@ function handleInt(bindingName: string, value: BigNumber, type: string) {
 
   if (BigNumber.from(value).abs().gt(range)) {
     throw new ContractTypeMismatch(
-      `Number out of range - ${bindingName} \n provided: ${value.toString()} \n expected: ${
-        type || ""
-      }`
+      `Number out of range - ${bindingName} \n provided: ${value.toString()} \n expected: ${type}`
     );
   }
 }

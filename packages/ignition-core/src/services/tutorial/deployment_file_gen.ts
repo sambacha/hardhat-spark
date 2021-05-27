@@ -10,20 +10,20 @@ import {
 } from "./tutorial_desc";
 
 export class DeploymentFileGenerator {
-  private deploymentFileRepo: DeploymentFileRepo;
+  private _deploymentFileRepo: DeploymentFileRepo;
 
-  private moduleName: string | undefined;
-  private readonly contracts: {
+  private _moduleName: string | undefined;
+  private readonly _contracts: {
     [bindingName: string]: {
       constructorArgs: any[];
     };
   };
-  private readonly templates: {
+  private readonly _templates: {
     [bindingName: string]: {
       contractName: string;
     };
   };
-  private readonly events: {
+  private readonly _events: {
     [eventName: string]: {
       bindingName: string;
       contractFunction: string;
@@ -32,23 +32,23 @@ export class DeploymentFileGenerator {
   };
 
   constructor(deploymentFileRepo: DeploymentFileRepo) {
-    this.deploymentFileRepo = deploymentFileRepo;
+    this._deploymentFileRepo = deploymentFileRepo;
 
-    this.contracts = {};
-    this.templates = {};
-    this.events = {};
+    this._contracts = {};
+    this._templates = {};
+    this._events = {};
   }
 
   public setDeploymentPath(deploymentPath: string, deploymentFile: string) {
-    this.deploymentFileRepo.setDeploymentPath(deploymentPath, deploymentFile);
+    this._deploymentFileRepo.setDeploymentPath(deploymentPath, deploymentFile);
   }
 
   public initEmptyModule(moduleName: string) {
-    this.moduleName = moduleName;
+    this._moduleName = moduleName;
 
-    const fileContent = this.generateModuleFile();
+    const fileContent = this._generateModuleFile();
 
-    this.deploymentFileRepo.storeNewDeployment(fileContent);
+    this._deploymentFileRepo.storeNewDeployment(fileContent);
   }
 
   public newContract(
@@ -56,19 +56,19 @@ export class DeploymentFileGenerator {
     bindingName: string,
     ...args: any[]
   ) {
-    if (contractName != bindingName) {
-      this.templates[bindingName] = {
+    if (contractName !== bindingName) {
+      this._templates[bindingName] = {
         contractName,
       };
     }
 
-    this.contracts[bindingName] = {
+    this._contracts[bindingName] = {
       constructorArgs: args,
     };
 
-    const fileContent = this.generateModuleFile();
+    const fileContent = this._generateModuleFile();
 
-    this.deploymentFileRepo.storeNewDeployment(fileContent);
+    this._deploymentFileRepo.storeNewDeployment(fileContent);
   }
 
   public newContractInvocation(
@@ -78,26 +78,26 @@ export class DeploymentFileGenerator {
     ...functionArgs: any[]
   ) {
     const eventName = `${EventType.AfterDeployEvent}${contractName}${functionName}`;
-    this.events[eventName] = {
+    this._events[eventName] = {
       bindingName,
       contractFunction: functionName,
       contractFunctionArgs: functionArgs,
     };
 
-    const fileContent = this.generateModuleFile();
+    const fileContent = this._generateModuleFile();
 
-    this.deploymentFileRepo.storeNewDeployment(fileContent);
+    this._deploymentFileRepo.storeNewDeployment(fileContent);
   }
 
-  private generateModuleFile() {
+  private _generateModuleFile() {
     let fileContent = `import { buildModule, ModuleBuilder } from '@tenderly/hardhat-ignition';
 
 /*
 ${MODULE_NAME_DESC}
 */
-export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: ModuleBuilder) => {`;
+export const ${this._moduleName} = buildModule('${this._moduleName}', async (m: ModuleBuilder) => {`;
 
-    if (Object.keys(this.templates).length > 0) {
+    if (Object.keys(this._templates).length > 0) {
       fileContent += `
   /*
   ${TEMPLATE_DESC}
@@ -105,8 +105,8 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
 `;
     }
 
-    for (const proto of Object.keys(this.templates)) {
-      fileContent += `  m.contractTemplate('${this.templates[proto].contractName}');
+    for (const proto of Object.keys(this._templates)) {
+      fileContent += `  m.contractTemplate('${this._templates[proto].contractName}');
 `;
     }
     fileContent += `
@@ -115,23 +115,23 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
   */
 `;
 
-    for (const contractBindingName of Object.keys(this.contracts)) {
-      const args = this.contracts[contractBindingName]?.constructorArgs.join(
+    for (const contractBindingName of Object.keys(this._contracts)) {
+      const args = this._contracts[contractBindingName]?.constructorArgs.join(
         ", "
       );
-      if (checkIfExist(this.templates[contractBindingName])) {
-        if (args) {
-          fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this.templates[contractBindingName].contractName}', ${args});
+      if (checkIfExist(this._templates[contractBindingName])) {
+        if (args !== "") {
+          fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this._templates[contractBindingName].contractName}', ${args});
 `;
           continue;
         }
 
-        fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this.templates[contractBindingName].contractName}');
+        fileContent += `  const ${contractBindingName} = m.bindTemplate('${contractBindingName}', '${this._templates[contractBindingName].contractName}');
 `;
         continue;
       }
 
-      if (args) {
+      if (args !== "") {
         fileContent += `  const ${contractBindingName} = m.contract('${contractBindingName}', ${args});
 `;
         continue;
@@ -144,7 +144,7 @@ export const ${this.moduleName} = buildModule('${this.moduleName}', async (m: Mo
     fileContent += `
 `;
 
-    for (const [eventName, event] of Object.entries(this.events)) {
+    for (const [eventName, event] of Object.entries(this._events)) {
       const functionArgs = event.contractFunctionArgs.join(", ");
       fileContent += `
   /*

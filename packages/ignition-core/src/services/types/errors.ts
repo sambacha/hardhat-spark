@@ -22,7 +22,7 @@ const MACRO_HELPER_DOCS =
 const EVENT_HOOK_DEPS_DOCS_LINK =
   "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 
-export enum ERROR_CODES {
+export enum ErrorCodes {
   NO_NETWORK = "NO_NETWORK",
 }
 
@@ -32,7 +32,7 @@ export function handleMappedErrorCodes(
 ): string {
   switch (errorCode) {
     case ethers.errors.NETWORK_ERROR:
-    case ERROR_CODES.NO_NETWORK: {
+    case ErrorCodes.NO_NETWORK: {
       const currentNetworkName = process.env.IGNITION_NETWORK_NAME;
       const rpcProvider = process.env.IGINITION_RPC_PROVIDER;
       return chalk.red(`No network running.
@@ -372,9 +372,9 @@ export class GasPriceBackoffError extends UserError {
     )} wei.
 
 Ignition will wait for ${chalk.bold(
-      (numberOfRetries * backoffTime) / 1000 + "s"
+      `${((numberOfRetries * backoffTime) / 1000).toString()}s`
     )} and check the network gas price again. Current total wait time is ${chalk.bold(
-      (numberOfRetries * backoffTime) / 1000 + "s"
+      `${((numberOfRetries * backoffTime) / 1000).toString()}s`
     )}.
 `);
   }

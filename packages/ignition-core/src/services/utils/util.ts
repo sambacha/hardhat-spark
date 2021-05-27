@@ -101,7 +101,7 @@ export async function errorHandling(
   logger?: ILogging,
   errorReporter?: IErrorReporting
 ) {
-  if (logger) {
+  if (logger !== undefined) {
     logger.logError(error);
 
     return;
@@ -121,7 +121,7 @@ export async function errorHandling(
   }
 
   // unhandled errors
-  if (errorReporter) {
+  if (errorReporter !== undefined) {
     errorReporter.reportError(error);
   }
 

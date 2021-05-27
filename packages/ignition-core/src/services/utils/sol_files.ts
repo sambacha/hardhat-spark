@@ -205,7 +205,7 @@ function genTemplates(moduleStateBindings: ModuleStateBindings): string {
   const contractMap: { [name: string]: number } = {};
 
   for (const [, element] of Object.entries(moduleStateBindings)) {
-    if (contractMap[element.contractName]) {
+    if (contractMap[element.contractName] !== undefined) {
       contractMap[element.contractName]++;
       continue;
     }

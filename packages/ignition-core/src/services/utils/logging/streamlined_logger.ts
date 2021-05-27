@@ -8,12 +8,12 @@ import { ModuleState } from "../../types/module";
 import { generateErrorMessage, ILogging } from "./index";
 
 export class StreamlinedLogger implements ILogging {
-  private whitespaces: string;
-  private readonly skipConfirmation: boolean;
+  private _whitespaces: string;
+  private readonly _skipConfirmation: boolean;
 
   constructor(skipConfirmation: boolean = false) {
-    this.skipConfirmation = skipConfirmation;
-    this.whitespaces = "";
+    this._skipConfirmation = skipConfirmation;
+    this._whitespaces = "";
   }
 
   public generatedTypes(): void {
@@ -34,23 +34,23 @@ export class StreamlinedLogger implements ILogging {
     moduleStates: ModuleState
   ): void {
     cli.info(chalk.bold("\nDeploy module - ", chalk.green(moduleName)));
-    this.whitespaces += "  ";
+    this._whitespaces += "  ";
   }
 
   public finishModuleDeploy(moduleName: string, summary: string): void {
-    this.finishedElementExecution();
+    this._finishedElementExecution();
     cli.info(summary);
   }
 
   public alreadyDeployed(elementName: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold(elementName)} is already ${chalk.bold("deployed")}.`
+      `${this._whitespaces}
+        ${chalk.bold(elementName)} is already ${chalk.bold("deployed")}.`
     );
   }
 
   public async promptContinueDeployment(): Promise<void> {
-    if (this.skipConfirmation) {
+    if (this._skipConfirmation) {
       return;
     }
 
@@ -60,26 +60,26 @@ export class StreamlinedLogger implements ILogging {
         required: false,
       }
     );
-    if (con == "n") {
+    if (con === "n") {
       throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
   public async promptExecuteTx(): Promise<void> {
-    if (this.skipConfirmation) {
+    if (this._skipConfirmation) {
       return;
     }
 
     const con = await cli.prompt("Execute transactions? (Y/n)", {
       required: false,
     });
-    if (con == "n") {
+    if (con === "n") {
       throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
   public promptSignedTransaction(tx: string): void {
-    cli.debug(this.whitespaces + `Signed transaction: ${tx}`);
+    cli.debug(`${this._whitespaces} Signed transaction: ${tx}`);
   }
 
   public logError(error: Error): void {
@@ -89,7 +89,7 @@ export class StreamlinedLogger implements ILogging {
   }
 
   public sendingTx(): void {
-    cli.action.start(this.whitespaces + "Sending tx");
+    cli.action.start(`${this._whitespaces} Sending tx`);
   }
 
   public sentTx(): void {
@@ -98,17 +98,17 @@ export class StreamlinedLogger implements ILogging {
 
   public bindingExecution(bindingName: string): void {
     cli.info(
-      `${this.whitespaces}${chalk.bold(
+      `${this._whitespaces}${chalk.bold(
         "Started"
       )} deploying binding - ${chalk.bold(bindingName)}`
     );
-    this.whitespaces += "  ";
+    this._whitespaces += "  ";
   }
 
   public finishedBindingExecution(bindingName: string): void {
-    this.finishedElementExecution();
+    this._finishedElementExecution();
     cli.info(
-      `${this.whitespaces}${chalk.bold(
+      `${this._whitespaces}${chalk.bold(
         "Finished"
       )} binding execution - ${chalk.bold(bindingName)}\n`
     );
@@ -116,16 +116,16 @@ export class StreamlinedLogger implements ILogging {
 
   public eventExecution(eventName: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold("Started")} executing event - ${chalk.bold(eventName)}`
+      `${this._whitespaces}
+        ${chalk.bold("Started")} executing event - ${chalk.bold(eventName)}`
     );
-    this.whitespaces += "  ";
+    this._whitespaces += "  ";
   }
 
   public finishedEventExecution(eventName: string, eventType: EventType): void {
-    this.finishedElementExecution();
+    this._finishedElementExecution();
     cli.info(
-      `${this.whitespaces}${chalk.bold(
+      `${this._whitespaces}${chalk.bold(
         "Finished"
       )} event execution - ${chalk.bold(eventName)}\n`
     );
@@ -133,17 +133,17 @@ export class StreamlinedLogger implements ILogging {
 
   public executeContractFunction(functionName: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold("Started")} execution of contract function - `,
+      `${this._whitespaces}
+      ${chalk.bold("Started")} execution of contract function - `,
       chalk.bold(functionName)
     );
-    this.whitespaces += "  ";
+    this._whitespaces += "  ";
   }
 
   public finishedExecutionOfContractFunction(functionName: string): void {
-    this.finishedElementExecution();
+    this._finishedElementExecution();
     cli.info(
-      `${this.whitespaces}${chalk.bold(
+      `${this._whitespaces}${chalk.bold(
         "Finished"
       )} execution of contract function - ${chalk.bold(functionName)}`
     );
@@ -151,35 +151,35 @@ export class StreamlinedLogger implements ILogging {
 
   public executeWalletTransfer(from: string, to: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold("Started")} execution of wallet transfer -  ${chalk.bold(
-          from
-        )} --> ${chalk.bold(to)}`
+      `${this._whitespaces}
+      ${chalk.bold("Started")} execution of wallet transfer -  ${chalk.bold(
+        from
+      )} --> ${chalk.bold(to)}`
     );
-    this.whitespaces += "  ";
+    this._whitespaces += "  ";
   }
 
   public finishedExecutionOfWalletTransfer(from: string, to: string): void {
-    this.finishedElementExecution();
+    this._finishedElementExecution();
     cli.info(
-      this.whitespaces +
-        `${chalk.bold("Finished")} execution of wallet transfer - ${chalk.bold(
-          from
-        )} --> ${chalk.bold(to)}`
+      `${this._whitespaces}
+        ${chalk.bold("Finished")} execution of wallet transfer - ${chalk.bold(
+        from
+      )} --> ${chalk.bold(to)}`
     );
   }
 
   public transactionReceipt(): void {
-    cli.info(this.whitespaces + "Waiting for block confirmation...");
+    cli.info(`${this._whitespaces} Waiting for block confirmation...`);
   }
 
   public waitTransactionConfirmation(): void {
-    cli.action.start(this.whitespaces + "Block is mining");
+    cli.action.start(`${this._whitespaces} Block is mining`);
   }
 
   public transactionConfirmation(confirmationNumber: number): void {
     cli.action.stop(
-      `\n${this.whitespaces} Current block confirmation: ${confirmationNumber}`
+      `\n${this._whitespaces} Current block confirmation: ${confirmationNumber}`
     );
   }
 
@@ -206,7 +206,7 @@ export class StreamlinedLogger implements ILogging {
   }
 
   public async wrongNetwork(): Promise<boolean> {
-    if (this.skipConfirmation) {
+    if (this._skipConfirmation) {
       return true;
     }
 
@@ -217,8 +217,8 @@ export class StreamlinedLogger implements ILogging {
 
   public gasPriceIsLarge(backoffTime: number) {
     cli.info(
-      this.whitespaces +
-        `Gas price is too large, waiting for ${backoffTime}ms before continuing`
+      `${this._whitespaces}
+        Gas price is too large, waiting for ${backoffTime}ms before continuing`
     );
   }
 
@@ -231,7 +231,7 @@ export class StreamlinedLogger implements ILogging {
     ...args: any[]
   ): void {}
 
-  private finishedElementExecution(): void {
-    this.whitespaces = this.whitespaces.slice(0, -2);
+  private _finishedElementExecution(): void {
+    this._whitespaces = this._whitespaces.slice(0, -2);
   }
 }

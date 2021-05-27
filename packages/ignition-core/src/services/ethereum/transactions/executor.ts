@@ -37,7 +37,7 @@ import {
   TransactionFailed,
 } from "../../types/errors";
 import { ModuleState } from "../../types/module";
-import { clsNamespaces } from "../../utils/continuation_local_storage";
+import { ClsNamespaces } from "../../utils/continuation_local_storage";
 import { ILogging } from "../../utils/logging";
 import { checkIfExist } from "../../utils/util";
 
@@ -482,7 +482,7 @@ export class TxExecutor {
     return new Promise((resolve, reject) => {
       try {
         this.eventSession.run(async () => {
-          this.eventSession.set(clsNamespaces.PARALLELIZE, true);
+          this.eventSession.set(ClsNamespaces.PARALLELIZE, true);
 
           const eventPromise = [];
           for (const batchElement of batch) {
@@ -585,7 +585,7 @@ export class TxExecutor {
     return new Promise((resolve, reject) => {
       this.eventSession.run(async () => {
         try {
-          this.eventSession.set(clsNamespaces.EVENT_NAME, event.event.name);
+          this.eventSession.set(ClsNamespaces.EVENT_NAME, event.event.name);
 
           switch (event.event.eventType) {
             case EventType.BeforeDeployEvent: {

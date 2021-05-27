@@ -14,11 +14,11 @@ export function ConfirmationQuestion({
   const handleSubmit = useCallback(
     (submitValue) => {
       if (
-        submitValue == "" ||
-        submitValue == "y" ||
-        submitValue == "Y" ||
-        submitValue == "Yes" ||
-        submitValue == "yes"
+        submitValue === "" ||
+        submitValue === "y" ||
+        submitValue === "Y" ||
+        submitValue === "Yes" ||
+        submitValue === "yes"
       ) {
         resolve(true);
         return;

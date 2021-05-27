@@ -19,34 +19,34 @@ export const DEPLOYMENT_FILE = "./tutorial.module.ts";
 type ContractName = string;
 
 export class TutorialService {
-  private readonly contractNames: { [bindingName: string]: ContractName };
+  private readonly _contractNames: { [bindingName: string]: ContractName };
 
-  private deploymentFileGenerator: DeploymentFileGenerator;
-  private systemCrawlingService: SystemCrawlingService;
+  private _deploymentFileGenerator: DeploymentFileGenerator;
+  private _systemCrawlingService: SystemCrawlingService;
 
   constructor(
     deploymentFileGenerator: DeploymentFileGenerator,
     systemCrawlingService: SystemCrawlingService
   ) {
-    this.deploymentFileGenerator = deploymentFileGenerator;
-    this.systemCrawlingService = systemCrawlingService;
-    this.contractNames = {};
+    this._deploymentFileGenerator = deploymentFileGenerator;
+    this._systemCrawlingService = systemCrawlingService;
+    this._contractNames = {};
   }
 
   public setDeploymentPath(rootPath: string) {
-    this.deploymentFileGenerator.setDeploymentPath(
+    this._deploymentFileGenerator.setDeploymentPath(
       path.resolve(rootPath, DEPLOYMENT_FOLDER),
       DEPLOYMENT_FILE
     );
   }
 
   public setModuleName(moduleName: string) {
-    this.deploymentFileGenerator.initEmptyModule(moduleName);
+    this._deploymentFileGenerator.initEmptyModule(moduleName);
   }
 
   public async start() {
     // crawl for all contracts in
-    const contracts = this.systemCrawlingService.crawlSolidityContractsNames();
+    const contracts = this._systemCrawlingService.crawlSolidityContractsNames();
 
     while (true) {
       let yes = await cli.confirm(
@@ -73,18 +73,18 @@ export class TutorialService {
       ).contractName;
 
       let bindingName = contractName;
-      if (checkIfExist(this.contractNames[contractName])) {
+      if (checkIfExist(this._contractNames[contractName])) {
         bindingName = await cli.prompt(CONTRACT_DUPLICATES);
-        this.contractNames[bindingName] = contractName;
+        this._contractNames[bindingName] = contractName;
       }
-      this.contractNames[contractName] = contractName;
+      this._contractNames[contractName] = contractName;
 
       let constructorArgs = await cli.prompt(CONSTRUCTOR_ARGS, {
         required: false,
       });
       constructorArgs = constructorArgs.split(",");
 
-      this.deploymentFileGenerator.newContract(
+      this._deploymentFileGenerator.newContract(
         contractName,
         bindingName,
         ...constructorArgs
@@ -115,10 +115,13 @@ export class TutorialService {
 
     while (true) {
       if (yes) {
-        const contractFunctionNames = await this.systemCrawlingService.crawlSolidityFunctionsOfContract(
+        const contractFunctionNames = this._systemCrawlingService.crawlSolidityFunctionsOfContract(
           contractName
         );
-        if (contractFunctionNames && contractFunctionNames.length > 0) {
+        if (
+          contractFunctionNames !== undefined &&
+          contractFunctionNames.length > 0
+        ) {
           const functionName = (
             await inquirer.prompt([
               {
@@ -139,7 +142,7 @@ export class TutorialService {
           });
           functionArgs = functionArgs?.split(",");
 
-          this.deploymentFileGenerator.newContractInvocation(
+          this._deploymentFileGenerator.newContractInvocation(
             contractName,
             bindingName,
             functionName,
@@ -151,14 +154,14 @@ export class TutorialService {
           );
         }
 
-        const yes = await cli.confirm(
+        const confirmed = await cli.confirm(
           "Any more contract functions to be executed?(yes/no)"
         );
         if (
           !(await this.handleContractFuncExecution(
             contractName,
             bindingName,
-            yes
+            confirmed
           ))
         ) {
           break;

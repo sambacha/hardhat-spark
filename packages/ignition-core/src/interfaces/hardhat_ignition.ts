@@ -44,7 +44,7 @@ import {
   TemplateNotFound,
   WalletTransactionNotInEventError,
 } from "../services/types/errors";
-import { clsNamespaces } from "../services/utils/continuation_local_storage";
+import { ClsNamespaces } from "../services/utils/continuation_local_storage";
 import { ILogging } from "../services/utils/logging";
 import {
   checkIfExist,
@@ -544,9 +544,9 @@ export class ContractBinding extends Binding {
         depEvents.push((dep as ContractEvent).name);
       }
     }
-    const moduleName = copyValue(moduleSession.get(clsNamespaces.MODULE_NAME));
+    const moduleName = copyValue(moduleSession.get(ClsNamespaces.MODULE_NAME));
     const subModuleNameDepth = copyValue(
-      moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || []
+      moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) || []
     );
 
     return {
@@ -674,7 +674,7 @@ export class ContractBinding extends Binding {
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      const eventName = this.eventSession?.get(clsNamespaces.EVENT_NAME) || "";
+      const eventName = this.eventSession?.get(ClsNamespaces.EVENT_NAME) || "";
       throw new ContractNotDeployedError(
         this.name,
         this.contractName,
@@ -1169,7 +1169,7 @@ export class ContractInstance {
         ...args: any[]
       ): Promise<TransactionResponse | TransactionReceipt> {
         const sessionEventName = this.eventSession.get(
-          clsNamespaces.EVENT_NAME
+          ClsNamespaces.EVENT_NAME
         );
 
         if (
@@ -1274,7 +1274,7 @@ export class ContractInstance {
       };
 
       const currentEventAbstraction = this.eventSession.get(
-        clsNamespaces.EVENT_NAME
+        ClsNamespaces.EVENT_NAME
       );
       const txSender = await this.signer.getAddress();
       this.eventTxExecutor.add(
@@ -1354,7 +1354,7 @@ export class IgnitionSigner {
         throw new MissingToAddressInWalletTransferTransaction();
       }
       this.prompter.executeWalletTransfer(address, toAddr);
-      const currEventName = this.sessionNamespace.get(clsNamespaces.EVENT_NAME);
+      const currEventName = this.sessionNamespace.get(ClsNamespaces.EVENT_NAME);
       if (!checkIfExist(currEventName)) {
         throw new WalletTransactionNotInEventError();
       }
@@ -1385,7 +1385,7 @@ export class IgnitionSigner {
     };
 
     const currentEventName = this.sessionNamespace.get(
-      clsNamespaces.EVENT_NAME
+      ClsNamespaces.EVENT_NAME
     );
     this.eventTxExecutor.add(currentEventName, address, address, func);
 
@@ -1550,10 +1550,10 @@ export class ModuleBuilder {
       cli.exit(0);
     }
 
-    const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
+    const moduleName = this.moduleSession.get(ClsNamespaces.MODULE_NAME);
     const subModuleNameDepth =
-      this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
-    const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
+      this.moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) || [];
+    const subModule = this.moduleSession.get(ClsNamespaces.SUB_MODULE_NAME);
     this.bindings[name] = new ContractBinding(
       name,
       name,
@@ -1630,10 +1630,10 @@ export class ModuleBuilder {
       );
     }
 
-    const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
+    const moduleName = this.moduleSession.get(ClsNamespaces.MODULE_NAME);
     const subModuleNameDepth =
-      this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
-    const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
+      this.moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) || [];
+    const subModule = this.moduleSession.get(ClsNamespaces.SUB_MODULE_NAME);
     this.bindings[name] = new ContractBinding(
       name,
       this.templates[templateName].contractName,
@@ -1764,11 +1764,11 @@ export class ModuleBuilder {
       moduleParams
     );
     const oldDepth =
-      this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+      this.moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) || [];
     if (oldDepth.length >= 1) {
       oldDepth.pop();
     }
-    this.moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
+    this.moduleSession.set(ClsNamespaces.MODULE_DEPTH_NAME, oldDepth);
 
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
@@ -2010,12 +2010,12 @@ export class Module {
     // this is needed in order for ContractBindings to be aware of their originating module for later context changes
     if (!!m) {
       const currentDepth =
-        moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+        moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) || [];
       currentDepth.push(this.name);
 
-      moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, currentDepth);
+      moduleSession.set(ClsNamespaces.MODULE_DEPTH_NAME, currentDepth);
     } else {
-      moduleSession.set(clsNamespaces.MODULE_NAME, this.name);
+      moduleSession.set(ClsNamespaces.MODULE_NAME, this.name);
     }
 
     try {

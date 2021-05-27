@@ -67,7 +67,7 @@ export const TerminalLayout = ({
       )}
       {!checkIfEmpty(summary) ? <Text>{summary}</Text> : <></>}
       {!checkIfEmpty(errorMessage) ? <Text>{errorMessage}</Text> : <></>}
-      {!(checkIfEmpty(errorStack) && cli.config.outputLevel == "debug") ? (
+      {!(checkIfEmpty(errorStack) && cli.config.outputLevel === "debug") ? (
         <Text>{errorStack}</Text>
       ) : (
         <></>
@@ -93,7 +93,7 @@ function ModuleElements({
   Object.values(formattedModuleElements).map((value: ElementWithStatus) => {
     if ((value.element as ContractBinding)._isContractBinding) {
       value.element = value.element as ContractBinding;
-      const subModule = (value.element.subModuleNameDepth || []).join(" > ");
+      const subModule = value.element.subModuleNameDepth.join(" > ");
       if (!checkIfExist(mappedModuleElements[subModule])) {
         mappedModuleElements[subModule] = [];
       }
@@ -103,9 +103,8 @@ function ModuleElements({
 
     if ((value.element as StatefulEvent)._isStatefulEvent) {
       value.element = value.element as StatefulEvent;
-      const subModule = (
-        (value.element?.event as ContractEvent)?.subModuleNameDepth || []
-      ).join(" > ");
+      const subModule = ((value.element
+        ?.event as ContractEvent)?.subModuleNameDepth).join(" > ");
       if (!checkIfExist(mappedModuleElements[subModule])) {
         mappedModuleElements[subModule] = [];
       }
@@ -137,7 +136,7 @@ function SubModuleElements({
 }) {
   return (
     <>
-      {subModuleDepth != "" ? (
+      {subModuleDepth !== "" ? (
         <Text>
           {" "}
           {">"} {subModuleDepth}
@@ -191,7 +190,7 @@ function fetchName(element: ContractBinding | StatefulEvent) {
 }
 
 function checkIfEmpty(data: string): boolean {
-  return data == "";
+  return data === "";
 }
 
 function getStatus(elementStatus: ElementStatus): boolean | JSX.Element {

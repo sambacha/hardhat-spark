@@ -6,7 +6,7 @@ import { ModuleState } from "../../types/module";
 import { generateErrorMessage, ILogging } from "./index";
 
 export class JsonLogger implements ILogging {
-  private currentModuleName: string | undefined;
+  private _currentModuleName: string | undefined;
 
   constructor() {}
 
@@ -85,7 +85,7 @@ export class JsonLogger implements ILogging {
       JSON.stringify({
         name: "Finished module deployment",
         fields: {
-          moduleName: this.currentModuleName,
+          moduleName: this._currentModuleName,
         },
       })
     );
@@ -142,7 +142,7 @@ export class JsonLogger implements ILogging {
       JSON.stringify({
         name: "Nothing to deploy",
         fields: {
-          moduleName: this.currentModuleName,
+          moduleName: this._currentModuleName,
         },
       })
     );
@@ -203,7 +203,7 @@ export class JsonLogger implements ILogging {
         },
       })
     );
-    this.currentModuleName = moduleName;
+    this._currentModuleName = moduleName;
   }
 
   public transactionConfirmation(

@@ -5,12 +5,12 @@ import { JsonFragment, JsonFragmentType } from "../types/artifacts/abi";
 import { searchBuilds, searchModuleFilesName } from "../utils/sol_files";
 
 export class SystemCrawlingService {
-  private static filterArtifactsByName(
+  private static _filterArtifactsByName(
     artifacts: Artifact[],
     contractName: string
   ): Artifact | undefined {
     for (const artifact of artifacts) {
-      if (artifact.contractName == contractName) {
+      if (artifact.contractName === contractName) {
         return artifact;
       }
     }
@@ -18,35 +18,35 @@ export class SystemCrawlingService {
     return undefined;
   }
 
-  private static filterArtifacts(artifacts: Artifact[]): Artifact[] {
+  private static _filterArtifacts(artifacts: Artifact[]): Artifact[] {
     const filteredArtifacts: Artifact[] = [];
 
     for (const artifact of artifacts) {
-      if (artifact.bytecode && artifact.contractName) {
+      if (artifact.bytecode !== "" && artifact.contractName !== "") {
         filteredArtifacts.push(artifact);
       }
     }
 
     return filteredArtifacts;
   }
-  private readonly currentPath: string;
+  private readonly _currentPath: string;
 
   constructor(currentPath: string, folderName: string) {
-    this.currentPath = path.resolve(currentPath, folderName);
+    this._currentPath = path.resolve(currentPath, folderName);
   }
 
   public crawlDeploymentModule(): string[] {
-    return searchModuleFilesName(this.currentPath, []);
+    return searchModuleFilesName(this._currentPath, []);
   }
 
   public crawlSolidityContractsNames(): string[] {
     const contracts: string[] = [];
 
-    const artifacts = searchBuilds(this.currentPath, []) as Artifact[];
-    const contractArtifacts = SystemCrawlingService.filterArtifacts(artifacts);
+    const artifacts = searchBuilds(this._currentPath, []) as Artifact[];
+    const contractArtifacts = SystemCrawlingService._filterArtifacts(artifacts);
 
-    for (const artifacts of contractArtifacts) {
-      contracts.push(artifacts.contractName);
+    for (const contractArtifact of contractArtifacts) {
+      contracts.push(contractArtifact.contractName);
     }
 
     return contracts;
@@ -65,13 +65,13 @@ export class SystemCrawlingService {
       inputs?: JsonFragmentType[];
     }> = [];
 
-    const artifacts = searchBuilds(this.currentPath, []) as Artifact[];
-    const contractBuilds = SystemCrawlingService.filterArtifactsByName(
+    const artifacts = searchBuilds(this._currentPath, []) as Artifact[];
+    const contractBuilds = SystemCrawlingService._filterArtifactsByName(
       artifacts,
       contractName
     );
 
-    if (!contractBuilds) {
+    if (contractBuilds === undefined) {
       return undefined;
     }
 

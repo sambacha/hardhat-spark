@@ -8,7 +8,7 @@ export class KeyMutex {
   }
 
   public isLocked(key: string) {
-    return this._lock[key] != undefined;
+    return this._lock[key] !== undefined;
   }
 
   public acquireQueued(key: string) {
@@ -23,7 +23,7 @@ export class KeyMutex {
       release = resolve;
     }));
     return () => {
-      if (this._lock[key] == lock) {
+      if (this._lock[key] === lock) {
         this._lock[key] = undefined;
       }
 

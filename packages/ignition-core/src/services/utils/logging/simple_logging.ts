@@ -30,23 +30,23 @@ enum DescActionList {
 }
 
 export class SimpleOverviewLogger extends FileLogging implements ILogging {
-  private moduleBars: {
+  private _moduleBars: {
     [moduleName: string]: SingleBar;
   };
 
-  private currentModuleName: string | undefined;
+  private _currentModuleName: string | undefined;
 
   constructor() {
     super();
-    this.moduleBars = {};
+    this._moduleBars = {};
   }
 
   public gasPriceIsLarge(backoffTime: number) {
     super.gasPriceIsLarge(backoffTime);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
+    this._moduleBars[this._currentModuleName].update({
       action: DescActionList.LOWER_GAS_PRICE,
     });
   }
@@ -57,7 +57,6 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
         "WARNING: This feature is experimental, please avoid using it while deploying to production"
       )
     );
-    cli.confirm("Confirm you are willing to continue");
     const yes = await cli.confirm(
       "Do you wish to continue with deployment of this module? (Y/n)"
     );
@@ -77,10 +76,10 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   public startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
     super.startModuleDeploy(moduleName, moduleState);
 
-    this.currentModuleName = moduleName;
+    this._currentModuleName = moduleName;
     cli.info(chalk.bold("\n\nDeploy module - ", chalk.green(moduleName)));
 
-    this.moduleBars[moduleName] = new SingleBar({
+    this._moduleBars[moduleName] = new SingleBar({
       clearOnComplete: false,
       synchronousUpdate: true,
       fps: 100,
@@ -90,8 +89,8 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
         "{element}"
       )} -> status: {status} | Action: {action}`,
     });
-    this.moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
-      module: this.currentModuleName,
+    this._moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
+      module: this._currentModuleName,
       element: "N/A",
       status: "N/A",
     });
@@ -99,12 +98,12 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public alreadyDeployed(elementName: string): void {
     super.alreadyDeployed(elementName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
 
-    this.moduleBars[this.currentModuleName].increment({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].increment({
+      module: this._currentModuleName,
       element: elementName,
       status: StateElementStatus.DEPLOYED,
       action: DescActionList.SKIPPED,
@@ -113,11 +112,11 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public bindingExecution(bindingName: string): void {
     super.bindingExecution(bindingName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: bindingName,
       status: StateElementStatus.RUNNING,
       action: DescActionList.CREATE,
@@ -126,14 +125,14 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public logError(error: Error): void {
     super.logError(error);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       return;
     }
-    if (!this.moduleBars[this.currentModuleName]) {
+    if (this._moduleBars[this._currentModuleName] === undefined) {
       return;
     }
 
-    this.moduleBars[this.currentModuleName].stop();
+    this._moduleBars[this._currentModuleName].stop();
     const { message, stack } = generateErrorMessage(error);
 
     cli.info(message);
@@ -141,11 +140,11 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public eventExecution(eventName: string): void {
     super.eventExecution(eventName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: "N/A",
@@ -154,18 +153,18 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public finishModuleDeploy(moduleName: string, summary: string): void {
     super.finishModuleDeploy(moduleName, summary);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
-      element: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
+      element: this._currentModuleName,
       status: StateElementStatus.SUCCESSFUL,
       action: "N/A",
     });
-    this.moduleBars[this.currentModuleName].stop();
+    this._moduleBars[this._currentModuleName].stop();
 
-    this.currentModuleName = "";
+    this._currentModuleName = "";
 
     cli.info(summary);
   }
@@ -173,13 +172,13 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   public finishedEventExecution(eventName: string, eventType: EventType): void {
     super.finishedEventExecution(eventName, eventType);
 
-    this.handleElementCompletion(eventName);
+    this._handleElementCompletion(eventName);
   }
 
   public finishedBindingExecution(bindingName: string): void {
     super.finishedBindingExecution(bindingName);
 
-    this.handleElementCompletion(bindingName);
+    this._handleElementCompletion(bindingName);
   }
 
   public finishedExecutionOfContractFunction(functionName: string): void {
@@ -212,17 +211,17 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public sendingTx(eventName: string, functionName: string = "CREATE"): void {
     super.sendingTx(eventName, functionName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+    if (!checkIfExist(this._moduleBars[this._currentModuleName])) {
       throw new CliError(
         "Current module not found when trying to log transactions"
       );
     }
 
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: `${functionName} -> sending`,
@@ -231,18 +230,18 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public sentTx(eventName: string, functionName: string = "CREATE"): void {
     super.sentTx(eventName, functionName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
 
-    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+    if (!checkIfExist(this._moduleBars[this._currentModuleName])) {
       throw new CliError(
         "Current module not found when trying to log transactions"
       );
     }
 
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: `${functionName} -> sent`,
@@ -256,17 +255,17 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   ): void {
     super.transactionConfirmation(confirmationNumber, eventName, functionName);
 
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+    if (!checkIfExist(this._moduleBars[this._currentModuleName])) {
       throw new CliError(
         "Current module not found when trying to log transactions"
       );
     }
 
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: `${functionName} -> confirmed ${confirmationNumber}`,
@@ -301,7 +300,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
   }
 
   public async wrongNetwork(): Promise<boolean> {
-    super.wrongNetwork();
+    await super.wrongNetwork();
     return cli.confirm(
       "Contracts are missing on the network, do you wish to continue? (Y/n)"
     );
@@ -311,12 +310,12 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
 
   public finishModuleResolving(): void {}
 
-  private handleElementCompletion(elementName: string): void {
-    if (!this?.currentModuleName) {
+  private _handleElementCompletion(elementName: string): void {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].increment({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].increment({
+      module: this._currentModuleName,
       element: elementName,
       status: StateElementStatus.SUCCESSFUL,
       action: "N/A",
