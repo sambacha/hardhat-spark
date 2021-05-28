@@ -517,7 +517,7 @@ export class TxExecutor {
     batches: any[],
     element: ContractBinding | StatefulEvent,
     moduleState: ModuleState,
-    elementsBatches: any
+    elementsBatches: { [name: string]: number }
   ) {
     if (checkIfExist((element as ContractBinding)?.bytecode)) {
       element = element as ContractBinding;

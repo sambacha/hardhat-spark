@@ -119,7 +119,7 @@ export class Batcher {
       }
 
       if (elementsBatches[dep] < shallowestDepNumber) {
-        shallowestDepNumber < elementsBatches[dep];
+        shallowestDepNumber = elementsBatches[dep];
       }
     }
 

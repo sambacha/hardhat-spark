@@ -181,7 +181,7 @@
   dependencies:
     "@ethersproject/bignumber" "^5.2.0"
 
-"@ethersproject/contracts@5.2.0":
+"@ethersproject/contracts@5.2.0", "@ethersproject/contracts@^5.2.0":
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/contracts/-/contracts-5.2.0.tgz#f54e12ec4a323f2bf93c338034839cc6dfc1e347"
   integrity sha512-/2fg5tWPG6Z4pciEWpwGji3ggGA5j0ChVNF7NTmkOhvFrrJuWnRpzbvYA00nz8tBDNCOV3cwub5zfWRpgwYEJQ==

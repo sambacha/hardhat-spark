@@ -171,7 +171,7 @@ export class EthTxGenerator implements ITransactionGenerator {
       );
     }
     if (checkIfExist(this._gasPriceBackoff)) {
-      if (gasPrice > this._gasPriceBackoff.maxGasPrice) {
+      if (gasPrice.gt(this._gasPriceBackoff.maxGasPrice)) {
         this._prompter.gasPriceIsLarge(this._gasPriceBackoff.backoffTime);
         await delay(this._gasPriceBackoff.backoffTime);
         gasPrice = await this._fetchBackoffGasPrice(retries - 1);

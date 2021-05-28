@@ -16,7 +16,7 @@ export class EventTxExecutor {
       sender: string;
       contractBindingName: string;
       func: ContractFunction;
-      resolveFunc: Function | undefined;
+      resolveFunc: (() => void) | undefined;
       args: any[] | undefined;
     };
   };
@@ -61,7 +61,7 @@ export class EventTxExecutor {
   ): Promise<TransactionResponse> {
     this._rootEvents[eventName].args = args;
 
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve: () => void, reject) => {
       try {
         this._rootEvents[eventName].resolveFunc = resolve;
         await this.executeAll();

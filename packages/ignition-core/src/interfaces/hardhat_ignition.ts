@@ -81,8 +81,10 @@ export type RedeployFn = (...deps: ContractBinding[]) => Promise<void>;
 
 export type EventFnDeployed = () => Promise<void>;
 export type EventFnCompiled = () => void;
-export type EventFn = () => void;
+export type ContractEventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
+
+export type EventFn = EventFnCompiled | EventFnDeployed | ModuleEventFn;
 
 export interface ModuleParams {
   [name: string]: any;
@@ -136,7 +138,7 @@ export interface AfterDeployEvent extends BaseEvent {
 }
 
 export interface BeforeCompileEvent extends BaseEvent {
-  fn: EventFn;
+  fn: ContractEventFn;
 }
 
 export interface AfterCompileEvent extends BaseEvent {
@@ -416,7 +418,7 @@ export class GroupedDependencies {
   public beforeCompile(
     m: ModuleBuilder,
     eventName: string,
-    fn: EventFn,
+    fn: ContractEventFn,
     ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
@@ -914,7 +916,7 @@ export class ContractBinding extends Binding {
   public beforeCompile(
     m: ModuleBuilder,
     eventName: string,
-    fn: EventFn,
+    fn: ContractEventFn,
     ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     if (this.eventsDeps.beforeCompile.includes(eventName)) {
@@ -1350,8 +1352,8 @@ export class IgnitionSigner {
     const address = await this._signer.getAddress();
 
     const func = async (): Promise<TransactionResponse> => {
-      const toAddr = (await transaction).to as string;
-      if (!toAddr) {
+      const toAddr = (await transaction.to) as string;
+      if (toAddr !== undefined) {
         throw new MissingToAddressInWalletTransferTransaction();
       }
       this._prompter.executeWalletTransfer(address, toAddr);

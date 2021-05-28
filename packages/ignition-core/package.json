@@ -17,6 +17,9 @@
   "dependencies": {
     "@ethersproject/abi": "^5.2.0",
     "@ethersproject/abstract-provider": "^5.2.0",
+    "@ethersproject/bignumber": "^5.2.0",
+    "@ethersproject/contracts": "^5.2.0",
+    "@ethersproject/properties": "^5.2.0",
     "@sentry/node": "^6.2.5",
     "aws-sdk": "^2.805.0",
     "chalk": "^4.1.0",

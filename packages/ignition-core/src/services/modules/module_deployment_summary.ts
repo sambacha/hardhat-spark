@@ -158,10 +158,8 @@ export class ModuleDeploymentSummaryService {
 
           let inputGasPrice;
           let outputGasUsed = BigNumber.from(0);
-          if (singleTxOutput && singleTxOutput.gasUsed) {
-            if (singleTxOutput.gasUsed?._hex !== undefined) {
-              outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
-            }
+          if (singleTxOutput.gasUsed?._hex !== undefined) {
+            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
           }
 
           if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
