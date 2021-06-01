@@ -1,5 +1,4 @@
 import { assert } from "chai";
-import { loadScript } from "common";
 import { ethers } from "ethers";
 import {
   ContractBindingMetaData,
@@ -14,6 +13,12 @@ import { loadStateFile } from "../utils/files";
 const networkId = "31337";
 const networkName = "local";
 const defaultProvider = new ethers.providers.JsonRpcProvider();
+
+// TODO: Remove this
+export async function loadScript(filePath: string): Promise<any> {
+  const m = require(filePath);
+  return m.default ?? m;
+}
 
 // @TODO move this to tests
 const testPrivateKeys = [
@@ -337,9 +342,9 @@ async function runDeployCommand(
     DEPLOYMENT_FOLDER,
     projectFileName
   );
-  const modules = await loadScript(deploymentFilePath, true);
-  for (const [, module] of Object.entries(modules)) {
-    await ignition.deploy(module as Module);
+  const modules = await loadScript(deploymentFilePath);
+  for (const [, module] of Object.entries<Module>(modules)) {
+    await ignition.deploy(module);
   }
 }
 
@@ -354,7 +359,7 @@ async function loadModuleParams(
       "deployment",
       "module.params.js"
     );
-    config = await loadScript(configFileJs, true);
+    config = await loadScript(configFileJs);
   } catch (e) {
     if (e.code === "MODULE_NOT_FOUND") {
       const configFileTs = path.resolve(
@@ -362,7 +367,7 @@ async function loadModuleParams(
         "deployment",
         "module.params.ts"
       );
-      config = await loadScript(configFileTs, true);
+      config = await loadScript(configFileTs);
     } else {
       throw e;
     }

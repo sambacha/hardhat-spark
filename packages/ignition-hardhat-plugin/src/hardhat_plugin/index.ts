@@ -1,4 +1,3 @@
-import { loadScript } from "common";
 import { extendEnvironment, task } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import { ActionType } from "hardhat/types";
@@ -21,6 +20,12 @@ import "./type_extentions";
 const DEFAULT_NETWORK_NAME = "local";
 export const PluginName = "hardhat-ignition";
 const DEFAULT_DEPLOYMENT_FOLDER = "deployments";
+
+// TODO: Remove this
+export async function loadScript(filePath: string): Promise<any> {
+  const m = require(filePath);
+  return m.default ?? m;
+}
 
 extendEnvironment((env) => {
   const networkName =

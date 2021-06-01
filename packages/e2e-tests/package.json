@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "cli-ux": "^5.5.1",
-    "common": "^0.0.1",
     "ethers": "^5.1.4",
     "ignition-test": "^0.0.1",
     "ignition-core": "^0.0.1",

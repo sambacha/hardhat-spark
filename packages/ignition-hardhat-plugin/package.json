@@ -15,7 +15,6 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "common": "^0.0.1",
     "ignition-core": "^0.0.1",
     "inquirer": "^8.0.0"
   },
