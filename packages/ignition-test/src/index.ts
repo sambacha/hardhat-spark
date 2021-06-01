@@ -40,7 +40,7 @@ export class IgnitionTests implements IIgnitionUsage {
   }
 
   public cleanup() {
-    if (!this.core.moduleParams) {
+    if (this.core.moduleParams === undefined) {
       return;
     }
 
@@ -48,14 +48,14 @@ export class IgnitionTests implements IIgnitionUsage {
   }
 
   public async setStateFile(moduleName: string, stateFile: ModuleStateFile) {
-    if (!this.core.moduleStateRepo) {
+    if (this.core.moduleStateRepo === undefined) {
       return;
     }
     await this.core.moduleStateRepo?.storeNewState(moduleName, stateFile);
   }
 
   public async getStateFile(moduleName: string): Promise<ModuleStateFile> {
-    if (!this.core.moduleStateRepo) {
+    if (this.core.moduleStateRepo === undefined) {
       return {};
     }
 
