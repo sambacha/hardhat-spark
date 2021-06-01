@@ -1,28 +1,22 @@
-import {
-  ContractBinding,
-  ContractInput,
-  ModuleBuilder,
-  StatefulEvent,
-} from '../../interfaces/hardhat_ignition';
-import { CliError, handleMappedErrorCodes, UserError } from '../types/errors';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
-import * as os from 'os';
-import { ILogging } from './logging';
-import { IErrorReporting } from './analytics';
+import { cli } from "cli-ux";
+import * as os from "os";
+
+import { handleMappedErrorCodes } from "../types/errors";
+
+import { IErrorReporting } from "./analytics";
+import { ILogging } from "./logging";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export function checkIfExist(object: any): boolean {
-  return object != undefined && typeof object != 'undefined';
-}
-
-export function checkIfFuncExist(func: any): boolean {
-  return typeof func === 'function';
+  return object !== undefined && typeof object !== "undefined";
 }
 
 export function checkIfSameInputs(
-  input: ContractInput,
+  input: {
+    functionName: string;
+    inputs: any[];
+  },
   fragmentName: string,
   args: any[]
 ): boolean {
@@ -46,20 +40,7 @@ export function isSameBytecode(
     bytecodeTwo.length - metaDataLengthTwo
   );
 
-  return formattedBytecodeOne == formattedBytecodeTwo;
-}
-
-export function checkIfSuitableForInstantiating(
-  contractBinding: ContractBinding
-): boolean {
-  return (
-    checkIfExist(contractBinding?.deployMetaData.contractAddress) &&
-    checkIfExist(contractBinding?.abi) &&
-    checkIfExist(contractBinding?.signer) &&
-    checkIfExist(contractBinding?.prompter) &&
-    checkIfExist(contractBinding?.txGenerator) &&
-    checkIfExist(contractBinding?.moduleStateRepo)
-  );
+  return formattedBytecodeOne === formattedBytecodeTwo;
 }
 
 export function arrayEquals(a: any[], b: any[]) {
@@ -72,9 +53,9 @@ export function arrayEquals(a: any[], b: any[]) {
 }
 
 export function removeLastPathElement(path: string) {
-  const pathElements = path.split('/');
+  const pathElements = path.split("/");
   pathElements.pop();
-  return pathElements.join('/');
+  return pathElements.join("/");
 }
 
 export async function checkMutex(
@@ -83,7 +64,7 @@ export async function checkMutex(
   retries: number
 ) {
   if (retries === 0) {
-    throw new Error('Maximum number of retries reached.');
+    throw new Error("Maximum number of retries reached.");
   }
 
   if (mutex) {
@@ -96,91 +77,51 @@ export async function checkMutex(
 
 function getOperatingSystem(): string {
   switch (os.type()) {
-    case 'Windows_NT':
-      return '(Windows NT 6.1; Win64; x64)';
-    case 'Darwin':
-      return '(Macintosh; Intel Mac OS X 10_13_6)';
-    case 'Linux':
-      return '(X11; Linux x86_64)';
+    case "Windows_NT":
+      return "(Windows NT 6.1; Win64; x64)";
+    case "Darwin":
+      return "(Macintosh; Intel Mac OS X 10_13_6)";
+    case "Linux":
+      return "(X11; Linux x86_64)";
     default:
-      return '(Unknown)';
+      return "(Unknown)";
   }
 }
 
 export function getUserType(): string {
-  return 'Developer'; // @TODO add CI here after we add integration
+  return "Developer"; // @TODO add CI here after we add integration
 }
 
 export function getUserAgent(): string {
   return `Node/${process.version} ${getOperatingSystem()}`;
 }
 
-export function moduleBuilderStatefulDiff(
-  oldModuleBuilder: ModuleBuilder,
-  newModuleBuilder: ModuleBuilder
-): ([string, ContractBinding][] | [string, StatefulEvent][])[] {
-  const oldBindings = oldModuleBuilder.getAllBindings();
-  const oldEvents = oldModuleBuilder.getAllEvents();
-
-  const newBindings = newModuleBuilder.getAllBindings();
-  const newEvents = newModuleBuilder.getAllEvents();
-
-  const bindingsDiff = Object.entries(newBindings).splice(
-    0,
-    Object.entries(oldBindings).length
-  );
-  const eventsDiff = Object.entries(newEvents).splice(
-    0,
-    Object.entries(oldEvents).length
-  );
-
-  return [bindingsDiff, eventsDiff];
-}
-
-export function extractObjectInfo(obj: any): string {
-  if (obj._isBigNumber) {
-    return obj.toString();
-  }
-
-  if (obj._isContractBinding) {
-    return `${obj.name}(${obj.deployMetaData.contractAddress})`;
-  }
-
-  if (obj._isContractBindingMetaData) {
-    return obj.deployMetaData.contractAddress;
-  }
-
-  return '';
-}
-
 export async function errorHandling(
-  error: Error,
+  error: any,
   logger?: ILogging,
   errorReporter?: IErrorReporting
 ) {
-  if (logger) {
+  if (logger !== undefined) {
     logger.logError(error);
 
     return;
   }
 
-  // @ts-ignore
   if (checkIfExist(error?.code)) {
-    // @ts-ignore
     cli.info(handleMappedErrorCodes(error.code, error));
-    if (cli.config.outputLevel == 'debug' && error?.stack) {
+    if (cli.config.outputLevel === "debug" && error?.stack) {
       cli.debug(error?.stack);
     }
     return;
   }
 
   cli.info(error.message);
-  if (cli.config.outputLevel == 'debug' && error?.stack) {
+  if (cli.config.outputLevel === "debug" && error?.stack) {
     cli.debug(error.stack);
   }
 
   // unhandled errors
-  if (errorReporter) {
+  if (errorReporter !== undefined) {
     errorReporter.reportError(error);
   }
 

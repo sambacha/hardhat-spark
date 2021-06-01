@@ -1,28 +1,34 @@
-import { ModuleStateRepo } from '../services/modules/states/state_repo';
-import { HardhatCompiler } from '../services/ethereum/compiler/hardhat';
-import {
-  checkIfExist,
-  checkIfSameInputs,
-  checkIfSuitableForInstantiating,
-  copyValue,
-  isSameBytecode,
-} from '../services/utils/util';
-import { ModuleValidator } from '../services/modules/module_validator';
-import {
-  JsonFragment,
-  JsonFragmentType,
-} from '../services/types/artifacts/abi';
+import { FunctionFragment } from "@ethersproject/abi";
 import {
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
-} from '@ethersproject/abstract-provider';
-import { cli } from 'cli-ux';
-import { CallOverrides, ethers } from 'ethers';
-import { ContractFunction } from '@ethersproject/contracts';
-import { FunctionFragment } from '@ethersproject/abi';
-import { EthTxGenerator } from '../services/ethereum/transactions/generator';
-import { ILogging } from '../services/utils/logging';
+} from "@ethersproject/abstract-provider";
+import { ContractFunction } from "@ethersproject/contracts";
+import { Deferrable } from "@ethersproject/properties";
+import { cli } from "cli-ux";
+import { Namespace } from "cls-hooked";
+import { CallOverrides, ethers } from "ethers";
+
+import { ICompiler } from "../services/ethereum/compiler";
+import { IGasCalculator, IGasPriceCalculator } from "../services/ethereum/gas";
+import {
+  INonceManager,
+  ITransactionGenerator,
+  ITransactionSigner,
+} from "../services/ethereum/transactions";
+import { EventTxExecutor } from "../services/ethereum/transactions/event_executor";
+import { IModuleRegistryResolver } from "../services/modules/states/registry";
+import { IModuleStateRepo } from "../services/modules/states/repo";
+import { IModuleValidator } from "../services/modules/validator";
+import {
+  JsonFragment,
+  JsonFragmentType,
+} from "../services/types/artifacts/abi";
+import {
+  LinkReferences,
+  SingleContractLinkReference,
+} from "../services/types/artifacts/libraries";
 import {
   ArgumentLengthInvalid,
   BindingsConflict,
@@ -37,22 +43,15 @@ import {
   ShouldRedeployAlreadyDefinedError,
   TemplateNotFound,
   WalletTransactionNotInEventError,
-} from '../services/types/errors';
-import { IModuleRegistryResolver } from '../services/modules/states/registry';
+} from "../services/types/errors";
+import { ClsNamespaces } from "../services/utils/continuation_local_storage";
+import { ILogging } from "../services/utils/logging";
 import {
-  LinkReferences,
-  SingleContractLinkReference,
-} from '../services/types/artifacts/libraries';
-import { IGasCalculator, IGasPriceCalculator } from '../services/ethereum/gas';
-import {
-  INonceManager,
-  ITransactionSigner,
-} from '../services/ethereum/transactions';
-import { EventTxExecutor } from '../services/ethereum/transactions';
-import { Namespace } from 'cls-hooked';
-import { Deferrable } from '@ethersproject/properties';
-import { clsNamespaces } from '../services/utils/continuation_local_storage';
-import { ModuleParams } from '../../index';
+  checkIfExist,
+  checkIfSameInputs,
+  copyValue,
+  isSameBytecode,
+} from "../services/utils/util";
 
 export type AutoBinding = any | Binding | ContractBinding;
 
@@ -68,7 +67,9 @@ export type Argument = AutoBinding | NamedArguments;
 
 // NamedArguments are a mapping of argument names to AutoBindings
 // to be used when resolving Bindings and Actions.
-export type NamedArguments = { [name: string]: AutoBinding };
+export interface NamedArguments {
+  [name: string]: AutoBinding;
+}
 
 // Arguments is the final type that wraps the Arguments above
 // and is the type that is directly used by Bindings and Actions.
@@ -80,31 +81,38 @@ export type RedeployFn = (...deps: ContractBinding[]) => Promise<void>;
 
 export type EventFnDeployed = () => Promise<void>;
 export type EventFnCompiled = () => void;
-export type EventFn = () => void;
+export type ContractEventFn = () => void;
 export type ModuleEventFn = () => Promise<void>;
+
+export type EventFn = EventFnCompiled | EventFnDeployed | ModuleEventFn;
+
+export interface ModuleParams {
+  [name: string]: any;
+}
 
 export type ShouldRedeployFn = (curr: ContractBinding) => boolean;
 
-export type DeployReturn = {
+export interface DeployReturn {
   transaction: TransactionReceipt;
   contractAddress: string;
-};
+}
+
 export type DeployFn = () => Promise<DeployReturn>;
 
 export enum EventType {
-  'OnChangeEvent' = 'OnChangeEvent',
-  'BeforeDeployEvent' = 'BeforeDeployEvent',
-  'AfterDeployEvent' = 'AfterDeployEvent',
-  'AfterCompileEvent' = 'AfterCompileEvent',
-  'BeforeCompileEvent' = 'BeforeCompileEvent',
-  'OnStart' = 'OnStart',
-  'OnFail' = 'OnFail',
-  'OnCompletion' = 'OnCompletion',
-  'OnSuccess' = 'OnSuccess',
-  'Deploy' = 'Deploy',
+  "OnChangeEvent" = "OnChangeEvent",
+  "BeforeDeployEvent" = "BeforeDeployEvent",
+  "AfterDeployEvent" = "AfterDeployEvent",
+  "AfterCompileEvent" = "AfterCompileEvent",
+  "BeforeCompileEvent" = "BeforeCompileEvent",
+  "OnStart" = "OnStart",
+  "OnFail" = "OnFail",
+  "OnCompletion" = "OnCompletion",
+  "OnSuccess" = "OnSuccess",
+  "Deploy" = "Deploy",
 }
 
-export type BaseEvent = {
+export interface BaseEvent {
   name: string;
   eventType: EventType;
 
@@ -119,7 +127,7 @@ export type BaseEvent = {
   // moduleMetaData
   moduleName: string;
   subModuleNameDepth: string[];
-};
+}
 
 export interface BeforeDeployEvent extends BaseEvent {
   fn: EventFnCompiled;
@@ -130,7 +138,7 @@ export interface AfterDeployEvent extends BaseEvent {
 }
 
 export interface BeforeCompileEvent extends BaseEvent {
-  fn: EventFn;
+  fn: ContractEventFn;
 }
 
 export interface AfterCompileEvent extends BaseEvent {
@@ -141,20 +149,20 @@ export interface OnChangeEvent extends BaseEvent {
   fn: RedeployFn;
 }
 
-export type ModuleEvent = {
+export interface ModuleEvent {
   name: string;
   eventType: EventType;
   fn: ModuleEventFn;
-};
+}
 
-export type MetaDataEvent = {
+export interface MetaDataEvent {
   name: string;
   eventType: EventType;
   deps?: string[];
   eventDeps?: string[];
   usage?: string[];
   eventUsage?: string[];
-};
+}
 
 export type ContractEvent =
   | BeforeDeployEvent
@@ -165,24 +173,26 @@ export type ContractEvent =
 
 export type Event = ContractEvent | ModuleEvent | MetaDataEvent;
 
-export type Events = { [name: string]: StatefulEvent };
+export interface Events {
+  [name: string]: StatefulEvent;
+}
 
-export type ModuleEvents = {
+export interface ModuleEvents {
   onStart: { [name: string]: ModuleEvent };
   onSuccess: { [name: string]: ModuleEvent };
   onCompletion: { [name: string]: ModuleEvent };
   onFail: { [name: string]: ModuleEvent };
-};
+}
 
-export type EventsDepRef = {
+export interface EventsDepRef {
   beforeCompile: string[];
   afterCompile: string[];
   beforeDeploy: string[];
   afterDeploy: string[];
   onChange: string[];
-};
+}
 
-export type Deployed = {
+export interface Deployed {
   lastEventName: string | undefined;
   logicallyDeployed: boolean | undefined;
   contractAddress: string | undefined;
@@ -190,27 +200,31 @@ export type Deployed = {
   deploymentSpec:
     | {
         deployFn: DeployFn | undefined;
-        deps: (ContractBinding | ContractBindingMetaData)[];
+        deps: Array<ContractBinding | ContractBindingMetaData>;
       }
     | undefined;
-};
+}
+
+export interface ModuleStateBindings {
+  [name: string]: ContractBindingMetaData;
+}
 
 /**
  * Module config is simple way to specify if desired contract should be deployed or not.
  */
-export type ModuleConfig = {
+export interface ModuleConfig {
   contract: {
     [contractName: string]: {
       deploy: boolean;
     };
   };
   defaultOptions: ModuleOptions;
-};
+}
 
-export type FactoryCustomOpts = {
+export interface FactoryCustomOpts {
   getterFunc?: string;
   getterArgs?: any[];
-};
+}
 
 export class StatefulEvent {
   public _isStatefulEvent: boolean = true;
@@ -231,10 +245,10 @@ export class StatefulEvent {
   }
 }
 
-export type ModuleOptions = {
+export interface ModuleOptions {
   // Module parameters used to customize Module behavior.
   params: { [name: string]: any };
-};
+}
 
 export type ModuleBuilderFn = (
   m: ModuleBuilder | any,
@@ -248,23 +262,23 @@ export abstract class Binding {
     this.name = name;
   }
 
-  deployed(m: ModuleBuilder): any {
+  public deployed(m: ModuleBuilder): any {
     return {
       name: this.name,
     };
   }
 }
 
-export type SearchParams = {
+export interface SearchParams {
   functionName?: string;
-};
+}
 
 export class GroupedDependencies {
-  dependencies: (ContractBinding | ContractEvent)[];
-  moduleSession: Namespace;
+  public dependencies: Array<ContractBinding | ContractEvent>;
+  public moduleSession: Namespace;
 
   constructor(
-    dependencies: (ContractBinding | ContractEvent)[],
+    dependencies: Array<ContractBinding | ContractEvent>,
     moduleSession: Namespace
   ) {
     this.dependencies = dependencies;
@@ -272,7 +286,7 @@ export class GroupedDependencies {
   }
 
   // util
-  find(searchParams: SearchParams): GroupedDependencies {
+  public find(searchParams: SearchParams): GroupedDependencies {
     const bindings = this.dependencies.filter(
       (target: ContractBinding | ContractEvent) => {
         return ((target as ContractBinding)?.abi as JsonFragment[]).find(
@@ -284,10 +298,10 @@ export class GroupedDependencies {
     return new GroupedDependencies(bindings, this.moduleSession);
   }
 
-  exclude(...elementName: string[]): GroupedDependencies {
+  public exclude(...elementNames: string[]): GroupedDependencies {
     const newBindings = this.dependencies.filter((target) => {
       const fullExpr = new RegExp(
-        elementName.map((elementName: string) => elementName).join('|')
+        elementNames.map((elementName: string) => elementName).join("|")
       );
 
       return !fullExpr.test(target.name);
@@ -296,13 +310,13 @@ export class GroupedDependencies {
     return new GroupedDependencies(newBindings, this.moduleSession);
   }
 
-  map(
+  public map(
     fn: (
       value: ContractBinding,
       index: number,
-      array: (ContractBinding | ContractEvent)[]
+      array: Array<ContractBinding | ContractEvent>
     ) => any
-  ): (ContractBinding | ContractEvent)[] {
+  ): Array<ContractBinding | ContractEvent> {
     const resultArray = [];
     for (let index = 0; index < this.dependencies.length; index++) {
       resultArray.push(
@@ -317,11 +331,11 @@ export class GroupedDependencies {
     return resultArray;
   }
 
-  shouldRedeploy(fn: ShouldRedeployFn): void {
+  public shouldRedeploy(fn: ShouldRedeployFn): void {
     for (let dependency of this.dependencies) {
       dependency = dependency as ContractBinding;
       if (dependency._isContractBinding) {
-        if (dependency.deployMetaData.shouldRedeploy) {
+        if (dependency.deployMetaData.shouldRedeploy !== undefined) {
           throw new ShouldRedeployAlreadyDefinedError(dependency.name);
         }
 
@@ -333,15 +347,15 @@ export class GroupedDependencies {
   // event hooks
   // beforeDeploy runs each time the Binding is about to be triggered.
   // This event can be used to force the binding in question to be deployed.
-  beforeDeploy(
+  public beforeDeploy(
     m: ModuleBuilder,
     eventName: string,
     fn: EventFnCompiled,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeDeployEvent'],
+      EventType.BeforeDeployEvent,
       this.dependencies,
       usages,
       this.moduleSession
@@ -367,15 +381,15 @@ export class GroupedDependencies {
   }
 
   // afterDeploy runs after the Binding was deployed.
-  afterDeploy(
+  public afterDeploy(
     m: ModuleBuilder,
     eventName: string,
     fn: EventFnDeployed,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterDeployEvent'],
+      EventType.AfterDeployEvent,
       this.dependencies,
       usages,
       this.moduleSession
@@ -401,15 +415,15 @@ export class GroupedDependencies {
   }
 
   // beforeCompile runs before the source code is compiled.
-  beforeCompile(
+  public beforeCompile(
     m: ModuleBuilder,
     eventName: string,
-    fn: EventFn,
-    ...usages: (ContractBinding | ContractEvent)[]
+    fn: ContractEventFn,
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeCompileEvent'],
+      EventType.BeforeCompileEvent,
       this.dependencies,
       usages,
       this.moduleSession
@@ -435,15 +449,15 @@ export class GroupedDependencies {
   }
 
   // afterCompile runs after the source code is compiled and the bytecode is available.
-  afterCompile(
+  public afterCompile(
     m: ModuleBuilder,
     eventName: string,
     fn: EventFnCompiled,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterCompileEvent'],
+      EventType.AfterCompileEvent,
       this.dependencies,
       usages,
       this.moduleSession
@@ -469,15 +483,15 @@ export class GroupedDependencies {
   }
 
   // onChange runs after the Binding gets redeployed or changed
-  onChange(
+  public onChange(
     m: ModuleBuilder,
     eventName: string,
     fn: RedeployFn,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['OnChangeEvent'],
+      EventType.OnChangeEvent,
       this.dependencies,
       usages,
       this.moduleSession
@@ -504,6 +518,50 @@ export class GroupedDependencies {
 }
 
 export class ContractBinding extends Binding {
+  public static generateBaseEvent(
+    eventName: string,
+    eventType: EventType,
+    dependencies: Array<ContractBinding | ContractEvent>,
+    usages: Array<ContractBinding | ContractEvent>,
+    moduleSession: Namespace
+  ): BaseEvent {
+    const usageBindings: string[] = [];
+    const eventUsages: string[] = [];
+
+    for (const usage of usages) {
+      if ((usage as ContractBinding)._isContractBinding) {
+        usageBindings.push(usage.name);
+      } else {
+        eventUsages.push((usage as ContractEvent).name);
+      }
+    }
+
+    const depBindings: string[] = [];
+    const depEvents: string[] = [];
+    for (const dep of dependencies) {
+      if ((dep as ContractBinding)._isContractBinding) {
+        depBindings.push(dep.name);
+      } else {
+        depEvents.push((dep as ContractEvent).name);
+      }
+    }
+    const moduleName = copyValue(moduleSession.get(ClsNamespaces.MODULE_NAME));
+    const subModuleNameDepth = copyValue(
+      moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) ?? []
+    );
+
+    return {
+      name: eventName,
+      eventType,
+      deps: depBindings,
+      eventDeps: depEvents,
+      usage: usageBindings,
+      eventUsage: eventUsages,
+      moduleName,
+      subModuleNameDepth,
+    };
+  }
+
   public _isContractBinding: boolean = true;
 
   public contractName: string;
@@ -515,7 +573,7 @@ export class ContractBinding extends Binding {
   public subModuleNameDepth: string[];
   public subModule: string;
 
-  public bytecode: string = '';
+  public bytecode: string = "";
   public abi: JsonFragment[] | undefined;
   public library: boolean = false;
   public libraries: SingleContractLinkReference | undefined;
@@ -523,17 +581,17 @@ export class ContractBinding extends Binding {
   public txData: TransactionData | undefined;
   public contractTxProgress: number | undefined;
 
-  private contractInstance: ethers.Contract | undefined;
-
   public forceFlag: boolean;
 
   public signer: ethers.Signer | undefined;
   public prompter: ILogging | undefined;
-  public txGenerator: EthTxGenerator | undefined;
-  public moduleStateRepo: ModuleStateRepo | undefined;
+  public txGenerator: ITransactionGenerator | undefined;
+  public moduleStateRepo: IModuleStateRepo | undefined;
   public eventTxExecutor: EventTxExecutor | undefined;
   public eventSession: Namespace | undefined;
   public moduleSession: Namespace;
+
+  private _contractInstance: ethers.Contract | undefined;
 
   constructor(
     // metadata
@@ -553,15 +611,15 @@ export class ContractBinding extends Binding {
     events?: EventsDepRef,
     signer?: ethers.Signer,
     prompter?: ILogging,
-    txGenerator?: EthTxGenerator,
-    moduleStateRepo?: ModuleStateRepo,
+    txGenerator?: ITransactionGenerator,
+    moduleStateRepo?: IModuleStateRepo,
     eventTxExecutor?: EventTxExecutor,
     eventSession?: Namespace
   ) {
     super(name);
     this.args = args;
     this.contractName = contractName;
-    this.deployMetaData = deployMetaData || {
+    this.deployMetaData = deployMetaData ?? {
       logicallyDeployed: undefined,
       contractAddress: undefined,
       lastEventName: undefined,
@@ -571,7 +629,7 @@ export class ContractBinding extends Binding {
         deps: [],
       },
     };
-    this.eventsDeps = events || {
+    this.eventsDeps = events ?? {
       beforeCompile: [],
       afterCompile: [],
       beforeDeploy: [],
@@ -579,7 +637,7 @@ export class ContractBinding extends Binding {
       onChange: [],
     };
 
-    if (bytecode) {
+    if (bytecode !== undefined) {
       this.bytecode = bytecode;
     }
     this.abi = abi;
@@ -588,7 +646,7 @@ export class ContractBinding extends Binding {
     this.txData = txData;
     this.contractTxProgress = 0;
 
-    this.contractInstance = undefined;
+    this._contractInstance = undefined;
 
     this.signer = signer;
     this.prompter = prompter;
@@ -611,13 +669,13 @@ export class ContractBinding extends Binding {
    * interface, with record keeping functionality. This is needed in case if some of underlying contract function
    * fail in execution so when hardhat-ignition continue it will "skip" successfully executed transaction.
    */
-  deployed(): ethers.Contract {
-    if (this.contractInstance) {
-      return this.contractInstance;
+  public deployed(): ethers.Contract {
+    if (this._contractInstance !== undefined) {
+      return this._contractInstance;
     }
 
     if (!checkIfSuitableForInstantiating(this)) {
-      const eventName = this.eventSession?.get(clsNamespaces.EVENT_NAME) || '';
+      const eventName = this.eventSession?.get(ClsNamespaces.EVENT_NAME) ?? "";
       throw new ContractNotDeployedError(
         this.name,
         this.contractName,
@@ -625,19 +683,19 @@ export class ContractBinding extends Binding {
       );
     }
 
-    this.contractInstance = (new ContractInstance(
+    this._contractInstance = (new ContractInstance(
       this,
       this.deployMetaData?.contractAddress as string,
       this.abi as JsonFragment[],
       this.signer as ethers.Signer,
       this.prompter as ILogging,
-      this.txGenerator as EthTxGenerator,
-      this.moduleStateRepo as ModuleStateRepo,
+      this.txGenerator as ITransactionGenerator,
+      this.moduleStateRepo as IModuleStateRepo,
       this.eventTxExecutor as EventTxExecutor,
       this.eventSession as Namespace
     ) as unknown) as ethers.Contract;
 
-    return this.contractInstance;
+    return this._contractInstance;
   }
 
   /**
@@ -645,7 +703,7 @@ export class ContractBinding extends Binding {
    *
    * @param signer Ethers signer object referencing deployer.
    */
-  setDeployer(signer: ethers.Signer): ContractBinding {
+  public setDeployer(signer: ethers.Signer): ContractBinding {
     this.signer = signer;
 
     return this;
@@ -654,7 +712,7 @@ export class ContractBinding extends Binding {
   /**
    * Flag provided in case user wants to force contract deployment even if contract is already has record in state file.
    */
-  force(): ContractBinding {
+  public force(): ContractBinding {
     this.forceFlag = true;
 
     return this;
@@ -665,41 +723,14 @@ export class ContractBinding extends Binding {
    *
    * @param bytecode New contract bytecode.
    */
-  changeBytecode(bytecode: string) {
+  public changeBytecode(bytecode: string) {
     this.bytecode = bytecode;
-  }
-
-  /**
-   * Run hardhat compiler on top of whole project, most commonly used if their is on fly contract source changes.
-   */
-  recompile() {
-    const compiler = new HardhatCompiler();
-
-    compiler.compile();
-  }
-
-  /**
-   * Fetching bytecode, abi and libraries metadata from artifacts and injecting them into contract object inside module
-   * builder for use.
-   */
-  fetchAllContractMetadata() {
-    const compiler = new HardhatCompiler();
-
-    this.bytecode = compiler.extractBytecode([this.contractName])[
-      this.contractName
-    ];
-    this.abi = compiler.extractContractInterface([this.contractName])[
-      this.contractName
-    ];
-    this.libraries = compiler.extractContractLibraries([this.contractName])[
-      this.contractName
-    ];
   }
 
   /**
    * This functions is setting library flag to true, in order for hardhat-ignition to know how to resolve library usage.
    */
-  setLibrary() {
+  public setLibrary() {
     this.library = true;
   }
 
@@ -711,7 +742,7 @@ export class ContractBinding extends Binding {
    * @param logic Logic contract deployed
    * @param setLogicFuncName Function used to change logic contract in proxy
    */
-  proxySetNewLogic(
+  public proxySetNewLogic(
     m: ModuleBuilder,
     proxy: ContractBinding,
     logic: ContractBinding,
@@ -735,17 +766,16 @@ export class ContractBinding extends Binding {
    * @param args Contract creation arguments
    * @param opts Custom object that can overwrite smartly defined getterFunc and getterArgs.
    */
-  factoryCreate(
+  public factoryCreate(
     m: ModuleBuilder,
     childName: string,
     createFuncName: string,
     args: any[],
     opts?: FactoryCustomOpts
   ): ContractBinding {
-    const getFunctionName = opts?.getterFunc
-      ? opts.getterFunc
-      : 'get' + createFuncName.substr(5);
-    const getFunctionArgs = opts?.getterArgs ? opts.getterArgs : [];
+    const getFunctionName =
+      opts?.getterFunc ?? `get${createFuncName.substr(5)}`;
+    const getFunctionArgs = opts?.getterArgs ?? [];
 
     const child = m.contract(childName);
     child.deployFn(async () => {
@@ -768,7 +798,10 @@ export class ContractBinding extends Binding {
    * @param deployFn
    * @param deps
    */
-  deployFn(deployFn: DeployFn, ...deps: ContractBinding[]): ContractBinding {
+  public deployFn(
+    deployFn: DeployFn,
+    ...deps: ContractBinding[]
+  ): ContractBinding {
     this.deployMetaData.deploymentSpec = {
       deployFn,
       deps,
@@ -789,11 +822,11 @@ export class ContractBinding extends Binding {
    * @param fn
    * @param usages
    */
-  beforeDeploy(
+  public beforeDeploy(
     m: ModuleBuilder,
     eventName: string,
     fn: EventFnCompiled,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     if (this.eventsDeps.beforeDeploy.includes(eventName)) {
       throw new EventNameExistsError(eventName);
@@ -802,7 +835,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeDeployEvent'],
+      EventType.BeforeDeployEvent,
       [this],
       usages,
       this.moduleSession
@@ -829,11 +862,11 @@ export class ContractBinding extends Binding {
    * @param fn
    * @param usages
    */
-  afterDeploy(
+  public afterDeploy(
     m: ModuleBuilder,
     eventName: string,
     fn: EventFnDeployed,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     if (this.eventsDeps.afterDeploy.includes(eventName)) {
       throw new EventNameExistsError(eventName);
@@ -842,7 +875,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterDeployEvent'],
+      EventType.AfterDeployEvent,
       [this],
       usages,
       this.moduleSession
@@ -865,7 +898,7 @@ export class ContractBinding extends Binding {
    *
    * @param fn Function that is suggesting if contract should be redeployed.
    */
-  shouldRedeploy(fn: ShouldRedeployFn): void {
+  public shouldRedeploy(fn: ShouldRedeployFn): void {
     this.deployMetaData.shouldRedeploy = fn;
   }
 
@@ -880,11 +913,11 @@ export class ContractBinding extends Binding {
    * @param fn
    * @param usages
    */
-  beforeCompile(
+  public beforeCompile(
     m: ModuleBuilder,
     eventName: string,
-    fn: EventFn,
-    ...usages: (ContractBinding | ContractEvent)[]
+    fn: ContractEventFn,
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     if (this.eventsDeps.beforeCompile.includes(eventName)) {
       throw new EventNameExistsError(eventName);
@@ -893,7 +926,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['BeforeCompileEvent'],
+      EventType.BeforeCompileEvent,
       [this],
       usages,
       this.moduleSession
@@ -919,11 +952,11 @@ export class ContractBinding extends Binding {
    * @param fn
    * @param usages
    */
-  afterCompile(
+  public afterCompile(
     m: ModuleBuilder,
     eventName: string,
     fn: EventFnCompiled,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     if (this.eventsDeps.afterCompile.includes(eventName)) {
       throw new EventNameExistsError(eventName);
@@ -932,7 +965,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['AfterCompileEvent'],
+      EventType.AfterCompileEvent,
       [this],
       usages,
       this.moduleSession
@@ -958,11 +991,11 @@ export class ContractBinding extends Binding {
    * @param fn
    * @param usages
    */
-  onChange(
+  public onChange(
     m: ModuleBuilder,
     eventName: string,
     fn: RedeployFn,
-    ...usages: (ContractBinding | ContractEvent)[]
+    ...usages: Array<ContractBinding | ContractEvent>
   ): ContractEvent {
     if (this.eventsDeps.onChange.includes(eventName)) {
       throw new EventNameExistsError(eventName);
@@ -971,7 +1004,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType['OnChangeEvent'],
+      EventType.OnChangeEvent,
       [this],
       usages,
       this.moduleSession
@@ -985,51 +1018,6 @@ export class ContractBinding extends Binding {
 
     return onChangeEvent;
   }
-
-  public static generateBaseEvent(
-    eventName: string,
-    eventType: EventType,
-    dependencies: (ContractBinding | ContractEvent)[],
-    usages: (ContractBinding | ContractEvent)[],
-    moduleSession: Namespace
-  ): BaseEvent {
-    const usageBindings: string[] = [];
-    const eventUsages: string[] = [];
-
-    for (const usage of usages) {
-      if ((usage as ContractBinding)._isContractBinding) {
-        usageBindings.push(usage.name);
-      } else {
-        eventUsages.push((usage as ContractEvent).name);
-      }
-    }
-
-    const depBindings: string[] = [];
-    const depEvents: string[] = [];
-    for (let i = 0; i < dependencies.length; i++) {
-      const dep = dependencies[i];
-      if ((dep as ContractBinding)._isContractBinding) {
-        depBindings.push(dep.name);
-      } else {
-        depEvents.push((dep as ContractEvent).name);
-      }
-    }
-    const moduleName = copyValue(moduleSession.get(clsNamespaces.MODULE_NAME));
-    const subModuleNameDepth = copyValue(
-      moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || []
-    );
-
-    return {
-      name: eventName,
-      eventType: eventType,
-      deps: depBindings,
-      eventDeps: depEvents,
-      usage: usageBindings,
-      eventUsage: eventUsages,
-      moduleName: moduleName,
-      subModuleNameDepth: subModuleNameDepth,
-    };
-  }
 }
 
 export class Action {
@@ -1042,252 +1030,30 @@ export class Action {
   }
 }
 
-export type TxData = {
+export interface TxData {
   from: string;
   input?: string;
-};
+}
 
-export type ContractInput = {
+export interface ContractInput {
   functionName: string;
   inputs: JsonFragmentType[];
-};
+}
 
-export type TransactionData = {
+export interface TransactionData {
   input: TxData | TransactionResponse;
   output?: TransactionReceipt;
-};
+}
 
-export type EventTransactionData = {
+export interface EventTransactionData {
   contractInput: ContractInput[];
   contractOutput: TransactionReceipt[];
-};
+}
 
 export class ContractInstance {
-  private readonly contractBinding: ContractBinding;
-  private readonly prompter: ILogging;
-  private readonly moduleStateRepo: ModuleStateRepo;
-  private readonly eventTxExecutor: EventTxExecutor;
-  private readonly eventSession: Namespace;
-  private readonly txGenerator: EthTxGenerator;
-
-  private signer: ethers.Signer;
-
   [key: string]: any;
 
-  constructor(
-    contractBinding: ContractBinding,
-    contractAddress: string,
-    abi: JsonFragment[],
-    signer: ethers.Signer,
-    prompter: ILogging,
-    txGenerator: EthTxGenerator,
-    moduleStateRepo: ModuleStateRepo,
-    eventTxExecutor: EventTxExecutor,
-    eventSession: Namespace
-  ) {
-    this.prompter = prompter;
-    this.txGenerator = txGenerator;
-    this.contractBinding = contractBinding;
-    this.eventTxExecutor = eventTxExecutor;
-    this.eventSession = eventSession;
-    this.signer = signer;
-
-    if (!checkIfExist(this.contractBinding?.contractTxProgress)) {
-      this.contractBinding.contractTxProgress = 0;
-    }
-
-    this.moduleStateRepo = moduleStateRepo;
-    const parent: any = new ethers.Contract(contractAddress, abi, signer);
-
-    Object.keys(parent.interface.functions).forEach((signature) => {
-      const fragment = parent.interface.functions[signature];
-
-      if (parent[signature] != undefined) {
-        if (fragment.constant) {
-          this[signature] = this.buildConstantWrappers(
-            parent[signature],
-            fragment
-          );
-          this[fragment.name] = this[signature];
-          return;
-        }
-
-        this[signature] = this.buildDefaultWrapper(parent[signature], fragment);
-        this[fragment.name] = this[signature];
-      }
-    });
-
-    Object.keys(parent.interface.structs).forEach((fragment) => {
-      const struct = parent.interface.structs[fragment];
-
-      if (struct != undefined) {
-        this[fragment] = this.buildStructWrappers(parent[fragment]);
-        this[fragment] = this[fragment];
-        return;
-      }
-    });
-
-    Object.keys(parent).forEach((key) => {
-      if (this[key] != undefined) {
-        return;
-      }
-
-      this[key] = parent[key];
-    });
-  }
-
-  private buildDefaultWrapper(
-    contractFunction: ContractFunction,
-    fragment: FunctionFragment
-  ): ContractFunction {
-    return async (...args: Array<any>): Promise<TransactionResponse> => {
-      const func = async function (
-        this: ContractInstance,
-        ...args: Array<any>
-      ): Promise<TransactionResponse | TransactionReceipt> {
-        const sessionEventName = this.eventSession.get(
-          clsNamespaces.EVENT_NAME
-        );
-
-        if (
-          // optional overrides
-          args.length > fragment.inputs.length + 1 ||
-          args.length < fragment.inputs.length
-        ) {
-          throw new ArgumentLengthInvalid(fragment.name, fragment.inputs);
-        }
-
-        let overrides: CallOverrides = {};
-        if (args.length === fragment.inputs.length + 1) {
-          overrides = args.pop() as CallOverrides;
-        }
-
-        args = ContractInstance.formatArgs(args);
-
-        let contractTxIterator = this.contractBinding?.contractTxProgress || 0;
-
-        const currentEventTransactionData = await this.moduleStateRepo.getEventTransactionData(
-          this.contractBinding.name,
-          sessionEventName
-        );
-
-        if (
-          currentEventTransactionData.contractOutput.length > contractTxIterator
-        ) {
-          this.contractBinding.contractTxProgress = ++contractTxIterator;
-          return currentEventTransactionData.contractOutput[
-            contractTxIterator - 1
-          ];
-        }
-
-        const currentInputs =
-          currentEventTransactionData.contractInput[contractTxIterator];
-        const contractOutput =
-          currentEventTransactionData.contractOutput[contractTxIterator];
-
-        if (
-          checkIfExist(currentInputs) &&
-          checkIfSameInputs(currentInputs, fragment.name, args) &&
-          checkIfExist(contractOutput)
-        ) {
-          this.prompter.contractFunctionAlreadyExecuted(fragment.name, ...args);
-          cli.info(
-            'Contract function already executed: ',
-            fragment.name,
-            ...args,
-            '... skipping'
-          );
-
-          this.contractBinding.contractTxProgress = ++contractTxIterator;
-          return contractOutput;
-        }
-
-        if (
-          (checkIfExist(currentInputs) &&
-            !checkIfSameInputs(currentInputs, fragment.name, args)) ||
-          !checkIfExist(currentInputs)
-        ) {
-          currentEventTransactionData.contractInput[contractTxIterator] = {
-            functionName: fragment.name,
-            inputs: args,
-          } as ContractInput;
-        }
-
-        this.prompter.executeContractFunction(fragment.name);
-        await this.prompter.promptExecuteTx();
-
-        const txData = await this.txGenerator.fetchTxData(
-          await this.signer.getAddress()
-        );
-        overrides = {
-          gasPrice: overrides.gasPrice ? overrides.gasPrice : txData.gasPrice,
-          value: overrides.value ? overrides.value : undefined,
-          gasLimit: overrides.gasLimit ? overrides.gasLimit : undefined,
-          nonce: txData.nonce,
-        };
-
-        await this.prompter.sendingTx(sessionEventName, fragment.name);
-        let tx;
-        try {
-          tx = await contractFunction(...args, overrides);
-          currentEventTransactionData.contractInput[contractTxIterator] = tx;
-        } catch (err) {
-          throw err;
-        }
-        await this.prompter.sentTx(sessionEventName, fragment.name);
-        await this.moduleStateRepo.storeEventTransactionData(
-          this.contractBinding.name,
-          currentEventTransactionData.contractInput[contractTxIterator],
-          undefined,
-          sessionEventName
-        );
-
-        this.prompter.waitTransactionConfirmation();
-
-        this.contractBinding.contractTxProgress = ++contractTxIterator;
-        this.prompter.finishedExecutionOfContractFunction(fragment.name);
-
-        return tx;
-      }.bind(this);
-
-      const currentEventAbstraction = this.eventSession.get(
-        clsNamespaces.EVENT_NAME
-      );
-      const txSender = await this.signer.getAddress();
-      this.eventTxExecutor.add(
-        currentEventAbstraction,
-        txSender,
-        this.contractBinding.name,
-        func
-      );
-
-      return await this.eventTxExecutor.executeSingle(
-        currentEventAbstraction,
-        ...args
-      );
-    };
-  }
-
-  private buildConstantWrappers(
-    contractFunction: ContractFunction,
-    fragment: FunctionFragment
-  ): ContractFunction {
-    return async (...args: Array<any>): Promise<TransactionResponse> => {
-      args = ContractInstance.formatArgs(args);
-
-      return await contractFunction(...args);
-    };
-  }
-
-  private buildStructWrappers(struct: any): any {
-    return async (...args: Array<any>): Promise<TransactionResponse> => {
-      args = ContractInstance.formatArgs(args);
-
-      return await struct(...args);
-    };
-  }
-
-  private static formatArgs(args: Array<any>): Array<any> {
+  private static _formatArgs(args: any[]): any[] {
     let i = 0;
     for (let arg of args) {
       if (
@@ -1313,23 +1079,251 @@ export class ContractInstance {
     return args;
   }
 
+  private readonly _contractBinding: ContractBinding;
+  private readonly _prompter: ILogging;
+  private readonly _moduleStateRepo: IModuleStateRepo;
+  private readonly _eventTxExecutor: EventTxExecutor;
+  private readonly _eventSession: Namespace;
+  private readonly _txGenerator: ITransactionGenerator;
+
+  private _signer: ethers.Signer;
+
+  constructor(
+    contractBinding: ContractBinding,
+    contractAddress: string,
+    abi: JsonFragment[],
+    signer: ethers.Signer,
+    prompter: ILogging,
+    txGenerator: ITransactionGenerator,
+    moduleStateRepo: IModuleStateRepo,
+    eventTxExecutor: EventTxExecutor,
+    eventSession: Namespace
+  ) {
+    this._prompter = prompter;
+    this._txGenerator = txGenerator;
+    this._contractBinding = contractBinding;
+    this._eventTxExecutor = eventTxExecutor;
+    this._eventSession = eventSession;
+    this._signer = signer;
+
+    if (!checkIfExist(this._contractBinding?.contractTxProgress)) {
+      this._contractBinding.contractTxProgress = 0;
+    }
+
+    this._moduleStateRepo = moduleStateRepo;
+    const parent: any = new ethers.Contract(contractAddress, abi, signer);
+
+    Object.keys(parent.interface.functions).forEach((signature) => {
+      const fragment = parent.interface.functions[signature];
+
+      if (parent[signature] !== undefined) {
+        if (fragment.constant) {
+          this[signature] = this._buildConstantWrappers(
+            parent[signature],
+            fragment
+          );
+          this[fragment.name] = this[signature];
+          return;
+        }
+
+        this[signature] = this._buildDefaultWrapper(
+          parent[signature],
+          fragment
+        );
+        this[fragment.name] = this[signature];
+      }
+    });
+
+    Object.keys(parent.interface.structs).forEach((fragment) => {
+      const struct = parent.interface.structs[fragment];
+
+      if (struct !== undefined) {
+        this[fragment] = this._buildStructWrappers(parent[fragment]);
+        this[fragment] = this[fragment];
+        return;
+      }
+    });
+
+    Object.keys(parent).forEach((key) => {
+      if (this[key] !== undefined) {
+        return;
+      }
+
+      this[key] = parent[key];
+    });
+  }
+
   public withSigner(wallet: ethers.Wallet) {
     if (wallet._isSigner) {
-      this.signer = (wallet as unknown) as ethers.Signer;
+      this._signer = (wallet as unknown) as ethers.Signer;
     }
+  }
+
+  private _buildDefaultWrapper(
+    contractFunction: ContractFunction,
+    fragment: FunctionFragment
+  ): ContractFunction {
+    return async (...args: any[]): Promise<TransactionResponse> => {
+      const func = async function (
+        this: ContractInstance,
+        ...funcArgs: any[]
+      ): Promise<TransactionResponse | TransactionReceipt> {
+        const sessionEventName = this._eventSession.get(
+          ClsNamespaces.EVENT_NAME
+        );
+
+        if (
+          // optional overrides
+          funcArgs.length > fragment.inputs.length + 1 ||
+          funcArgs.length < fragment.inputs.length
+        ) {
+          throw new ArgumentLengthInvalid(fragment.name, fragment.inputs);
+        }
+
+        let overrides: CallOverrides = {};
+        if (funcArgs.length === fragment.inputs.length + 1) {
+          overrides = funcArgs.pop() as CallOverrides;
+        }
+
+        funcArgs = ContractInstance._formatArgs(funcArgs);
+
+        let contractTxIterator = this._contractBinding?.contractTxProgress ?? 0;
+
+        const currentEventTransactionData = await this._moduleStateRepo.getEventTransactionData(
+          this._contractBinding.name,
+          sessionEventName
+        );
+
+        if (
+          currentEventTransactionData.contractOutput.length > contractTxIterator
+        ) {
+          this._contractBinding.contractTxProgress = ++contractTxIterator;
+          return currentEventTransactionData.contractOutput[
+            contractTxIterator - 1
+          ];
+        }
+
+        const currentInputs =
+          currentEventTransactionData.contractInput[contractTxIterator];
+        const contractOutput =
+          currentEventTransactionData.contractOutput[contractTxIterator];
+
+        if (
+          checkIfExist(currentInputs) &&
+          checkIfSameInputs(currentInputs, fragment.name, funcArgs) &&
+          checkIfExist(contractOutput)
+        ) {
+          this._prompter.contractFunctionAlreadyExecuted(
+            fragment.name,
+            ...funcArgs
+          );
+          cli.info(
+            "Contract function already executed: ",
+            fragment.name,
+            ...funcArgs,
+            "... skipping"
+          );
+
+          this._contractBinding.contractTxProgress = ++contractTxIterator;
+          return contractOutput;
+        }
+
+        if (
+          (checkIfExist(currentInputs) &&
+            !checkIfSameInputs(currentInputs, fragment.name, funcArgs)) ||
+          !checkIfExist(currentInputs)
+        ) {
+          currentEventTransactionData.contractInput[contractTxIterator] = {
+            functionName: fragment.name,
+            inputs: funcArgs,
+          };
+        }
+
+        this._prompter.executeContractFunction(fragment.name);
+        await this._prompter.promptExecuteTx();
+
+        const txData = await this._txGenerator.fetchTxData(
+          await this._signer.getAddress()
+        );
+        overrides = {
+          gasPrice: overrides.gasPrice ?? txData.gasPrice,
+          value: overrides.value,
+          gasLimit: overrides.gasLimit,
+          nonce: txData.nonce,
+        };
+
+        this._prompter.sendingTx(sessionEventName, fragment.name);
+        let tx;
+        try {
+          tx = await contractFunction(...funcArgs, overrides);
+          currentEventTransactionData.contractInput[contractTxIterator] = tx;
+        } catch (err) {
+          throw err;
+        }
+        this._prompter.sentTx(sessionEventName, fragment.name);
+        await this._moduleStateRepo.storeEventTransactionData(
+          this._contractBinding.name,
+          currentEventTransactionData.contractInput[contractTxIterator],
+          undefined,
+          sessionEventName
+        );
+
+        this._prompter.waitTransactionConfirmation();
+
+        this._contractBinding.contractTxProgress = ++contractTxIterator;
+        this._prompter.finishedExecutionOfContractFunction(fragment.name);
+
+        return tx;
+      };
+
+      const currentEventAbstraction = this._eventSession.get(
+        ClsNamespaces.EVENT_NAME
+      );
+      const txSender = await this._signer.getAddress();
+      this._eventTxExecutor.add(
+        currentEventAbstraction,
+        txSender,
+        this._contractBinding.name,
+        func
+      );
+
+      return this._eventTxExecutor.executeSingle(
+        currentEventAbstraction,
+        ...args
+      );
+    };
+  }
+
+  private _buildConstantWrappers(
+    contractFunction: ContractFunction,
+    fragment: FunctionFragment
+  ): ContractFunction {
+    return async (...args: any[]): Promise<TransactionResponse> => {
+      args = ContractInstance._formatArgs(args);
+
+      return contractFunction(...args);
+    };
+  }
+
+  private _buildStructWrappers(struct: any): any {
+    return async (...args: any[]): Promise<TransactionResponse> => {
+      args = ContractInstance._formatArgs(args);
+
+      return struct(...args);
+    };
   }
 }
 
 export class IgnitionSigner {
   public _signer: ethers.Signer;
 
-  private sessionNamespace: Namespace;
-  private moduleStateRepo: ModuleStateRepo;
-  private nonceManager: INonceManager;
-  private gasPriceCalculator: IGasPriceCalculator;
-  private gasCalculator: IGasCalculator;
-  private prompter: ILogging;
-  private eventTxExecutor: EventTxExecutor;
+  private _sessionNamespace: Namespace;
+  private _moduleStateRepo: IModuleStateRepo;
+  private _nonceManager: INonceManager;
+  private _gasPriceCalculator: IGasPriceCalculator;
+  private _gasCalculator: IGasCalculator;
+  private _prompter: ILogging;
+  private _eventTxExecutor: EventTxExecutor;
 
   constructor(
     signer: ethers.Signer,
@@ -1337,44 +1331,44 @@ export class IgnitionSigner {
     nonceManager: INonceManager,
     gasPriceCalculator: IGasPriceCalculator,
     gasCalculator: IGasCalculator,
-    moduleStateRepo: ModuleStateRepo,
+    moduleStateRepo: IModuleStateRepo,
     prompter: ILogging,
     eventTxExecutor: EventTxExecutor
   ) {
-    this.sessionNamespace = sessionNamespace;
-    this.nonceManager = nonceManager;
-    this.gasPriceCalculator = gasPriceCalculator;
-    this.gasCalculator = gasCalculator;
-    this.moduleStateRepo = moduleStateRepo;
-    this.prompter = prompter;
-    this.eventTxExecutor = eventTxExecutor;
+    this._sessionNamespace = sessionNamespace;
+    this._nonceManager = nonceManager;
+    this._gasPriceCalculator = gasPriceCalculator;
+    this._gasCalculator = gasCalculator;
+    this._moduleStateRepo = moduleStateRepo;
+    this._prompter = prompter;
+    this._eventTxExecutor = eventTxExecutor;
 
     this._signer = signer;
   }
 
-  async sendTransaction(
+  public async sendTransaction(
     transaction: Deferrable<TransactionRequest>
   ): Promise<TransactionResponse> {
     const address = await this._signer.getAddress();
 
     const func = async (): Promise<TransactionResponse> => {
-      const toAddr = (await transaction).to as string;
-      if (!toAddr) {
+      const toAddr = (await transaction.to) as string;
+      if (toAddr !== undefined) {
         throw new MissingToAddressInWalletTransferTransaction();
       }
-      this.prompter.executeWalletTransfer(address, toAddr);
-      const currentEventName = this.sessionNamespace.get(
-        clsNamespaces.EVENT_NAME
+      this._prompter.executeWalletTransfer(address, toAddr);
+      const currEventName = this._sessionNamespace.get(
+        ClsNamespaces.EVENT_NAME
       );
-      if (!checkIfExist(currentEventName)) {
+      if (!checkIfExist(currEventName)) {
         throw new WalletTransactionNotInEventError();
       }
 
-      await this.prompter.sendingTx(currentEventName, 'raw wallet transaction');
+      this._prompter.sendingTx(currEventName, "raw wallet transaction");
 
       let ignitionTransaction;
       try {
-        ignitionTransaction = await this.populateTransactionWithIgnitionMetadata(
+        ignitionTransaction = await this._populateTransactionWithIgnitionMetadata(
           transaction
         );
       } catch (err) {
@@ -1382,64 +1376,64 @@ export class IgnitionSigner {
       }
 
       const txResp = await this._signer.sendTransaction(ignitionTransaction);
-      this.prompter.sentTx(currentEventName, 'raw wallet transaction');
-      await this.moduleStateRepo.storeEventTransactionData(
+      this._prompter.sentTx(currEventName, "raw wallet transaction");
+      await this._moduleStateRepo.storeEventTransactionData(
         address,
         undefined,
         undefined,
-        currentEventName
+        currEventName
       );
 
-      await this.prompter.finishedExecutionOfWalletTransfer(address, toAddr);
+      this._prompter.finishedExecutionOfWalletTransfer(address, toAddr);
 
       return txResp;
     };
 
-    const currentEventName = this.sessionNamespace.get(
-      clsNamespaces.EVENT_NAME
+    const currentEventName = this._sessionNamespace.get(
+      ClsNamespaces.EVENT_NAME
     );
-    this.eventTxExecutor.add(currentEventName, address, address, func);
+    this._eventTxExecutor.add(currentEventName, address, address, func);
 
-    return this.eventTxExecutor.executeSingle(currentEventName);
+    return this._eventTxExecutor.executeSingle(currentEventName);
   }
 
-  async getAddress(): Promise<string> {
+  public async getAddress(): Promise<string> {
     return this._signer.getAddress();
   }
 
-  async signTransaction(
+  public async signTransaction(
     transaction: Deferrable<TransactionRequest>
   ): Promise<string> {
     return this._signer.signTransaction(transaction);
   }
 
-  private async populateTransactionWithIgnitionMetadata(
+  private async _populateTransactionWithIgnitionMetadata(
     transaction: Deferrable<TransactionRequest>
   ): Promise<TransactionRequest> {
     const address = await this._signer.getAddress();
     if (!checkIfExist(transaction.nonce)) {
-      transaction.nonce = this.nonceManager.getAndIncrementTransactionCount(
+      transaction.nonce = this._nonceManager.getAndIncrementTransactionCount(
         address
       );
     }
 
     if (!checkIfExist(transaction.gasPrice)) {
-      transaction.gasPrice = await this.gasPriceCalculator.getCurrentPrice();
+      transaction.gasPrice = await this._gasPriceCalculator.getCurrentPrice();
     }
 
     if (!checkIfExist(transaction.gasPrice)) {
       const toAddr = await transaction.to;
       const data = await transaction.data;
-      if (data) {
-        transaction.gasLimit = await this.gasCalculator.estimateGas(
+      if (data !== undefined) {
+        transaction.gasLimit = await this._gasCalculator.estimateGas(
           address,
-          toAddr || undefined,
+          toAddr,
           data
         );
       }
     }
 
-    return await this._signer.populateTransaction(transaction);
+    return this._signer.populateTransaction(transaction);
   }
 }
 
@@ -1449,7 +1443,7 @@ export class ContractBindingMetaData {
   public name: string;
   public contractName: string;
   public args: Arguments;
-  public bytecode: string = '';
+  public bytecode: string = "";
   public abi: JsonFragment[] | undefined;
   public libraries: SingleContractLinkReference | undefined;
   public txData: TransactionData | undefined;
@@ -1471,16 +1465,16 @@ export class ContractBindingMetaData {
     this.name = name;
     this.contractName = contractName;
     this.args = args;
-    if (bytecode) {
+    if (bytecode !== undefined) {
       this.bytecode = bytecode;
     }
     this.abi = abi;
-    if (library) {
+    if (library !== undefined) {
       this.library = library;
     }
     this.libraries = libraries;
     this.txData = txData;
-    this.deployMetaData = deployMetaData || {
+    this.deployMetaData = deployMetaData ?? {
       logicallyDeployed: undefined,
       contractAddress: undefined,
       lastEventName: undefined,
@@ -1501,41 +1495,50 @@ export class ContractBindingMetaData {
 export class ModuleBuilder {
   [key: string]: ContractBinding | Event | Action | any;
 
-  private params: ModuleParams;
-  private readonly bindings: { [name: string]: ContractBinding };
-  private readonly contractEvents: Events;
-  private readonly moduleEvents: ModuleEvents;
-  private readonly actions: { [name: string]: Action };
-  private templates: { [name: string]: Template };
+  private _params: ModuleParams;
+  private readonly _bindings: { [name: string]: ContractBinding };
+  private readonly _contractEvents: Events;
+  private readonly _moduleEvents: ModuleEvents;
+  private readonly _actions: { [name: string]: Action };
+  private _templates: { [name: string]: Template };
 
-  private resolver: IModuleRegistryResolver | undefined;
-  private registry: IModuleRegistryResolver | undefined;
-  private gasPriceProvider: IGasPriceCalculator | undefined;
-  private nonceManager: INonceManager | undefined;
-  private transactionSigner: ITransactionSigner | undefined;
+  private _resolver: IModuleRegistryResolver | undefined;
+  private _registry: IModuleRegistryResolver | undefined;
+  private _gasPriceProvider: IGasPriceCalculator | undefined;
+  private _nonceManager: INonceManager | undefined;
+  private _transactionSigner: ITransactionSigner | undefined;
 
-  private readonly subModules: ModuleBuilder[];
-  private readonly moduleSession: Namespace;
+  private readonly _subModules: ModuleBuilder[];
+  private readonly _moduleSession: Namespace;
+  private _compiler: ICompiler;
+  private _moduleValidator: IModuleValidator;
 
-  constructor(moduleSession: Namespace, params?: ModuleParams) {
-    this.bindings = {};
-    this.actions = {};
-    this.templates = {};
-    this.resolver = undefined;
-    this.registry = undefined;
-    this.contractEvents = {};
-    this.moduleEvents = {
+  constructor(
+    moduleSession: Namespace,
+    compiler: ICompiler,
+    moduleValidator: IModuleValidator,
+    params?: ModuleParams
+  ) {
+    this._bindings = {};
+    this._actions = {};
+    this._templates = {};
+    this._resolver = undefined;
+    this._registry = undefined;
+    this._contractEvents = {};
+    this._moduleEvents = {
       onFail: {},
       onSuccess: {},
       onCompletion: {},
       onStart: {},
     };
-    this.params = {};
+    this._params = {};
     if (checkIfExist(params)) {
-      this.params = params || {};
+      this._params = params ?? {};
     }
-    this.subModules = [];
-    this.moduleSession = moduleSession;
+    this._subModules = [];
+    this._moduleSession = moduleSession;
+    this._compiler = compiler;
+    this._moduleValidator = moduleValidator;
   }
 
   /**
@@ -1546,27 +1549,27 @@ export class ModuleBuilder {
    * @param name Contract name defined in solidity file.
    * @param args Constructor arguments. In case of contract binding just provide reference.
    */
-  contract(name: string, ...args: Arguments): ContractBinding {
-    if (checkIfExist(this.bindings[name])) {
-      cli.info('Contract already bind to the module - ', name); // @TODO add typed error
+  public contract(name: string, ...args: Arguments): ContractBinding {
+    if (checkIfExist(this._bindings[name])) {
+      cli.info("Contract already bind to the module - ", name); // @TODO add typed error
       cli.exit(0);
     }
 
-    const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
+    const moduleName = this._moduleSession.get(ClsNamespaces.MODULE_NAME);
     const subModuleNameDepth =
-      this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
-    const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
-    this.bindings[name] = new ContractBinding(
+      this._moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) ?? [];
+    const subModule = this._moduleSession.get(ClsNamespaces.SUB_MODULE_NAME);
+    this._bindings[name] = new ContractBinding(
       name,
       name,
       args,
       moduleName,
       subModuleNameDepth.slice(0),
       subModule,
-      this.moduleSession
+      this._moduleSession
     );
-    this[name] = this.bindings[name];
-    return this.bindings[name];
+    this[name] = this._bindings[name];
+    return this._bindings[name];
   }
 
   /**
@@ -1577,7 +1580,7 @@ export class ModuleBuilder {
    * @param name Contract name.
    * @param args Constructor arguments, if any.
    */
-  library(name: string, ...args: Arguments): ContractBinding {
+  public library(name: string, ...args: Arguments): ContractBinding {
     const binding = this.contract(name, ...args);
     binding.setLibrary();
 
@@ -1591,10 +1594,10 @@ export class ModuleBuilder {
    *
    * @param dependencies
    */
-  group(
-    ...dependencies: (ContractBinding | ContractEvent)[]
+  public group(
+    ...dependencies: Array<ContractBinding | ContractEvent>
   ): GroupedDependencies {
-    return new GroupedDependencies(dependencies, this.moduleSession);
+    return new GroupedDependencies(dependencies, this._moduleSession);
   }
 
   /**
@@ -1602,10 +1605,10 @@ export class ModuleBuilder {
    *
    * @param name Solidity contract name
    */
-  contractTemplate(name: string): Template {
-    this.templates[name] = new Template(name);
+  public contractTemplate(name: string): Template {
+    this._templates[name] = new Template(name);
 
-    return this.templates[name];
+    return this._templates[name];
   }
 
   /**
@@ -1615,39 +1618,39 @@ export class ModuleBuilder {
    * @param templateName Solidity contract name provided in .contractTemplate() function
    * @param args Constructor arguments.
    */
-  bindTemplate(
+  public bindTemplate(
     name: string,
     templateName: string,
     ...args: Arguments
   ): ContractBinding {
-    if (checkIfExist(this.bindings[name])) {
+    if (checkIfExist(this._bindings[name])) {
       throw new BindingsConflict(
         `Contract already bind to the module - ${name}`
       );
     }
 
-    if (!checkIfExist(this.templates[templateName])) {
+    if (!checkIfExist(this._templates[templateName])) {
       throw new TemplateNotFound(
         `Template with name ${templateName} is not found in this module`
       );
     }
 
-    const moduleName = this.moduleSession.get(clsNamespaces.MODULE_NAME);
+    const moduleName = this._moduleSession.get(ClsNamespaces.MODULE_NAME);
     const subModuleNameDepth =
-      this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
-    const subModule = this.moduleSession.get(clsNamespaces.SUB_MODULE_NAME);
-    this.bindings[name] = new ContractBinding(
+      this._moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) ?? [];
+    const subModule = this._moduleSession.get(ClsNamespaces.SUB_MODULE_NAME);
+    this._bindings[name] = new ContractBinding(
       name,
-      this.templates[templateName].contractName,
+      this._templates[templateName].contractName,
       args,
       moduleName,
       subModuleNameDepth.slice(0),
       subModule,
-      this.moduleSession
+      this._moduleSession
     );
-    this[name] = this.bindings[name];
+    this[name] = this._bindings[name];
 
-    return this.bindings[name];
+    return this._bindings[name];
   }
 
   /**
@@ -1656,8 +1659,8 @@ export class ModuleBuilder {
    * @param name Parameter name
    * @param value Parameter value.
    */
-  param(name: string, value: any) {
-    this.params.params[name] = value;
+  public param(name: string, value: any) {
+    this._params.params[name] = value;
   }
 
   /**
@@ -1665,14 +1668,14 @@ export class ModuleBuilder {
    *
    * @param name
    */
-  getParam(name: string): any {
-    if (!checkIfExist(this.params)) {
+  public getParam(name: string): any {
+    if (!checkIfExist(this._params)) {
       throw new CliError(
-        'This module doesnt have params, check if you are deploying right module!'
+        "This module doesnt have params, check if you are deploying right module!"
       );
     }
 
-    return this.params.params[name];
+    return this._params.params[name];
   }
 
   /**
@@ -1680,41 +1683,41 @@ export class ModuleBuilder {
    *
    * @param moduleParams Module parameters.
    */
-  setParam(moduleParams: ModuleParams) {
+  public setParam(moduleParams: ModuleParams) {
     if (!checkIfExist(moduleParams)) {
       return;
     }
 
-    this.params = moduleParams;
+    this._params = moduleParams;
 
     for (const [paramName, param] of Object.entries(moduleParams)) {
       this[paramName] = param;
     }
   }
 
-  addEvent(eventName: string, event: Event): void {
-    if (checkIfExist(this.contractEvents[eventName])) {
+  public addEvent(eventName: string, event: Event): void {
+    if (checkIfExist(this._contractEvents[eventName])) {
       throw new EventNameExistsError(eventName);
     }
 
-    this.contractEvents[eventName] = new StatefulEvent(event, false, {});
-    this[eventName] = this.contractEvents[eventName];
+    this._contractEvents[eventName] = new StatefulEvent(event, false, {});
+    this[eventName] = this._contractEvents[eventName];
   }
 
-  getEvent(eventName: string): StatefulEvent {
-    if (!checkIfExist(this.contractEvents[eventName])) {
+  public getEvent(eventName: string): StatefulEvent {
+    if (!checkIfExist(this._contractEvents[eventName])) {
       throw new EventDoesntExistError(eventName);
     }
 
-    return this.contractEvents[eventName];
+    return this._contractEvents[eventName];
   }
 
-  getAllEvents(): Events {
-    return this.contractEvents;
+  public getAllEvents(): Events {
+    return this._contractEvents;
   }
 
-  getAllModuleEvents(): ModuleEvents {
-    return this.moduleEvents;
+  public getAllModuleEvents(): ModuleEvents {
+    return this._moduleEvents;
   }
 
   /**
@@ -1723,10 +1726,10 @@ export class ModuleBuilder {
    * @param name Action name
    * @param fn User defined custom fucntion.
    */
-  registerAction(name: string, fn: ActionFn): Action {
+  public registerAction(name: string, fn: ActionFn): Action {
     const action = new Action(name, fn);
-    this.actions[name] = action;
-    this[name] = this.actions[name];
+    this._actions[name] = action;
+    this[name] = this._actions[name];
 
     return action;
   }
@@ -1741,14 +1744,12 @@ export class ModuleBuilder {
    *
    * @returns Module builder data from sub-module.
    */
-  async useModule(
+  public async useModule(
     m: Module | Promise<Module>,
     params?: ModuleParams,
     signers: ethers.Signer[] | any[] = []
   ): Promise<ModuleBuilder> {
-    const moduleParams = params
-      ? Object.assign(this.params, params)
-      : this.params;
+    const moduleParams = { ...this._params, ...params };
 
     if (m instanceof Promise) {
       m = await m;
@@ -1760,26 +1761,28 @@ export class ModuleBuilder {
     }
 
     moduleBuilder = await m.init(
-      this.moduleSession,
+      this._moduleSession,
+      this._compiler,
+      this._moduleValidator,
       signers,
       this,
       moduleParams
     );
     const oldDepth =
-      this.moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+      this._moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) ?? [];
     if (oldDepth.length >= 1) {
       oldDepth.pop();
     }
-    this.moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, oldDepth);
+    this._moduleSession.set(ClsNamespaces.MODULE_DEPTH_NAME, oldDepth);
 
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
 
-    const networkId = process.env.IGNITION_NETWORK_ID || '';
-    const resolver = await m.getRegistry();
+    const networkId = process.env.IGNITION_NETWORK_ID ?? "";
+    const resolver = m.getRegistry();
 
     for (const [eventName, event] of Object.entries(events)) {
-      if (checkIfExist(this.contractEvents[eventName])) {
+      if (checkIfExist(this._contractEvents[eventName])) {
         continue;
       }
 
@@ -1788,9 +1791,9 @@ export class ModuleBuilder {
 
     for (const [bindingName, binding] of Object.entries(bindings)) {
       if (
-        checkIfExist(this.bindings[bindingName]) &&
-        this.bindings[bindingName] &&
-        !isSameBytecode(this.bindings[bindingName].bytecode, binding.bytecode)
+        checkIfExist(this._bindings[bindingName]) &&
+        this._bindings[bindingName] !== undefined &&
+        !isSameBytecode(this._bindings[bindingName].bytecode, binding.bytecode)
       ) {
         continue;
       }
@@ -1801,76 +1804,76 @@ export class ModuleBuilder {
         bindingName
       );
       this[bindingName] = binding;
-      this.bindings[bindingName] = binding;
+      this._bindings[bindingName] = binding;
     }
 
-    this.templates = m.getAllTemplates();
+    this._templates = m.getAllTemplates();
 
     return moduleBuilder;
   }
 
-  getAllSubModules(): ModuleBuilder[] {
-    return this.subModules;
+  public getAllSubModules(): ModuleBuilder[] {
+    return this._subModules;
   }
 
-  getBinding(name: string): ContractBinding {
-    return this.bindings[name];
+  public getBinding(name: string): ContractBinding {
+    return this._bindings[name];
   }
 
-  getAllBindings(): { [name: string]: ContractBinding } {
-    return this.bindings;
+  public getAllBindings(): { [name: string]: ContractBinding } {
+    return this._bindings;
   }
 
-  getAllActions(): { [name: string]: Action } {
-    return this.actions;
+  public getAllActions(): { [name: string]: Action } {
+    return this._actions;
   }
 
-  setResolver(resolver: IModuleRegistryResolver): void {
-    this.resolver = resolver;
+  public setResolver(resolver: IModuleRegistryResolver): void {
+    this._resolver = resolver;
   }
 
-  getResolver(): IModuleRegistryResolver | undefined {
-    return this.resolver;
+  public getResolver(): IModuleRegistryResolver | undefined {
+    return this._resolver;
   }
 
-  setRegistry(registry: IModuleRegistryResolver): void {
-    this.registry = registry;
+  public setRegistry(registry: IModuleRegistryResolver): void {
+    this._registry = registry;
   }
 
-  setCustomGasPriceProvider(provider: IGasPriceCalculator): void {
-    this.gasPriceProvider = provider;
+  public setCustomGasPriceProvider(provider: IGasPriceCalculator): void {
+    this._gasPriceProvider = provider;
   }
 
-  getCustomGasPriceProvider(): IGasPriceCalculator | undefined {
-    return this.gasPriceProvider;
+  public getCustomGasPriceProvider(): IGasPriceCalculator | undefined {
+    return this._gasPriceProvider;
   }
 
-  setCustomNonceManager(nonceManager: INonceManager): void {
-    this.nonceManager = nonceManager;
+  public setCustomNonceManager(nonceManager: INonceManager): void {
+    this._nonceManager = nonceManager;
   }
 
-  getCustomNonceManager(): INonceManager | undefined {
-    return this.nonceManager;
+  public getCustomNonceManager(): INonceManager | undefined {
+    return this._nonceManager;
   }
 
-  setCustomTransactionSigner(txSigner: ITransactionSigner): void {
-    this.transactionSigner = txSigner;
+  public setCustomTransactionSigner(txSigner: ITransactionSigner): void {
+    this._transactionSigner = txSigner;
   }
 
-  getCustomTransactionSigner(): ITransactionSigner | undefined {
-    return this.transactionSigner;
+  public getCustomTransactionSigner(): ITransactionSigner | undefined {
+    return this._transactionSigner;
   }
 
-  getRegistry(): IModuleRegistryResolver | undefined {
-    return this.registry;
+  public getRegistry(): IModuleRegistryResolver | undefined {
+    return this._registry;
   }
 
-  getAllTemplates(): { [name: string]: Template } {
-    return this.templates;
+  public getAllTemplates(): { [name: string]: Template } {
+    return this._templates;
   }
 
-  getAllParams(): ModuleParams {
-    return this.params;
+  public getAllParams(): ModuleParams {
+    return this._params;
   }
 
   /**
@@ -1879,11 +1882,11 @@ export class ModuleBuilder {
    * @param eventName Unique event name
    * @param fn Module event function
    */
-  onStart(eventName: string, fn: ModuleEventFn): void {
-    this.moduleEvents.onStart[eventName] = {
+  public onStart(eventName: string, fn: ModuleEventFn): void {
+    this._moduleEvents.onStart[eventName] = {
       name: eventName,
       eventType: EventType.OnStart,
-      fn: fn,
+      fn,
     };
   }
 
@@ -1893,11 +1896,11 @@ export class ModuleBuilder {
    * @param eventName Unique event name
    * @param fn Module event function
    */
-  onCompletion(eventName: string, fn: ModuleEventFn): void {
-    this.moduleEvents.onCompletion[eventName] = {
+  public onCompletion(eventName: string, fn: ModuleEventFn): void {
+    this._moduleEvents.onCompletion[eventName] = {
       name: eventName,
       eventType: EventType.OnCompletion,
-      fn: fn,
+      fn,
     };
   }
 
@@ -1907,11 +1910,11 @@ export class ModuleBuilder {
    * @param eventName Unique event name
    * @param fn Module event function
    */
-  onSuccess(eventName: string, fn: ModuleEventFn): void {
-    this.moduleEvents.onSuccess[eventName] = {
+  public onSuccess(eventName: string, fn: ModuleEventFn): void {
+    this._moduleEvents.onSuccess[eventName] = {
       name: eventName,
       eventType: EventType.OnSuccess,
-      fn: fn,
+      fn,
     };
   }
 
@@ -1921,11 +1924,11 @@ export class ModuleBuilder {
    * @param eventName Unique event name
    * @param fn Module event function
    */
-  onFail(eventName: string, fn: ModuleEventFn): void {
-    this.moduleEvents.onFail[eventName] = {
+  public onFail(eventName: string, fn: ModuleEventFn): void {
+    this._moduleEvents.onFail[eventName] = {
       name: eventName,
       eventType: EventType.OnFail,
-      fn: fn,
+      fn,
     };
   }
 }
@@ -1939,25 +1942,24 @@ export class Template {
 }
 
 export class Module {
-  private isUsage: boolean = false;
+  public readonly name: string;
+  private readonly _isUsage: boolean = false;
 
-  private initialized: boolean = false;
-  private fn: ModuleBuilderFn;
+  private _initialized: boolean = false;
+  private readonly _fn: ModuleBuilderFn;
+  private _params: ModuleParams;
+  private _bindings: { [name: string]: ContractBinding };
+  private _events: Events;
+  private _moduleEvents: ModuleEvents;
+  private _actions: { [name: string]: Action };
+  private readonly _moduleConfig: ModuleConfig | undefined;
+  private _templates: { [name: string]: Template };
 
-  readonly name: string;
-  private params: ModuleParams;
-  private bindings: { [name: string]: ContractBinding };
-  private events: Events;
-  private moduleEvents: ModuleEvents;
-  private actions: { [name: string]: Action };
-  private readonly moduleConfig: ModuleConfig | undefined;
-  private templates: { [name: string]: Template };
-
-  private registry: IModuleRegistryResolver | undefined;
-  private resolver: IModuleRegistryResolver | undefined;
-  private gasPriceProvider: IGasPriceCalculator | undefined;
-  private nonceManager: INonceManager | undefined;
-  private transactionSigner: ITransactionSigner | undefined;
+  private _registry: IModuleRegistryResolver | undefined;
+  private _resolver: IModuleRegistryResolver | undefined;
+  private _gasPriceProvider: IGasPriceCalculator | undefined;
+  private _nonceManager: INonceManager | undefined;
+  private _transactionSigner: ITransactionSigner | undefined;
 
   constructor(
     moduleName: string,
@@ -1966,54 +1968,58 @@ export class Module {
     usageModule: boolean = false
   ) {
     this.name = moduleName;
-    this.fn = fn;
-    this.moduleConfig = moduleConfig;
-    this.isUsage = usageModule;
+    this._fn = fn;
+    this._moduleConfig = moduleConfig;
+    this._isUsage = usageModule;
 
-    this.params = moduleConfig?.defaultOptions?.params || {};
-    this.bindings = {};
-    this.events = {};
-    this.moduleEvents = {
+    this._params = moduleConfig?.defaultOptions?.params ?? {};
+    this._bindings = {};
+    this._events = {};
+    this._moduleEvents = {
       onFail: {},
       onCompletion: {},
       onStart: {},
       onSuccess: {},
     };
-    this.actions = {};
-    this.templates = {};
+    this._actions = {};
+    this._templates = {};
   }
 
-  isInitialized(): boolean {
-    return this.initialized;
+  public isInitialized(): boolean {
+    return this._initialized;
   }
 
-  async init(
+  public async init(
     moduleSession: Namespace,
+    compiler: ICompiler,
+    moduleValidator: IModuleValidator,
     signers: ethers.Signer[],
     m?: ModuleBuilder,
     moduleParams?: ModuleParams
   ): Promise<ModuleBuilder> {
-    if (moduleParams && checkIfExist(moduleParams)) {
-      this.params = moduleParams;
+    if (moduleParams !== undefined && checkIfExist(moduleParams)) {
+      this._params = moduleParams;
     }
-    let moduleBuilder = m ? m : new ModuleBuilder(moduleSession, moduleParams);
-    if (moduleParams) {
+    let moduleBuilder =
+      m ??
+      new ModuleBuilder(moduleSession, compiler, moduleValidator, moduleParams);
+    if (moduleParams !== undefined) {
       moduleBuilder.setParam(moduleParams);
     }
 
     // this is needed in order for ContractBindings to be aware of their originating module for later context changes
-    if (!!m) {
+    if (m !== undefined) {
       const currentDepth =
-        moduleSession.get(clsNamespaces.MODULE_DEPTH_NAME) || [];
+        moduleSession.get(ClsNamespaces.MODULE_DEPTH_NAME) ?? [];
       currentDepth.push(this.name);
 
-      moduleSession.set(clsNamespaces.MODULE_DEPTH_NAME, currentDepth);
+      moduleSession.set(ClsNamespaces.MODULE_DEPTH_NAME, currentDepth);
     } else {
-      moduleSession.set(clsNamespaces.MODULE_NAME, this.name);
+      moduleSession.set(ClsNamespaces.MODULE_NAME, this.name);
     }
 
     try {
-      await this.fn(moduleBuilder, signers);
+      await this._fn(moduleBuilder, signers);
     } catch (err) {
       if (err._isUserError || err._isCliError) {
         throw err;
@@ -2023,131 +2029,112 @@ export class Module {
     }
     moduleBuilder = await handleModule(
       moduleBuilder,
+      compiler,
+      moduleValidator,
       this.name,
-      this.isUsage,
-      !!m
+      this._isUsage,
+      m !== undefined
     );
 
-    this.bindings = moduleBuilder.getAllBindings();
-    this.events = moduleBuilder.getAllEvents();
-    this.moduleEvents = moduleBuilder.getAllModuleEvents();
-    this.actions = moduleBuilder.getAllActions();
-    this.registry = moduleBuilder.getRegistry();
-    this.resolver = moduleBuilder.getResolver();
-    this.gasPriceProvider = moduleBuilder.getCustomGasPriceProvider();
-    this.nonceManager = moduleBuilder.getCustomNonceManager();
-    this.transactionSigner = moduleBuilder.getCustomTransactionSigner();
-    this.templates = moduleBuilder.getAllTemplates();
-    this.params = moduleBuilder.getAllParams();
+    this._bindings = moduleBuilder.getAllBindings();
+    this._events = moduleBuilder.getAllEvents();
+    this._moduleEvents = moduleBuilder.getAllModuleEvents();
+    this._actions = moduleBuilder.getAllActions();
+    this._registry = moduleBuilder.getRegistry();
+    this._resolver = moduleBuilder.getResolver();
+    this._gasPriceProvider = moduleBuilder.getCustomGasPriceProvider();
+    this._nonceManager = moduleBuilder.getCustomNonceManager();
+    this._transactionSigner = moduleBuilder.getCustomTransactionSigner();
+    this._templates = moduleBuilder.getAllTemplates();
+    this._params = moduleBuilder.getAllParams();
 
-    this.initialized = true;
+    this._initialized = true;
 
     return moduleBuilder;
   }
 
-  getAllBindings(): { [name: string]: ContractBinding } {
-    return this.bindings;
+  public getAllBindings(): { [name: string]: ContractBinding } {
+    return this._bindings;
   }
 
-  getAllEvents(): Events {
-    return this.events;
+  public getAllEvents(): Events {
+    return this._events;
   }
 
-  getParams(): ModuleParams {
-    return this.params;
+  public getParams(): ModuleParams {
+    return this._params;
   }
 
-  getAllModuleEvents(): ModuleEvents {
-    return this.moduleEvents;
+  public getAllModuleEvents(): ModuleEvents {
+    return this._moduleEvents;
   }
 
-  getAllActions(): { [name: string]: Action } {
-    return this.actions;
+  public getAllActions(): { [name: string]: Action } {
+    return this._actions;
   }
 
-  getRegistry(): IModuleRegistryResolver | undefined {
-    return this.registry;
+  public getRegistry(): IModuleRegistryResolver | undefined {
+    return this._registry;
   }
 
-  setRegistry(registry: IModuleRegistryResolver): void {
-    this.registry = registry;
+  public setRegistry(registry: IModuleRegistryResolver): void {
+    this._registry = registry;
   }
 
-  getResolver(): IModuleRegistryResolver | undefined {
-    return this.resolver;
+  public getResolver(): IModuleRegistryResolver | undefined {
+    return this._resolver;
   }
 
-  setResolver(resolver: IModuleRegistryResolver): void {
-    this.resolver = resolver;
+  public setResolver(resolver: IModuleRegistryResolver): void {
+    this._resolver = resolver;
   }
 
-  getAction(name: string): Action {
-    return this.actions[name];
+  public getAction(name: string): Action {
+    return this._actions[name];
   }
 
-  getModuleConfig(): ModuleConfig | undefined {
-    return this.moduleConfig;
+  public getModuleConfig(): ModuleConfig | undefined {
+    return this._moduleConfig;
   }
 
-  getAllTemplates(): { [name: string]: Template } {
-    return this.templates;
+  public getAllTemplates(): { [name: string]: Template } {
+    return this._templates;
   }
 
-  getCustomGasPriceProvider(): IGasPriceCalculator | undefined {
-    return this.gasPriceProvider;
+  public getCustomGasPriceProvider(): IGasPriceCalculator | undefined {
+    return this._gasPriceProvider;
   }
 
-  getCustomNonceManager(): INonceManager | undefined {
-    return this.nonceManager;
+  public getCustomNonceManager(): INonceManager | undefined {
+    return this._nonceManager;
   }
 
-  getCustomTransactionSigner(): ITransactionSigner | undefined {
-    return this.transactionSigner;
+  public getCustomTransactionSigner(): ITransactionSigner | undefined {
+    return this._transactionSigner;
   }
 }
 
-/**
- * This function is instantiating module class that will be used by hardhat-ignition in order to read user defined contracts and
- * events in order.
- *
- * @param moduleName Name of the module
- * @param fn Function that will be used to build module.
- * @param moduleConfig Deployment module config, defines which bindings would be skipped.
- */
-export async function buildModule(
-  moduleName: string,
-  fn: ModuleBuilderFn,
-  moduleConfig: ModuleConfig | undefined = undefined
-): Promise<Module> {
-  return new Module(moduleName, fn, moduleConfig);
+function checkIfSuitableForInstantiating(
+  contractBinding: ContractBinding
+): boolean {
+  return (
+    checkIfExist(contractBinding?.deployMetaData.contractAddress) &&
+    checkIfExist(contractBinding?.abi) &&
+    checkIfExist(contractBinding?.signer) &&
+    checkIfExist(contractBinding?.prompter) &&
+    checkIfExist(contractBinding?.txGenerator) &&
+    checkIfExist(contractBinding?.moduleStateRepo)
+  );
 }
 
-/**
- * This function is instantiating module class that will be used by hardhat-ignition in order to read user defined contracts and
- * events in order. This is not intended to be a valid deployment module, but rather to be used only as a sub-module
- * with resolver specified in hardhat-ignition.config.ts/js script.
- *
- * @param moduleName Name of the module
- * @param fn Function that will be used to build module.
- * @param moduleConfig Deployment module config, defines which bindings would be skipped.
- */
-export async function buildUsage(
-  moduleName: string,
-  fn: ModuleBuilderFn,
-  moduleConfig: ModuleConfig | undefined = undefined
-): Promise<Module> {
-  return new Module(moduleName, fn, moduleConfig, true);
-}
-
-async function handleModule(
+export async function handleModule(
   moduleBuilder: ModuleBuilder,
+  compiler: ICompiler,
+  moduleValidator: IModuleValidator,
   moduleName: string,
   isUsage: boolean,
   isSubModule: boolean
 ): Promise<ModuleBuilder> {
-  const compiler = new HardhatCompiler();
-  const moduleValidator = new ModuleValidator();
-
   const contractBuildNames: string[] = [];
   const moduleBuilderBindings = moduleBuilder.getAllBindings();
   for (const [, bind] of Object.entries(moduleBuilderBindings)) {

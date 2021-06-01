@@ -1,41 +1,44 @@
+import path from "path";
+
+import {
+  ContractBindingMetaData,
+  Deployed,
+  TxData,
+} from "../../../interfaces/hardhat_ignition";
+import { CliError } from "../../types/errors";
 import {
   Build,
   HardhatBuild,
   Migration,
   TruffleBuild,
-} from '../../types/migration';
-import { checkIfExist } from '../../utils/util';
-import { IModuleState, ModuleStateFile } from './module';
-import {
-  ContractBindingMetaData,
-  Deployed,
-  TxData,
-} from '../../../interfaces/hardhat_ignition';
-import { searchBuilds, searchBuildsAndNetworks } from '../../utils/files';
-import { CliError } from '../../types/errors';
-import path from 'path';
+} from "../../types/migration";
+import { ModuleStateFile } from "../../types/module";
+import { searchBuilds, searchBuildsAndNetworks } from "../../utils/sol_files";
+import { checkIfExist } from "../../utils/util";
 
-const TRUFFLE_BUILD_DIR_NAME = 'build';
-const HARDHAT_DEPLOYMENTS_DIR_NAME = 'deployments';
+import { IModuleState } from "./module";
+
+const TRUFFLE_BUILD_DIR_NAME = "build";
+const HARDHAT_DEPLOYMENTS_DIR_NAME = "deployments";
 
 export class StateMigrationService {
-  private readonly moduleState: IModuleState;
-  private readonly stateMigrationType: Migration;
-  private readonly artifactsPath: string;
+  private readonly _moduleState: IModuleState;
+  private readonly _stateMigrationType: Migration;
+  private readonly _artifactsPath: string;
 
   constructor(moduleState: IModuleState, stateMigrationType: Migration) {
-    this.moduleState = moduleState;
-    this.stateMigrationType = stateMigrationType;
+    this._moduleState = moduleState;
+    this._stateMigrationType = stateMigrationType;
 
-    switch (this.stateMigrationType) {
+    switch (this._stateMigrationType) {
       case Migration.truffle:
-        this.artifactsPath = path.resolve(
+        this._artifactsPath = path.resolve(
           process.cwd(),
           TRUFFLE_BUILD_DIR_NAME
         );
         break;
       case Migration.hardhatDeploy:
-        this.artifactsPath = path.resolve(
+        this._artifactsPath = path.resolve(
           process.cwd(),
           HARDHAT_DEPLOYMENTS_DIR_NAME
         );
@@ -43,22 +46,22 @@ export class StateMigrationService {
     }
   }
 
-  searchBuild(): Build[] {
-    switch (this.stateMigrationType) {
+  public searchBuild(): Build[] {
+    switch (this._stateMigrationType) {
       case Migration.truffle:
-        return searchBuilds(this.artifactsPath, []) as TruffleBuild[];
+        return searchBuilds(this._artifactsPath, []) as TruffleBuild[];
       case Migration.hardhatDeploy:
         return searchBuildsAndNetworks(
-          this.artifactsPath,
+          this._artifactsPath,
           []
         ) as HardhatBuild[];
       default:
-        throw new CliError('Migration type not found, please check.');
+        throw new CliError("Migration type not found, please check.");
     }
   }
 
-  extractValidBuilds(builds: Build[]): Build[] {
-    switch (this.stateMigrationType) {
+  public extractValidBuilds(builds: Build[]): Build[] {
+    switch (this._stateMigrationType) {
       case Migration.truffle: {
         const validBuilds: TruffleBuild[] = [];
         for (let buildFile of builds) {
@@ -91,10 +94,10 @@ export class StateMigrationService {
     }
   }
 
-  mapBuildsToStateFile(
+  public mapBuildsToStateFile(
     validBuilds: Build[]
   ): { [networkId: string]: ModuleStateFile } {
-    switch (this.stateMigrationType) {
+    switch (this._stateMigrationType) {
       case Migration.truffle: {
         const stateObject: { [networkId: string]: ModuleStateFile } = {};
 
@@ -153,6 +156,9 @@ export class StateMigrationService {
             stateObject[validBuild.networkId] = {};
           }
 
+          const txData: TxData = {
+            from: validBuild.receipt.from,
+          };
           stateObject[validBuild.networkId][
             elementName
           ] = new ContractBindingMetaData(
@@ -165,9 +171,7 @@ export class StateMigrationService {
             undefined,
             {
               output: validBuild.receipt,
-              input: {
-                from: validBuild.receipt.from,
-              } as TxData,
+              input: txData,
             },
             deployMetaData
           );
@@ -178,12 +182,12 @@ export class StateMigrationService {
     }
   }
 
-  async storeNewStateFiles(
+  public async storeNewStateFiles(
     moduleName: string,
     stateFiles: { [networkId: string]: ModuleStateFile }
   ) {
     for (const [networkId, stateFile] of Object.entries(stateFiles)) {
-      await this.moduleState.storeStates(networkId, moduleName, stateFile);
+      await this._moduleState.storeStates(networkId, moduleName, stateFile);
     }
   }
 }

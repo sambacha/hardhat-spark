@@ -1,67 +1,64 @@
-import {
-  IModuleState,
-  IModuleStateCleanup,
-  ModuleState,
-  ModuleStateFile,
-} from './index';
-import { ModuleStateRepo } from '../state_repo';
-import { checkIfExist, copyValue } from '../../../utils/util';
+import { ModuleState, ModuleStateFile } from "../../../types/module";
+import { checkIfExist, copyValue } from "../../../utils/util";
+import { ModuleStateRepo } from "../repo/state_repo";
+
+import { IModuleState, IModuleStateCleanup } from "./index";
 
 export class MemoryModuleState implements IModuleState, IModuleStateCleanup {
-  private state: {
+  private _state: {
     [networkName: string]: {
       [moduleName: string]: ModuleStateFile;
     };
   };
 
   constructor() {
-    this.state = {};
+    this._state = {};
   }
 
-  clear() {
-    this.state = {};
+  public clear() {
+    this._state = {};
   }
 
-  async getModuleState(
+  public async getModuleState(
     networkName: string,
     moduleName: string
   ): Promise<ModuleStateFile> {
-    if (!this.state[networkName]) {
-      this.state[networkName] = {};
+    if (this._state[networkName] === undefined) {
+      this._state[networkName] = {};
       return {};
     }
-    if (!this.state[networkName][moduleName]) {
-      this.state[networkName][moduleName] = {};
+    if (this._state[networkName][moduleName] === undefined) {
+      this._state[networkName][moduleName] = {};
       return {};
     }
 
-    return copyValue(this.state[networkName][moduleName]);
+    return copyValue(this._state[networkName][moduleName]);
   }
 
-  async storeStates(
+  public async storeStates(
     networkName: string,
     moduleName: string,
     moduleStates: ModuleState | null
   ): Promise<boolean> {
-    if (moduleStates == undefined) {
-      this.state[networkName][moduleName] = {};
+    if (moduleStates === undefined) {
+      this._state[networkName][moduleName] = {};
       return true;
     }
 
-    if (!this.state[networkName]) {
-      this.state[networkName] = {};
+    if (this._state[networkName] === undefined) {
+      this._state[networkName] = {};
     }
-    if (!this.state[networkName][moduleName]) {
-      this.state[networkName][moduleName] = {};
+    if (this._state[networkName][moduleName] === undefined) {
+      this._state[networkName][moduleName] = {};
     }
-    this.state[networkName][moduleName] = copyValue(
+    this._state[networkName][moduleName] = copyValue(
       ModuleStateRepo.convertStatesToMetaData(moduleStates)
     );
 
     return true;
   }
 
-  checkIfSet(moduleName: string, networkId: string): boolean {
-    return checkIfExist(this.state[networkId][moduleName]);
+  public checkIfSet(moduleName: string, networkId: string): boolean {
+    return checkIfExist(this._state[networkId][moduleName]);
   }
 }

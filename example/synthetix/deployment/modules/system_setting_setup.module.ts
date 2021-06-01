@@ -19,7 +19,6 @@ const networkId: number = +(IGNITION_NETWORK_ID || 31337);
 
 export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m: SynthetixModuleBuilder) => {
   const synthsToAdd: { synth: ContractBinding, currencyKeyInBytes: string }[] = [];
-  // @ts-ignore
   for (const {name: currencyKey} of m.synths) {
     const currencyKeyInBytes = toBytes32(currencyKey);
     const Synth = m.getBinding(`Synth${currencyKey}`);
@@ -112,11 +111,8 @@ export const SystemSettingsModule = buildModule('SystemSettingsModule', async (m
     await SystemSettings.deployed().setCrossDomainMessageGasLimit(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT']);
     await expectFuncRead(constants['CROSS_DOMAIN_MESSAGE_GAS_LIMIT'], SystemSettings.deployed().crossDomainMessageGasLimit);
 
-    // @ts-ignore
     if (checkIfExist(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[networkId]])) {
-      // @ts-ignore
       await SystemSettings.deployed().setAggregatorWarningFlags(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[networkId]]);
-      // @ts-ignore
       await expectFuncRead(constants['AGGREGATOR_WARNING_FLAGS'][chainIdToNetwork[networkId]] as string, SystemSettings.deployed().aggregatorWarningFlags);
     }
   });

@@ -1,54 +1,56 @@
-import * as path from 'path';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
+import chalk from "chalk";
+import { cli } from "cli-ux";
+import * as inquirer from "inquirer";
+import * as path from "path";
+
+import { checkIfExist } from "../utils/util";
+
+import { DeploymentFileGenerator } from "./deployment_file_gen";
+import { SystemCrawlingService } from "./system_crawler";
 import {
   CONSTRUCTOR_ARGS,
   CONTRACT_DUPLICATES,
   CONTRACT_NAME_DESC,
-} from './tutorial_desc';
-import { checkIfExist } from '../utils/util';
-import { DeploymentFileGenerator } from './deployment_file_gen';
-import { SystemCrawlingService } from './system_crawler';
-import * as inquirer from 'inquirer';
+} from "./tutorial_desc";
 
-export const DEPLOYMENT_FOLDER = './deployment';
-export const DEPLOYMENT_FILE = './tutorial.module.ts';
+export const DEPLOYMENT_FOLDER = "./deployment";
+export const DEPLOYMENT_FILE = "./tutorial.module.ts";
 
 type ContractName = string;
 
 export class TutorialService {
-  private readonly contractNames: { [bindingName: string]: ContractName };
+  private readonly _contractNames: { [bindingName: string]: ContractName };
 
-  private deploymentFileGenerator: DeploymentFileGenerator;
-  private systemCrawlingService: SystemCrawlingService;
+  private _deploymentFileGenerator: DeploymentFileGenerator;
+  private _systemCrawlingService: SystemCrawlingService;
 
   constructor(
     deploymentFileGenerator: DeploymentFileGenerator,
     systemCrawlingService: SystemCrawlingService
   ) {
-    this.deploymentFileGenerator = deploymentFileGenerator;
-    this.systemCrawlingService = systemCrawlingService;
-    this.contractNames = {};
+    this._deploymentFileGenerator = deploymentFileGenerator;
+    this._systemCrawlingService = systemCrawlingService;
+    this._contractNames = {};
   }
 
-  setDeploymentPath(rootPath: string) {
-    this.deploymentFileGenerator.setDeploymentPath(
+  public setDeploymentPath(rootPath: string) {
+    this._deploymentFileGenerator.setDeploymentPath(
       path.resolve(rootPath, DEPLOYMENT_FOLDER),
       DEPLOYMENT_FILE
     );
   }
 
-  setModuleName(moduleName: string) {
-    this.deploymentFileGenerator.initEmptyModule(moduleName);
+  public setModuleName(moduleName: string) {
+    this._deploymentFileGenerator.initEmptyModule(moduleName);
   }
 
-  async start() {
+  public async start() {
     // crawl for all contracts in
-    const contracts = this.systemCrawlingService.crawlSolidityContractsNames();
+    const contracts = this._systemCrawlingService.crawlSolidityContractsNames();
 
     while (true) {
       let yes = await cli.confirm(
-        'Do you want to deploy a smart contract?(yes/no)'
+        "Do you want to deploy a smart contract?(yes/no)"
       );
       if (!yes) {
         break;
@@ -58,9 +60,9 @@ export class TutorialService {
       const contractName = (
         await inquirer.prompt([
           {
-            name: 'contractName',
-            message: 'Contract name:',
-            type: 'list',
+            name: "contractName",
+            message: "Contract name:",
+            type: "list",
             choices: contracts.map((v) => {
               return {
                 name: v,
@@ -71,25 +73,25 @@ export class TutorialService {
       ).contractName;
 
       let bindingName = contractName;
-      if (checkIfExist(this.contractNames[contractName])) {
+      if (checkIfExist(this._contractNames[contractName])) {
         bindingName = await cli.prompt(CONTRACT_DUPLICATES);
-        this.contractNames[bindingName] = contractName;
+        this._contractNames[bindingName] = contractName;
       }
-      this.contractNames[contractName] = contractName;
+      this._contractNames[contractName] = contractName;
 
       let constructorArgs = await cli.prompt(CONSTRUCTOR_ARGS, {
         required: false,
       });
-      constructorArgs = constructorArgs.split(',');
+      constructorArgs = constructorArgs.split(",");
 
-      this.deploymentFileGenerator.newContract(
+      this._deploymentFileGenerator.newContract(
         contractName,
         bindingName,
         ...constructorArgs
       );
 
       yes = await cli.confirm(
-        'Do you wish to execute any contract function after contract deployment?(yes/no)'
+        "Do you wish to execute any contract function after contract deployment?(yes/no)"
       );
       await this.handleContractFuncExecution(contractName, bindingName, yes);
     }
@@ -102,7 +104,7 @@ export class TutorialService {
     );
   }
 
-  async handleContractFuncExecution(
+  public async handleContractFuncExecution(
     contractName: string,
     bindingName: string,
     yes: boolean
@@ -113,16 +115,19 @@ export class TutorialService {
 
     while (true) {
       if (yes) {
-        const contractFunctionNames = await this.systemCrawlingService.crawlSolidityFunctionsOfContract(
+        const contractFunctionNames = this._systemCrawlingService.crawlSolidityFunctionsOfContract(
           contractName
         );
-        if (contractFunctionNames && contractFunctionNames.length > 0) {
+        if (
+          contractFunctionNames !== undefined &&
+          contractFunctionNames.length > 0
+        ) {
           const functionName = (
             await inquirer.prompt([
               {
-                name: 'functionName',
-                message: 'Function name:',
-                type: 'list',
+                name: "functionName",
+                message: "Function name:",
+                type: "list",
                 choices: contractFunctionNames.map((v) => {
                   return {
                     name: v.name,
@@ -135,9 +140,9 @@ export class TutorialService {
           let functionArgs = await cli.prompt(`Contract function arguments?`, {
             required: false,
           });
-          functionArgs = functionArgs?.split(',');
+          functionArgs = functionArgs?.split(",");
 
-          this.deploymentFileGenerator.newContractInvocation(
+          this._deploymentFileGenerator.newContractInvocation(
             contractName,
             bindingName,
             functionName,
@@ -145,18 +150,18 @@ export class TutorialService {
           );
         } else {
           cli.info(
-            'Contract dont have any callable function... please continue'
+            "Contract dont have any callable function... please continue"
           );
         }
 
-        const yes = await cli.confirm(
-          'Any more contract functions to be executed?(yes/no)'
+        const confirmed = await cli.confirm(
+          "Any more contract functions to be executed?(yes/no)"
         );
         if (
           !(await this.handleContractFuncExecution(
             contractName,
             bindingName,
-            yes
+            confirmed
           ))
         ) {
           break;

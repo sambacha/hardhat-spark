@@ -1,13 +1,19 @@
 {
-  "extends": "../../tsconfig.json",
+//  "extends": "../../config/typescript/tsconfig.json",
   "compilerOptions": {
-    "outDir": "lib",
+    "target": "ES2017",
+    "module": "commonjs",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmitOnError": true,
+    "outDir": "dist",
+    "jsx": "react"
   },
   "exclude": [
-    "lib"
-  ],
-  "include": [
-    "index.ts",
-    "src/**/*",
+    "./dist",
+    "./node_modules"
   ]
 }

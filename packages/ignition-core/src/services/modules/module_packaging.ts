@@ -1,58 +1,58 @@
-import fs from 'fs';
-import fse from 'fs-extra';
-import * as path from 'path';
+import fs from "fs";
+import fse from "fs-extra";
+import * as path from "path";
 
-const CONTRACTS_FOLDER = 'contracts';
-const DEPLOYMENT_FOLDER = 'deployment';
-const PACKAGE_DISTRIBUTION_FOLDER_NAME = 'dist';
+const CONTRACTS_FOLDER = "contracts";
+const DEPLOYMENT_FOLDER = "deployment";
+const PACKAGE_DISTRIBUTION_FOLDER_NAME = "dist";
 
 export class ModulePackagingService {
-  private readonly currentDir: string;
-  private readonly currentDistFolder: string;
-  private readonly packageName: string;
-  private readonly packageVersion: string;
+  private readonly _currentDir: string;
+  private readonly _currentDistFolder: string;
+  private readonly _packageName: string;
+  private readonly _packageVersion: string;
 
   constructor(packageName: string, packageVersion: string) {
-    this.currentDir = process.cwd();
-    this.currentDistFolder = path.resolve(
+    this._currentDir = process.cwd();
+    this._currentDistFolder = path.resolve(
       process.cwd(),
       PACKAGE_DISTRIBUTION_FOLDER_NAME
     );
-    if (!fs.existsSync(this.currentDistFolder)) {
-      fs.mkdirSync(this.currentDistFolder);
+    if (!fs.existsSync(this._currentDistFolder)) {
+      fs.mkdirSync(this._currentDistFolder);
     }
 
-    this.packageName = packageName;
-    this.packageVersion = packageVersion;
+    this._packageName = packageName;
+    this._packageVersion = packageVersion;
   }
 
-  async initializePackageDistributionFolder() {
+  public async initializePackageDistributionFolder() {
     const currentPackageFile = fs.readFileSync(
-      path.resolve(this.currentDir, 'package.json'),
-      'utf-8'
+      path.resolve(this._currentDir, "package.json"),
+      "utf-8"
     );
     const packageJson = JSON.parse(currentPackageFile);
 
-    packageJson.name = this.packageName;
-    packageJson.version = this.packageVersion;
+    packageJson.name = this._packageName;
+    packageJson.version = this._packageVersion;
 
     fs.writeFileSync(
-      path.resolve(this.currentDistFolder, 'package.json'),
+      path.resolve(this._currentDistFolder, "package.json"),
       JSON.stringify(packageJson, undefined, 4)
     );
   }
 
-  async copyAllContracts() {
+  public async copyAllContracts() {
     fse.copySync(
-      path.resolve(this.currentDir, CONTRACTS_FOLDER),
-      path.resolve(this.currentDistFolder, CONTRACTS_FOLDER)
+      path.resolve(this._currentDir, CONTRACTS_FOLDER),
+      path.resolve(this._currentDistFolder, CONTRACTS_FOLDER)
     );
   }
 
-  async copyAllDeploymentModules() {
+  public async copyAllDeploymentModules() {
     fse.copySync(
-      path.resolve(this.currentDir, DEPLOYMENT_FOLDER),
-      path.resolve(this.currentDistFolder, DEPLOYMENT_FOLDER)
+      path.resolve(this._currentDir, DEPLOYMENT_FOLDER),
+      path.resolve(this._currentDistFolder, DEPLOYMENT_FOLDER)
     );
   }
 }

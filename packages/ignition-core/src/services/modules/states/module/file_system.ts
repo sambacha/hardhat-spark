@@ -1,18 +1,15 @@
-import {
-  IModuleState,
-  ModuleState,
-  ModuleStateFile,
-  STATE_DIR_NAME,
-  STATE_NAME,
-} from './index';
-import path from 'path';
-import fs from 'fs';
-import { ModuleStateRepo } from '../state_repo';
-import { Mutex } from '../../../utils/mutex/simple_mutex';
+import fs from "fs";
+import path from "path";
+
+import { ModuleState, ModuleStateFile } from "../../../types/module";
+import { Mutex } from "../../../utils/mutex/simple_mutex";
+import { ModuleStateRepo } from "../repo/state_repo";
+
+import { IModuleState, STATE_DIR_NAME, STATE_NAME } from "./index";
 
 export class FileSystemModuleState implements IModuleState {
-  private mutex: Mutex;
-  private readonly statePath: string;
+  private _mutex: Mutex;
+  private readonly _statePath: string;
 
   constructor(currentProjectPath: string) {
     const dir = path.resolve(currentProjectPath, STATE_DIR_NAME);
@@ -20,17 +17,17 @@ export class FileSystemModuleState implements IModuleState {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
-    this.statePath = dir;
+    this._statePath = dir;
 
-    this.mutex = new Mutex();
+    this._mutex = new Mutex();
   }
 
-  async getModuleState(
+  public async getModuleState(
     networkName: string,
     moduleName: string
   ): Promise<ModuleStateFile> {
     const dir = path.resolve(
-      this.statePath,
+      this._statePath,
       moduleName,
       `${networkName}_${STATE_NAME}`
     );
@@ -41,22 +38,22 @@ export class FileSystemModuleState implements IModuleState {
     return (
       JSON.parse(
         fs.readFileSync(dir, {
-          encoding: 'utf-8',
+          encoding: "utf-8",
         })
-      ) || {}
+      ) ?? {}
     );
   }
 
-  async storeStates(
+  public async storeStates(
     networkName: string,
     moduleName: string,
     moduleStates: ModuleState | null
   ): Promise<boolean> {
-    if (moduleStates == undefined) {
+    if (moduleStates === undefined) {
       return true;
     }
 
-    const moduleDir = path.resolve(this.statePath, moduleName);
+    const moduleDir = path.resolve(this._statePath, moduleName);
     const metaData = ModuleStateRepo.convertStatesToMetaData(moduleStates);
     if (!fs.existsSync(moduleDir)) {
       fs.mkdirSync(moduleDir);
@@ -64,7 +61,7 @@ export class FileSystemModuleState implements IModuleState {
 
     const stateDir = path.resolve(moduleDir, `${networkName}_${STATE_NAME}`);
     const jsonMetaData = JSON.stringify(metaData, undefined, 4);
-    const release = await this.mutex.acquireQueued();
+    const release = await this._mutex.acquireQueued();
     try {
       fs.writeFileSync(stateDir, jsonMetaData);
     } catch (e) {
@@ -77,9 +74,9 @@ export class FileSystemModuleState implements IModuleState {
     return true;
   }
 
-  checkIfSet(moduleName: string, networkName: string): boolean {
+  public checkIfSet(moduleName: string, networkName: string): boolean {
     const dir = path.resolve(
-      this.statePath,
+      this._statePath,
       moduleName,
       `${networkName}_${STATE_NAME}`
     );

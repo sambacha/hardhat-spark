@@ -7,60 +7,60 @@ import {
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent,
-} from '../../../interfaces/hardhat_ignition';
-import { checkIfExist } from '../../utils/util';
+} from "../../../interfaces/hardhat_ignition";
 import {
   CliError,
   EventDependencyNotDeployedError,
   EventUsageIsNotDeployed,
-} from '../../types/errors';
+} from "../../types/errors";
+import { checkIfExist } from "../../utils/util";
 
 export class Batcher {
-  static async handleAfterDeployEvent(
+  public static async handleAfterDeployEvent(
     event: AfterDeployEvent,
     element: StatefulEvent,
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleOnChangeEvent(
+  public static async handleOnChangeEvent(
     event: OnChangeEvent,
     element: StatefulEvent,
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleBeforeCompileEvent(
+  public static async handleBeforeCompileEvent(
     event: BeforeCompileEvent,
     element: StatefulEvent,
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleCompiledEvent(
+  public static async handleCompiledEvent(
     event: BeforeDeployEvent,
     element: StatefulEvent,
     batches: any[],
     elementsBatches: any
   ) {
-    this.baseEventHandling(event, element, batches, elementsBatches);
+    this._baseEventHandling(event, element, batches, elementsBatches);
   }
 
-  static async handleModuleEvent(
+  public static async handleModuleEvent(
     event: ModuleEvent,
     element: StatefulEvent,
     batches: any[]
   ) {
-    this.moduleEventHandling(element, batches);
+    this._moduleEventHandling(element, batches);
   }
 
-  private static moduleEventHandling(element: StatefulEvent, batches: any[]) {
+  private static _moduleEventHandling(element: StatefulEvent, batches: any[]) {
     if (!checkIfExist(batches[0])) {
       batches[0] = [];
     }
@@ -68,7 +68,7 @@ export class Batcher {
     batches[0].push(element);
   }
 
-  private static baseEventHandling(
+  private static _baseEventHandling(
     event: BaseEvent,
     element: StatefulEvent,
     batches: any[],
@@ -78,18 +78,23 @@ export class Batcher {
       case EventType.BeforeCompileEvent:
       case EventType.AfterCompileEvent:
       case EventType.BeforeDeployEvent:
-        this.handleBeforeDeployEvents(event, element, batches, elementsBatches);
+        this._handleBeforeDeployEvents(
+          event,
+          element,
+          batches,
+          elementsBatches
+        );
         break;
       case EventType.OnChangeEvent:
       case EventType.AfterDeployEvent:
-        this.handleAfterDeployEvents(event, element, batches, elementsBatches);
+        this._handleAfterDeployEvents(event, element, batches, elementsBatches);
         break;
       default:
-        throw new CliError('Event type not found');
+        throw new CliError("Event type not found");
     }
   }
 
-  private static handleBeforeDeployEvents(
+  private static _handleBeforeDeployEvents(
     event: BaseEvent,
     element: StatefulEvent,
     batches: any[],
@@ -114,7 +119,7 @@ export class Batcher {
       }
 
       if (elementsBatches[dep] < shallowestDepNumber) {
-        shallowestDepNumber < elementsBatches[dep];
+        shallowestDepNumber = elementsBatches[dep];
       }
     }
 
@@ -161,7 +166,7 @@ export class Batcher {
     elementsBatches[event.name] = batchNumber;
   }
 
-  private static handleAfterDeployEvents(
+  private static _handleAfterDeployEvents(
     event: BaseEvent,
     element: StatefulEvent,
     batches: any[],
@@ -171,7 +176,7 @@ export class Batcher {
 
     for (const usage of event.usage) {
       if (!checkIfExist(elementsBatches[usage])) {
-        throw new EventUsageIsNotDeployed(event, usage);
+        throw new EventUsageIsNotDeployed(event.name, usage);
       }
 
       if (elementsBatches[usage] > deepestDepNumber) {
@@ -201,7 +206,7 @@ export class Batcher {
 
     for (const eventUsage of event.eventUsage) {
       if (!checkIfExist(elementsBatches[eventUsage])) {
-        throw new EventUsageIsNotDeployed(event, eventUsage);
+        throw new EventUsageIsNotDeployed(event.name, eventUsage);
       }
 
       if (elementsBatches[eventUsage] > deepestDepNumber) {

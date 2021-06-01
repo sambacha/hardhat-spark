@@ -1,13 +1,9 @@
-import { IErrorReporting } from './index';
+import { IErrorReporting } from "./index";
 
 export class EmptyAnalyticsService implements IErrorReporting {
   constructor() {}
 
-  reportError(err: Error) {
-    return;
-  }
-
-  sendCommandHit(taskName: string) {
+  public reportError(err: Error) {
     return;
   }
 }

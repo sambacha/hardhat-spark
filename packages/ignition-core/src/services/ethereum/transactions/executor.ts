@@ -1,3 +1,11 @@
+import { defaultAbiCoder as abiCoder } from "@ethersproject/abi";
+import {
+  TransactionReceipt,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider";
+import { Namespace } from "cls-hooked";
+import { BigNumber, providers } from "ethers";
+
 import {
   AfterCompileEvent,
   AfterDeployEvent,
@@ -13,19 +21,13 @@ import {
   OnChangeEvent,
   StatefulEvent,
   TransactionData,
-} from '../../../interfaces/hardhat_ignition';
-import { ILogging } from '../../utils/logging';
-import { ModuleStateRepo } from '../../modules/states/state_repo';
-import { checkIfExist } from '../../utils/util';
-import { EthTxGenerator } from './generator';
-import { BigNumber, providers } from 'ethers';
-import { defaultAbiCoder as abiCoder } from '@ethersproject/abi';
-import {
-  TransactionReceipt,
-  TransactionResponse,
-} from '@ethersproject/abstract-provider';
-import { JsonFragment, JsonFragmentType } from '../../types/artifacts/abi';
-import { EventHandler } from '../../modules/events/handler';
+} from "../../../interfaces/hardhat_ignition";
+import { Batcher } from "../../modules/events/batcher";
+import { EventHandler } from "../../modules/events/handler";
+import { ModuleResolver } from "../../modules/module_resolver";
+import { IModuleRegistryResolver } from "../../modules/states/registry";
+import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
+import { JsonFragment, JsonFragmentType } from "../../types/artifacts/abi";
 import {
   CliError,
   ContractTypeMismatch,
@@ -33,474 +35,19 @@ import {
   MissingAbiInContractError,
   NoContractBindingDataInModuleState,
   TransactionFailed,
-} from '../../types/errors';
-import { ModuleState } from '../../modules/states/module';
-import { IModuleRegistryResolver } from '../../modules/states/registry';
-import { ModuleResolver } from '../../modules/module_resolver';
-import { Batcher } from '../../modules/events/batcher';
-import { Namespace } from 'cls-hooked';
-import { EventTxExecutor } from './event_executor';
-import { clsNamespaces } from '../../utils/continuation_local_storage';
+} from "../../types/errors";
+import { ModuleState } from "../../types/module";
+import { ClsNamespaces } from "../../utils/continuation_local_storage";
+import { ILogging } from "../../utils/logging";
+import { checkIfExist } from "../../utils/util";
 
-const CONSTRUCTOR_TYPE = 'constructor';
+import { EventTxExecutor } from "./event_executor";
+import { EthTxGenerator } from "./generator";
+
+const CONSTRUCTOR_TYPE = "constructor";
 
 export class TxExecutor {
-  private readonly networkId: string;
-  private readonly parallelize: boolean;
-
-  private prompter: ILogging;
-  private moduleStateRepo: ModuleStateRepo;
-  private txGenerator: EthTxGenerator;
-  private ethers: providers.JsonRpcProvider;
-  private eventHandler: EventHandler;
-  private eventSession: Namespace;
-  private eventTxExecutor: EventTxExecutor;
-  private readonly blockConfirmation: number;
-
-  constructor(
-    prompter: ILogging,
-    moduleState: ModuleStateRepo,
-    txGenerator: EthTxGenerator,
-    networkId: string,
-    ethers: providers.JsonRpcProvider,
-    eventHandler: EventHandler,
-    eventSession: Namespace,
-    eventTxExecutor: EventTxExecutor,
-    parallelize: boolean = false
-  ) {
-    this.prompter = prompter;
-    this.moduleStateRepo = moduleState;
-    this.txGenerator = txGenerator;
-
-    this.ethers = ethers;
-    this.eventHandler = eventHandler;
-    this.networkId = networkId;
-    this.parallelize = parallelize;
-    this.eventSession = eventSession;
-    this.eventTxExecutor = eventTxExecutor;
-
-    this.blockConfirmation = +(process.env.BLOCK_CONFIRMATION_NUMBER || 1);
-  }
-
-  async execute(
-    moduleName: string,
-    moduleState: ModuleState,
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
-    moduleConfig: ModuleConfig | undefined
-  ): Promise<void> {
-    // store everything before execution is started
-    await this.moduleStateRepo.storeNewState(moduleName, moduleState);
-
-    if (this.parallelize) {
-      await this.prompter.startModuleDeploy(moduleName, moduleState);
-      await this.prompter.parallelizationExperimental();
-      if (!checkIfExist(moduleState)) {
-        this.prompter.nothingToDeploy();
-      }
-
-      await this.executeParallel(
-        moduleName,
-        moduleState,
-        registry,
-        resolver,
-        moduleConfig
-      );
-
-      return;
-    }
-
-    await this.prompter.startModuleDeploy(moduleName, moduleState);
-    if (!checkIfExist(moduleState)) {
-      this.prompter.nothingToDeploy();
-    }
-
-    await this.executeSync(
-      moduleName,
-      moduleState,
-      registry,
-      resolver,
-      moduleConfig
-    );
-    return;
-  }
-
-  private async executeSync(
-    moduleName: string,
-    moduleState: ModuleState,
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
-    moduleConfig: ModuleConfig | undefined
-  ): Promise<void> {
-    for (let [elementName, element] of Object.entries(moduleState)) {
-      if (checkIfExist((element as ContractBinding)?.bytecode)) {
-        element = element as ContractBinding;
-
-        const contractAddress = await resolver?.resolveContract(
-          this.networkId,
-          moduleName,
-          elementName
-        );
-
-        // check if already deployed
-        if (checkIfExist(element.deployMetaData?.contractAddress)) {
-          this.prompter.alreadyDeployed(elementName);
-          await this.prompter.promptContinueDeployment();
-          await this.prompter.finishedBindingExecution(elementName);
-          continue;
-        }
-
-        // if contract is present in registry it would be resolved thought resolver
-        if (checkIfExist(contractAddress)) {
-          element.deployMetaData.contractAddress = contractAddress as string;
-          this.prompter.alreadyDeployed(elementName);
-          await this.moduleStateRepo.storeSingleBinding(
-            element as ContractBinding
-          );
-          await this.prompter.finishedBindingExecution(elementName);
-          continue;
-        }
-
-        // in case if it is specified in module config for contract not to be deployed
-        if (
-          moduleConfig &&
-          moduleConfig.contract &&
-          checkIfExist(moduleConfig.contract[element.name]) &&
-          !moduleConfig.contract[element.name].deploy
-        ) {
-          continue;
-        }
-
-        // executing user defined shouldRedeploy function and skipping execution if user desired that.
-        if (
-          element.deployMetaData.shouldRedeploy &&
-          !element.deployMetaData.shouldRedeploy(element)
-        ) {
-          continue;
-        }
-
-        this.prompter.bindingExecution(element.name);
-        element = await this.executeSingleBinding(
-          moduleName,
-          element as ContractBinding,
-          moduleState
-        );
-        element.deployMetaData.contractAddress =
-          element?.txData?.output?.contractAddress;
-        if (!checkIfExist(element.deployMetaData?.lastEventName)) {
-          element.deployMetaData.logicallyDeployed = true;
-        }
-
-        if (
-          checkIfExist(registry) &&
-          checkIfExist(element?.deployMetaData?.contractAddress)
-        ) {
-          await registry?.setAddress(
-            this.networkId,
-            moduleName,
-            element.name,
-            element?.deployMetaData?.contractAddress as string
-          );
-        }
-
-        await this.moduleStateRepo.storeSingleBinding(element);
-        this.prompter.finishedBindingExecution(element.name);
-        continue;
-      }
-
-      this.prompter.eventExecution((element as StatefulEvent).event.name);
-      await this.executeEvent(
-        moduleName,
-        element as StatefulEvent,
-        moduleState
-      );
-    }
-  }
-
-  private async executeParallel(
-    moduleName: string,
-    moduleState: ModuleState,
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
-    moduleConfig: ModuleConfig | undefined
-  ): Promise<void> {
-    const batches: [] = [];
-
-    const elementsBatches: { [elementName: string]: number } = {};
-
-    // batched libraries in first batch, if they exist
-    let hasLibraries = false;
-    for (let [, element] of Object.entries(moduleState)) {
-      if (checkIfExist((element as ContractBinding)?.bytecode)) {
-        element = element as ContractBinding;
-        if (element.library) {
-          await this.handleElement(
-            0,
-            batches,
-            element,
-            moduleState,
-            elementsBatches
-          );
-          hasLibraries = true;
-        }
-      }
-    }
-
-    // batching elements depending on dependant tree depth.
-    for (const [, element] of Object.entries(moduleState)) {
-      if (hasLibraries) {
-        await this.handleElement(
-          1,
-          batches,
-          element,
-          moduleState,
-          elementsBatches
-        );
-        continue;
-      }
-
-      await this.handleElement(
-        0,
-        batches,
-        element,
-        moduleState,
-        elementsBatches
-      );
-    }
-
-    // batched execution
-    await this.executeBatches(
-      moduleName,
-      batches,
-      moduleState,
-      registry,
-      resolver,
-      moduleConfig
-    );
-  }
-
-  private async executeBatches(
-    moduleName: string,
-    batches: any[],
-    moduleState: ModuleState,
-    registry?: IModuleRegistryResolver,
-    resolver?: IModuleRegistryResolver,
-    moduleConfig?: ModuleConfig
-  ) {
-    for (const batch of batches) {
-      const promiseTxReceipt = [];
-      for (let batchElement of batch) {
-        if (!checkIfExist((batchElement as ContractBinding)?.bytecode)) {
-          continue;
-        }
-
-        const contractAddress = await resolver?.resolveContract(
-          this.networkId,
-          moduleName,
-          batchElement.name
-        );
-
-        batchElement = batchElement as ContractBinding;
-        if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
-          await this.prompter.alreadyDeployed(batchElement.name);
-          await this.prompter.finishedBindingExecution(batchElement.name);
-          continue;
-        }
-
-        if (checkIfExist(contractAddress)) {
-          batchElement.deployMetaData.contractAddress = contractAddress as string;
-          await this.moduleStateRepo.storeSingleBinding(
-            batchElement as ContractBinding
-          );
-          continue;
-        }
-
-        if (
-          moduleConfig &&
-          moduleConfig.contract[batchElement.name] &&
-          checkIfExist(moduleConfig.contract[batchElement.name]) &&
-          !moduleConfig.contract[batchElement.name].deploy
-        ) {
-          continue;
-        }
-
-        if (
-          batchElement.deployMetaData.shouldRedeploy &&
-          !batchElement.deployMetaData.shouldRedeploy(batchElement)
-        ) {
-          continue;
-        }
-
-        this.prompter.bindingExecution(batchElement.name);
-        batchElement = await this.executeSingleBinding(
-          moduleName,
-          batchElement,
-          moduleState,
-          true
-        );
-        promiseTxReceipt.push(
-          batchElement.txData.input.wait(this.blockConfirmation)
-        );
-      }
-
-      const txReceipt: { [txHash: string]: TransactionReceipt } = {};
-      (await Promise.all(promiseTxReceipt)).forEach(
-        (v: TransactionReceipt | any) => {
-          if (v && v.transactionHash) {
-            txReceipt[v.transactionHash] = v;
-          }
-        }
-      );
-
-      await this.executeEvents(
-        moduleName,
-        moduleState,
-        batch,
-        batch.length - promiseTxReceipt.length
-      );
-
-      for (const batchElement of batch) {
-        if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
-          const txHash = batchElement.txData.input.hash;
-          if (!checkIfExist(txReceipt[txHash])) {
-            continue;
-          }
-
-          batchElement.txData.output = txReceipt[txHash];
-
-          batchElement.deployMetaData.contractAddress =
-            batchElement.txData.output.contractAddress;
-          if (!checkIfExist(batchElement.deployMetaData?.lastEventName)) {
-            batchElement.deployMetaData.logicallyDeployed = true;
-          }
-
-          moduleState[batchElement.name] = batchElement;
-
-          if (
-            checkIfExist(registry) &&
-            checkIfExist(batchElement?.deployMetaData?.contractAddress)
-          ) {
-            await registry?.setAddress(
-              this.networkId,
-              moduleName,
-              batchElement.name,
-              batchElement?.deployMetaData?.contractAddress as string
-            );
-          }
-
-          await this.moduleStateRepo.storeSingleBinding(batchElement);
-          this.prompter.finishedBindingExecution(batchElement.name);
-        }
-      }
-    }
-  }
-
-  private async executeEvents(
-    moduleName: string,
-    moduleState: ModuleState,
-    batch: any,
-    numberOfEvents: number
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        this.eventSession.run(async () => {
-          this.eventSession.set(clsNamespaces.PARALLELIZE, true);
-
-          const eventPromise = [];
-          for (let i = 0; i < batch.length; i++) {
-            const batchElement = batch[i];
-            if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
-              continue;
-            }
-
-            this.prompter.eventExecution(
-              (batchElement as StatefulEvent).event.name
-            );
-            eventPromise.push(
-              this.executeEvent(
-                moduleName,
-                batchElement as StatefulEvent,
-                moduleState
-              )
-            );
-          }
-
-          await Promise.all(eventPromise);
-          resolve();
-        });
-      } catch (e) {
-        reject(e);
-      }
-    });
-  }
-
-  private async handleElement(
-    currentBatch: number,
-    batches: any[],
-    element: ContractBinding | StatefulEvent,
-    moduleState: ModuleState,
-    elementsBatches: any
-  ) {
-    if (checkIfExist((element as ContractBinding)?.bytecode)) {
-      element = element as ContractBinding;
-      if (checkIfExist(elementsBatches[element.name])) {
-        return;
-      }
-
-      for (const arg of element.args) {
-        if (!checkIfExist(arg?.bytecode)) {
-          continue;
-        }
-
-        const argBinding = moduleState[arg.name];
-        if (!checkIfExist(argBinding)) {
-          throw new NoContractBindingDataInModuleState(element.name, arg.name);
-        }
-
-        if (checkIfExist(elementsBatches[arg.name])) {
-          currentBatch =
-            currentBatch < elementsBatches[arg.name] + 1
-              ? elementsBatches[arg.name] + 1
-              : currentBatch;
-          continue;
-        }
-
-        await this.handleElement(
-          currentBatch,
-          batches,
-          argBinding,
-          moduleState,
-          elementsBatches
-        );
-        currentBatch = elementsBatches[element.name] + 1;
-      }
-
-      if (!checkIfExist(batches[currentBatch])) {
-        batches[currentBatch] = [];
-      }
-      batches[currentBatch].push(element);
-
-      elementsBatches[element.name] = currentBatch;
-
-      return;
-    }
-
-    element = element as StatefulEvent;
-    const event = element.event;
-
-    if (checkIfExist(event.eventType)) {
-      await TxExecutor.handleEvent(
-        event,
-        element,
-        currentBatch,
-        batches,
-        moduleState,
-        elementsBatches
-      );
-    }
-  }
-
-  private static async handleEvent(
+  private static async _handleEvent(
     event: Event,
     element: StatefulEvent,
     currentBatch: number,
@@ -561,7 +108,87 @@ export class TxExecutor {
     }
   }
 
-  async executeModuleEvents(
+  private readonly _networkId: string;
+  private readonly _parallelize: boolean;
+
+  private _prompter: ILogging;
+  private _moduleStateRepo: ModuleStateRepo;
+  private _txGenerator: EthTxGenerator;
+  private _ethers: providers.JsonRpcProvider;
+  private _eventHandler: EventHandler;
+  private _eventSession: Namespace;
+  private _eventTxExecutor: EventTxExecutor;
+  private readonly _blockConfirmation: number;
+
+  constructor(
+    prompter: ILogging,
+    moduleState: ModuleStateRepo,
+    txGenerator: EthTxGenerator,
+    networkId: string,
+    ethers: providers.JsonRpcProvider,
+    eventHandler: EventHandler,
+    eventSession: Namespace,
+    eventTxExecutor: EventTxExecutor,
+    parallelize: boolean = false
+  ) {
+    this._prompter = prompter;
+    this._moduleStateRepo = moduleState;
+    this._txGenerator = txGenerator;
+
+    this._ethers = ethers;
+    this._eventHandler = eventHandler;
+    this._networkId = networkId;
+    this._parallelize = parallelize;
+    this._eventSession = eventSession;
+    this._eventTxExecutor = eventTxExecutor;
+
+    this._blockConfirmation = +(process.env.BLOCK_CONFIRMATION_NUMBER ?? 1);
+  }
+
+  public async execute(
+    moduleName: string,
+    moduleState: ModuleState,
+    registry: IModuleRegistryResolver | undefined,
+    resolver: IModuleRegistryResolver | undefined,
+    moduleConfig: ModuleConfig | undefined
+  ): Promise<void> {
+    // store everything before execution is started
+    await this._moduleStateRepo.storeNewState(moduleName, moduleState);
+
+    if (this._parallelize) {
+      this._prompter.startModuleDeploy(moduleName, moduleState);
+      this._prompter.parallelizationExperimental();
+      if (!checkIfExist(moduleState)) {
+        this._prompter.nothingToDeploy();
+      }
+
+      await this._executeParallel(
+        moduleName,
+        moduleState,
+        registry,
+        resolver,
+        moduleConfig
+      );
+
+      return;
+    }
+
+    this._prompter.startModuleDeploy(moduleName, moduleState);
+    if (!checkIfExist(moduleState)) {
+      this._prompter.nothingToDeploy();
+    }
+
+    await this._executeSync(
+      moduleName,
+      moduleState,
+      registry,
+      resolver,
+      moduleConfig
+    );
+    return;
+  }
+
+  public async executeModuleEvents(
     moduleName: string,
     moduleState: ModuleState,
     moduleEvents: { [name: string]: ModuleEvent }
@@ -569,7 +196,7 @@ export class TxExecutor {
     ModuleResolver.handleModuleEvents(moduleState, moduleEvents);
 
     for (const [eventName, event] of Object.entries(moduleEvents)) {
-      await this.executeEvent(
+      await this._executeEvent(
         moduleName,
         moduleState[eventName] as StatefulEvent,
         moduleState
@@ -577,19 +204,393 @@ export class TxExecutor {
     }
   }
 
-  private async executeEvent(
+  private async _executeSync(
+    moduleName: string,
+    moduleState: ModuleState,
+    registry: IModuleRegistryResolver | undefined,
+    resolver: IModuleRegistryResolver | undefined,
+    moduleConfig: ModuleConfig | undefined
+  ): Promise<void> {
+    for (let [elementName, element] of Object.entries(moduleState)) {
+      if (checkIfExist((element as ContractBinding)?.bytecode)) {
+        element = element as ContractBinding;
+
+        const contractAddress = await resolver?.resolveContract(
+          this._networkId,
+          moduleName,
+          elementName
+        );
+
+        // check if already deployed
+        if (checkIfExist(element.deployMetaData?.contractAddress)) {
+          this._prompter.alreadyDeployed(elementName);
+          await this._prompter.promptContinueDeployment();
+          this._prompter.finishedBindingExecution(elementName);
+          continue;
+        }
+
+        // if contract is present in registry it would be resolved thought resolver
+        if (checkIfExist(contractAddress)) {
+          element.deployMetaData.contractAddress = contractAddress as string;
+          this._prompter.alreadyDeployed(elementName);
+          await this._moduleStateRepo.storeSingleBinding(
+            element as ContractBinding
+          );
+          this._prompter.finishedBindingExecution(elementName);
+          continue;
+        }
+
+        // in case if it is specified in module config for contract not to be deployed
+        if (
+          moduleConfig !== undefined &&
+          moduleConfig.contract !== undefined &&
+          checkIfExist(moduleConfig.contract[element.name]) &&
+          !moduleConfig.contract[element.name].deploy
+        ) {
+          continue;
+        }
+
+        // executing user defined shouldRedeploy function and skipping execution if user desired that.
+        if (
+          element.deployMetaData.shouldRedeploy !== undefined &&
+          !element.deployMetaData.shouldRedeploy(element)
+        ) {
+          continue;
+        }
+
+        this._prompter.bindingExecution(element.name);
+        element = await this._executeSingleBinding(
+          moduleName,
+          element as ContractBinding,
+          moduleState
+        );
+        element.deployMetaData.contractAddress =
+          element?.txData?.output?.contractAddress;
+        if (!checkIfExist(element.deployMetaData?.lastEventName)) {
+          element.deployMetaData.logicallyDeployed = true;
+        }
+
+        if (
+          checkIfExist(registry) &&
+          checkIfExist(element?.deployMetaData?.contractAddress)
+        ) {
+          await registry?.setAddress(
+            this._networkId,
+            moduleName,
+            element.name,
+            element?.deployMetaData?.contractAddress as string
+          );
+        }
+
+        await this._moduleStateRepo.storeSingleBinding(element);
+        this._prompter.finishedBindingExecution(element.name);
+        continue;
+      }
+
+      this._prompter.eventExecution((element as StatefulEvent).event.name);
+      await this._executeEvent(
+        moduleName,
+        element as StatefulEvent,
+        moduleState
+      );
+    }
+  }
+
+  private async _executeParallel(
+    moduleName: string,
+    moduleState: ModuleState,
+    registry: IModuleRegistryResolver | undefined,
+    resolver: IModuleRegistryResolver | undefined,
+    moduleConfig: ModuleConfig | undefined
+  ): Promise<void> {
+    const batches: [] = [];
+
+    const elementsBatches: { [elementName: string]: number } = {};
+
+    // batched libraries in first batch, if they exist
+    let hasLibraries = false;
+    for (let [, element] of Object.entries(moduleState)) {
+      if (checkIfExist((element as ContractBinding)?.bytecode)) {
+        element = element as ContractBinding;
+        if (element.library) {
+          await this._handleElement(
+            0,
+            batches,
+            element,
+            moduleState,
+            elementsBatches
+          );
+          hasLibraries = true;
+        }
+      }
+    }
+
+    // batching elements depending on dependant tree depth.
+    for (const [, element] of Object.entries(moduleState)) {
+      if (hasLibraries) {
+        await this._handleElement(
+          1,
+          batches,
+          element,
+          moduleState,
+          elementsBatches
+        );
+        continue;
+      }
+
+      await this._handleElement(
+        0,
+        batches,
+        element,
+        moduleState,
+        elementsBatches
+      );
+    }
+
+    // batched execution
+    await this._executeBatches(
+      moduleName,
+      batches,
+      moduleState,
+      registry,
+      resolver,
+      moduleConfig
+    );
+  }
+
+  private async _executeBatches(
+    moduleName: string,
+    batches: any[],
+    moduleState: ModuleState,
+    registry?: IModuleRegistryResolver,
+    resolver?: IModuleRegistryResolver,
+    moduleConfig?: ModuleConfig
+  ) {
+    for (const batch of batches) {
+      const promiseTxReceipt = [];
+      for (let batchElement of batch) {
+        if (!checkIfExist((batchElement as ContractBinding)?.bytecode)) {
+          continue;
+        }
+
+        const contractAddress = await resolver?.resolveContract(
+          this._networkId,
+          moduleName,
+          batchElement.name
+        );
+
+        batchElement = batchElement as ContractBinding;
+        if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
+          this._prompter.alreadyDeployed(batchElement.name);
+          this._prompter.finishedBindingExecution(batchElement.name);
+          continue;
+        }
+
+        if (checkIfExist(contractAddress)) {
+          batchElement.deployMetaData.contractAddress = contractAddress as string;
+          await this._moduleStateRepo.storeSingleBinding(
+            batchElement as ContractBinding
+          );
+          continue;
+        }
+
+        if (
+          moduleConfig !== undefined &&
+          moduleConfig.contract[batchElement.name] !== undefined &&
+          checkIfExist(moduleConfig.contract[batchElement.name]) &&
+          !moduleConfig.contract[batchElement.name].deploy
+        ) {
+          continue;
+        }
+
+        if (
+          batchElement.deployMetaData.shouldRedeploy &&
+          !batchElement.deployMetaData.shouldRedeploy(batchElement)
+        ) {
+          continue;
+        }
+
+        this._prompter.bindingExecution(batchElement.name);
+        batchElement = await this._executeSingleBinding(
+          moduleName,
+          batchElement,
+          moduleState,
+          true
+        );
+        promiseTxReceipt.push(
+          batchElement.txData.input.wait(this._blockConfirmation)
+        );
+      }
+
+      const txReceipt: { [txHash: string]: TransactionReceipt } = {};
+      (await Promise.all(promiseTxReceipt)).forEach(
+        (v: TransactionReceipt | any) => {
+          if (v && v.transactionHash) {
+            txReceipt[v.transactionHash] = v;
+          }
+        }
+      );
+
+      await this._executeEvents(
+        moduleName,
+        moduleState,
+        batch,
+        batch.length - promiseTxReceipt.length
+      );
+
+      for (const batchElement of batch) {
+        if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
+          const txHash = batchElement.txData.input.hash;
+          if (!checkIfExist(txReceipt[txHash])) {
+            continue;
+          }
+
+          batchElement.txData.output = txReceipt[txHash];
+
+          batchElement.deployMetaData.contractAddress =
+            batchElement.txData.output.contractAddress;
+          if (!checkIfExist(batchElement.deployMetaData?.lastEventName)) {
+            batchElement.deployMetaData.logicallyDeployed = true;
+          }
+
+          moduleState[batchElement.name] = batchElement;
+
+          if (
+            checkIfExist(registry) &&
+            checkIfExist(batchElement?.deployMetaData?.contractAddress)
+          ) {
+            await registry?.setAddress(
+              this._networkId,
+              moduleName,
+              batchElement.name,
+              batchElement?.deployMetaData?.contractAddress as string
+            );
+          }
+
+          await this._moduleStateRepo.storeSingleBinding(batchElement);
+          this._prompter.finishedBindingExecution(batchElement.name);
+        }
+      }
+    }
+  }
+
+  private async _executeEvents(
+    moduleName: string,
+    moduleState: ModuleState,
+    batch: any,
+    numberOfEvents: number
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this._eventSession.run(async () => {
+          this._eventSession.set(ClsNamespaces.PARALLELIZE, true);
+
+          const eventPromise = [];
+          for (const batchElement of batch) {
+            if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
+              continue;
+            }
+
+            this._prompter.eventExecution(
+              (batchElement as StatefulEvent).event.name
+            );
+            eventPromise.push(
+              this._executeEvent(
+                moduleName,
+                batchElement as StatefulEvent,
+                moduleState
+              )
+            );
+          }
+
+          await Promise.all(eventPromise);
+          resolve();
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  private async _handleElement(
+    currentBatch: number,
+    batches: any[],
+    element: ContractBinding | StatefulEvent,
+    moduleState: ModuleState,
+    elementsBatches: { [name: string]: number }
+  ) {
+    if (checkIfExist((element as ContractBinding)?.bytecode)) {
+      element = element as ContractBinding;
+      if (checkIfExist(elementsBatches[element.name])) {
+        return;
+      }
+
+      for (const arg of element.args) {
+        if (!checkIfExist(arg?.bytecode)) {
+          continue;
+        }
+
+        const argBinding = moduleState[arg.name];
+        if (!checkIfExist(argBinding)) {
+          throw new NoContractBindingDataInModuleState(element.name, arg.name);
+        }
+
+        if (checkIfExist(elementsBatches[arg.name])) {
+          currentBatch =
+            currentBatch < elementsBatches[arg.name] + 1
+              ? elementsBatches[arg.name] + 1
+              : currentBatch;
+          continue;
+        }
+
+        await this._handleElement(
+          currentBatch,
+          batches,
+          argBinding,
+          moduleState,
+          elementsBatches
+        );
+        currentBatch = elementsBatches[element.name] + 1;
+      }
+
+      if (!checkIfExist(batches[currentBatch])) {
+        batches[currentBatch] = [];
+      }
+      batches[currentBatch].push(element);
+
+      elementsBatches[element.name] = currentBatch;
+
+      return;
+    }
+
+    element = element as StatefulEvent;
+    const event = element.event;
+
+    if (checkIfExist(event.eventType)) {
+      await TxExecutor._handleEvent(
+        event,
+        element,
+        currentBatch,
+        batches,
+        moduleState,
+        elementsBatches
+      );
+    }
+  }
+
+  private async _executeEvent(
     moduleName: string,
     event: StatefulEvent,
     moduleState: ModuleState
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.eventSession.run(async () => {
+      this._eventSession.run(async () => {
         try {
-          this.eventSession.set(clsNamespaces.EVENT_NAME, event.event.name);
+          this._eventSession.set(ClsNamespaces.EVENT_NAME, event.event.name);
 
           switch (event.event.eventType) {
             case EventType.BeforeDeployEvent: {
-              await this.eventHandler.executeBeforeDeployEventHook(
+              await this._eventHandler.executeBeforeDeployEventHook(
                 moduleName,
                 event.event as BeforeDeployEvent,
                 moduleState
@@ -597,7 +598,7 @@ export class TxExecutor {
               break;
             }
             case EventType.AfterDeployEvent: {
-              await this.eventHandler.executeAfterDeployEventHook(
+              await this._eventHandler.executeAfterDeployEventHook(
                 moduleName,
                 event.event as AfterDeployEvent,
                 moduleState
@@ -605,7 +606,7 @@ export class TxExecutor {
               break;
             }
             case EventType.BeforeCompileEvent: {
-              await this.eventHandler.executeBeforeCompileEventHook(
+              await this._eventHandler.executeBeforeCompileEventHook(
                 moduleName,
                 event.event as BeforeCompileEvent,
                 moduleState
@@ -613,7 +614,7 @@ export class TxExecutor {
               break;
             }
             case EventType.AfterCompileEvent: {
-              await this.eventHandler.executeAfterCompileEventHook(
+              await this._eventHandler.executeAfterCompileEventHook(
                 moduleName,
                 event.event as AfterCompileEvent,
                 moduleState
@@ -621,7 +622,7 @@ export class TxExecutor {
               break;
             }
             case EventType.OnChangeEvent: {
-              await this.eventHandler.executeOnChangeEventHook(
+              await this._eventHandler.executeOnChangeEventHook(
                 moduleName,
                 event.event as OnChangeEvent,
                 moduleState
@@ -629,7 +630,7 @@ export class TxExecutor {
               break;
             }
             case EventType.OnStart: {
-              await this.eventHandler.executeOnStartModuleEventHook(
+              await this._eventHandler.executeOnStartModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
                 moduleState
@@ -637,7 +638,7 @@ export class TxExecutor {
               break;
             }
             case EventType.OnCompletion: {
-              await this.eventHandler.executeOnCompletionModuleEventHook(
+              await this._eventHandler.executeOnCompletionModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
                 moduleState
@@ -645,7 +646,7 @@ export class TxExecutor {
               break;
             }
             case EventType.OnSuccess: {
-              await this.eventHandler.executeOnSuccessModuleEventHook(
+              await this._eventHandler.executeOnSuccessModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
                 moduleState
@@ -653,7 +654,7 @@ export class TxExecutor {
               break;
             }
             case EventType.OnFail: {
-              await this.eventHandler.executeOnFailModuleEventHook(
+              await this._eventHandler.executeOnFailModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
                 moduleState
@@ -672,7 +673,7 @@ export class TxExecutor {
           if (checkIfExist((event.event as ContractEvent)?.deps)) {
             const deps = (event.event as ContractEvent).deps;
             for (const depName of deps) {
-              await this.moduleStateRepo.storeSingleBinding(
+              await this._moduleStateRepo.storeSingleBinding(
                 moduleState[depName] as ContractBinding
               );
             }
@@ -686,7 +687,7 @@ export class TxExecutor {
     });
   }
 
-  private async executeSingleBinding(
+  private async _executeSingleBinding(
     moduleName: string,
     binding: ContractBinding,
     moduleState: ModuleState,
@@ -699,30 +700,32 @@ export class TxExecutor {
     }
 
     binding.abi = binding.abi as JsonFragment[];
-    for (let i = 0; i < binding.abi.length; i++) {
-      const abi = binding.abi[i];
-
-      if (abi.type == CONSTRUCTOR_TYPE && abi.inputs) {
+    for (const abi of binding.abi) {
+      if (abi.type === CONSTRUCTOR_TYPE && abi.inputs !== undefined) {
         constructorFragmentInputs = abi.inputs;
         break;
       }
     }
 
-    if (binding?.deployMetaData?.deploymentSpec?.deployFn) {
+    if (binding?.deployMetaData?.deploymentSpec?.deployFn !== undefined) {
       // @TODO this doesn't work when running parallelized
-      this.moduleStateRepo.setSingleEventName(`Deploy${binding.name}`);
+      this._moduleStateRepo.setSingleEventName(`Deploy${binding.name}`);
       const resp = await binding.deployMetaData.deploymentSpec.deployFn();
-      await this.moduleStateRepo.finishCurrentEvent(
+      await this._moduleStateRepo.finishCurrentEvent(
         moduleName,
         moduleState,
         `Deploy${binding.name}`
       );
 
       binding.deployMetaData.contractAddress = resp.contractAddress;
-      if (!binding.txData) {
-        binding.txData = {} as TransactionData;
+      if (binding.txData !== undefined) {
+        binding.txData = {
+          input: {
+            from: resp.transaction.from,
+          },
+          output: resp.transaction,
+        };
       }
-      binding.txData.output = resp.transaction;
       if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
         binding.deployMetaData.logicallyDeployed = true;
       }
@@ -739,7 +742,7 @@ export class TxExecutor {
     // constructor params validation
     for (let i = 0; i < constructorFragmentInputs?.length; i++) {
       switch (typeof binding.args[i]) {
-        case 'object': {
+        case "object": {
           if (binding.args[i]?._isBigNumber) {
             const value = binding.args[i].toString();
 
@@ -748,7 +751,7 @@ export class TxExecutor {
             break;
           }
 
-          if (binding.args[i]?.type == 'BigNumber') {
+          if (binding.args[i]?.type === "BigNumber") {
             const value = BigNumber.from(binding.args[i].hex).toString();
 
             values.push(value);
@@ -763,14 +766,14 @@ export class TxExecutor {
           }
 
           if (
-            'contract ' + binding.args[i].name !=
+            `contract ${binding.args[i].name}` !==
               constructorFragmentInputs[i].internalType &&
-            'address' != constructorFragmentInputs[i].type
+            "address" !== constructorFragmentInputs[i].type
           ) {
             throw new ContractTypeMismatch(
               `Unsupported type for - ${binding.name} \n provided: ${
                 binding.args[i].name
-              } \n expected: ${constructorFragmentInputs[i].internalType || ''}`
+              } \n expected: ${constructorFragmentInputs[i].internalType ?? ""}`
             );
           }
 
@@ -801,14 +804,14 @@ export class TxExecutor {
 
           break;
         }
-        case 'number': {
+        case "number": {
           values.push(binding.args[i]);
           types.push(constructorFragmentInputs[i].type);
 
           break;
         }
-        case 'string': {
-          if (constructorFragmentInputs[i].type == 'bytes') {
+        case "string": {
+          if (constructorFragmentInputs[i].type === "bytes") {
             values.push(Buffer.from(binding.args[i]));
             types.push(constructorFragmentInputs[i].type);
             break;
@@ -819,7 +822,7 @@ export class TxExecutor {
 
           break;
         }
-        case 'boolean': {
+        case "boolean": {
           values.push(binding.args[i]);
           types.push(constructorFragmentInputs[i].type);
 
@@ -834,30 +837,30 @@ export class TxExecutor {
     }
 
     bytecode = bytecode + abiCoder.encode(types, values).substring(2);
-    bytecode = await this.txGenerator.addLibraryAddresses(
+    bytecode = this._txGenerator.addLibraryAddresses(
       bytecode,
-      binding,
+      binding.libraries,
       moduleState
     );
 
-    const signedTx = await this.txGenerator.generateSingedTx(
+    const signedTx = await this._txGenerator.generateSingedTx(
       0,
       bytecode,
       binding.signer
     );
 
-    await this.prompter.promptSignedTransaction(signedTx);
-    await this.prompter.promptExecuteTx();
+    this._prompter.promptSignedTransaction(signedTx);
+    await this._prompter.promptExecuteTx();
 
     binding.txData = binding.txData as TransactionData;
     if (!parallelized) {
-      binding.txData.output = await this.sendTransactionAndWait(
+      binding.txData.output = await this._sendTransactionAndWait(
         binding.name,
         binding,
         signedTx
       );
     } else {
-      binding.txData.input = await this.sendTransaction(
+      binding.txData.input = await this._sendTransaction(
         binding.name,
         binding,
         signedTx
@@ -867,7 +870,7 @@ export class TxExecutor {
     return binding;
   }
 
-  private async sendTransaction(
+  private async _sendTransaction(
     elementName: string,
     binding: ContractBinding,
     signedTx: string
@@ -875,19 +878,19 @@ export class TxExecutor {
     return new Promise(async (resolve, reject) => {
       binding.txData = binding.txData as TransactionData;
 
-      this.prompter.sendingTx(elementName);
+      this._prompter.sendingTx(elementName);
       let txResp;
       try {
-        txResp = await this.ethers.sendTransaction(signedTx);
+        txResp = await this._ethers.sendTransaction(signedTx);
         resolve(txResp);
       } catch (e) {
         reject(new TransactionFailed(e.error.message));
       }
-      this.prompter.sentTx(elementName);
+      this._prompter.sentTx(elementName);
     });
   }
 
-  private async sendTransactionAndWait(
+  private async _sendTransactionAndWait(
     elementName: string,
     binding: ContractBinding,
     signedTx: string
@@ -895,24 +898,24 @@ export class TxExecutor {
     return new Promise(async (resolve, reject) => {
       try {
         binding.txData = binding.txData as TransactionData;
-        const txResp: TransactionResponse = await this.sendTransaction(
+        const txResp: TransactionResponse = await this._sendTransaction(
           elementName,
           binding,
           signedTx
         );
 
         binding.txData.input = txResp;
-        await this.moduleStateRepo.storeSingleBinding(binding);
+        await this._moduleStateRepo.storeSingleBinding(binding);
 
-        this.prompter.waitTransactionConfirmation();
-        this.prompter.transactionConfirmation(1, elementName);
+        this._prompter.waitTransactionConfirmation();
+        this._prompter.transactionConfirmation(1, elementName);
         let txReceipt = await txResp.wait(1);
         binding.txData.output = txReceipt;
-        await this.moduleStateRepo.storeSingleBinding(binding);
+        await this._moduleStateRepo.storeSingleBinding(binding);
 
         let currentConfirmation = 2;
-        while (currentConfirmation < this.blockConfirmation) {
-          this.prompter.transactionConfirmation(
+        while (currentConfirmation < this._blockConfirmation) {
+          this._prompter.transactionConfirmation(
             currentConfirmation,
             elementName
           );
@@ -920,11 +923,11 @@ export class TxExecutor {
           currentConfirmation++;
         }
 
-        txReceipt = await txResp.wait(this.blockConfirmation);
+        txReceipt = await txResp.wait(this._blockConfirmation);
         binding.txData.output = txReceipt;
-        await this.moduleStateRepo.storeSingleBinding(binding);
-        this.prompter.transactionConfirmation(
-          this.blockConfirmation,
+        await this._moduleStateRepo.storeSingleBinding(binding);
+        this._prompter.transactionConfirmation(
+          this._blockConfirmation,
           elementName
         );
 

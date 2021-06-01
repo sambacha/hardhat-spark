@@ -1,30 +1,30 @@
-import { ModuleStateRepo } from './states/state_repo';
-import { ModuleStateFile } from './states/module';
+import {
+  TransactionReceipt,
+  TransactionRequest,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider";
+import chalk from "chalk";
+import { BigNumber, ethers } from "ethers";
+
 import {
   ContractBindingMetaData,
   ContractInput,
   StatefulEvent,
   TxData,
-} from '../../interfaces/hardhat_ignition';
-import { BigNumber, ethers } from 'ethers';
-import { checkIfExist } from '../utils/util';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
-import { getIgnitionVersion } from '../utils/package_info';
-import {
-  TransactionReceipt,
-  TransactionRequest,
-  TransactionResponse,
-} from '@ethersproject/abstract-provider';
+} from "../../interfaces/hardhat_ignition";
+import { ModuleStateFile } from "../types/module";
+import { checkIfExist } from "../utils/util";
+
+import { ModuleStateRepo } from "./states/repo/state_repo";
 
 export enum SummaryType {
-  'EMPTY' = 'EMPTY',
-  'JSON' = 'JSON',
-  'SIMPLE' = 'SIMPLE',
-  'ALL' = 'ALL',
+  "EMPTY" = "EMPTY",
+  "JSON" = "JSON",
+  "SIMPLE" = "SIMPLE",
+  "ALL" = "ALL",
 }
 
-type SummaryDataOption = {
+interface SummaryDataOption {
   time: boolean;
   totalEthers: boolean;
   totalGas: boolean;
@@ -32,7 +32,7 @@ type SummaryDataOption = {
   numberOfContract: boolean;
   numberOfEvents: boolean;
   numberOfTransactions: boolean;
-};
+}
 
 const summaryDataOptions: { [type: string]: SummaryDataOption } = {
   EMPTY: {
@@ -65,28 +65,23 @@ const summaryDataOptions: { [type: string]: SummaryDataOption } = {
 };
 
 export class ModuleDeploymentSummaryService {
-  private readonly moduleStateRepo: ModuleStateRepo;
-  private startTime: Date;
+  private readonly _moduleStateRepo: ModuleStateRepo;
+  private _startTime: Date;
 
   constructor(
     moduleStateRepo: ModuleStateRepo,
     summaryType: SummaryType = SummaryType.SIMPLE
   ) {
-    this.moduleStateRepo = moduleStateRepo;
-    this.startTime = new Date();
+    this._moduleStateRepo = moduleStateRepo;
+    this._startTime = new Date();
   }
 
-  private endTimer() {
-    const endTime = new Date();
-    return (endTime.getTime() - this.startTime.getTime()) / 1000;
-  }
-
-  async showSummary(
+  public async showSummary(
     moduleName: string,
     oldModuleState: ModuleStateFile
   ): Promise<string> {
-    const elapsedTime = this.endTimer();
-    const currentModuleState = await this.moduleStateRepo.getStateIfExist(
+    const elapsedTime = this._endTimer();
+    const currentModuleState = await this._moduleStateRepo.getStateIfExist(
       moduleName
     );
 
@@ -101,7 +96,7 @@ export class ModuleDeploymentSummaryService {
         input: Array<
           ContractInput | TxData | TransactionResponse | TransactionRequest
         >;
-        output: Array<TransactionReceipt>;
+        output: TransactionReceipt[];
       } = {
         input: [],
         output: [],
@@ -109,7 +104,7 @@ export class ModuleDeploymentSummaryService {
       if ((element as StatefulEvent)._isStatefulEvent) {
         element = element as StatefulEvent;
         const oldElement = oldModuleState[elementName] as StatefulEvent;
-        if (oldElement?.executed == element?.executed) {
+        if (oldElement?.executed === element?.executed) {
           continue;
         }
 
@@ -119,7 +114,6 @@ export class ModuleDeploymentSummaryService {
 
         numberOfEvents = numberOfEvents.add(1);
         for (const [, txObject] of Object.entries(element.txData)) {
-          // @ts-ignore
           transactionReceiptList.input.push(...txObject.contractInput);
           transactionReceiptList.output.push(...txObject.contractOutput);
         }
@@ -131,25 +125,25 @@ export class ModuleDeploymentSummaryService {
           elementName
         ] as ContractBindingMetaData;
         if (
-          oldElement?.deployMetaData?.contractAddress ==
+          oldElement?.deployMetaData?.contractAddress ===
           element?.deployMetaData?.contractAddress
         ) {
           continue;
         }
 
-        if (!element.deployMetaData.contractAddress) {
+        if (element.deployMetaData.contractAddress === undefined) {
           continue;
         }
 
-        if (!checkIfExist(element.txData?.output)) {
+        if (checkIfExist(element.txData?.output) === undefined) {
           continue;
         }
 
         numberOfContracts = numberOfContracts.add(1);
 
-        if (element.txData) {
+        if (element.txData !== undefined) {
           transactionReceiptList.input.push(element.txData.input);
-          if (element.txData.output) {
+          if (element.txData.output !== undefined) {
             transactionReceiptList.output.push(element.txData.output);
           }
         }
@@ -164,14 +158,8 @@ export class ModuleDeploymentSummaryService {
 
           let inputGasPrice;
           let outputGasUsed = BigNumber.from(0);
-          if (singleTxOutput && singleTxOutput.gasUsed) {
-            // @ts-ignore
-            if (!singleTxOutput.gasUsed?.hex) {
-              outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
-            } else {
-              // @ts-ignore
-              outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
-            }
+          if (singleTxOutput.gasUsed?._hex !== undefined) {
+            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
           }
 
           if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
@@ -206,5 +194,10 @@ Spent ${chalk.bold(
 
 Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}.$timestamp.log
 `;
+  }
+
+  private _endTimer() {
+    const endTime = new Date();
+    return (endTime.getTime() - this._startTime.getTime()) / 1000;
   }
 }

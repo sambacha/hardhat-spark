@@ -1,11 +1,13 @@
+import { ethers } from "ethers";
+
+import { checkIfExist } from "../../services/utils/util";
 import {
   ContractBinding,
   ContractEvent,
   ModuleBuilder,
-} from '../hardhat_ignition';
-import { expectFuncRead, expectSlotRead } from './expectancy';
-import { ethers } from 'ethers';
-import { checkIfExist } from '../../services/utils/util';
+} from "../hardhat_ignition";
+
+import { expectFuncRead, expectSlotRead } from "./expectancy";
 
 /**
  * sendAfterDeploy is fastest way to set new value and validate if the same value is correctly set. It
@@ -28,34 +30,31 @@ export const sendAfterDeploy = (
     getterFunc?: string;
     getterArgs?: any[];
     expectedValue?: any;
-    deps?: (ContractBinding | ContractEvent)[];
+    deps?: Array<ContractBinding | ContractEvent>;
     slot?: string;
   }
 ): ContractEvent => {
-  const eventName = opts?.eventName
-    ? opts.eventName
-    : `mutator${setterFunc}${setter.name}`;
+  const eventName = opts?.eventName ?? `mutator${setterFunc}${setter.name}`;
   const getFunc = setterFunc.substring(3);
-  const getterFunc = opts?.getterFunc
-    ? opts.getterFunc
-    : `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
+  const getterFunc =
+    opts?.getterFunc ?? `${getFunc[0].toLowerCase() + getFunc.slice(1)}`;
 
   const deps = [];
-  if (opts?.deps) {
+  if (opts?.deps !== undefined) {
     deps.push(...opts.deps);
   }
 
-  const usages: (ContractBinding | ContractEvent)[] = [];
+  const usages: Array<ContractBinding | ContractEvent> = [];
   for (const arg of setterArgs) {
-    if (arg?._isContractBinding || checkIfExist(arg?.eventType)) {
+    if (arg?._isContractBinding !== undefined || checkIfExist(arg?.eventType)) {
       usages.push(arg);
     }
   }
 
   const value = setterArgs.pop();
   const keys = setterArgs;
-  const getterArgs = opts?.getterArgs ? opts.getterArgs : keys;
-  const expectedValue = opts?.expectedValue ? opts.expectedValue : value;
+  const getterArgs = opts?.getterArgs ?? keys;
+  const expectedValue = opts?.expectedValue ?? value;
 
   return m.group(setter, ...deps).afterDeploy(
     m,
@@ -63,7 +62,7 @@ export const sendAfterDeploy = (
     async (): Promise<void> => {
       await setter.deployed()[`${setterFunc}`](...keys, value);
 
-      if (opts?.slot) {
+      if (opts?.slot !== undefined) {
         await expectSlotRead(expectedValue, setter.deployed(), opts.slot);
         return;
       }
@@ -94,14 +93,14 @@ export const filler = (
   value?: ethers.BigNumberish | any
 ): void => {
   if (!value) {
-    value = ethers.utils.parseUnits('1', 'ether') as ethers.BigNumber;
+    value = ethers.utils.parseUnits("1", "ether") as ethers.BigNumber;
   }
-  m.onStart('on start distribute ethers to all accounts', async () => {
-    for (let i = 0; i < wallets.length; i++) {
+  m.onStart("on start distribute ethers to all accounts", async () => {
+    for (const wallet of wallets) {
       await rootWallet.sendTransaction({
         from: await rootWallet.getAddress(),
-        to: await wallets[i].getAddress(),
-        value: value,
+        to: await wallet.getAddress(),
+        value,
         gasLimit: 21000,
       });
     }

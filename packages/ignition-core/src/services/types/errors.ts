@@ -1,37 +1,29 @@
-import chalk from 'chalk';
-import { extractObjectInfo } from '../utils/util';
-import * as path from 'path';
-import {
-  BaseEvent,
-  ContractBinding,
-  ContractBindingMetaData,
-  EventType,
-  StatefulEvent,
-} from '../../interfaces/hardhat_ignition';
-import { ParamType } from '@ethersproject/abi';
-import { ethers } from 'ethers';
+import { ParamType } from "@ethersproject/abi";
+import chalk from "chalk";
+import { ethers } from "ethers";
+import * as path from "path";
 
 const EVENT_HOOK_DEFINITION_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const EVENT_LIFECYCLE_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const CONTACT_DEFINITION_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const MODULE_GROUPING_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const CONFIG_SCRIPT_DOCS =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const DEPLOYMENT_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const MACRO_HELPER_DOCS =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 const EVENT_HOOK_DEPS_DOCS_LINK =
-  'https://github.com/nomiclabs/hardhat-ignition/tree/main/docs';
+  "https://github.com/nomiclabs/hardhat-ignition/tree/main/docs";
 
-export enum ERROR_CODES {
-  NO_NETWORK = 'NO_NETWORK',
+export enum ErrorCodes {
+  NO_NETWORK = "NO_NETWORK",
 }
 
 export function handleMappedErrorCodes(
@@ -40,7 +32,7 @@ export function handleMappedErrorCodes(
 ): string {
   switch (errorCode) {
     case ethers.errors.NETWORK_ERROR:
-    case ERROR_CODES.NO_NETWORK: {
+    case ErrorCodes.NO_NETWORK: {
       const currentNetworkName = process.env.IGNITION_NETWORK_NAME;
       const rpcProvider = process.env.IGINITION_RPC_PROVIDER;
       return chalk.red(`No network running.
@@ -52,8 +44,7 @@ In a case that want to run a local rpc node, execute $ npx hardhat node
 `);
     }
     case ethers.errors.SERVER_ERROR: {
-      // @ts-ignore
-      return chalk.red(`${error.error.message}
+      return chalk.red(`${error.message}
 
 If you are running a local rpc node you can check node logs for more error information`);
     }
@@ -94,11 +85,9 @@ export class UserError extends Error {
 
 export class CliError extends Error {
   public _isCliError: boolean = true;
-  public message: string;
 
   constructor(message: string) {
-    super();
-    this.message = 'CLI error - ' + message;
+    super(message);
   }
 }
 
@@ -107,7 +96,7 @@ export class ServicesNotInitialized extends UserError {
     super(
       `Some services are not initialized inside the ignition.
 
-This is internal issue, please open github issue if this happend to you.`
+This is internal issue, please open github issue if this happened to you.`
     );
   }
 }
@@ -170,7 +159,7 @@ export class ContractNotCompiledError extends UserError {
     moduleName: string
   ) {
     super(`Contract is not compiled correctly.
-${chalk.bold('Library')} data is missing for ${chalk.bold(
+${chalk.bold("Library")} data is missing for ${chalk.bold(
       contractName
     )} contract inside module ${chalk.bold(moduleName)}.
 
@@ -204,7 +193,7 @@ export class ContractNotDeployedError extends UserError {
 If you want to use this contract inside of the event hook ${chalk.bold(
       eventName
     )}, you can utilize ${chalk.bold(
-      'm.group()'
+      "m.group()"
     )} to specify it as a dependency.
 Here is the link to the documentation: ${MODULE_GROUPING_DOCS_LINK}`);
   }
@@ -255,13 +244,10 @@ If you are not sure how to write ignition config, here is detailed documentation
 }
 
 export class ModuleAndModuleStateMismatchElementError extends UserError {
-  constructor(
-    moduleElement: StatefulEvent,
-    stateFileModuleElement: ContractBinding
-  ) {
+  constructor(moduleElementName: string, stateFileModuleElementName: string) {
     super(`Seems like ${chalk.bold(
-      moduleElement.event.name
-    )} is not the same type as ${chalk.bold(stateFileModuleElement.name)}.
+      moduleElementName
+    )} is not the same type as ${chalk.bold(stateFileModuleElementName)}.
 
 This can be caused if you have added a contract or an event in the middle of module dependency resolving.
 Here is a link to the detailed description of the module resolving process: ${MODULE_DEPENDENCIES_RESOLVING_DOCS_LINK}`);
@@ -284,8 +270,8 @@ Here is a link to the detailed description of the module resolving process, it c
 export class ModuleAndModuleStateEventTypeMismatchError extends UserError {
   constructor(
     currentEventName: string,
-    resolvedModuleStateElementEventType: EventType,
-    stateFileElementEventType: EventType
+    resolvedModuleStateElementEventType: string,
+    stateFileElementEventType: string
   ) {
     super(`You have changed the event hook type for the ${chalk.bold(
       currentEventName
@@ -324,7 +310,7 @@ Trying to call a contract function with invalid number of arguments for the ${ch
 
 The function interface is looking like this:
 ${functionName}(${args.map((v: ParamType, index) => {
-      if (index == arguments.length - 1) {
+      if (index === arguments.length - 1) {
         return `${v.type}`;
       }
 
@@ -386,9 +372,9 @@ export class GasPriceBackoffError extends UserError {
     )} wei.
 
 Ignition will wait for ${chalk.bold(
-      (numberOfRetries * backoffTime) / 1000 + 's'
+      `${((numberOfRetries * backoffTime) / 1000).toString()}s`
     )} and check the network gas price again. Current total wait time is ${chalk.bold(
-      (numberOfRetries * backoffTime) / 1000 + 's'
+      `${((numberOfRetries * backoffTime) / 1000).toString()}s`
     )}.
 `);
   }
@@ -413,11 +399,11 @@ If you are not sure how to define deployment file location in config script you 
 }
 
 export class EventUsageIsNotDeployed extends UserError {
-  constructor(currentEvent: BaseEvent, eventUsage: string) {
-    super(`The event ${chalk.bold(currentEvent.name)} is using ${chalk(
+  constructor(currentEventName: string, eventUsage: string) {
+    super(`The event ${chalk.bold(currentEventName)} is using ${chalk(
       eventUsage
     )} event, but the ${eventUsage} event still has ${chalk.bold(
-      'not yet been executed'
+      "not yet been executed"
     )}.
 
 Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK}
@@ -430,7 +416,7 @@ export class EventDependencyNotDeployedError extends UserError {
     super(`The event ${chalk.bold(eventName)} is depending on ${chalk(
       dep
     )} event, but the ${dep} event still has ${chalk.bold(
-      'not yet been executed'
+      "not yet been executed"
     )}.
 
 Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK}
@@ -439,11 +425,11 @@ Learn more about event dependencies and usages here: ${EVENT_HOOK_DEPS_DOCS_LINK
 }
 
 export class ModuleStateMismatchError extends UserError {
-  constructor(stateFileElement: ContractBindingMetaData, event: StatefulEvent) {
+  constructor(stateFileElementName: string, eventName: string) {
     super(`Seems like ${chalk.bold(
-      event.event.name
+      eventName
     )} event is not the same type as the ${chalk.bold(
-      stateFileElement.name
+      stateFileElementName
     )} contract binding.
 
 This can be caused if you have added a contract or an event in the middle of module dependency resolving.
@@ -459,7 +445,7 @@ export class MissingContractMetadata extends UserError {
     )}.
 
 Currently they are ${chalk.bold(
-      'missing'
+      "missing"
     )}, try to recompile them or manually fix the issue.
 `);
   }
@@ -468,7 +454,7 @@ Currently they are ${chalk.bold(
 export class NoNetworkError extends UserError {
   constructor(error: Error, rpcProvider: string) {
     super(`Ignition could ${chalk.bold(
-      'NOT DETECT'
+      "NOT DETECT"
     )} a running node at ${chalk.bold(rpcProvider)}.
 
 Please check if node is running and if you have configured rpc correctly.
@@ -600,4 +586,20 @@ export class MissingContractAddressInStateFile extends UserError {
   constructor(message: string) {
     super(message);
   }
+}
+
+function extractObjectInfo(obj: any): string {
+  if (obj._isBigNumber) {
+    return obj.toString();
+  }
+
+  if (obj._isContractBinding) {
+    return `${obj.name}(${obj.deployMetaData.contractAddress})`;
+  }
+
+  if (obj._isContractBindingMetaData) {
+    return obj.deployMetaData.contractAddress;
+  }
+
+  return "";
 }

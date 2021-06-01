@@ -12,31 +12,31 @@ import {
   ModuleEventFn,
   OnChangeEvent,
   StatefulEvent,
-} from '../../../interfaces/hardhat_ignition';
-import { checkIfExist } from '../../utils/util';
-import { ModuleStateRepo } from '../states/state_repo';
-import { ModuleState } from '../states/module';
-import { CliError, EventExecutionError } from '../../types/errors';
-import { ILogging } from '../../utils/logging';
+} from "../../../interfaces/hardhat_ignition";
+import { CliError, EventExecutionError } from "../../types/errors";
+import { ModuleState } from "../../types/module";
+import { ILogging } from "../../utils/logging";
+import { checkIfExist } from "../../utils/util";
+import { ModuleStateRepo } from "../states/repo/state_repo";
 
 export class EventHandler {
-  private readonly moduleState: ModuleStateRepo;
-  private readonly prompter: ILogging;
+  private readonly _moduleState: ModuleStateRepo;
+  private readonly _prompter: ILogging;
 
   constructor(moduleState: ModuleStateRepo, prompter: ILogging) {
-    this.moduleState = moduleState;
-    this.prompter = prompter;
+    this._moduleState = moduleState;
+    this._prompter = prompter;
   }
 
-  async executeBeforeCompileEventHook(
+  public async executeBeforeCompileEventHook(
     moduleName: string,
     event: BeforeCompileEvent,
     moduleState: ModuleState
   ): Promise<void> {
     const eventElement = moduleState[event.name] as StatefulEvent;
     if (eventElement.executed) {
-      this.prompter.alreadyDeployed(event.name);
-      this.prompter.finishedEventExecution(event.name, event.eventType);
+      this._prompter.alreadyDeployed(event.name);
+      this._prompter.finishedEventExecution(event.name, event.eventType);
 
       return;
     }
@@ -48,7 +48,7 @@ export class EventHandler {
     for (const dependencyName of deps) {
       if (!checkIfExist(moduleState[dependencyName])) {
         throw new CliError(
-          'Module state element that is part of event dependency is not contract.'
+          "Module state element that is part of event dependency is not contract."
         );
       }
 
@@ -56,7 +56,7 @@ export class EventHandler {
         !checkIfExist((moduleState[dependencyName] as ContractBinding).name) ||
         !checkIfExist((moduleState[dependencyName] as ContractBinding).args)
       ) {
-        throw new CliError('Desired contract is not yet been compiled.');
+        throw new CliError("Desired contract is not yet been compiled.");
       }
 
       if (
@@ -69,24 +69,24 @@ export class EventHandler {
       }
     }
 
-    await this.executeEvent(eventName, fn);
-    await this.moduleState.finishCurrentEvent(
+    await this._executeEvent(eventName, fn);
+    await this._moduleState.finishCurrentEvent(
       moduleName,
       moduleState,
       eventName
     );
-    this.prompter.finishedEventExecution(
+    this._prompter.finishedEventExecution(
       eventName,
       eventElement.event.eventType
     );
   }
 
-  async executeAfterCompileEventHook(
+  public async executeAfterCompileEventHook(
     moduleName: string,
     event: AfterCompileEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleCompiledBindingsEvents(
+    await this._handleCompiledBindingsEvents(
       moduleName,
       event.name,
       event.fn,
@@ -95,12 +95,12 @@ export class EventHandler {
     );
   }
 
-  async executeBeforeDeployEventHook(
+  public async executeBeforeDeployEventHook(
     moduleName: string,
     event: BeforeDeployEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleCompiledBindingsEvents(
+    await this._handleCompiledBindingsEvents(
       moduleName,
       event.name,
       event.fn,
@@ -109,12 +109,12 @@ export class EventHandler {
     );
   }
 
-  async executeAfterDeployEventHook(
+  public async executeAfterDeployEventHook(
     moduleName: string,
     event: AfterDeployEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleDeployedBindingsEvents(
+    await this._handleDeployedBindingsEvents(
       moduleName,
       event.name,
       event.fn,
@@ -123,12 +123,12 @@ export class EventHandler {
     );
   }
 
-  async executeOnChangeEventHook(
+  public async executeOnChangeEventHook(
     moduleName: string,
     event: OnChangeEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleDeployedBindingsEvents(
+    await this._handleDeployedBindingsEvents(
       moduleName,
       event.name,
       event.fn,
@@ -137,12 +137,12 @@ export class EventHandler {
     );
   }
 
-  async executeOnStartModuleEventHook(
+  public async executeOnStartModuleEventHook(
     moduleName: string,
     event: ModuleEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleModuleEventHooks(
+    await this._handleModuleEventHooks(
       moduleName,
       event.name,
       event.eventType,
@@ -151,12 +151,12 @@ export class EventHandler {
     );
   }
 
-  async executeOnCompletionModuleEventHook(
+  public async executeOnCompletionModuleEventHook(
     moduleName: string,
     event: ModuleEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleModuleEventHooks(
+    await this._handleModuleEventHooks(
       moduleName,
       event.name,
       event.eventType,
@@ -165,12 +165,12 @@ export class EventHandler {
     );
   }
 
-  async executeOnErrorModuleEventHook(
+  public async executeOnErrorModuleEventHook(
     moduleName: string,
     event: ModuleEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleModuleEventHooks(
+    await this._handleModuleEventHooks(
       moduleName,
       event.name,
       event.eventType,
@@ -179,12 +179,12 @@ export class EventHandler {
     );
   }
 
-  async executeOnSuccessModuleEventHook(
+  public async executeOnSuccessModuleEventHook(
     moduleName: string,
     event: ModuleEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleModuleEventHooks(
+    await this._handleModuleEventHooks(
       moduleName,
       event.name,
       event.eventType,
@@ -193,12 +193,12 @@ export class EventHandler {
     );
   }
 
-  async executeOnFailModuleEventHook(
+  public async executeOnFailModuleEventHook(
     moduleName: string,
     event: ModuleEvent,
     moduleState: ModuleState
   ): Promise<void> {
-    await this.handleModuleEventHooks(
+    await this._handleModuleEventHooks(
       moduleName,
       event.name,
       event.eventType,
@@ -207,7 +207,7 @@ export class EventHandler {
     );
   }
 
-  private async handleModuleEventHooks(
+  private async _handleModuleEventHooks(
     moduleName: string,
     eventName: string,
     eventType: EventType,
@@ -216,22 +216,22 @@ export class EventHandler {
   ) {
     const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      this.prompter.alreadyDeployed(eventName);
-      this.prompter.finishedEventExecution(eventName, eventType);
+      this._prompter.alreadyDeployed(eventName);
+      this._prompter.finishedEventExecution(eventName, eventType);
       return;
     }
 
-    await this.executeEvent(eventName, fn);
-    await this.moduleState.finishCurrentModuleEvent(
+    await this._executeEvent(eventName, fn);
+    await this._moduleState.finishCurrentModuleEvent(
       moduleName,
       moduleState,
       eventType,
       eventName
     );
-    this.prompter.finishedEventExecution(eventName, eventType);
+    this._prompter.finishedEventExecution(eventName, eventType);
   }
 
-  private async handleDeployedBindingsEvents(
+  private async _handleDeployedBindingsEvents(
     moduleName: string,
     eventName: string,
     fn: EventFnDeployed,
@@ -240,8 +240,8 @@ export class EventHandler {
   ) {
     const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      this.prompter.alreadyDeployed(eventName);
-      this.prompter.finishedEventExecution(
+      this._prompter.alreadyDeployed(eventName);
+      this._prompter.finishedEventExecution(
         eventName,
         eventElement.event.eventType
       );
@@ -254,7 +254,7 @@ export class EventHandler {
         checkIfExist((moduleState[dependencyName] as ContractBinding).bytecode)
       ) {
         throw new CliError(
-          'Module state element that is part of event dependency is not contract.'
+          "Module state element that is part of event dependency is not contract."
         );
       }
 
@@ -274,7 +274,7 @@ export class EventHandler {
 
       if (
         (moduleState[dependencyName] as ContractBinding).deployMetaData
-          ?.lastEventName == eventName
+          ?.lastEventName === eventName
       ) {
         (moduleState[
           dependencyName
@@ -282,19 +282,19 @@ export class EventHandler {
       }
     }
 
-    await this.executeEvent(eventName, fn);
-    await this.moduleState.finishCurrentEvent(
+    await this._executeEvent(eventName, fn);
+    await this._moduleState.finishCurrentEvent(
       moduleName,
       moduleState,
       eventName
     );
-    this.prompter.finishedEventExecution(
+    this._prompter.finishedEventExecution(
       eventName,
       eventElement.event.eventType
     );
   }
 
-  private async handleCompiledBindingsEvents(
+  private async _handleCompiledBindingsEvents(
     moduleName: string,
     eventName: string,
     fn: EventFnCompiled,
@@ -303,8 +303,8 @@ export class EventHandler {
   ) {
     const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      this.prompter.alreadyDeployed(eventName);
-      this.prompter.finishedEventExecution(
+      this._prompter.alreadyDeployed(eventName);
+      this._prompter.finishedEventExecution(
         eventName,
         eventElement.event.eventType
       );
@@ -317,7 +317,7 @@ export class EventHandler {
         checkIfExist((moduleState[dependencyName] as ContractBinding)?.bytecode)
       ) {
         throw new CliError(
-          'Module state element that is part of event dependency is not contract.'
+          "Module state element that is part of event dependency is not contract."
         );
       }
 
@@ -327,7 +327,7 @@ export class EventHandler {
         ) ||
         !checkIfExist((moduleState[dependencyName] as ContractBinding).abi)
       ) {
-        throw new CliError('Desired contract is not yet been compiled.');
+        throw new CliError("Desired contract is not yet been compiled.");
       }
 
       if (
@@ -340,20 +340,20 @@ export class EventHandler {
       }
     }
 
-    await this.executeEvent(eventName, fn);
-    await this.moduleState.finishCurrentEvent(
+    await this._executeEvent(eventName, fn);
+    await this._moduleState.finishCurrentEvent(
       moduleName,
       moduleState,
       eventName
     );
-    this.prompter.finishedEventExecution(
+    this._prompter.finishedEventExecution(
       eventName,
       eventElement.event.eventType
     );
   }
 
-  private async executeEvent(eventName: string, fn: EventFn) {
-    await this.moduleState.setSingleEventName(eventName);
+  private async _executeEvent(eventName: string, fn: EventFn) {
+    this._moduleState.setSingleEventName(eventName);
     try {
       await fn();
     } catch (e) {

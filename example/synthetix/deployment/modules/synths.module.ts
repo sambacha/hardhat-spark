@@ -10,7 +10,6 @@ const {
 export const SynthetixSynths = buildModule('SynthetixSynths', async (m: SynthetixModuleBuilder) => {
   const ExchangeRates = m.ExchangeRates;
 
-  // @ts-ignore
   for (const {name: currencyKey, subclass, asset} of m.synths) {
     const TokenStateForSynth = m.bindTemplate(`TokenState${currencyKey}`, 'TokenState', m.ETH_ADDRESS, ethers.constants.AddressZero);
 

@@ -1,397 +1,437 @@
-import React, { FC, ReactNode } from 'react';
-import { render } from 'ink';
-import { TerminalLayout } from './ui/layout/terminal';
-import { ModuleState } from '../../../modules/states/module';
-import { generateErrorMessage, ILogging } from '../index';
-import { getIgnitionVersion } from '../../package_info';
-import { ContractBinding, EventType, StatefulEvent } from '../../../../interfaces/hardhat_ignition';
-import { FileLogging } from '../file_logging';
-import { checkIfExist } from '../../util';
-import chalk from 'chalk';
-import { cli } from 'cli-ux';
-import { ConfirmationQuestion } from './ui/layout/confirmation_question';
-import { ModuleContextMissingInLogger } from '../../../types/errors';
+import chalk from "chalk";
+import { cli } from "cli-ux";
+import { render } from "ink";
+import React, { ReactNode } from "react";
 
-export enum ElementStatus {
-  'EMPTY' = 'EMPTY',
-  'IN_PROGRESS' = 'IN_PROGRESS',
-  'SUCCESSFULLY' = 'SUCCESSFULLY',
-}
+import { EventType } from "../../../../interfaces/hardhat_ignition";
+import { ModuleContextMissingInLogger } from "../../../types/errors";
+import { ElementStatus, ElementWithStatus } from "../../../types/logger";
+import { ModuleState } from "../../../types/module";
+import { getIgnitionVersion } from "../../package_info";
+import { checkIfExist } from "../../util";
+import { FileLogging } from "../file_logging";
+import { generateErrorMessage, ILogging } from "../index";
 
-export type ElementWithStatus = {
-  element: (ContractBinding | StatefulEvent);
-  status: ElementStatus;
-};
+import { ConfirmationQuestion } from "./ui/layout/confirmation_question";
+import { TerminalLayout } from "./ui/layout/terminal";
 
-// @ts-ignore
 export class OverviewLogger extends FileLogging implements ILogging {
-  private readonly rerender: { [moduleName: string]: ((node: ReactNode) => void) };
-  private readonly clear: { [moduleName: string]: (node: ReactNode) => void };
-  private readonly cleanup: { [moduleName: string]: (node: ReactNode) => void };
+  private readonly _rerender: {
+    [moduleName: string]: (node: ReactNode) => void;
+  };
+  private readonly _clear: { [moduleName: string]: (node: ReactNode) => void };
+  private readonly _cleanup: {
+    [moduleName: string]: (node: ReactNode) => void;
+  };
 
-  private showDeployment: boolean = false;
-  private moduleState: ModuleState | undefined;
-  private readonly ignitionVersion: string;
-  private numberOfExecutedElements: number = 0;
-  private totalNumberOfElements: number = 0;
-  private moduleElements: { [key: string]: ElementWithStatus } = {};
-
-  private moduleName: string | undefined;
+  private _showDeployment: boolean = false;
+  private _moduleState: ModuleState | undefined;
+  private readonly _ignitionVersion: string;
+  private _numberOfExecutedElements: number = 0;
+  private _totalNumberOfElements: number = 0;
+  private _moduleElements: { [key: string]: ElementWithStatus } = {};
 
   constructor() {
     super();
-    this.ignitionVersion = getIgnitionVersion() || 'v0';
+    let version = getIgnitionVersion();
+    if (version === undefined) {
+      version = "v0";
+    }
+    this._ignitionVersion = version;
 
-    this.rerender = {};
-    this.clear = {};
-    this.cleanup = {};
+    this._rerender = {};
+    this._clear = {};
+    this._cleanup = {};
   }
 
-  alreadyDeployed(elementName: string): void {
+  public alreadyDeployed(elementName: string): void {
     super.alreadyDeployed(elementName);
 
-    if (!this.moduleName) {
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
 
-    this.moduleElements[elementName].status = ElementStatus.SUCCESSFULLY;
+    this._moduleElements[elementName].status = ElementStatus.SUCCESSFULLY;
 
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+      />
+    );
   }
 
-  bindingExecution(bindingName: string): void {
+  public bindingExecution(bindingName: string): void {
     super.bindingExecution(bindingName);
 
-    this.moduleElements[bindingName].status = ElementStatus.IN_PROGRESS;
-    if (!this.moduleName) {
+    this._moduleElements[bindingName].status = ElementStatus.IN_PROGRESS;
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+      />
+    );
   }
 
-  logError(error: Error): void {
+  public logError(error: Error): void {
     super.logError(error);
 
-    const {
-      message: errorMessage,
-      stack: errorStack,
-    } = generateErrorMessage(error);
-    this.showDeployment = false;
+    const { message: errorMessage, stack: errorStack } = generateErrorMessage(
+      error
+    );
+    this._showDeployment = false;
 
-    if (!checkIfExist(this.moduleName)) {
+    if (!checkIfExist(this._moduleName)) {
       cli.info(chalk.red(errorMessage));
-      if (cli.config.outputLevel == 'debug') {
+      if (cli.config.outputLevel === "debug") {
         cli.info(errorStack);
       }
 
       return;
     }
-    if (!this.moduleName) {
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-      errorMessage={errorMessage}
-      errorStack={errorStack}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+        errorMessage={errorMessage}
+        errorStack={errorStack}
+      />
+    );
   }
 
-  eventExecution(eventName: string): void {
+  public eventExecution(eventName: string): void {
     super.eventExecution(eventName);
 
-    this.moduleElements[eventName].status = ElementStatus.IN_PROGRESS;
-    if (!this.moduleName) {
+    this._moduleElements[eventName].status = ElementStatus.IN_PROGRESS;
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+      />
+    );
   }
 
-  executeContractFunction(contractFunction: string): void {
+  public executeContractFunction(contractFunction: string): void {
     super.executeContractFunction(contractFunction);
   }
 
-  executeWalletTransfer(address: string, to: string): void {
+  public executeWalletTransfer(address: string, to: string): void {
     super.executeWalletTransfer(address, to);
   }
 
-  finishModuleDeploy(moduleName: string, summary: string): void {
+  public finishModuleDeploy(moduleName: string, summary: string): void {
     super.finishModuleDeploy(moduleName, summary);
-    if (!this.rerender[moduleName] && !checkIfExist(this.rerender[moduleName])) {
+    if (
+      this._rerender[moduleName] === undefined &&
+      !checkIfExist(this._rerender[moduleName])
+    ) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={summary}
-    />);
+    this._rerender[moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={summary}
+      />
+    );
   }
 
-  finishedBindingExecution(bindingName: string): void {
+  public finishedBindingExecution(bindingName: string): void {
     super.finishedBindingExecution(bindingName);
 
-    this.numberOfExecutedElements += 1;
-    this.moduleElements[bindingName].status = ElementStatus.SUCCESSFULLY;
-    if (!this.moduleName) {
+    this._numberOfExecutedElements += 1;
+    this._moduleElements[bindingName].status = ElementStatus.SUCCESSFULLY;
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+      />
+    );
   }
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
+  public finishedEventExecution(eventName: string, eventType: EventType): void {
     super.finishedEventExecution(eventName, eventType);
-    if (eventType == EventType.OnFail) {
+    if (eventType === EventType.OnFail) {
       return;
     }
 
-    this.numberOfExecutedElements += 1;
-    this.moduleElements[eventName].status = ElementStatus.SUCCESSFULLY;
-    if (!this.moduleName) {
+    this._numberOfExecutedElements += 1;
+    this._moduleElements[eventName].status = ElementStatus.SUCCESSFULLY;
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+      />
+    );
   }
 
-  finishedExecutionOfContractFunction(functionName: string): void {
+  public finishedExecutionOfContractFunction(functionName: string): void {
     super.finishedExecutionOfContractFunction(functionName);
   }
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {
     super.finishedExecutionOfWalletTransfer(from, to);
   }
 
-  finishedModuleUsageGeneration(moduleName: string) {
+  public finishedModuleUsageGeneration(moduleName: string) {
     super.finishedModuleUsageGeneration(moduleName);
   }
 
-  gasPriceIsLarge(backoffTime: number) {
+  public gasPriceIsLarge(backoffTime: number) {
     super.gasPriceIsLarge(backoffTime);
   }
 
-  generatedTypes(): void {
+  public generatedTypes(): void {
     super.generatedTypes();
   }
 
-  nothingToDeploy(): void {
+  public nothingToDeploy(): void {
     super.nothingToDeploy();
   }
 
-  parallelizationExperimental(): Promise<boolean> {
+  public parallelizationExperimental(): Promise<boolean> {
     return new Promise((resolve) => {
       super.parallelizationExperimental();
 
-      render(<ConfirmationQuestion
-        userPrompt={`${chalk.yellow('WARNING: This feature is experimental, please avoid using it while deploying to production')}
+      render(
+        <ConfirmationQuestion
+          userPrompt={`${chalk.yellow(
+            "WARNING: This feature is experimental, please avoid using it while deploying to production"
+          )}
 Confirm you are willing to continue?`}
-        resolve={resolve}
-      />);
+          resolve={resolve}
+        />
+      );
     });
   }
 
-  promptContinueDeployment(): Promise<void> {
+  public promptContinueDeployment(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  promptExecuteTx(): Promise<void> {
+  public promptExecuteTx(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  promptSignedTransaction(tx: string): void {
+  public promptSignedTransaction(tx: string): void {
     super.promptSignedTransaction(tx);
   }
 
-  sendingTx(elementName: string, functionName: string = 'CREATE'): void {
+  public sendingTx(elementName: string, functionName: string = "CREATE"): void {
     super.sendingTx(elementName, functionName);
 
-    const transactionStatus = 'Sending tx...';
-    if (!this.moduleName) {
+    const transactionStatus = "Sending tx...";
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={transactionStatus}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={transactionStatus}
+        summary={""}
+      />
+    );
   }
 
-  sentTx(elementName: string, functionName: string = 'CREATE'): void {
+  public sentTx(elementName: string, functionName: string = "CREATE"): void {
     super.sentTx(elementName, functionName);
 
-    const transactionStatus = 'Sent tx...';
-    if (!this.moduleName) {
+    const transactionStatus = "Sent tx...";
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={transactionStatus}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={transactionStatus}
+        summary={""}
+      />
+    );
   }
 
-  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
+  public startModuleDeploy(
+    moduleName: string,
+    moduleStates: ModuleState
+  ): void {
     super.startModuleDeploy(moduleName, moduleStates);
 
-    this.showDeployment = true;
-    this.moduleState = moduleStates;
-    this.moduleName = moduleName;
-    this.moduleElements = hydrateModuleWithStatus(moduleStates);
+    this._showDeployment = true;
+    this._moduleState = moduleStates;
+    this._moduleName = moduleName;
+    this._moduleElements = hydrateModuleWithStatus(moduleStates);
 
-    this.totalNumberOfElements = Object.entries(this.moduleElements).length;
-    this.numberOfExecutedElements = 0;
+    this._totalNumberOfElements = Object.entries(this._moduleElements).length;
+    this._numberOfExecutedElements = 0;
 
-    const {
-      rerender,
-      cleanup,
-      clear,
-    } = render(<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={''}
-      summary={''}
-    />);
+    const { rerender, cleanup, clear } = render(
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={""}
+        summary={""}
+      />
+    );
 
-    this.rerender[moduleName] = rerender;
-    this.clear[moduleName] = clear;
-    this.cleanup[this.moduleName] = cleanup;
+    this._rerender[moduleName] = rerender;
+    this._clear[moduleName] = clear;
+    this._cleanup[this._moduleName] = cleanup;
   }
 
-  startingModuleUsageGeneration(moduleName: string) {
+  public startingModuleUsageGeneration(moduleName: string) {
     super.startingModuleUsageGeneration(moduleName);
   }
 
-  transactionConfirmation(confirmationNumber: number, elementName: string, functionName: string = 'CREATE'): void {
-    super.transactionConfirmation(confirmationNumber, elementName, functionName);
+  public transactionConfirmation(
+    confirmationNumber: number,
+    elementName: string,
+    functionName: string = "CREATE"
+  ): void {
+    super.transactionConfirmation(
+      confirmationNumber,
+      elementName,
+      functionName
+    );
 
     const transactionStatus = `Waiting for block...`;
-    if (!this.moduleName) {
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={transactionStatus}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={transactionStatus}
+        summary={""}
+      />
+    );
   }
 
-  transactionReceipt(): void {
+  public transactionReceipt(): void {
     super.transactionReceipt();
   }
 
-  waitTransactionConfirmation(): void {
+  public waitTransactionConfirmation(): void {
     super.waitTransactionConfirmation();
-    const transactionStatus = 'Waiting for block...';
-    if (!this.moduleName) {
+    const transactionStatus = "Waiting for block...";
+    if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.rerender[this.moduleName](<TerminalLayout
-      showDeployment={this.showDeployment}
-      ignitionVersion={this.ignitionVersion}
-      moduleName={this.moduleName}
-      numberOfExecutedElements={this.numberOfExecutedElements}
-      totalNumberOfElements={this.totalNumberOfElements}
-      moduleElementsWithStatus={this.moduleElements}
-      transactionStatus={transactionStatus}
-      summary={''}
-    />);
+    this._rerender[this._moduleName](
+      <TerminalLayout
+        showDeployment={this._showDeployment}
+        ignitionVersion={this._ignitionVersion}
+        moduleName={this._moduleName}
+        numberOfExecutedElements={this._numberOfExecutedElements}
+        totalNumberOfElements={this._totalNumberOfElements}
+        moduleElementsWithStatus={this._moduleElements}
+        transactionStatus={transactionStatus}
+        summary={""}
+      />
+    );
   }
 
-  async wrongNetwork(): Promise<boolean> {
-    return new Promise(resolve => {
-      super.wrongNetwork();
+  public async wrongNetwork(): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      await super.wrongNetwork();
 
-      render(<ConfirmationQuestion
-        userPrompt={'Contracts are missing on the network, do you wish to continue?'}
-        resolve={resolve}
-      />);
+      render(
+        <ConfirmationQuestion
+          userPrompt={
+            "Contracts are missing on the network, do you wish to continue?"
+          }
+          resolve={resolve}
+        />
+      );
     });
   }
 
-  startModuleResolving(moduleName: string): void {
-  }
+  public startModuleResolving(moduleName: string): void {}
 
-  finishModuleResolving(moduleName: string): void {
-  }
+  public finishModuleResolving(moduleName: string): void {}
 
-  contractFunctionAlreadyExecuted(contractFunction: string, ...args: any[]): void {
-  }
+  public contractFunctionAlreadyExecuted(
+    contractFunction: string,
+    ...args: any[]
+  ): void {}
 }
 
-function hydrateModuleWithStatus(moduleState: ModuleState): { [key: string]: ElementWithStatus } {
+function hydrateModuleWithStatus(
+  moduleState: ModuleState
+): { [key: string]: ElementWithStatus } {
   const moduleWithStatus: { [key: string]: ElementWithStatus } = {};
   for (const [key, value] of Object.entries(moduleState)) {
     moduleWithStatus[key] = {

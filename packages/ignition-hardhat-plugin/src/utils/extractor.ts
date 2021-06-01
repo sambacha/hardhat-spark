@@ -1,16 +1,16 @@
-import {
-  HardhatUserConfig,
-  HttpNetworkAccountsUserConfig,
-  HttpNetworkConfig,
-} from 'hardhat/types';
-import { IgnitionParams, IgnitionRepos, IgnitionServices } from 'ignition-core';
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
+import { derivePrivateKeys } from "hardhat/internal/core/providers/util";
 import {
   HardhatNetworkAccountConfig,
   HardhatNetworkAccountsUserConfig,
   HardhatNetworkHDAccountsConfig,
-} from 'hardhat/src/types/config';
-import { derivePrivateKeys } from 'hardhat/internal/core/providers/util';
+} from "hardhat/src/types/config";
+import {
+  HardhatUserConfig,
+  HttpNetworkAccountsUserConfig,
+  HttpNetworkConfig,
+} from "hardhat/types";
+import { IgnitionParams, IgnitionRepos, IgnitionServices } from "ignition-core";
 
 const createSigners = (
   accounts:
@@ -20,16 +20,16 @@ const createSigners = (
   provider: ethers.providers.JsonRpcProvider
 ): ethers.Signer[] => {
   const signers: ethers.Signer[] = [];
-  if (!accounts) {
+  if (accounts === undefined) {
     return [];
   }
 
-  if (accounts == 'remote') {
+  if (accounts === "remote") {
     return [];
   }
 
   const accountsAsMnemonic = accounts as HardhatNetworkHDAccountsConfig;
-  if (accountsAsMnemonic?.mnemonic) {
+  if (accountsAsMnemonic?.mnemonic === undefined) {
     const privateKeys = derivePrivateKeys(
       accountsAsMnemonic.mnemonic,
       accountsAsMnemonic.path,
@@ -38,14 +38,16 @@ const createSigners = (
     );
 
     const wallets: ethers.Wallet[] = [];
-    for (let i = 0; i < privateKeys.length; i++) {
-      wallets.push(new ethers.Wallet(privateKeys[i], provider));
+    for (const item of privateKeys) {
+      wallets.push(new ethers.Wallet(item, provider));
     }
 
     return wallets;
   }
 
-  if ((accounts as HardhatNetworkAccountConfig[])[0]?.privateKey) {
+  if (
+    (accounts as HardhatNetworkAccountConfig[])[0]?.privateKey !== undefined
+  ) {
     for (const account of accounts as HardhatNetworkAccountConfig[]) {
       signers.push(new ethers.Wallet(account.privateKey, provider));
     }
@@ -68,7 +70,7 @@ export const extractDataFromConfig = (
   repos: IgnitionRepos;
   moduleParams: { [name: string]: any };
 } => {
-  if (!config || !config.networks) {
+  if (config?.networks === undefined) {
     return {
       params: {
         networkId,
@@ -83,7 +85,7 @@ export const extractDataFromConfig = (
   const ignition = config?.ignition;
 
   const networkUrl =
-    (networkConfig as HttpNetworkConfig)?.url || 'http://localhost:8545';
+    (networkConfig as HttpNetworkConfig)?.url ?? "http://localhost:8545";
 
   const provider = new ethers.providers.JsonRpcProvider(networkUrl, {
     name: networkName,
@@ -95,9 +97,9 @@ export const extractDataFromConfig = (
     networkId,
     localDeployment: networkConfig?.localDeployment,
     rpcProvider: provider,
-    signers: signers,
-    logging: ignition?.logging || true,
-    test: ignition?.test || false,
+    signers,
+    logging: ignition?.logging ?? true,
+    test: ignition?.test ?? false,
     parallelizeDeployment: networkConfig?.parallelizeDeployment,
     blockConfirmation: networkConfig?.blockConfirmation,
     gasPriceBackoffMechanism: networkConfig?.gasPriceBackoff,
@@ -118,6 +120,6 @@ export const extractDataFromConfig = (
     params,
     customServices,
     repos,
-    moduleParams: ignition?.moduleParams || {},
+    moduleParams: ignition?.moduleParams ?? {},
   };
 };

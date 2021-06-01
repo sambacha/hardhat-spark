@@ -1,323 +1,324 @@
-import { generateErrorMessage, ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import { SingleBar } from 'cli-progress';
-import cli from 'cli-ux';
-import chalk from 'chalk';
-import { checkIfExist } from '../util';
+import chalk from "chalk";
+import { SingleBar } from "cli-progress";
+import cli from "cli-ux";
+
+import { EventType } from "../../../interfaces/hardhat_ignition";
 import {
   CliError,
   DeniedConfirmation,
   ModuleContextMissingInLogger,
-} from '../../types/errors';
-import { FileLogging } from './file_logging';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+} from "../../types/errors";
+import { ModuleState } from "../../types/module";
+import { checkIfExist } from "../util";
+
+import { FileLogging } from "./file_logging";
+import { generateErrorMessage, ILogging } from "./index";
 
 export enum StateElementStatus {
-  'NOT_EXECUTED' = 'not executed',
-  'RUNNING' = 'running',
-  'SUCCESSFUL' = 'successful',
-  'DEPLOYED' = 'already executed/deployed',
-  'FAILED' = 'failed',
+  "NOT_EXECUTED" = "not executed",
+  "RUNNING" = "running",
+  "SUCCESSFUL" = "successful",
+  "DEPLOYED" = "already executed/deployed",
+  "FAILED" = "failed",
 }
 
 enum DescActionList {
-  'SKIPPED' = 'skipped',
-  'SUCCESSFUL' = 'SUCCESSFUL',
-  'CREATE' = 'create',
-  'LOWER_GAS_PRICE' = 'waiting for lower gas price',
+  "SKIPPED" = "skipped",
+  "SUCCESSFUL" = "SUCCESSFUL",
+  "CREATE" = "create",
+  "LOWER_GAS_PRICE" = "waiting for lower gas price",
 }
 
 export class SimpleOverviewLogger extends FileLogging implements ILogging {
-  private moduleBars: {
+  private _moduleBars: {
     [moduleName: string]: SingleBar;
   };
 
-  private currentModuleName: string | undefined;
+  private _currentModuleName: string | undefined;
 
   constructor() {
     super();
-    this.moduleBars = {};
+    this._moduleBars = {};
   }
 
-  gasPriceIsLarge(backoffTime: number) {
+  public gasPriceIsLarge(backoffTime: number) {
     super.gasPriceIsLarge(backoffTime);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
+    this._moduleBars[this._currentModuleName].update({
       action: DescActionList.LOWER_GAS_PRICE,
     });
   }
 
-  async parallelizationExperimental() {
+  public async parallelizationExperimental() {
     cli.info(
       chalk.yellow(
-        'WARNING: This feature is experimental, please avoid using it while deploying to production'
+        "WARNING: This feature is experimental, please avoid using it while deploying to production"
       )
     );
-    cli.confirm('Confirm you are willing to continue');
     const yes = await cli.confirm(
-      'Do you wish to continue with deployment of this module? (Y/n)'
+      "Do you wish to continue with deployment of this module? (Y/n)"
     );
     if (!yes) {
-      throw new DeniedConfirmation('Confirmation has been declined.');
+      throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {
     super.finishedExecutionOfWalletTransfer(from, to);
   }
 
-  executeWalletTransfer(address: string, to: string): void {
+  public executeWalletTransfer(address: string, to: string): void {
     super.finishedExecutionOfWalletTransfer(address, to);
   }
 
-  startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
+  public startModuleDeploy(moduleName: string, moduleState: ModuleState): void {
     super.startModuleDeploy(moduleName, moduleState);
 
-    this.currentModuleName = moduleName;
-    cli.info(chalk.bold('\n\nDeploy module - ', chalk.green(moduleName)));
+    this._currentModuleName = moduleName;
+    cli.info(chalk.bold("\n\nDeploy module - ", chalk.green(moduleName)));
 
-    this.moduleBars[moduleName] = new SingleBar({
+    this._moduleBars[moduleName] = new SingleBar({
       clearOnComplete: false,
       synchronousUpdate: true,
       fps: 100,
       format: `# ${chalk.bold(
-        '{module}'
+        "{module}"
       )} | {percentage}% | {value}/{total} | Current element: ${chalk.bold(
-        '{element}'
+        "{element}"
       )} -> status: {status} | Action: {action}`,
     });
-    this.moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
-      module: this.currentModuleName,
-      element: 'N/A',
-      status: 'N/A',
+    this._moduleBars[moduleName].start(Object.entries(moduleState).length, 0, {
+      module: this._currentModuleName,
+      element: "N/A",
+      status: "N/A",
     });
   }
 
-  alreadyDeployed(elementName: string): void {
+  public alreadyDeployed(elementName: string): void {
     super.alreadyDeployed(elementName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
 
-    this.moduleBars[this.currentModuleName].increment({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].increment({
+      module: this._currentModuleName,
       element: elementName,
       status: StateElementStatus.DEPLOYED,
       action: DescActionList.SKIPPED,
     });
   }
 
-  bindingExecution(bindingName: string): void {
+  public bindingExecution(bindingName: string): void {
     super.bindingExecution(bindingName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: bindingName,
       status: StateElementStatus.RUNNING,
       action: DescActionList.CREATE,
     });
   }
 
-  logError(error: Error): void {
+  public logError(error: Error): void {
     super.logError(error);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       return;
     }
-    if (!this.moduleBars[this.currentModuleName]) {
+    if (this._moduleBars[this._currentModuleName] === undefined) {
       return;
     }
 
-    this.moduleBars[this.currentModuleName].stop();
+    this._moduleBars[this._currentModuleName].stop();
     const { message, stack } = generateErrorMessage(error);
 
     cli.info(message);
   }
 
-  eventExecution(eventName: string): void {
+  public eventExecution(eventName: string): void {
     super.eventExecution(eventName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
-      action: 'N/A',
+      action: "N/A",
     });
   }
 
-  finishModuleDeploy(moduleName: string, summary: string): void {
+  public finishModuleDeploy(moduleName: string, summary: string): void {
     super.finishModuleDeploy(moduleName, summary);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
-      element: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
+      element: this._currentModuleName,
       status: StateElementStatus.SUCCESSFUL,
-      action: 'N/A',
+      action: "N/A",
     });
-    this.moduleBars[this.currentModuleName].stop();
+    this._moduleBars[this._currentModuleName].stop();
 
-    this.currentModuleName = '';
+    this._currentModuleName = "";
 
     cli.info(summary);
   }
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
+  public finishedEventExecution(eventName: string, eventType: EventType): void {
     super.finishedEventExecution(eventName, eventType);
 
-    this.handleElementCompletion(eventName);
+    this._handleElementCompletion(eventName);
   }
 
-  finishedBindingExecution(bindingName: string): void {
+  public finishedBindingExecution(bindingName: string): void {
     super.finishedBindingExecution(bindingName);
 
-    this.handleElementCompletion(bindingName);
+    this._handleElementCompletion(bindingName);
   }
 
-  private handleElementCompletion(elementName: string): void {
-    if (!this?.currentModuleName) {
-      throw new ModuleContextMissingInLogger();
-    }
-    this.moduleBars[this.currentModuleName].increment({
-      module: this.currentModuleName,
-      element: elementName,
-      status: StateElementStatus.SUCCESSFUL,
-      action: 'N/A',
-    });
-  }
-
-  finishedExecutionOfContractFunction(functionName: string): void {
+  public finishedExecutionOfContractFunction(functionName: string): void {
     super.finishedExecutionOfContractFunction(functionName);
   }
 
-  nothingToDeploy(): void {
+  public nothingToDeploy(): void {
     super.nothingToDeploy();
     cli.info(
-      'State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.'
+      "State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how."
     );
     cli.exit(0);
   }
 
-  promptContinueDeployment(): Promise<void> {
+  public promptContinueDeployment(): Promise<void> {
     // overview will not have confirmations
     return Promise.resolve();
   }
 
-  promptExecuteTx(): Promise<void> {
+  public promptExecuteTx(): Promise<void> {
     // overview will not have metadata
     return Promise.resolve();
   }
 
-  promptSignedTransaction(tx: string): void {
+  public promptSignedTransaction(tx: string): void {
     super.promptSignedTransaction(tx);
     // overview will not have metadata
     return;
   }
 
-  sendingTx(eventName: string, functionName: string = 'CREATE'): void {
+  public sendingTx(eventName: string, functionName: string = "CREATE"): void {
     super.sendingTx(eventName, functionName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+    if (!checkIfExist(this._moduleBars[this._currentModuleName])) {
       throw new CliError(
-        'Current module not found when trying to log transactions'
+        "Current module not found when trying to log transactions"
       );
     }
 
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: `${functionName} -> sending`,
     });
   }
 
-  sentTx(eventName: string, functionName: string = 'CREATE'): void {
+  public sentTx(eventName: string, functionName: string = "CREATE"): void {
     super.sentTx(eventName, functionName);
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
 
-    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+    if (!checkIfExist(this._moduleBars[this._currentModuleName])) {
       throw new CliError(
-        'Current module not found when trying to log transactions'
+        "Current module not found when trying to log transactions"
       );
     }
 
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: `${functionName} -> sent`,
     });
   }
 
-  transactionConfirmation(
+  public transactionConfirmation(
     confirmationNumber: number,
     eventName: string,
-    functionName: string = 'CREATE'
+    functionName: string = "CREATE"
   ): void {
     super.transactionConfirmation(confirmationNumber, eventName, functionName);
 
-    if (!this?.currentModuleName) {
+    if (this?._currentModuleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
-    if (!checkIfExist(this.moduleBars[this.currentModuleName])) {
+    if (!checkIfExist(this._moduleBars[this._currentModuleName])) {
       throw new CliError(
-        'Current module not found when trying to log transactions'
+        "Current module not found when trying to log transactions"
       );
     }
 
-    this.moduleBars[this.currentModuleName].update({
-      module: this.currentModuleName,
+    this._moduleBars[this._currentModuleName].update({
+      module: this._currentModuleName,
       element: eventName,
       status: StateElementStatus.RUNNING,
       action: `${functionName} -> confirmed ${confirmationNumber}`,
     });
   }
 
-  transactionReceipt(): void {
+  public transactionReceipt(): void {
     super.transactionReceipt();
   }
 
-  waitTransactionConfirmation(): void {
+  public waitTransactionConfirmation(): void {
     super.waitTransactionConfirmation();
   }
 
-  executeContractFunction(contractFunction: string): void {
+  public executeContractFunction(contractFunction: string): void {
     super.executeContractFunction(contractFunction);
   }
 
-  generatedTypes(): void {
+  public generatedTypes(): void {
     super.generatedTypes();
     cli.info(
-      'Successfully generated module types, look under your deployments folder for .d.ts file.'
+      "Successfully generated module types, look under your deployments folder for .d.ts file."
     );
   }
 
-  finishedModuleUsageGeneration(moduleName: string) {
+  public finishedModuleUsageGeneration(moduleName: string) {
     super.finishedModuleUsageGeneration(moduleName);
   }
 
-  startingModuleUsageGeneration(moduleName: string) {
+  public startingModuleUsageGeneration(moduleName: string) {
     super.startingModuleUsageGeneration(moduleName);
   }
 
-  async wrongNetwork(): Promise<boolean> {
-    super.wrongNetwork();
-    return await cli.confirm(
-      'Contracts are missing on the network, do you wish to continue? (Y/n)'
+  public async wrongNetwork(): Promise<boolean> {
+    await super.wrongNetwork();
+    return cli.confirm(
+      "Contracts are missing on the network, do you wish to continue? (Y/n)"
     );
   }
 
-  startModuleResolving(): void {}
+  public startModuleResolving(): void {}
 
-  finishModuleResolving(): void {}
+  public finishModuleResolving(): void {}
+
+  private _handleElementCompletion(elementName: string): void {
+    if (this?._currentModuleName === undefined) {
+      throw new ModuleContextMissingInLogger();
+    }
+    this._moduleBars[this._currentModuleName].increment({
+      module: this._currentModuleName,
+      element: elementName,
+      status: StateElementStatus.SUCCESSFUL,
+      action: "N/A",
+    });
+  }
 }

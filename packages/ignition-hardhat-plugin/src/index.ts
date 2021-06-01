@@ -1,20 +1,20 @@
-import './hardhat_plugin';
-
 import {
-  IgnitionCore,
   DeployArgs,
   DiffArgs,
   GenTypesArgs,
+  IGasProvider,
+  IgnitionCore,
   IgnitionParams,
-  IgnitionServices,
   IgnitionRepos,
-  ModuleParams,
-  Module,
+  IgnitionServices,
   IModuleRegistryResolver,
   INonceManager,
   ITransactionSigner,
-  IGasProvider,
-} from 'ignition-core';
+  Module,
+  ModuleParams,
+} from "ignition-core";
+
+import "./hardhat_plugin";
 
 export type Args = DeployArgs | DiffArgs | GenTypesArgs;
 
@@ -33,7 +33,7 @@ export interface IHardhatIgnition {
   genTypes(module: Module, deploymentFolder: string): Promise<void>;
 }
 
-export type HardhatIgnitionConfig = {
+export interface HardhatIgnitionConfig {
   logging?: boolean;
   test?: boolean;
   registry?: IModuleRegistryResolver;
@@ -42,10 +42,10 @@ export type HardhatIgnitionConfig = {
   nonceManager?: INonceManager;
   transactionSigner?: ITransactionSigner;
   moduleParams?: { [name: string]: any };
-};
+}
 
 export class HardhatIgnition implements IHardhatIgnition {
-  private readonly ignitionCore: IgnitionCore;
+  private readonly _ignitionCore: IgnitionCore;
 
   constructor(
     params: IgnitionParams,
@@ -53,33 +53,44 @@ export class HardhatIgnition implements IHardhatIgnition {
     repos: IgnitionRepos,
     moduleParams?: ModuleParams
   ) {
-    this.ignitionCore = new IgnitionCore(params, services, repos, moduleParams);
+    this._ignitionCore = new IgnitionCore(
+      params,
+      services,
+      repos,
+      moduleParams
+    );
   }
 
-  async init(logging: boolean = true, test: boolean = true): Promise<void> {
-    this.ignitionCore.params.logging = logging;
-    this.ignitionCore.params.test = test;
-    await this.ignitionCore.mustInit(this.ignitionCore.params);
+  public async init(
+    logging: boolean = true,
+    test: boolean = true
+  ): Promise<void> {
+    this._ignitionCore.params.logging = logging;
+    this._ignitionCore.params.test = test;
+    await this._ignitionCore.mustInit(this._ignitionCore.params);
   }
 
-  async deploy(
+  public async deploy(
     module: Module,
     networkName: string,
     logging?: boolean,
     test?: boolean
   ): Promise<void> {
-    await this.ignitionCore.deploy(networkName, module, logging, test);
+    await this._ignitionCore.deploy(networkName, module, logging, test);
   }
 
-  async diff(
+  public async diff(
     module: Module,
     networkName: string,
     logging?: boolean
   ): Promise<void> {
-    await this.ignitionCore.diff(networkName, module, logging);
+    await this._ignitionCore.diff(networkName, module, logging);
   }
 
-  async genTypes(module: Module, deploymentFolder: string): Promise<void> {
-    await this.ignitionCore.genTypes(module, deploymentFolder);
+  public async genTypes(
+    module: Module,
+    deploymentFolder: string
+  ): Promise<void> {
+    await this._ignitionCore.genTypes(module, deploymentFolder);
   }
 }

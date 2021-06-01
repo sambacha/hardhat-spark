@@ -1,52 +1,77 @@
-import { searchBuilds, searchModuleFilesName } from '../utils/files';
-import { Artifact } from 'hardhat/types';
-import * as path from 'path';
-import { JsonFragment, JsonFragmentType } from '../types/artifacts/abi';
+import { Artifact } from "hardhat/types";
+import * as path from "path";
+
+import { JsonFragment, JsonFragmentType } from "../types/artifacts/abi";
+import { searchBuilds, searchModuleFilesName } from "../utils/sol_files";
 
 export class SystemCrawlingService {
-  private readonly currentPath: string;
+  private static _filterArtifactsByName(
+    artifacts: Artifact[],
+    contractName: string
+  ): Artifact | undefined {
+    for (const artifact of artifacts) {
+      if (artifact.contractName === contractName) {
+        return artifact;
+      }
+    }
+
+    return undefined;
+  }
+
+  private static _filterArtifacts(artifacts: Artifact[]): Artifact[] {
+    const filteredArtifacts: Artifact[] = [];
+
+    for (const artifact of artifacts) {
+      if (artifact.bytecode !== "" && artifact.contractName !== "") {
+        filteredArtifacts.push(artifact);
+      }
+    }
+
+    return filteredArtifacts;
+  }
+  private readonly _currentPath: string;
 
   constructor(currentPath: string, folderName: string) {
-    this.currentPath = path.resolve(currentPath, folderName);
+    this._currentPath = path.resolve(currentPath, folderName);
   }
 
-  crawlDeploymentModule(): string[] {
-    return searchModuleFilesName(this.currentPath, []);
+  public crawlDeploymentModule(): string[] {
+    return searchModuleFilesName(this._currentPath, []);
   }
 
-  crawlSolidityContractsNames(): string[] {
+  public crawlSolidityContractsNames(): string[] {
     const contracts: string[] = [];
 
-    const artifacts = searchBuilds(this.currentPath, []) as Artifact[];
-    const contractArtifacts = SystemCrawlingService.filterArtifacts(artifacts);
+    const artifacts = searchBuilds(this._currentPath, []) as Artifact[];
+    const contractArtifacts = SystemCrawlingService._filterArtifacts(artifacts);
 
-    for (const artifacts of contractArtifacts) {
-      contracts.push(artifacts.contractName);
+    for (const contractArtifact of contractArtifacts) {
+      contracts.push(contractArtifact.contractName);
     }
 
     return contracts;
   }
 
-  crawlSolidityFunctionsOfContract(
+  public crawlSolidityFunctionsOfContract(
     contractName: string
   ):
-    | {
+    | Array<{
         name: string;
-        inputs?: Array<JsonFragmentType>;
-      }[]
+        inputs?: JsonFragmentType[];
+      }>
     | undefined {
-    const functionNames: {
+    const functionNames: Array<{
       name: string;
-      inputs?: Array<JsonFragmentType>;
-    }[] = [];
+      inputs?: JsonFragmentType[];
+    }> = [];
 
-    const artifacts = searchBuilds(this.currentPath, []) as Artifact[];
-    const contractBuilds = SystemCrawlingService.filterArtifactsByName(
+    const artifacts = searchBuilds(this._currentPath, []) as Artifact[];
+    const contractBuilds = SystemCrawlingService._filterArtifactsByName(
       artifacts,
       contractName
     );
 
-    if (!contractBuilds) {
+    if (contractBuilds === undefined) {
       return undefined;
     }
 
@@ -62,30 +87,5 @@ export class SystemCrawlingService {
     }
 
     return functionNames;
-  }
-
-  private static filterArtifactsByName(
-    artifacts: Artifact[],
-    contractName: string
-  ): Artifact | undefined {
-    for (const artifact of artifacts) {
-      if (artifact.contractName == contractName) {
-        return artifact;
-      }
-    }
-
-    return undefined;
-  }
-
-  private static filterArtifacts(artifacts: Artifact[]): Artifact[] {
-    const filteredArtifacts: Artifact[] = [];
-
-    for (const artifact of artifacts) {
-      if (artifact.bytecode && artifact.contractName) {
-        filteredArtifacts.push(artifact);
-      }
-    }
-
-    return filteredArtifacts;
   }
 }

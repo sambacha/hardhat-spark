@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import chalk from "chalk";
 
 export const INITIAL_MSG = chalk.gray(`Hey wizard, props for starting the tutorial :)
 Firstly let's try to explain what hardhat-ignition is and what this tutorial is going to tackle.
@@ -18,7 +18,7 @@ export const CONTRACT_NAME_DESC = `This is your smart contract name, you can che
 export const CONTRACT_DESC = `This is smart contract deployment definition.`;
 
 export const CONSTRUCTOR_ARGS = `${chalk.gray(
-  'comma separated values, in case if other contract is one of constructor arguments just put contract name you defined earlier.'
+  "comma separated values, in case if other contract is one of constructor arguments just put contract name you defined earlier."
 )}
 Constructor arguments`;
 

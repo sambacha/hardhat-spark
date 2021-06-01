@@ -1,23 +1,25 @@
 export class Mutex {
   private _lock: any;
 
-  isLocked() {
-    return this._lock != undefined;
+  public isLocked() {
+    return this._lock !== undefined;
   }
 
-  acquireQueued() {
+  public acquireQueued() {
     const q = Promise.resolve(this._lock).then(() => release);
     const release = this._acquire();
     return q;
   }
 
-  _acquire() {
+  public _acquire() {
     let release: any;
     const lock = (this._lock = new Promise((resolve) => {
       release = resolve;
     }));
     return () => {
-      if (this._lock == lock) this._lock = undefined;
+      if (this._lock === lock) {
+        this._lock = undefined;
+      }
       release();
     };
   }

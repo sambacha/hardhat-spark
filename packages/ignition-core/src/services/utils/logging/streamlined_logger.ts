@@ -1,232 +1,237 @@
-import cli from 'cli-ux';
-import { DeniedConfirmation } from '../../types/errors';
-import chalk from 'chalk';
-import { generateErrorMessage, ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+import chalk from "chalk";
+import cli from "cli-ux";
+
+import { EventType } from "../../../interfaces/hardhat_ignition";
+import { DeniedConfirmation } from "../../types/errors";
+import { ModuleState } from "../../types/module";
+
+import { generateErrorMessage, ILogging } from "./index";
 
 export class StreamlinedLogger implements ILogging {
-  private whitespaces: string;
-  private readonly skipConfirmation: boolean;
+  private _whitespaces: string;
+  private readonly _skipConfirmation: boolean;
 
   constructor(skipConfirmation: boolean = false) {
-    this.skipConfirmation = skipConfirmation;
-    this.whitespaces = '';
+    this._skipConfirmation = skipConfirmation;
+    this._whitespaces = "";
   }
 
-  generatedTypes(): void {
+  public generatedTypes(): void {
     cli.info(
-      'Successfully generated module types, look for .d.ts file in your deployment folder.'
+      "Successfully generated module types, look for .d.ts file in your deployment folder."
     );
   }
 
-  nothingToDeploy(): void {
+  public nothingToDeploy(): void {
     cli.info(
-      'State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how.'
+      "State file is up to date and their is nothing to be deployed, if you still want to trigger deploy use --help to see how."
     );
     cli.exit(0);
   }
 
-  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {
-    cli.info(chalk.bold('\nDeploy module - ', chalk.green(moduleName)));
-    this.whitespaces += '  ';
+  public startModuleDeploy(
+    moduleName: string,
+    moduleStates: ModuleState
+  ): void {
+    cli.info(chalk.bold("\nDeploy module - ", chalk.green(moduleName)));
+    this._whitespaces += "  ";
   }
 
-  finishModuleDeploy(moduleName: string, summary: string): void {
-    this.finishedElementExecution();
+  public finishModuleDeploy(moduleName: string, summary: string): void {
+    this._finishedElementExecution();
     cli.info(summary);
   }
 
-  alreadyDeployed(elementName: string): void {
+  public alreadyDeployed(elementName: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold(elementName)} is already ${chalk.bold('deployed')}.`
+      `${this._whitespaces}
+        ${chalk.bold(elementName)} is already ${chalk.bold("deployed")}.`
     );
   }
 
-  async promptContinueDeployment(): Promise<void> {
-    if (this.skipConfirmation) {
+  public async promptContinueDeployment(): Promise<void> {
+    if (this._skipConfirmation) {
       return;
     }
 
     const con = await cli.prompt(
-      'Do you wish to continue with deployment of this module? (Y/n)',
+      "Do you wish to continue with deployment of this module? (Y/n)",
       {
         required: false,
       }
     );
-    if (con == 'n') {
-      throw new DeniedConfirmation('Confirmation has been declined.');
+    if (con === "n") {
+      throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
-  async promptExecuteTx(): Promise<void> {
-    if (this.skipConfirmation) {
+  public async promptExecuteTx(): Promise<void> {
+    if (this._skipConfirmation) {
       return;
     }
 
-    const con = await cli.prompt('Execute transactions? (Y/n)', {
+    const con = await cli.prompt("Execute transactions? (Y/n)", {
       required: false,
     });
-    if (con == 'n') {
-      throw new DeniedConfirmation('Confirmation has been declined.');
+    if (con === "n") {
+      throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
-  promptSignedTransaction(tx: string): void {
-    cli.debug(this.whitespaces + `Signed transaction: ${tx}`);
+  public promptSignedTransaction(tx: string): void {
+    cli.debug(`${this._whitespaces} Signed transaction: ${tx}`);
   }
 
-  logError(error: Error): void {
+  public logError(error: Error): void {
     const { message, stack } = generateErrorMessage(error);
 
     cli.info(message);
   }
 
-  sendingTx(): void {
-    cli.action.start(this.whitespaces + 'Sending tx');
+  public sendingTx(): void {
+    cli.action.start(`${this._whitespaces} Sending tx`);
   }
 
-  sentTx(): void {
-    cli.action.stop('sent');
+  public sentTx(): void {
+    cli.action.stop("sent");
   }
 
-  bindingExecution(bindingName: string): void {
+  public bindingExecution(bindingName: string): void {
     cli.info(
-      `${this.whitespaces}${chalk.bold(
-        'Started'
+      `${this._whitespaces}${chalk.bold(
+        "Started"
       )} deploying binding - ${chalk.bold(bindingName)}`
     );
-    this.whitespaces += '  ';
+    this._whitespaces += "  ";
   }
 
-  finishedBindingExecution(bindingName: string): void {
-    this.finishedElementExecution();
+  public finishedBindingExecution(bindingName: string): void {
+    this._finishedElementExecution();
     cli.info(
-      `${this.whitespaces}${chalk.bold(
-        'Finished'
+      `${this._whitespaces}${chalk.bold(
+        "Finished"
       )} binding execution - ${chalk.bold(bindingName)}\n`
     );
   }
 
-  private finishedElementExecution(): void {
-    this.whitespaces = this.whitespaces.slice(0, -2);
-  }
-
-  eventExecution(eventName: string): void {
+  public eventExecution(eventName: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold('Started')} executing event - ${chalk.bold(eventName)}`
+      `${this._whitespaces}
+        ${chalk.bold("Started")} executing event - ${chalk.bold(eventName)}`
     );
-    this.whitespaces += '  ';
+    this._whitespaces += "  ";
   }
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {
-    this.finishedElementExecution();
+  public finishedEventExecution(eventName: string, eventType: EventType): void {
+    this._finishedElementExecution();
     cli.info(
-      `${this.whitespaces}${chalk.bold(
-        'Finished'
+      `${this._whitespaces}${chalk.bold(
+        "Finished"
       )} event execution - ${chalk.bold(eventName)}\n`
     );
   }
 
-  executeContractFunction(functionName: string): void {
+  public executeContractFunction(functionName: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold('Started')} execution of contract function - `,
+      `${this._whitespaces}
+      ${chalk.bold("Started")} execution of contract function - `,
       chalk.bold(functionName)
     );
-    this.whitespaces += '  ';
+    this._whitespaces += "  ";
   }
 
-  finishedExecutionOfContractFunction(functionName: string): void {
-    this.finishedElementExecution();
+  public finishedExecutionOfContractFunction(functionName: string): void {
+    this._finishedElementExecution();
     cli.info(
-      `${this.whitespaces}${chalk.bold(
-        'Finished'
+      `${this._whitespaces}${chalk.bold(
+        "Finished"
       )} execution of contract function - ${chalk.bold(functionName)}`
     );
   }
 
-  executeWalletTransfer(from: string, to: string): void {
+  public executeWalletTransfer(from: string, to: string): void {
     cli.info(
-      this.whitespaces +
-        `${chalk.bold('Started')} execution of wallet transfer -  ${chalk.bold(
-          from
-        )} --> ${chalk.bold(to)}`
+      `${this._whitespaces}
+      ${chalk.bold("Started")} execution of wallet transfer -  ${chalk.bold(
+        from
+      )} --> ${chalk.bold(to)}`
     );
-    this.whitespaces += '  ';
+    this._whitespaces += "  ";
   }
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {
-    this.finishedElementExecution();
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {
+    this._finishedElementExecution();
     cli.info(
-      this.whitespaces +
-        `${chalk.bold('Finished')} execution of wallet transfer - ${chalk.bold(
-          from
-        )} --> ${chalk.bold(to)}`
+      `${this._whitespaces}
+        ${chalk.bold("Finished")} execution of wallet transfer - ${chalk.bold(
+        from
+      )} --> ${chalk.bold(to)}`
     );
   }
 
-  transactionReceipt(): void {
-    cli.info(this.whitespaces + 'Waiting for block confirmation...');
+  public transactionReceipt(): void {
+    cli.info(`${this._whitespaces} Waiting for block confirmation...`);
   }
 
-  waitTransactionConfirmation(): void {
-    cli.action.start(this.whitespaces + 'Block is mining');
+  public waitTransactionConfirmation(): void {
+    cli.action.start(`${this._whitespaces} Block is mining`);
   }
 
-  transactionConfirmation(confirmationNumber: number): void {
+  public transactionConfirmation(confirmationNumber: number): void {
     cli.action.stop(
-      `\n${this.whitespaces} Current block confirmation: ${confirmationNumber}`
+      `\n${this._whitespaces} Current block confirmation: ${confirmationNumber}`
     );
   }
 
-  finishedModuleUsageGeneration(moduleName: string) {
+  public finishedModuleUsageGeneration(moduleName: string) {
     cli.info(`Finished module usage script file generation - ${moduleName}`);
   }
 
-  startingModuleUsageGeneration(moduleName: string) {
+  public startingModuleUsageGeneration(moduleName: string) {
     cli.info(`Starting module usage script file generation - ${moduleName}`);
   }
 
-  async parallelizationExperimental() {
+  public async parallelizationExperimental() {
     cli.warn(
       chalk.yellow(
-        'WARNING: This feature is experimental, please avoid using it while deploying to production'
+        "WARNING: This feature is experimental, please avoid using it while deploying to production"
       )
     );
     const yes = await cli.confirm(
-      'Do you wish to continue with deployment of this module? (Y/n)'
+      "Do you wish to continue with deployment of this module? (Y/n)"
     );
     if (!yes) {
-      throw new DeniedConfirmation('Confirmation has been declined.');
+      throw new DeniedConfirmation("Confirmation has been declined.");
     }
   }
 
-  async wrongNetwork(): Promise<boolean> {
-    if (this.skipConfirmation) {
+  public async wrongNetwork(): Promise<boolean> {
+    if (this._skipConfirmation) {
       return true;
     }
 
-    return await cli.confirm(
-      'Contracts are missing on the network, do you wish to continue? (Y/n)'
+    return cli.confirm(
+      "Contracts are missing on the network, do you wish to continue? (Y/n)"
     );
   }
 
-  gasPriceIsLarge(backoffTime: number) {
+  public gasPriceIsLarge(backoffTime: number) {
     cli.info(
-      this.whitespaces +
-        `Gas price is too large, waiting for ${backoffTime}ms before continuing`
+      `${this._whitespaces}
+        Gas price is too large, waiting for ${backoffTime}ms before continuing`
     );
   }
 
-  startModuleResolving(): void {}
+  public startModuleResolving(): void {}
 
-  finishModuleResolving(): void {}
+  public finishModuleResolving(): void {}
 
-  contractFunctionAlreadyExecuted(
+  public contractFunctionAlreadyExecuted(
     contractFunction: string,
     ...args: any[]
   ): void {}
+
+  private _finishedElementExecution(): void {
+    this._whitespaces = this._whitespaces.slice(0, -2);
+  }
 }

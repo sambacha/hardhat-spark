@@ -1,29 +1,35 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 export class DeploymentFileRepo {
-  private deploymentPath: string | undefined;
-  private deploymentFile: string | undefined;
+  private _deploymentPath: string | undefined;
+  private _deploymentFile: string | undefined;
 
   constructor() {}
 
-  setDeploymentPath(deploymentPath: string, deploymentFile: string): void {
-    this.deploymentPath = deploymentPath;
-    this.deploymentFile = deploymentFile;
+  public setDeploymentPath(
+    deploymentPath: string,
+    deploymentFile: string
+  ): void {
+    this._deploymentPath = deploymentPath;
+    this._deploymentFile = deploymentFile;
   }
 
-  storeNewDeployment(fileContent: string): void {
-    if (!this.deploymentPath || !this.deploymentFile) {
+  public storeNewDeployment(fileContent: string): void {
+    if (
+      this._deploymentPath === undefined ||
+      this._deploymentFile === undefined
+    ) {
       return;
     }
 
-    if (!fs.existsSync(this.deploymentPath)) {
-      fs.mkdirSync(this.deploymentPath);
+    if (!fs.existsSync(this._deploymentPath)) {
+      fs.mkdirSync(this._deploymentPath);
     }
     fs.writeFileSync(
-      path.resolve(this.deploymentPath, this.deploymentFile),
+      path.resolve(this._deploymentPath, this._deploymentFile),
       fileContent,
-      { encoding: 'utf8' }
+      { encoding: "utf8" }
     );
   }
 }

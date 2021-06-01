@@ -1,79 +1,86 @@
-import { ILogging } from './index';
-import { ModuleState } from '../../modules/states/module';
-import { EventType } from '../../../interfaces/hardhat_ignition';
+import { EventType } from "../../../interfaces/hardhat_ignition";
+import { ModuleState } from "../../types/module";
+
+import { ILogging } from "./index";
 
 export class EmptyLogger implements ILogging {
   constructor() {}
 
-  alreadyDeployed(elementName: string): void {}
+  public alreadyDeployed(elementName: string): void {}
 
-  bindingExecution(bindingName: string): void {}
+  public bindingExecution(bindingName: string): void {}
 
-  logError(): void {}
+  public logError(): void {}
 
-  eventExecution(eventName: string): void {}
+  public eventExecution(eventName: string): void {}
 
-  executeContractFunction(contractFunction: string): void {}
+  public executeContractFunction(contractFunction: string): void {}
 
-  executeWalletTransfer(address: string, to: string): void {}
+  public executeWalletTransfer(address: string, to: string): void {}
 
-  finishModuleDeploy(moduleName: string): void {}
+  public finishModuleDeploy(moduleName: string): void {}
 
-  finishedBindingExecution(bindingName: string): void {}
+  public finishedBindingExecution(bindingName: string): void {}
 
-  finishedEventExecution(eventName: string, eventType: EventType): void {}
+  public finishedEventExecution(
+    eventName: string,
+    eventType: EventType
+  ): void {}
 
-  finishedExecutionOfContractFunction(functionName: string): void {}
+  public finishedExecutionOfContractFunction(functionName: string): void {}
 
-  finishedExecutionOfWalletTransfer(from: string, to: string): void {}
+  public finishedExecutionOfWalletTransfer(from: string, to: string): void {}
 
-  nothingToDeploy(): void {}
+  public nothingToDeploy(): void {}
 
-  promptContinueDeployment(): Promise<void> {
+  public promptContinueDeployment(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  promptExecuteTx(): Promise<void> {
+  public promptExecuteTx(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  promptSignedTransaction(tx: string): void {}
+  public promptSignedTransaction(tx: string): void {}
 
-  sendingTx(elementName: string, functionName?: string): void {}
+  public sendingTx(elementName: string, functionName?: string): void {}
 
-  sentTx(elementName: string, functionName?: string): void {}
+  public sentTx(elementName: string, functionName?: string): void {}
 
-  startModuleDeploy(moduleName: string, moduleStates: ModuleState): void {}
+  public startModuleDeploy(
+    moduleName: string,
+    moduleStates: ModuleState
+  ): void {}
 
-  transactionConfirmation(
+  public transactionConfirmation(
     confirmationNumber: number,
     elementName: string,
     functionName?: string
   ): void {}
 
-  transactionReceipt(): void {}
+  public transactionReceipt(): void {}
 
-  waitTransactionConfirmation(): void {}
+  public waitTransactionConfirmation(): void {}
 
-  generatedTypes(): void {}
+  public generatedTypes(): void {}
 
-  finishedModuleUsageGeneration(moduleName: string) {}
+  public finishedModuleUsageGeneration(moduleName: string) {}
 
-  startingModuleUsageGeneration(moduleName: string) {}
+  public startingModuleUsageGeneration(moduleName: string) {}
 
-  parallelizationExperimental() {}
+  public parallelizationExperimental() {}
 
-  async wrongNetwork(): Promise<boolean> {
+  public async wrongNetwork(): Promise<boolean> {
     return false;
   }
 
-  gasPriceIsLarge(backoffTime: number) {}
+  public gasPriceIsLarge(backoffTime: number) {}
 
-  finishModuleResolving(): void {}
+  public finishModuleResolving(): void {}
 
-  startModuleResolving(): void {}
+  public startModuleResolving(): void {}
 
-  contractFunctionAlreadyExecuted(
+  public contractFunctionAlreadyExecuted(
     contractFunction: string,
     ...args: any[]
   ): void {}

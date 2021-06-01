@@ -3,7 +3,7 @@ export interface JsonFragmentType {
   indexed?: boolean;
   type: string;
   internalType?: string;
-  components?: Array<JsonFragmentType>;
+  components?: JsonFragmentType[];
 }
 
 export interface JsonFragment {
@@ -16,8 +16,8 @@ export interface JsonFragment {
   constant?: boolean;
   stateMutability?: string;
 
-  inputs?: Array<JsonFragmentType>;
-  outputs?: Array<JsonFragmentType>;
+  inputs?: JsonFragmentType[];
+  outputs?: JsonFragmentType[];
 
   gas?: string;
 }

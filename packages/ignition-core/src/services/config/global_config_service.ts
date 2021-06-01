@@ -1,23 +1,20 @@
-import * as path from 'path';
-import fs from 'fs';
-import { cli } from 'cli-ux';
+import { cli } from "cli-ux";
+import fs from "fs";
+import * as path from "path";
 
-const IGNITION_GLOBAL_FILE_NAME = '.hardhat-ignition';
+const IGNITION_GLOBAL_FILE_NAME = ".hardhat-ignition";
 
-const {
-  CI,
-  HOME
-} = process.env;
+const { CI, HOME } = process.env;
 
 export class GlobalConfigService {
-  private readonly homePath: string;
+  private readonly _homePath: string;
 
   constructor() {
-    this.homePath = HOME as string;
+    this._homePath = HOME as string;
 
     // check if file exist if it doesn't ask for consent and store it
     const globalConfigFilePath = path.resolve(
-      this.homePath,
+      this._homePath,
       IGNITION_GLOBAL_FILE_NAME
     );
     if (!fs.existsSync(globalConfigFilePath)) {
@@ -25,20 +22,20 @@ export class GlobalConfigService {
     }
   }
 
-  async mustConfirmConsent() {
-    if (CI == 'true') {
+  public async mustConfirmConsent() {
+    if (CI === "true") {
       return;
     }
 
     const globalFilePath = path.resolve(
-      this.homePath,
+      this._homePath,
       IGNITION_GLOBAL_FILE_NAME
     );
     if (fs.existsSync(globalFilePath)) {
       return;
     }
     const confirm = await cli.confirm(
-      'We are gathering some error reporting data, do you want to opt in? (Y/n)'
+      "We are gathering some error reporting data, do you want to opt in? (Y/n)"
     );
 
     fs.writeFileSync(globalFilePath, `IGNITION_ERROR_REPORTING=${confirm}`);
@@ -46,13 +43,13 @@ export class GlobalConfigService {
     return confirm;
   }
 
-  checkConsent(): boolean {
-    if (CI == 'true') {
+  public checkConsent(): boolean {
+    if (CI === "true") {
       return false;
     }
 
     const globalConfigFilePath = path.resolve(
-      this.homePath,
+      this._homePath,
       IGNITION_GLOBAL_FILE_NAME
     );
     if (!fs.existsSync(globalConfigFilePath)) {
@@ -60,7 +57,7 @@ export class GlobalConfigService {
     }
 
     fs.readFileSync(globalConfigFilePath);
-    require('dotenv').config({path: globalConfigFilePath});
-    return process.env.IGNITION_ERROR_REPORTING == 'true';
+    require("dotenv").config({ path: globalConfigFilePath });
+    return process.env.IGNITION_ERROR_REPORTING === "true";
   }
 }

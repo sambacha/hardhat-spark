@@ -1,43 +1,34 @@
-import { ModuleState } from '../../modules/states/module';
+import chalk from "chalk";
+import { cli } from "cli-ux";
+
 import {
   CliError,
   handleMappedErrorCodes,
   UserError,
-} from '../../types/errors';
-import { cli } from 'cli-ux';
-import chalk from 'chalk';
-import { checkIfExist } from '../util';
-import { EventType } from '../../../interfaces/hardhat_ignition';
-
-export * from './empty_logging';
-export * from './file_logging';
-export * from './json_logging';
-export * from './simple_logging';
-export * from './streamlined_logger';
-export * from './react-terminal/ui/layout/terminal';
-export * from './react-terminal/ui/layout/confirmation_question';
+} from "../../types/errors";
+import { ModuleState } from "../../types/module";
 
 export enum Logging {
-  'empty' = 'empty',
-  'overview' = 'overview',
-  'simple' = 'simple',
-  'json' = 'json',
-  'streamlined' = 'streamlined',
+  "empty" = "empty",
+  "overview" = "overview",
+  "simple" = "simple",
+  "json" = "json",
+  "streamlined" = "streamlined",
 }
 
 export enum StateElementStatus {
-  'NOT_EXECUTED' = 'not executed',
-  'STARTED' = 'started',
-  'SUCCESSFUL' = 'successful',
-  'DEPLOYED' = 'already executed/deployed',
-  'FAILED' = 'failed',
+  "NOT_EXECUTED" = "not executed",
+  "STARTED" = "started",
+  "SUCCESSFUL" = "successful",
+  "DEPLOYED" = "already executed/deployed",
+  "FAILED" = "failed",
 }
 
 export enum TransactionStatus {
-  'EMPTY' = 0,
-  'CONTRACT_TRANSACTION_SENT' = 1,
-  'WAITING_FOR_CONFIRMATION' = 2,
-  'TRANSACTION_CONFIRMED' = 3,
+  "EMPTY" = 0,
+  "CONTRACT_TRANSACTION_SENT" = 1,
+  "WAITING_FOR_CONFIRMATION" = 2,
+  "TRANSACTION_CONFIRMED" = 3,
 }
 
 export interface ILogging {
@@ -56,7 +47,7 @@ export interface ILogging {
   bindingExecution(bindingName: string): void;
   finishedBindingExecution(bindingName: string): void;
   eventExecution(eventName: string): void;
-  finishedEventExecution(eventName: string, eventType: EventType): void;
+  finishedEventExecution(eventName: string, eventType: string): void;
   executeContractFunction(contractFunction: string): void;
   contractFunctionAlreadyExecuted(
     contractFunction: string,
@@ -81,13 +72,13 @@ export interface ILogging {
 }
 
 export function generateErrorMessage(
-  error: Error
+  error: any
 ): {
   message: string;
   stack: any;
 } {
   let stack;
-  if (cli.config.outputLevel == 'debug') {
+  if (cli.config.outputLevel === "debug") {
     stack = error.stack;
   }
 
@@ -98,11 +89,9 @@ export function generateErrorMessage(
     };
   }
 
-  // @ts-ignore
-  if (checkIfExist(error?.code)) {
+  if (error?.code) {
     // @TODO (filip) map all codes with meaningful message
     return {
-      // @ts-ignore
       message: handleMappedErrorCodes(error?.code, error),
       stack,
     };
