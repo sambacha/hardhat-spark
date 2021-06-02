@@ -13,7 +13,7 @@ import {
   TruffleBuild,
 } from "../../types/migration";
 import { ModuleStateFile } from "../../types/module";
-import { searchBuilds, searchBuildsAndNetworks } from "../../utils/sol_files";
+import { searchBuilds, searchBuildsAndNetworks } from "../../utils/searcher";
 import { checkIfExist } from "../../utils/util";
 
 import { IModuleState } from "./module";

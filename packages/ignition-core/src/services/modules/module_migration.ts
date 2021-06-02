@@ -7,7 +7,7 @@ import {
 } from "../../interfaces/hardhat_ignition";
 import { FileGenerationType } from "../types/migration";
 import { ModuleStateFile } from "../types/module";
-import { generateModuleFile } from "../utils/sol_files";
+import { generateModuleFile } from "../utils/file_generator";
 import { checkIfExist } from "../utils/util";
 
 const DEFAULT_MODULE_FOLDER = "deployment";
