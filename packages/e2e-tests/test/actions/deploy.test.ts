@@ -1,5 +1,4 @@
 import { assert } from "chai";
-import { execSync } from "child_process";
 import { loadScript } from "common";
 import { ethers } from "ethers";
 import {

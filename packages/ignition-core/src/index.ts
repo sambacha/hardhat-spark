@@ -3,7 +3,6 @@ import * as cls from "cls-hooked";
 import { ethers } from "ethers";
 
 import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
-import { GlobalConfigService } from "./services/config";
 import { EthClient } from "./services/ethereum/client";
 import { ICompiler } from "./services/ethereum/compiler";
 import { HardhatCompiler } from "./services/ethereum/compiler/hardhat";
@@ -31,8 +30,6 @@ import { ModuleValidator } from "./services/modules/validator/module_validator";
 import { GasPriceBackoff } from "./services/types/config";
 import { EmptySigners, ServicesNotInitialized } from "./services/types/errors";
 import { ModuleState } from "./services/types/module";
-import { IErrorReporting } from "./services/utils/analytics";
-import { ErrorReporter } from "./services/utils/analytics/analytics_service";
 import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
@@ -48,7 +45,6 @@ export * from "./interfaces/module_builders";
 export * from "./interfaces/helper/expectancy";
 export * from "./interfaces/helper/macros";
 
-export * from "./services/config";
 export * from "./services/types";
 export * from "./services/ethereum/compiler";
 export * from "./services/ethereum/compiler/hardhat";
@@ -79,10 +75,8 @@ export * from "./services/modules/module_migration";
 export * from "./services/ethereum/client";
 export * from "./services/modules/module_usage";
 export * from "./services/modules/module_deployment_summary";
-export * from "./services/config";
 export * from "./services/types";
 export * from "./services/types/config";
-export * from "./services/utils/analytics";
 export * from "./services/types/module";
 
 export interface DiffArgs {
@@ -176,7 +170,6 @@ export class IgnitionCore implements IIgnition {
     | ModuleDeploymentSummaryService
     | undefined;
 
-  private _errorReporter: IErrorReporting | undefined;
   private _moduleTyping: ModuleTypings | undefined;
   private readonly _compiler: ICompiler;
   private readonly _moduleValidator: IModuleValidator;
@@ -231,7 +224,6 @@ export class IgnitionCore implements IIgnition {
       walletWrapper,
       moduleDeploymentSummaryService,
 
-      errorReporter,
       moduleTyping,
     } = await setupServicesAndEnvironment(
       this.params,
@@ -255,7 +247,6 @@ export class IgnitionCore implements IIgnition {
     this._walletWrapper = walletWrapper;
     this._moduleDeploymentSummaryService = moduleDeploymentSummaryService;
 
-    this._errorReporter = errorReporter;
     this._moduleTyping = moduleTyping;
 
     this._initialized = true;
@@ -385,7 +376,7 @@ export class IgnitionCore implements IIgnition {
       );
       this._logger.finishModuleDeploy(moduleName, summary);
     } catch (err) {
-      await errorHandling(err, this._logger, this._errorReporter);
+      await errorHandling(err, this._logger);
 
       throw err;
     }
@@ -451,7 +442,7 @@ export class IgnitionCore implements IIgnition {
         cli.info(`Nothing changed from last revision - ${moduleName}`);
       }
     } catch (err) {
-      await errorHandling(err, this._logger, this._errorReporter);
+      await errorHandling(err, this._logger);
     }
   }
 
@@ -484,7 +475,7 @@ export class IgnitionCore implements IIgnition {
 
       this._logger.generatedTypes();
     } catch (err) {
-      await errorHandling(err, this._logger, this._errorReporter);
+      await errorHandling(err, this._logger);
     }
   }
 
@@ -505,14 +496,9 @@ export async function defaultInputParams(
   rpcProvider: ethers.providers.JsonRpcProvider;
   logger: ILogging;
   parallelizeDeployment: boolean;
-  errorReporter: IErrorReporting;
   signers: ethers.Signer[];
   isLocalDeployment: boolean;
 }> {
-  const globalConfigService = new GlobalConfigService();
-  await globalConfigService.mustConfirmConsent();
-  const errorReporter = new ErrorReporter(globalConfigService);
-
   let networkName = params?.networkName ?? DEFAULT_NETWORK_NAME;
 
   let isLocalDeployment = true;
@@ -572,7 +558,6 @@ export async function defaultInputParams(
     gasPriceBackoff,
     logger,
     parallelizeDeployment,
-    errorReporter,
     signers,
     isLocalDeployment,
   };
@@ -589,7 +574,6 @@ export async function setupServicesAndEnvironment(
     gasPriceBackoff,
     rpcProvider,
     logger,
-    errorReporter,
     signers,
   } = await defaultInputParams(params, services, repos);
   const currentPath = process.cwd();
@@ -690,7 +674,6 @@ export async function setupServicesAndEnvironment(
     walletWrapper,
     moduleDeploymentSummaryService,
 
-    errorReporter,
     moduleTyping,
   };
 }

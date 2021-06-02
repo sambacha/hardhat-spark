@@ -2,7 +2,7 @@ import { assert } from "chai";
 import ux from "cli-ux";
 import { loadScript } from "common";
 import { ethers } from "ethers";
-import { DEPLOYMENT_FOLDER, Module } from "ignition-core";
+import { DEPLOYMENT_FOLDER } from "ignition-core";
 import { IgnitionTests } from "ignition-test";
 import * as path from "path";
 
