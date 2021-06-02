@@ -3,7 +3,6 @@ import * as os from "os";
 
 import { handleMappedErrorCodes } from "../types/errors";
 
-import { IErrorReporting } from "./analytics";
 import { ILogging } from "./logging";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -88,19 +87,7 @@ function getOperatingSystem(): string {
   }
 }
 
-export function getUserType(): string {
-  return "Developer"; // @TODO add CI here after we add integration
-}
-
-export function getUserAgent(): string {
-  return `Node/${process.version} ${getOperatingSystem()}`;
-}
-
-export async function errorHandling(
-  error: any,
-  logger?: ILogging,
-  errorReporter?: IErrorReporting
-) {
+export async function errorHandling(error: any, logger?: ILogging) {
   if (logger !== undefined) {
     logger.logError(error);
 
@@ -118,11 +105,6 @@ export async function errorHandling(
   cli.info(error.message);
   if (cli.config.outputLevel === "debug" && error?.stack) {
     cli.debug(error.stack);
-  }
-
-  // unhandled errors
-  if (errorReporter !== undefined) {
-    errorReporter.reportError(error);
   }
 
   throw error;

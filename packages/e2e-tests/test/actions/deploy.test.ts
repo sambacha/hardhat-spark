@@ -1,5 +1,4 @@
 import { assert } from "chai";
-import { execSync } from "child_process";
 import { loadScript } from "common";
 import { ethers } from "ethers";
 import {
@@ -340,7 +339,7 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath, true);
   for (const [, module] of Object.entries(modules)) {
-    await ignition.deploy(module);
+    await ignition.deploy(module as Module);
   }
 }
 
