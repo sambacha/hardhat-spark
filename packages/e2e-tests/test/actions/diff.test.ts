@@ -2,7 +2,7 @@ import { assert } from "chai";
 import ux from "cli-ux";
 import { loadScript } from "common";
 import { ethers } from "ethers";
-import { DEPLOYMENT_FOLDER } from "ignition-core";
+import { DEPLOYMENT_FOLDER, Module } from "ignition-core";
 import { IgnitionTests } from "ignition-test";
 import * as path from "path";
 
@@ -190,6 +190,6 @@ async function runDiffCommand(
 
   const modules = await loadScript(deploymentFilePath, true);
   for (const [, module] of Object.entries(modules)) {
-    await ignition.diff(module);
+    await ignition.diff(module as Module);
   }
 }

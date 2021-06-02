@@ -339,7 +339,7 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath, true);
   for (const [, module] of Object.entries(modules)) {
-    await ignition.deploy(module);
+    await ignition.deploy(module as Module);
   }
 }
 

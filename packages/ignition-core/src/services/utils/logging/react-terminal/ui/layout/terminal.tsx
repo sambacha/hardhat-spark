@@ -103,8 +103,9 @@ function ModuleElements({
 
     if ((value.element as StatefulEvent)._isStatefulEvent) {
       value.element = value.element as StatefulEvent;
-      const subModule = ((value.element
-        ?.event as ContractEvent)?.subModuleNameDepth).join(" > ");
+      const subModule = (
+        (value.element?.event as ContractEvent)?.subModuleNameDepth ?? []
+      ).join(" > ");
       if (!checkIfExist(mappedModuleElements[subModule])) {
         mappedModuleElements[subModule] = [];
       }
