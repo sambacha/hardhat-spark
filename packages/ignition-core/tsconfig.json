@@ -1,14 +1,6 @@
 {
-//  "extends": "../../config/typescript/tsconfig.json",
+  "extends": "../../config/typescript/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "module": "commonjs",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "noEmitOnError": true,
     "outDir": "dist",
     "jsx": "react"
   },

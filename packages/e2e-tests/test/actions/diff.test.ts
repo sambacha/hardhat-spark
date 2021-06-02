@@ -1,6 +1,5 @@
 import { assert } from "chai";
 import ux from "cli-ux";
-import { loadScript } from "common";
 import { ethers } from "ethers";
 import { DEPLOYMENT_FOLDER, Module } from "ignition-core";
 import { IgnitionTests } from "ignition-test";
@@ -20,6 +19,12 @@ const testPrivateKeys = [
     "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
   ),
 ];
+
+// TODO: Remove this
+export async function loadScript(filePath: string): Promise<any> {
+  const m = require(filePath);
+  return m.default ?? m;
+}
 
 describe("ignition diff - integration", () => {
   let output = "";
@@ -188,7 +193,7 @@ async function runDiffCommand(
     moduleFileName
   );
 
-  const modules = await loadScript(deploymentFilePath, true);
+  const modules = await loadScript(deploymentFilePath);
   for (const [, module] of Object.entries(modules)) {
     await ignition.diff(module as Module);
   }
