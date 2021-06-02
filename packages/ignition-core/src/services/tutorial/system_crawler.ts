@@ -2,7 +2,7 @@ import { Artifact } from "hardhat/types";
 import * as path from "path";
 
 import { JsonFragment, JsonFragmentType } from "../types/artifacts/abi";
-import { searchBuilds, searchModuleFilesName } from "../utils/sol_files";
+import { searchBuilds, searchModuleFilesName } from "../utils/searcher";
 
 export class SystemCrawlingService {
   private static _filterArtifactsByName(

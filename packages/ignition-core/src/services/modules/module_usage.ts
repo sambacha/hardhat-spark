@@ -8,7 +8,7 @@ import {
 import { CliError } from "../types/errors";
 import { FileGenerationType, ModuleFile } from "../types/migration";
 import { ModuleStateFile } from "../types/module";
-import { generateModuleFile } from "../utils/sol_files";
+import { generateModuleFile } from "../utils/file_generator";
 import { checkIfExist, removeLastPathElement } from "../utils/util";
 
 import { ModuleStateRepo } from "./states/repo/state_repo";
