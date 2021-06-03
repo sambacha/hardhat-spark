@@ -22,7 +22,6 @@ import { ModuleDeploymentSummaryService } from "./services/modules/module_deploy
 import { ModuleResolver } from "./services/modules/module_resolver";
 import { FileSystemModuleState } from "./services/modules/states/module/file_system";
 import { MemoryModuleState } from "./services/modules/states/module/memory";
-import { IModuleRegistryResolver } from "./services/modules/states/registry";
 import { ModuleStateRepo } from "./services/modules/states/repo/state_repo";
 import { ModuleTypings } from "./services/modules/typings";
 import { IModuleValidator } from "./services/modules/validator";
@@ -52,8 +51,6 @@ export * from "./services/ethereum/transactions";
 export * from "./services/ethereum/transactions/manager";
 export * from "./services/ethereum/wallet/wrapper";
 export * from "./services/modules/states/module";
-export * from "./services/modules/states/registry";
-export * from "./services/modules/states/registry/remote_bucket_storage";
 export * from "./services/modules/typings";
 export * from "./services/utils/util";
 export * from "./services/ethereum/gas";
@@ -137,15 +134,9 @@ export interface IgnitionServices {
   transactionSigner?: ITransactionSigner;
 }
 
-export interface IgnitionRepos {
-  registry?: IModuleRegistryResolver;
-  resolver?: IModuleRegistryResolver;
-}
-
 export class IgnitionCore implements IIgnition {
   public params: IgnitionParams;
   public customServices: IgnitionServices;
-  public repos: IgnitionRepos;
   public moduleParams: ModuleParams;
   public moduleStateRepo: ModuleStateRepo | undefined;
 
@@ -174,12 +165,10 @@ export class IgnitionCore implements IIgnition {
   constructor(
     params: IgnitionParams,
     services: IgnitionServices,
-    repos: IgnitionRepos,
     moduleParams: ModuleParams = {}
   ) {
     this.params = params;
     this.customServices = services;
-    this.repos = repos;
     this.moduleParams = moduleParams;
 
     // @TODO move to mustInit eventually
@@ -190,7 +179,6 @@ export class IgnitionCore implements IIgnition {
   public async mustInit(
     params?: IgnitionParams,
     services?: IgnitionServices,
-    repos?: IgnitionRepos,
     moduleParams?: ModuleParams
   ) {
     if (params !== undefined) {
@@ -198,9 +186,6 @@ export class IgnitionCore implements IIgnition {
     }
     if (services !== undefined) {
       this.customServices = services;
-    }
-    if (repos !== undefined) {
-      this.repos = repos;
     }
     if (moduleParams !== undefined) {
       this.moduleParams = moduleParams;
@@ -222,11 +207,7 @@ export class IgnitionCore implements IIgnition {
       moduleDeploymentSummaryService,
 
       moduleTyping,
-    } = await setupServicesAndEnvironment(
-      this.params,
-      this.customServices,
-      this.repos
-    );
+    } = await setupServicesAndEnvironment(this.params, this.customServices);
 
     this._networkName = this.params.networkName;
     this._networkId = networkId;
@@ -257,7 +238,7 @@ export class IgnitionCore implements IIgnition {
   ) {
     try {
       if (!this._initialized) {
-        await this.mustInit(this.params, this.customServices, this.repos);
+        await this.mustInit(this.params, this.customServices);
       }
 
       if (this.params.logging !== logging) {
@@ -353,8 +334,6 @@ export class IgnitionCore implements IIgnition {
         await this._txExecutor.execute(
           moduleName,
           initializedTxModuleState,
-          this.repos.registry,
-          this.repos.resolver,
           module.getModuleConfig()
         );
       } catch (error) {
@@ -382,7 +361,7 @@ export class IgnitionCore implements IIgnition {
   public async diff(networkName: string, module: Module, logging?: boolean) {
     try {
       if (!this._initialized) {
-        await this.mustInit(this.params, this.customServices, this.repos);
+        await this.mustInit(this.params, this.customServices);
       }
 
       if (this.params.logging !== logging) {
@@ -446,7 +425,7 @@ export class IgnitionCore implements IIgnition {
   public async genTypes(module: Module, deploymentFolder: string) {
     try {
       if (!this._initialized) {
-        await this.mustInit(this.params, this.customServices, this.repos);
+        await this.mustInit(this.params, this.customServices);
       }
 
       if (this._moduleTyping === undefined || this._logger === undefined) {
@@ -478,14 +457,13 @@ export class IgnitionCore implements IIgnition {
 
   public async reInitLogger(logging: boolean): Promise<void> {
     this.params.logging = logging;
-    await this.mustInit(this.params, this.customServices, this.repos);
+    await this.mustInit(this.params, this.customServices);
   }
 }
 
 export async function defaultInputParams(
   params: IgnitionParams,
-  services?: IgnitionServices,
-  repos?: IgnitionRepos
+  services?: IgnitionServices
 ): Promise<{
   networkName: string;
   networkId: string;
@@ -562,8 +540,7 @@ export async function defaultInputParams(
 
 export async function setupServicesAndEnvironment(
   params: IgnitionParams,
-  services?: IgnitionServices,
-  repos?: IgnitionRepos
+  services?: IgnitionServices
 ): Promise<any> {
   const {
     networkName,
@@ -572,7 +549,7 @@ export async function setupServicesAndEnvironment(
     rpcProvider,
     logger,
     signers,
-  } = await defaultInputParams(params, services, repos);
+  } = await defaultInputParams(params, services);
   const currentPath = process.cwd();
 
   const gasProvider = new GasPriceCalculator(rpcProvider);
