@@ -10,7 +10,7 @@ import { cli } from "cli-ux";
 import { Namespace } from "cls-hooked";
 import { CallOverrides, ethers } from "ethers";
 
-import { ICompiler } from "../services/ethereum/compiler";
+import { ICompiler } from "../services/ethereum/extractor";
 import { IGasCalculator, IGasPriceCalculator } from "../services/ethereum/gas";
 import {
   INonceManager,

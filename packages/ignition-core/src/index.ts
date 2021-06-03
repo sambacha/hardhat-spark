@@ -4,8 +4,8 @@ import { ethers } from "ethers";
 
 import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
 import { EthClient } from "./services/ethereum/client";
-import { ICompiler } from "./services/ethereum/compiler";
-import { HardhatCompiler } from "./services/ethereum/compiler/hardhat";
+import { ICompiler } from "./services/ethereum/extractor";
+import { HardhatExtractor } from "./services/ethereum/extractor/hardhat";
 import { IGasProvider } from "./services/ethereum/gas";
 import { GasPriceCalculator } from "./services/ethereum/gas/calculator";
 import {
@@ -46,8 +46,8 @@ export * from "./interfaces/helper/expectancy";
 export * from "./interfaces/helper/macros";
 
 export * from "./services/types";
-export * from "./services/ethereum/compiler";
-export * from "./services/ethereum/compiler/hardhat";
+export * from "./services/ethereum/extractor";
+export * from "./services/ethereum/extractor/hardhat";
 export * from "./services/ethereum/transactions";
 export * from "./services/ethereum/transactions/manager";
 export * from "./services/ethereum/wallet/wrapper";
@@ -186,7 +186,7 @@ export class IgnitionCore implements IIgnition {
     this.moduleParams = moduleParams;
 
     // @TODO move to mustInit eventually
-    this._compiler = new HardhatCompiler();
+    this._compiler = new HardhatExtractor();
     this._moduleValidator = new ModuleValidator();
   }
 
