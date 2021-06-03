@@ -3,13 +3,13 @@ import * as path from "path";
 import { ILogObject, Logger } from "tslog";
 
 import { EventType } from "../../../interfaces/hardhat_ignition";
-import { DEPLOYMENT_FOLDER } from "../../tutorial/tutorial_service";
 import { ModuleContextMissingInLogger } from "../../types/errors";
 import { ModuleState } from "../../types/module";
 
 import { generateErrorMessage, ILogging } from "./index";
 
 const FOLDER_NAME = ".log";
+const DEPLOYMENT_FOLDER = "deployment";
 
 export class FileLogging implements ILogging {
   protected _moduleName: string | undefined;

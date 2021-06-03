@@ -2,18 +2,13 @@ import { extendEnvironment, task } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import { ActionType } from "hardhat/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types/runtime";
-import {
-  DeployArgs,
-  DiffArgs,
-  GenTypesArgs,
-  Module,
-  SystemCrawlingService,
-} from "ignition-core";
+import { DeployArgs, DiffArgs, GenTypesArgs, Module } from "ignition-core";
 import inquirer from "inquirer";
 import * as path from "path";
 
 import { HardhatIgnition } from "../index";
 import { extractDataFromConfig } from "../utils/extractor";
+import { SystemCrawlingService } from "../utils/system_crawler";
 
 import "./type_extentions";
 
