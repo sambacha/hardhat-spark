@@ -75,6 +75,7 @@ export const extractDataFromConfig = (
       params: {
         networkId,
         networkName,
+        rpcProvider: new ethers.providers.JsonRpcProvider(),
       },
       customServices: {},
       repos: {},
