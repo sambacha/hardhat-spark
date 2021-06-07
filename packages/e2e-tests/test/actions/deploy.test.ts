@@ -363,6 +363,8 @@ async function runDeployCommand(
   projectLocation: string,
   projectFileName: string = moduleFileName
 ): Promise<void> {
+  // @TODO run contracts compilation somewhere around here
+
   const deploymentFilePath = path.resolve(
     projectLocation,
     deploymentFolder,
