@@ -1,15 +1,11 @@
 import { assert } from "chai";
 import { ethers } from "ethers";
-import {
-  ContractBindingMetaData,
-  DEPLOYMENT_FOLDER,
-  Module,
-} from "ignition-core";
-import { IgnitionTests } from "ignition-test";
+import { ContractBindingMetaData, IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
 
 import { loadStateFile } from "../utils/files";
 
+const deploymentFolder = "deployment";
 const networkId = "31337";
 const networkName = "local";
 const defaultProvider = new ethers.providers.JsonRpcProvider();
@@ -36,7 +32,7 @@ const moduleFileName = "module.ts";
 const rootDir = process.cwd();
 
 describe("ignition deploy", () => {
-  const ignition = new IgnitionTests(
+  const ignitionCoreTest = new IgnitionCore(
     {
       networkName,
       networkId,
@@ -47,11 +43,11 @@ describe("ignition deploy", () => {
     {}
   );
   before(async () => {
-    await ignition.init();
+    await ignitionCoreTest.init();
   });
 
   afterEach(() => {
-    ignition.cleanup();
+    ignitionCoreTest.cleanup();
     process.chdir(rootDir);
 
     // resolving same reference of an object that is required multiple times
@@ -66,10 +62,10 @@ describe("ignition deploy", () => {
         `./test/projects-scenarios/${projectFileName}`
       );
       process.chdir(projectLocation);
-      await loadStateFile(projectLocation, ignition, moduleName);
-      await runDeployCommand(ignition, projectLocation);
+      await loadStateFile(projectLocation, ignitionCoreTest, moduleName);
+      await runDeployCommand(ignitionCoreTest, projectLocation);
 
-      const moduleStateFile = await ignition.getStateFile(moduleName);
+      const moduleStateFile = await ignitionCoreTest.getStateFile(moduleName);
       const contractBinding = (moduleStateFile.Example as unknown) as ContractBindingMetaData;
       assert.isDefined(contractBinding?.deployMetaData?.contractAddress);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
@@ -82,10 +78,10 @@ describe("ignition deploy", () => {
         `./test/projects-scenarios/${projectFileName}`
       );
       process.chdir(projectLocation);
-      await loadStateFile(projectLocation, ignition, moduleName);
-      await runDeployCommand(ignition, projectLocation);
+      await loadStateFile(projectLocation, ignitionCoreTest, moduleName);
+      await runDeployCommand(ignitionCoreTest, projectLocation);
 
-      const moduleStateFile = await ignition.getStateFile(moduleName);
+      const moduleStateFile = await ignitionCoreTest.getStateFile(moduleName);
       const firstContractBinding = (moduleStateFile.Example as unknown) as ContractBindingMetaData;
       const secondContractBinding = (moduleStateFile.SecondExample as unknown) as ContractBindingMetaData;
 
@@ -106,11 +102,15 @@ describe("ignition deploy", () => {
         `./test/projects-scenarios/${projectFileName}`
       );
       process.chdir(projectLocation);
-      await loadStateFile(projectLocation, ignition, moduleName);
-      const moduleStateFileBefore = await ignition.getStateFile(moduleName);
+      await loadStateFile(projectLocation, ignitionCoreTest, moduleName);
+      const moduleStateFileBefore = await ignitionCoreTest.getStateFile(
+        moduleName
+      );
 
-      await runDeployCommand(ignition, projectLocation);
-      const moduleStateFileAfter = await ignition.getStateFile(moduleName);
+      await runDeployCommand(ignitionCoreTest, projectLocation);
+      const moduleStateFileAfter = await ignitionCoreTest.getStateFile(
+        moduleName
+      );
 
       const contractBindingBefore = (moduleStateFileBefore.Example as unknown) as ContractBindingMetaData;
       const contractBindingAfter = (moduleStateFileAfter.Example as unknown) as ContractBindingMetaData;
@@ -133,11 +133,15 @@ describe("ignition deploy", () => {
         `./test/projects-scenarios/${projectFileName}`
       );
       process.chdir(projectLocation);
-      await loadStateFile(projectLocation, ignition, moduleName);
-      const moduleStateFileBefore = await ignition.getStateFile(moduleName);
+      await loadStateFile(projectLocation, ignitionCoreTest, moduleName);
+      const moduleStateFileBefore = await ignitionCoreTest.getStateFile(
+        moduleName
+      );
 
-      await runDeployCommand(ignition, projectLocation);
-      const moduleStateFileAfter = await ignition.getStateFile(moduleName);
+      await runDeployCommand(ignitionCoreTest, projectLocation);
+      const moduleStateFileAfter = await ignitionCoreTest.getStateFile(
+        moduleName
+      );
 
       const firstContractBindingBefore = (moduleStateFileBefore.Example as unknown) as ContractBindingMetaData;
       const firstContractBindingAfter = (moduleStateFileAfter.Example as unknown) as ContractBindingMetaData;
@@ -181,12 +185,16 @@ describe("ignition deploy", () => {
         `./test/projects-scenarios/${projectFileName}`
       );
       process.chdir(projectLocation);
-      await loadStateFile(projectLocation, ignition, moduleName);
-      const oldModuleStateFile = await ignition.getStateFile(moduleName);
+      await loadStateFile(projectLocation, ignitionCoreTest, moduleName);
+      const oldModuleStateFile = await ignitionCoreTest.getStateFile(
+        moduleName
+      );
 
-      await runDeployCommand(ignition, projectLocation);
+      await runDeployCommand(ignitionCoreTest, projectLocation);
 
-      const newModuleStateFile = await ignition.getStateFile(moduleName);
+      const newModuleStateFile = await ignitionCoreTest.getStateFile(
+        moduleName
+      );
 
       const newContractBinding = (newModuleStateFile.Example as unknown) as ContractBindingMetaData;
       const oldContractBinding = (oldModuleStateFile.Example as unknown) as ContractBindingMetaData;
@@ -205,10 +213,10 @@ describe("ignition deploy", () => {
         `./test/projects-scenarios/${projectFileName}`
       );
       process.chdir(projectLocation);
-      await loadStateFile(projectLocation, ignition, moduleName);
-      await runDeployCommand(ignition, projectLocation);
+      await loadStateFile(projectLocation, ignitionCoreTest, moduleName);
+      await runDeployCommand(ignitionCoreTest, projectLocation);
 
-      const moduleStateFile = await ignition.getStateFile(moduleName);
+      const moduleStateFile = await ignitionCoreTest.getStateFile(moduleName);
       const contractBinding = (moduleStateFile.Example as unknown) as ContractBindingMetaData;
       assert.isDefined(contractBinding?.deployMetaData?.contractAddress);
       assert.equal(contractBinding.deployMetaData.logicallyDeployed, true);
@@ -216,7 +224,7 @@ describe("ignition deploy", () => {
   });
 
   describe("ignition deploy - examples - sync", () => {
-    runExamples(ignition);
+    runExamples(ignitionCoreTest);
   });
 
   // describe('ignition deploy - examples - parallel', () => {
@@ -234,7 +242,7 @@ describe("ignition deploy", () => {
   // });
 });
 
-function runExamples(ignition: IgnitionTests, skipSynthethix: boolean = false) {
+function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
   it("should be able to run - examples/all-feature-showcase", async () => {
     const projectFileName = "all-feature-showcase";
     const projectLocation = path.resolve(
@@ -333,13 +341,13 @@ function runExamples(ignition: IgnitionTests, skipSynthethix: boolean = false) {
 }
 
 async function runDeployCommand(
-  ignition: IgnitionTests,
+  ignition: IgnitionCore,
   projectLocation: string,
   projectFileName: string = moduleFileName
 ): Promise<void> {
   const deploymentFilePath = path.resolve(
     projectLocation,
-    DEPLOYMENT_FOLDER,
+    deploymentFolder,
     projectFileName
   );
   const modules = await loadScript(deploymentFilePath);
@@ -349,7 +357,7 @@ async function runDeployCommand(
 }
 
 async function loadModuleParams(
-  ignition: IgnitionTests,
+  ignition: IgnitionCore,
   projectLocation: string
 ): Promise<void> {
   let config: any = {};

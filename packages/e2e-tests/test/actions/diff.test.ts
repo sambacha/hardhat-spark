@@ -1,12 +1,12 @@
 import { assert } from "chai";
 import ux from "cli-ux";
 import { ethers } from "ethers";
-import { DEPLOYMENT_FOLDER, Module } from "ignition-core";
-import { IgnitionTests } from "ignition-test";
+import { IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
 
 import { loadStateFile } from "../utils/files";
 
+const deploymentFolder = "deployment";
 const defaultModuleFileName = "module.ts";
 const networkName = "local";
 const networkId = "31337";
@@ -28,7 +28,7 @@ export async function loadScript(filePath: string): Promise<any> {
 
 describe("ignition diff - integration", () => {
   let output = "";
-  const ignitionTests = new IgnitionTests(
+  const ignitionCoreTest = new IgnitionCore(
     {
       networkName,
       networkId,
@@ -53,12 +53,12 @@ describe("ignition diff - integration", () => {
   });
 
   before(async () => {
-    await ignitionTests.init();
+    await ignitionCoreTest.init();
   });
 
   afterEach(() => {
     output = "";
-    ignitionTests.cleanup();
+    ignitionCoreTest.cleanup();
   });
 
   it("should be able to show difference in modules - single new binding", async () => {
@@ -68,9 +68,9 @@ describe("ignition diff - integration", () => {
       `./test/projects-scenarios/${projectDir}`
     );
     process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionTests);
+    await loadStateFile(projectLocation, ignitionCoreTest);
 
-    await runDiffCommand(ignitionTests, projectLocation);
+    await runDiffCommand(ignitionCoreTest, projectLocation);
 
     assert.equal(
       output,
@@ -88,9 +88,9 @@ Module: ExampleModule
       `./test/projects-scenarios/${projectDir}`
     );
     process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionTests);
+    await loadStateFile(projectLocation, ignitionCoreTest);
 
-    await runDiffCommand(ignitionTests, projectLocation, "module.ts");
+    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
 
     assert.equal(
       output,
@@ -110,9 +110,9 @@ Module: ExampleModule
       `./test/projects-scenarios/${projectDir}`
     );
     process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionTests);
+    await loadStateFile(projectLocation, ignitionCoreTest);
 
-    await runDiffCommand(ignitionTests, projectLocation, "module.ts");
+    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
 
     assert.equal(
       output,
@@ -130,9 +130,9 @@ Module: ExampleModule
       `./test/projects-scenarios/${projectDir}`
     );
     process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionTests);
+    await loadStateFile(projectLocation, ignitionCoreTest);
 
-    await runDiffCommand(ignitionTests, projectLocation, "module.ts");
+    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
 
     assert.equal(
       output,
@@ -152,9 +152,9 @@ Module: ExampleModule
       `./test/projects-scenarios/${projectDir}`
     );
     process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionTests);
+    await loadStateFile(projectLocation, ignitionCoreTest);
 
-    await runDiffCommand(ignitionTests, projectLocation, "module.ts");
+    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
 
     assert.equal(
       output,
@@ -169,9 +169,9 @@ Module: ExampleModule
       `./test/projects-scenarios/${projectDir}`
     );
     process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionTests);
+    await loadStateFile(projectLocation, ignitionCoreTest);
 
-    await runDiffCommand(ignitionTests, projectLocation, "module.ts");
+    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
 
     assert.equal(
       output,
@@ -183,13 +183,13 @@ Module: ExampleModule
 });
 
 async function runDiffCommand(
-  ignition: IgnitionTests,
+  ignition: IgnitionCore,
   projectLocation: string,
   moduleFileName: string = defaultModuleFileName
 ): Promise<void> {
   const deploymentFilePath = path.join(
     projectLocation,
-    DEPLOYMENT_FOLDER,
+    deploymentFolder,
     moduleFileName
   );
 

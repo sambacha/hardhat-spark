@@ -112,12 +112,6 @@ export interface IIgnition {
   genTypes(module: Module, deploymentFolder: string): Promise<void>;
 }
 
-export interface IIgnitionUsage {
-  deploy(module: Module, logging?: boolean, test?: boolean): Promise<void>;
-
-  diff(module: Module, logging?: boolean, test?: boolean): Promise<void>;
-}
-
 export interface IgnitionParams {
   networkName: string;
   networkId: string;

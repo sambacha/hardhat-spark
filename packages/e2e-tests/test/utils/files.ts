@@ -1,6 +1,10 @@
 import * as fs from "fs";
-import { ModuleStateFile, STATE_DIR_NAME, STATE_NAME } from "ignition-core";
-import { IgnitionTests } from "ignition-test";
+import {
+  IgnitionCore,
+  ModuleStateFile,
+  STATE_DIR_NAME,
+  STATE_NAME,
+} from "ignition-core";
 import * as path from "path";
 
 export function getStateIfExist(dir: string): ModuleStateFile | undefined {
@@ -29,7 +33,7 @@ export function storeNewState(
 
 export async function loadStateFile(
   projectLocation: string,
-  ignition: IgnitionTests,
+  ignition: IgnitionCore,
   moduleName: string = "ExampleModule",
   networkName: string = "local"
 ) {
