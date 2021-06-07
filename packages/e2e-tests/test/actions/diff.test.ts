@@ -53,12 +53,14 @@ describe("ignition diff - integration", () => {
   });
 
   before(async () => {
-    await ignitionCoreTest.init();
+    await ignitionCoreTest.mustInit();
   });
 
   afterEach(() => {
     output = "";
-    ignitionCoreTest.cleanup();
+    if (ignitionCoreTest?.moduleStateRepo) {
+      ignitionCoreTest.moduleStateRepo.clear();
+    }
   });
 
   it("should be able to show difference in modules - single new binding", async () => {
@@ -195,6 +197,6 @@ async function runDiffCommand(
 
   const modules = await loadScript(deploymentFilePath);
   for (const [, module] of Object.entries(modules)) {
-    await ignition.diff(module as Module);
+    await ignition.diff(networkName, module as Module);
   }
 }

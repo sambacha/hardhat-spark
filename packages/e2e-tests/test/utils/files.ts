@@ -19,6 +19,17 @@ export function getStateIfExist(dir: string): ModuleStateFile | undefined {
   );
 }
 
+export async function getStateObject(
+  ignitionCore: IgnitionCore,
+  moduleName: string
+): Promise<ModuleStateFile> {
+  if (ignitionCore?.moduleStateRepo) {
+    return ignitionCore.moduleStateRepo.getStateIfExist(moduleName);
+  }
+
+  return {};
+}
+
 export function storeNewState(
   dir: string,
   state: ModuleStateFile | null
@@ -49,5 +60,8 @@ export async function loadStateFile(
   } catch (e) {
     stateFile = {};
   }
-  await ignition.setStateFile(moduleName, stateFile);
+
+  if (ignition?.moduleStateRepo) {
+    await ignition.moduleStateRepo.storeNewState(moduleName, stateFile);
+  }
 }
