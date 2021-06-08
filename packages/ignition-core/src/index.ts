@@ -1,4 +1,5 @@
 import { cli } from "cli-ux";
+import { Namespace } from "cls-hooked";
 import * as cls from "cls-hooked";
 import { ethers } from "ethers";
 
@@ -35,6 +36,7 @@ import {
   DEFAULT_NETWORK_NAME,
   DEFAULT_RPC_PROVIDER,
 } from "./services/utils/constants";
+import { ClsNamespaces } from "./services/utils/continuation_local_storage";
 import { ILogging } from "./services/utils/logging";
 import { EmptyLogger } from "./services/utils/logging/empty_logging";
 import { OverviewLogger } from "./services/utils/logging/react-terminal";
@@ -373,7 +375,7 @@ export class IgnitionCore implements IIgnition {
       );
       this._logger.finishModuleDeploy(moduleName, summary);
     } catch (err) {
-      await errorHandling(err, this._logger);
+      await errorHandling(this._eventSession, err, this._logger);
 
       throw err;
     }
@@ -483,6 +485,7 @@ export class IgnitionCore implements IIgnition {
 }
 
 export async function defaultInputParams(
+  eventSession: Namespace,
   params: IgnitionParams,
   services?: IgnitionServices,
   repos?: IgnitionRepos
@@ -512,16 +515,19 @@ export async function defaultInputParams(
   if (!checkIfExist(networkId)) {
     networkId = DEFAULT_NETWORK_ID;
   }
-  process.env.IGNITION_NETWORK_ID = String(networkId);
+  eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
   let provider = new ethers.providers.JsonRpcProvider();
-  process.env.IGNITION_RPC_PROVIDER = DEFAULT_RPC_PROVIDER;
+  eventSession.set(ClsNamespaces.IGNITION_RPC_PROVIDER, provider);
   if (params?.rpcProvider !== undefined) {
     provider = params.rpcProvider;
-    process.env.IGNITION_RPC_PROVIDER = String(params?.rpcProvider);
+    eventSession.set(ClsNamespaces.IGNITION_RPC_PROVIDER, params?.rpcProvider);
   }
 
   if (params?.blockConfirmation !== undefined) {
-    process.env.BLOCK_CONFIRMATION_NUMBER = String(params.blockConfirmation);
+    eventSession.set(
+      ClsNamespaces.BLOCK_CONFIRMATION_NUMBER,
+      params.blockConfirmation ?? 1
+    );
   }
 
   if (params?.localDeployment !== undefined) {
@@ -565,6 +571,7 @@ export async function setupServicesAndEnvironment(
   services?: IgnitionServices,
   repos?: IgnitionRepos
 ): Promise<any> {
+  const eventSession = cls.createNamespace("event");
   const {
     networkName,
     networkId,
@@ -572,11 +579,10 @@ export async function setupServicesAndEnvironment(
     rpcProvider,
     logger,
     signers,
-  } = await defaultInputParams(params, services, repos);
+  } = await defaultInputParams(eventSession, params, services, repos);
   const currentPath = process.cwd();
 
   const gasProvider = new GasPriceCalculator(rpcProvider);
-  const eventSession = cls.createNamespace("event");
 
   const testEnv = params?.test ?? false;
   const moduleStateRepo = new ModuleStateRepo(
@@ -588,7 +594,7 @@ export async function setupServicesAndEnvironment(
   );
   const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
 
-  process.env.IGNITION_NETWORK_ID = String(networkId);
+  eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
   if (signers.length === 0) {
     throw new EmptySigners();
   }

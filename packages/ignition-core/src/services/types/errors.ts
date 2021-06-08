@@ -33,12 +33,8 @@ export function handleMappedErrorCodes(
   switch (errorCode) {
     case ethers.errors.NETWORK_ERROR:
     case ErrorCodes.NO_NETWORK: {
-      const currentNetworkName = process.env.IGNITION_NETWORK_NAME;
-      const rpcProvider = process.env.IGINITION_RPC_PROVIDER;
       return chalk.red(`No network running.
-Seems like rpc provider at ${rpcProvider} for ${chalk.bold(
-        currentNetworkName
-      )} is either down or unreachable.
+Seems like rpc provider is either down or unreachable.
 
 In a case that want to run a local rpc node, execute $ npx hardhat node
 `);
