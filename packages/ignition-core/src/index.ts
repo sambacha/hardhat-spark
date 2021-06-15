@@ -112,7 +112,7 @@ export interface IIgnition {
 export interface IgnitionParams {
   networkName: string;
   networkId: string;
-  rpcProvider?: ethers.providers.JsonRpcProvider;
+  rpcProvider: ethers.providers.JsonRpcProvider;
   signers?: ethers.Signer[];
   logging?: boolean;
   parallelizeDeployment?: boolean;
@@ -485,12 +485,8 @@ export async function defaultInputParams(
     networkId = DEFAULT_NETWORK_ID;
   }
   process.env.IGNITION_NETWORK_ID = String(networkId);
-  let provider = new ethers.providers.JsonRpcProvider();
-  process.env.IGNITION_RPC_PROVIDER = DEFAULT_RPC_PROVIDER;
-  if (params?.rpcProvider !== undefined) {
-    provider = params.rpcProvider;
-    process.env.IGNITION_RPC_PROVIDER = String(params?.rpcProvider);
-  }
+  const provider = params.rpcProvider;
+  process.env.IGNITION_RPC_PROVIDER = String(params?.rpcProvider);
 
   if (params?.blockConfirmation !== undefined) {
     process.env.BLOCK_CONFIRMATION_NUMBER = String(params.blockConfirmation);
