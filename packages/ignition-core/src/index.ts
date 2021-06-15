@@ -66,7 +66,6 @@ export * from "./services/modules/events/handler";
 export * from "./services/utils/logging";
 export * from "./services/types/migration";
 export * from "./services/modules/states/state_migration_service";
-export * from "./services/modules/module_migration";
 export * from "./services/utils/searcher";
 export * from "./services/ethereum/client";
 export * from "./services/modules/module_usage";
