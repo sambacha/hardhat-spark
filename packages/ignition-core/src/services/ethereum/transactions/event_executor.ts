@@ -3,7 +3,7 @@ import { ContractFunction } from "@ethersproject/contracts";
 import { Namespace } from "cls-hooked";
 
 import { IModuleStateRepo } from "../../modules/states/repo";
-import { CliError } from "../../types/errors";
+import { CliError } from "../../types";
 import { ClsNamespaces } from "../../utils/continuation_local_storage";
 import { KeyMutex } from "../../utils/mutex/key_mutex";
 import { checkIfExist } from "../../utils/util";
@@ -117,8 +117,8 @@ export class EventTxExecutor {
           transactionReceipt = await tx.wait(1);
 
           if (!this._eventSession.get(ClsNamespaces.PARALLELIZE)) {
-            const blockConfirmation = +(
-              process.env.BLOCK_CONFIRMATION_NUMBER ?? 1
+            const blockConfirmation = +this._eventSession.get(
+              ClsNamespaces.BLOCK_CONFIRMATION_NUMBER
             );
             transactionReceipt = await tx.wait(blockConfirmation);
           }
