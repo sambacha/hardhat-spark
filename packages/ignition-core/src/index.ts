@@ -538,111 +538,113 @@ export async function setupServicesAndEnvironment(
   services?: IgnitionServices
 ): Promise<any> {
   const eventSession = cls.createNamespace("event");
-  const {
-    networkName,
-    networkId,
-    gasPriceBackoff,
-    rpcProvider,
-    logger,
-    signers,
-  } = await defaultInputParams(eventSession, params, services);
-  const currentPath = process.cwd();
+  return eventSession.runAndReturn(async () => {
+    const {
+      networkName,
+      networkId,
+      gasPriceBackoff,
+      rpcProvider,
+      logger,
+      signers,
+    } = await defaultInputParams(eventSession, params, services);
+    const currentPath = process.cwd();
 
-  const gasProvider = new GasPriceCalculator(rpcProvider);
+    const gasProvider = new GasPriceCalculator(rpcProvider);
 
-  const testEnv = params?.test ?? false;
-  const moduleStateRepo = new ModuleStateRepo(
-    networkName,
-    currentPath,
-    false,
-    testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath),
-    testEnv
-  );
-  const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
+    const testEnv = params?.test ?? false;
+    const moduleStateRepo = new ModuleStateRepo(
+      networkName,
+      currentPath,
+      false,
+      testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath),
+      testEnv
+    );
+    const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
 
-  eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
-  if (signers.length === 0) {
-    throw new EmptySigners();
-  }
+    eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
+    if (signers.length === 0) {
+      throw new EmptySigners();
+    }
 
-  const signer = signers[0];
-  const transactionManager = new TransactionManager(
-    rpcProvider,
-    signer,
-    networkId,
-    gasProvider,
-    gasProvider,
-    logger,
-    gasPriceBackoff
-  );
-  const txGenerator = new EthTxGenerator(
-    signer,
-    gasProvider,
-    gasProvider,
-    networkId,
-    rpcProvider,
-    transactionManager,
-    transactionManager,
-    logger,
-    gasPriceBackoff
-  );
+    const signer = signers[0];
+    const transactionManager = new TransactionManager(
+      rpcProvider,
+      signer,
+      networkId,
+      gasProvider,
+      gasProvider,
+      logger,
+      gasPriceBackoff
+    );
+    const txGenerator = new EthTxGenerator(
+      signer,
+      gasProvider,
+      gasProvider,
+      networkId,
+      rpcProvider,
+      transactionManager,
+      transactionManager,
+      logger,
+      gasPriceBackoff
+    );
 
-  const eventHandler = new EventHandler(moduleStateRepo, logger);
-  const txExecutor = new TxExecutor(
-    logger,
-    moduleStateRepo,
-    txGenerator,
-    networkId,
-    rpcProvider,
-    eventHandler,
-    eventSession,
-    eventTxExecutor
-  );
+    const eventHandler = new EventHandler(moduleStateRepo, logger);
+    const txExecutor = new TxExecutor(
+      logger,
+      moduleStateRepo,
+      txGenerator,
+      networkId,
+      rpcProvider,
+      eventHandler,
+      eventSession,
+      eventTxExecutor
+    );
 
-  const ethClient = new EthClient(rpcProvider);
-  const moduleResolver = new ModuleResolver(
-    rpcProvider,
-    signer,
-    logger,
-    txGenerator,
-    moduleStateRepo,
-    eventTxExecutor,
-    eventSession,
-    ethClient
-  );
+    const ethClient = new EthClient(rpcProvider);
+    const moduleResolver = new ModuleResolver(
+      rpcProvider,
+      signer,
+      logger,
+      txGenerator,
+      moduleStateRepo,
+      eventTxExecutor,
+      eventSession,
+      ethClient
+    );
 
-  const walletWrapper = new WalletWrapper(
-    eventSession,
-    transactionManager,
-    gasProvider,
-    gasProvider,
-    moduleStateRepo,
-    logger,
-    eventTxExecutor
-  );
-  const moduleTyping = new ModuleTypings();
+    const walletWrapper = new WalletWrapper(
+      eventSession,
+      transactionManager,
+      gasProvider,
+      gasProvider,
+      moduleStateRepo,
+      logger,
+      eventTxExecutor
+    );
+    const moduleTyping = new ModuleTypings();
 
-  const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(
-    moduleStateRepo
-  );
+    const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(
+      moduleStateRepo
+    );
 
-  return {
-    networkName,
-    networkId,
-    gasPriceBackoff,
-    rpcProvider,
-    signers,
-    logger,
+    return {
+      networkName,
+      networkId,
+      gasPriceBackoff,
+      rpcProvider,
+      signers,
+      logger,
 
-    gasProvider,
-    eventSession,
-    moduleStateRepo,
-    moduleResolver,
-    txGenerator,
-    txExecutor,
-    walletWrapper,
-    moduleDeploymentSummaryService,
+      gasProvider,
+      eventSession,
+      moduleStateRepo,
+      moduleResolver,
+      txGenerator,
+      txExecutor,
+      walletWrapper,
+      moduleDeploymentSummaryService,
 
-    moduleTyping,
-  };
+      moduleTyping,
+    };
+  });
 }

@@ -9,6 +9,7 @@
   ],
   "license": "MIT",
   "scripts": {
+    "test": "mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
     "lint:fix": "prettier --write \"src/**/*.{js,ts}\" \"test/**/*.{js,ts}\" && yarn lint --fix",
     "lint": "tslint --config tslint.json --project ./tsconfig.json",
     "build": "tsc --build .",

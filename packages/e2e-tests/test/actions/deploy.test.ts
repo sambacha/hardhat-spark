@@ -36,6 +36,7 @@ describe("ignition deploy", () => {
     {
       networkName,
       networkId,
+      rpcProvider: defaultProvider,
       signers: testPrivateKeys,
       test: true,
     },
@@ -45,7 +46,6 @@ describe("ignition deploy", () => {
   before(async () => {
     await ignitionCoreTest.mustInit();
   });
-
   afterEach(() => {
     if (ignitionCoreTest?.moduleStateRepo) {
       ignitionCoreTest.moduleStateRepo.clear();
@@ -127,7 +127,7 @@ describe("ignition deploy", () => {
       const contractBindingAfter = (moduleStateFileAfter.Example as unknown) as ContractBindingMetaData;
       assert.equal(
         contractBindingBefore.deployMetaData.contractAddress !==
-          contractBindingAfter.deployMetaData.contractAddress,
+        contractBindingAfter.deployMetaData.contractAddress,
         true
       );
       assert.equal(
@@ -164,7 +164,7 @@ describe("ignition deploy", () => {
 
       assert.equal(
         firstContractBindingBefore.deployMetaData.contractAddress !==
-          firstContractBindingAfter.deployMetaData.contractAddress,
+        firstContractBindingAfter.deployMetaData.contractAddress,
         true
       );
       assert.equal(
@@ -178,7 +178,7 @@ describe("ignition deploy", () => {
 
       assert.equal(
         secondContractBindingBefore.deployMetaData.contractAddress !==
-          secondContractBindingAfter.deployMetaData.contractAddress,
+        secondContractBindingAfter.deployMetaData.contractAddress,
         true
       );
       assert.equal(
@@ -364,7 +364,6 @@ async function runDeployCommand(
   projectFileName: string = moduleFileName
 ): Promise<void> {
   // @TODO run contracts compilation somewhere around here
-
   const deploymentFilePath = path.resolve(
     projectLocation,
     deploymentFolder,
@@ -404,7 +403,6 @@ async function loadModuleParams(
   await ignition.mustInit(
     ignition.params,
     ignition.customServices,
-    ignition.repos,
     config.moduleParams
   );
 }

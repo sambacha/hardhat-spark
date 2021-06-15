@@ -26,11 +26,12 @@ import { Batcher } from "../../modules/events/batcher";
 import { EventHandler } from "../../modules/events/handler";
 import { ModuleResolver } from "../../modules/module_resolver";
 import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
-import { JsonFragment, JsonFragmentType } from "../../types";
 import {
   CliError,
   ContractTypeMismatch,
   ContractTypeUnsupported,
+  JsonFragment,
+  JsonFragmentType,
   MissingAbiInContractError,
   NoContractBindingDataInModuleState,
   TransactionFailed,
