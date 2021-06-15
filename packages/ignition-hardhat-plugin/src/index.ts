@@ -5,9 +5,7 @@ import {
   IGasProvider,
   IgnitionCore,
   IgnitionParams,
-  IgnitionRepos,
   IgnitionServices,
-  IModuleRegistryResolver,
   INonceManager,
   ITransactionSigner,
   Module,
@@ -36,8 +34,6 @@ export interface IHardhatIgnition {
 export interface HardhatIgnitionConfig {
   logging?: boolean;
   test?: boolean;
-  registry?: IModuleRegistryResolver;
-  resolver?: IModuleRegistryResolver;
   gasPriceProvider?: IGasProvider;
   nonceManager?: INonceManager;
   transactionSigner?: ITransactionSigner;
@@ -50,15 +46,9 @@ export class HardhatIgnition implements IHardhatIgnition {
   constructor(
     params: IgnitionParams,
     services: IgnitionServices,
-    repos: IgnitionRepos,
     moduleParams?: ModuleParams
   ) {
-    this._ignitionCore = new IgnitionCore(
-      params,
-      services,
-      repos,
-      moduleParams
-    );
+    this._ignitionCore = new IgnitionCore(params, services, moduleParams);
   }
 
   public async init(
