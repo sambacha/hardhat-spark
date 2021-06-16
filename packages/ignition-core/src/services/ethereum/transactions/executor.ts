@@ -628,7 +628,7 @@ export class TxExecutor {
     }
 
     if (binding?.deployMetaData?.deploymentSpec?.deployFn !== undefined) {
-      // @TODO this doesn't work when running parallelized
+      // @TODO add event session here instead of `setSingleEventName`
       this._moduleStateRepo.setSingleEventName(`Deploy${binding.name}`);
       const resp = await binding.deployMetaData.deploymentSpec.deployFn();
       await this._moduleStateRepo.finishCurrentEvent(
