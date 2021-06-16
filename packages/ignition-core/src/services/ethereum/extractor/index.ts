@@ -1,7 +1,7 @@
 import { JsonFragment } from "../../types/artifacts/abi";
 import { LinkReferences } from "../../types/artifacts/libraries";
 
-export interface ICompiler {
+export interface IContractDataExtractor {
   extractBytecode(contractNames: string[]): { [name: string]: string };
   extractContractInterface(
     contractNames: string[]

@@ -10,7 +10,7 @@ import { cli } from "cli-ux";
 import { Namespace } from "cls-hooked";
 import { CallOverrides, ethers } from "ethers";
 
-import { ICompiler } from "../services/ethereum/extractor";
+import { IContractDataExtractor } from "../services/ethereum/extractor";
 import { IGasCalculator, IGasPriceCalculator } from "../services/ethereum/gas";
 import {
   INonceManager,
@@ -198,9 +198,9 @@ export interface Deployed {
   shouldRedeploy: ShouldRedeployFn | undefined;
   deploymentSpec:
     | {
-        deployFn: DeployFn | undefined;
-        deps: Array<ContractBinding | ContractBindingMetaData>;
-      }
+    deployFn: DeployFn | undefined;
+    deps: Array<ContractBinding | ContractBindingMetaData>;
+  }
     | undefined;
 }
 
@@ -289,7 +289,7 @@ export class GroupedDependencies {
     const bindings = this.dependencies.filter(
       (target: ContractBinding | ContractEvent) => {
         return ((target as ContractBinding)?.abi as JsonFragment[]).find(
-          ({ name }) => name === searchParams?.functionName
+          ({name}) => name === searchParams?.functionName
         );
       }
     ) as ContractBinding[];
@@ -1198,8 +1198,8 @@ export class ContractInstance {
         ) {
           this._contractBinding.contractTxProgress = ++contractTxIterator;
           return currentEventTransactionData.contractOutput[
-            contractTxIterator - 1
-          ];
+          contractTxIterator - 1
+            ];
         }
 
         const currentInputs =
@@ -1507,12 +1507,12 @@ export class ModuleBuilder {
 
   private readonly _subModules: ModuleBuilder[];
   private readonly _moduleSession: Namespace;
-  private _compiler: ICompiler;
+  private _extractor: IContractDataExtractor;
   private _moduleValidator: IModuleValidator;
 
   constructor(
     moduleSession: Namespace,
-    compiler: ICompiler,
+    compiler: IContractDataExtractor,
     moduleValidator: IModuleValidator,
     params?: ModuleParams
   ) {
@@ -1534,7 +1534,7 @@ export class ModuleBuilder {
     }
     this._subModules = [];
     this._moduleSession = moduleSession;
-    this._compiler = compiler;
+    this._extractor = compiler;
     this._moduleValidator = moduleValidator;
   }
 
@@ -1746,7 +1746,7 @@ export class ModuleBuilder {
     params?: ModuleParams,
     signers: ethers.Signer[] | any[] = []
   ): Promise<ModuleBuilder> {
-    const moduleParams = { ...this._params, ...params };
+    const moduleParams = {...this._params, ...params};
 
     if (m instanceof Promise) {
       m = await m;
@@ -1759,7 +1759,7 @@ export class ModuleBuilder {
 
     moduleBuilder = await m.init(
       this._moduleSession,
-      this._compiler,
+      this._extractor,
       this._moduleValidator,
       signers,
       this,
@@ -1962,7 +1962,7 @@ export class Module {
 
   public async init(
     moduleSession: Namespace,
-    compiler: ICompiler,
+    extractor: IContractDataExtractor,
     moduleValidator: IModuleValidator,
     signers: ethers.Signer[],
     m?: ModuleBuilder,
@@ -1973,7 +1973,12 @@ export class Module {
     }
     let moduleBuilder =
       m ??
-      new ModuleBuilder(moduleSession, compiler, moduleValidator, moduleParams);
+      new ModuleBuilder(
+        moduleSession,
+        extractor,
+        moduleValidator,
+        moduleParams
+      );
     if (moduleParams !== undefined) {
       moduleBuilder.setParam(moduleParams);
     }
@@ -2000,7 +2005,7 @@ export class Module {
     }
     moduleBuilder = await handleModule(
       moduleBuilder,
-      compiler,
+      extractor,
       moduleValidator,
       this.name,
       this._isUsage,
@@ -2082,7 +2087,7 @@ function checkIfSuitableForInstantiating(
 
 export async function handleModule(
   moduleBuilder: ModuleBuilder,
-  compiler: ICompiler,
+  compiler: IContractDataExtractor,
   moduleValidator: IModuleValidator,
   moduleName: string,
   isUsage: boolean,
@@ -2110,8 +2115,10 @@ export async function handleModule(
 
   for (const [bindingName, binding] of Object.entries(moduleBuilderBindings)) {
     if (
-      !checkIfExist(bytecodes[binding.contractName]) ||
-      !checkIfExist(libraries[binding.contractName])
+      (bytecodes !== undefined &&
+        !checkIfExist(bytecodes[binding.contractName])) ||
+      (libraries !== undefined &&
+        !checkIfExist(libraries[binding.contractName]))
     ) {
       throw new MissingContractMetadata(
         `Contract metadata are missing for ${bindingName}`
@@ -2120,9 +2127,14 @@ export async function handleModule(
 
     moduleBuilderBindings[bindingName].bytecode =
       bytecodes[binding.contractName];
-    moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
-    moduleBuilderBindings[bindingName].libraries =
-      libraries[binding.contractName];
+    if (libraries !== undefined) {
+      moduleBuilderBindings[bindingName].libraries =
+        libraries[binding.contractName];
+    }
+
+    if (abi !== undefined) {
+      moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
+    }
   }
 
   return moduleBuilder;

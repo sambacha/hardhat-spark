@@ -1,5 +1,122 @@
+import { assert } from "chai";
+import { Namespace } from "cls-hooked";
+import { ethers } from "ethers";
+import sinon, { StubbedInstance, stubInterface } from "ts-sinon";
+
+import {
+  buildModule,
+  EthClient,
+  EventTxExecutor,
+  HardhatExtractor,
+  ITransactionGenerator,
+  ModuleBuilder,
+  ModuleResolver,
+} from "../../src";
+import { ModuleStateRepo } from "../../src/services/modules/states/repo/state_repo";
+import { ModuleValidator } from "../../src/services/modules/validator/module_validator";
+import { EmptyLogger } from "../../src/services/utils/logging/empty_logging";
+
 describe("resolve module", () => {
-  it("should be able to resolve single contract");
+  let moduleResolver: ModuleResolver;
+  const logger = new EmptyLogger();
+  const stubRpcProvider: StubbedInstance<ethers.providers.JsonRpcProvider> = stubInterface<
+    ethers.providers.JsonRpcProvider
+  >();
+  const stubSigner: StubbedInstance<ethers.Signer> = stubInterface<
+    ethers.Signer
+  >();
+  const stubTransactionGenerator: StubbedInstance<ITransactionGenerator> = stubInterface<
+    ITransactionGenerator
+  >();
+  const stubModuleStateRepo: StubbedInstance<ModuleStateRepo> = stubInterface<
+    ModuleStateRepo
+  >();
+  const stubEventTransactionExecutor: StubbedInstance<EventTxExecutor> = stubInterface<
+    EventTxExecutor
+  >();
+  const stubEventSession: StubbedInstance<Namespace> = stubInterface<
+    Namespace
+  >();
+  const stubModuleSession: StubbedInstance<Namespace> = stubInterface<
+    Namespace
+  >();
+  const stubEthClient: StubbedInstance<EthClient> = stubInterface<EthClient>();
+
+  const stubExtractor: StubbedInstance<HardhatExtractor> = stubInterface<
+    HardhatExtractor
+  >();
+  const stubModuleValidator: StubbedInstance<ModuleValidator> = stubInterface<
+    ModuleValidator
+  >();
+
+  beforeEach(() => {
+    moduleResolver = new ModuleResolver(
+      stubRpcProvider,
+      stubSigner,
+      logger,
+      stubTransactionGenerator,
+      stubModuleStateRepo,
+      stubEventTransactionExecutor,
+      stubEventSession,
+      stubEthClient
+    );
+  });
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it("should be able to resolve single contract", async () => {
+    const moduleName = "testModule";
+    const contractName = "test";
+    const contractAbi = {
+      inputs: [
+        {
+          internalType: "int256",
+          name: "a",
+          type: "int256",
+        },
+        {
+          internalType: "uint256",
+          name: "b",
+          type: "uint256",
+        },
+        {
+          internalType: "uint256",
+          name: "c",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "nonpayable",
+      type: "constructor",
+    };
+    const module = buildModule(moduleName, async (m: ModuleBuilder) => {
+      m.contract(contractName, 1, 2, 3);
+    });
+
+    stubExtractor.extractBytecode.returns({
+      test: "0x0",
+    });
+    stubExtractor.extractContractInterface.returns({
+      test: [contractAbi],
+    });
+    stubExtractor.extractContractLibraries.returns({
+      test: {},
+    });
+
+    await module.init(stubModuleSession, stubExtractor, stubModuleValidator, [
+      stubSigner,
+    ]);
+
+    const moduleState = await moduleResolver.resolve(
+      module.getAllBindings(),
+      module.getAllEvents(),
+      module.getAllModuleEvents(),
+      {}
+    );
+
+    assert.isDefined(moduleState);
+    assert.isDefined(moduleState[contractName]);
+  });
   it("should be able to resolve multiple contracts");
   it("should be able to resolve single contract and single event");
   it("should be able to resolve multiple contracts and multiple events");

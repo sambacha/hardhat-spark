@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 
 import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
 import { EthClient } from "./services/ethereum/client";
-import { ICompiler } from "./services/ethereum/extractor";
+import { IContractDataExtractor } from "./services/ethereum/extractor";
 import { HardhatExtractor } from "./services/ethereum/extractor/hardhat";
 import { IGasProvider } from "./services/ethereum/gas";
 import { GasPriceCalculator } from "./services/ethereum/gas/calculator";
@@ -154,7 +154,7 @@ export class IgnitionCore implements IIgnition {
     | undefined;
 
   private _moduleTyping: ModuleTypings | undefined;
-  private readonly _compiler: ICompiler;
+  private readonly _extractor: IContractDataExtractor;
   private readonly _moduleValidator: IModuleValidator;
 
   constructor(
@@ -167,7 +167,7 @@ export class IgnitionCore implements IIgnition {
     this.moduleParams = moduleParams;
 
     // @TODO move to mustInit eventually
-    this._compiler = new HardhatExtractor();
+    this._extractor = new HardhatExtractor();
     this._moduleValidator = new ModuleValidator();
   }
 
@@ -268,7 +268,7 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this._compiler,
+          this._extractor,
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
@@ -380,7 +380,7 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this._compiler,
+          this._extractor,
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
@@ -434,7 +434,7 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this._compiler,
+          this._extractor,
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
