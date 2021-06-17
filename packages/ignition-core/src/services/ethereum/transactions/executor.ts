@@ -219,13 +219,14 @@ export class TxExecutor {
           continue;
         }
 
-        // executing user defined shouldRedeploy function and skipping execution if user desired that.
-        if (
-          element.deployMetaData.shouldRedeploy !== undefined &&
-          !element.deployMetaData.shouldRedeploy(element)
-        ) {
-          continue;
-        }
+        // @TODO(filip): this part is potentially unneeded
+        // // executing user defined shouldRedeploy function and skipping execution if user desired that.
+        // if (
+        //   element.deployMetaData.shouldRedeploy !== undefined &&
+        //   !element.deployMetaData.shouldRedeploy(element)
+        // ) {
+        //   continue;
+        // }
 
         this._prompter.bindingExecution(element.name);
         element = await this._executeSingleBinding(
@@ -335,12 +336,13 @@ export class TxExecutor {
           continue;
         }
 
-        if (
-          batchElement.deployMetaData.shouldRedeploy &&
-          !batchElement.deployMetaData.shouldRedeploy(batchElement)
-        ) {
-          continue;
-        }
+        // @TODO(filip): this part is potentially unneeded
+        // if (
+        //   batchElement.deployMetaData.shouldRedeploy &&
+        //   !batchElement.deployMetaData.shouldRedeploy(batchElement)
+        // ) {
+        //   continue;
+        // }
 
         this._prompter.bindingExecution(batchElement.name);
         batchElement = await this._executeSingleBinding(

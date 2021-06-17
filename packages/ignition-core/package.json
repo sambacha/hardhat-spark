@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.2.0",
+    "@types/chai-as-promised": "^7.1.4",
     "@types/cli-progress": "^3.8.0",
     "@types/cls-hooked": "^4.3.1",
     "@types/fs-extra": "^9.0.11",
@@ -51,6 +52,7 @@
     "@types/qs": "^6.9.6",
     "@types/react": "^17.0.5",
     "@types/uuid": "^8.3.0",
+    "chai-as-promised": "^7.1.1",
     "ethers": "^5.0.22",
     "prettier": "2.0.5",
     "rimraf": "^3.0.2",

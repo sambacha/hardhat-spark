@@ -89,7 +89,10 @@ export interface ModuleParams {
   [name: string]: any;
 }
 
-export type ShouldRedeployFn = (curr: ContractBinding) => boolean;
+export type ShouldRedeployFn = (
+  old: ContractBindingMetaData,
+  curr: ContractBinding
+) => boolean;
 
 export interface DeployReturn {
   transaction: TransactionReceipt;
@@ -198,9 +201,9 @@ export interface Deployed {
   shouldRedeploy: ShouldRedeployFn | undefined;
   deploymentSpec:
     | {
-    deployFn: DeployFn | undefined;
-    deps: Array<ContractBinding | ContractBindingMetaData>;
-  }
+        deployFn: DeployFn | undefined;
+        deps: Array<ContractBinding | ContractBindingMetaData>;
+      }
     | undefined;
 }
 
@@ -289,7 +292,7 @@ export class GroupedDependencies {
     const bindings = this.dependencies.filter(
       (target: ContractBinding | ContractEvent) => {
         return ((target as ContractBinding)?.abi as JsonFragment[]).find(
-          ({name}) => name === searchParams?.functionName
+          ({ name }) => name === searchParams?.functionName
         );
       }
     ) as ContractBinding[];
@@ -1198,8 +1201,8 @@ export class ContractInstance {
         ) {
           this._contractBinding.contractTxProgress = ++contractTxIterator;
           return currentEventTransactionData.contractOutput[
-          contractTxIterator - 1
-            ];
+            contractTxIterator - 1
+          ];
         }
 
         const currentInputs =
@@ -1746,7 +1749,7 @@ export class ModuleBuilder {
     params?: ModuleParams,
     signers: ethers.Signer[] | any[] = []
   ): Promise<ModuleBuilder> {
-    const moduleParams = {...this._params, ...params};
+    const moduleParams = { ...this._params, ...params };
 
     if (m instanceof Promise) {
       m = await m;
@@ -2120,9 +2123,7 @@ export async function handleModule(
       (libraries !== undefined &&
         !checkIfExist(libraries[binding.contractName]))
     ) {
-      throw new MissingContractMetadata(
-        `Contract metadata are missing for ${bindingName}`
-      );
+      throw new MissingContractMetadata(binding.contractName);
     }
 
     moduleBuilderBindings[bindingName].bytecode =

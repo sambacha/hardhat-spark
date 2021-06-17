@@ -26,6 +26,10 @@ export function isSameBytecode(
   bytecodeOne: string,
   bytecodeTwo: string
 ): boolean {
+  if (bytecodeOne === bytecodeTwo) {
+    return true;
+  }
+
   // https://docs.soliditylang.org/en/latest/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   const metaDataLengthOne = parseInt(bytecodeOne.slice(-4), 16) * 2 + 4;
   const formattedBytecodeOne = bytecodeOne.substr(
