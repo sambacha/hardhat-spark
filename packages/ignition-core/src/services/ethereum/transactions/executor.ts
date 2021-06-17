@@ -43,6 +43,7 @@ import { checkIfExist } from "../../utils/util";
 
 import { EventTxExecutor } from "./event_executor";
 import { EthTxGenerator } from "./generator";
+import { ITransactionGenerator } from './index';
 
 const CONSTRUCTOR_TYPE = "constructor";
 
@@ -113,7 +114,7 @@ export class TxExecutor {
 
   private _prompter: ILogging;
   private _moduleStateRepo: ModuleStateRepo;
-  private _txGenerator: EthTxGenerator;
+  private _txGenerator: ITransactionGenerator;
   private _ethers: providers.JsonRpcProvider;
   private _eventHandler: EventHandler;
   private _eventSession: Namespace;
@@ -121,21 +122,21 @@ export class TxExecutor {
   private readonly _blockConfirmation: number;
 
   constructor(
-    prompter: ILogging,
+    logger: ILogging,
     moduleState: ModuleStateRepo,
-    txGenerator: EthTxGenerator,
+    txGenerator: ITransactionGenerator,
     networkId: string,
-    ethers: providers.JsonRpcProvider,
+    provider: providers.JsonRpcProvider,
     eventHandler: EventHandler,
     eventSession: Namespace,
     eventTxExecutor: EventTxExecutor,
     parallelize: boolean = false
   ) {
-    this._prompter = prompter;
+    this._prompter = logger;
     this._moduleStateRepo = moduleState;
     this._txGenerator = txGenerator;
 
-    this._ethers = ethers;
+    this._ethers = provider;
     this._eventHandler = eventHandler;
     this._networkId = networkId;
     this._parallelize = parallelize;

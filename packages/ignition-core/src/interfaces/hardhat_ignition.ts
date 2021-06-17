@@ -612,7 +612,7 @@ export class ContractBinding extends Binding {
     // event hooks
     events?: EventsDepRef,
     signer?: ethers.Signer,
-    prompter?: ILogging,
+    logger?: ILogging,
     txGenerator?: ITransactionGenerator,
     moduleStateRepo?: IModuleStateRepo,
     eventTxExecutor?: EventTxExecutor,
@@ -651,7 +651,7 @@ export class ContractBinding extends Binding {
     this._contractInstance = undefined;
 
     this.signer = signer;
-    this.prompter = prompter;
+    this.prompter = logger;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
