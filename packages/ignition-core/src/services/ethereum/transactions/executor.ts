@@ -42,8 +42,7 @@ import { ILogging } from "../../utils/logging";
 import { checkIfExist } from "../../utils/util";
 
 import { EventTxExecutor } from "./event_executor";
-import { EthTxGenerator } from "./generator";
-import { ITransactionGenerator } from './index';
+import { ITransactionGenerator } from "./index";
 
 const CONSTRUCTOR_TYPE = "constructor";
 
@@ -112,7 +111,7 @@ export class TxExecutor {
   private readonly _networkId: string;
   private readonly _parallelize: boolean;
 
-  private _prompter: ILogging;
+  private _logger: ILogging;
   private _moduleStateRepo: ModuleStateRepo;
   private _txGenerator: ITransactionGenerator;
   private _ethers: providers.JsonRpcProvider;
@@ -132,7 +131,7 @@ export class TxExecutor {
     eventTxExecutor: EventTxExecutor,
     parallelize: boolean = false
   ) {
-    this._prompter = logger;
+    this._logger = logger;
     this._moduleStateRepo = moduleState;
     this._txGenerator = txGenerator;
 
@@ -157,10 +156,10 @@ export class TxExecutor {
     await this._moduleStateRepo.storeNewState(moduleName, moduleState);
 
     if (this._parallelize) {
-      this._prompter.startModuleDeploy(moduleName, moduleState);
-      this._prompter.parallelizationExperimental();
+      this._logger.startModuleDeploy(moduleName, moduleState);
+      this._logger.parallelizationExperimental();
       if (!checkIfExist(moduleState)) {
-        this._prompter.nothingToDeploy();
+        this._logger.nothingToDeploy();
       }
 
       await this._executeParallel(moduleName, moduleState, moduleConfig);
@@ -168,9 +167,9 @@ export class TxExecutor {
       return;
     }
 
-    this._prompter.startModuleDeploy(moduleName, moduleState);
+    this._logger.startModuleDeploy(moduleName, moduleState);
     if (!checkIfExist(moduleState)) {
-      this._prompter.nothingToDeploy();
+      this._logger.nothingToDeploy();
     }
 
     await this._executeSync(moduleName, moduleState, moduleConfig);
@@ -204,9 +203,9 @@ export class TxExecutor {
 
         // check if already deployed
         if (checkIfExist(element.deployMetaData?.contractAddress)) {
-          this._prompter.alreadyDeployed(elementName);
-          await this._prompter.promptContinueDeployment();
-          this._prompter.finishedBindingExecution(elementName);
+          this._logger.alreadyDeployed(elementName);
+          await this._logger.promptContinueDeployment();
+          this._logger.finishedBindingExecution(elementName);
           continue;
         }
 
@@ -229,7 +228,7 @@ export class TxExecutor {
         //   continue;
         // }
 
-        this._prompter.bindingExecution(element.name);
+        this._logger.bindingExecution(element.name);
         element = await this._executeSingleBinding(
           moduleName,
           element as ContractBinding,
@@ -242,11 +241,11 @@ export class TxExecutor {
         }
 
         await this._moduleStateRepo.storeSingleBinding(element);
-        this._prompter.finishedBindingExecution(element.name);
+        this._logger.finishedBindingExecution(element.name);
         continue;
       }
 
-      this._prompter.eventExecution((element as StatefulEvent).event.name);
+      this._logger.eventExecution((element as StatefulEvent).event.name);
       await this._executeEvent(
         moduleName,
         element as StatefulEvent,
@@ -323,8 +322,8 @@ export class TxExecutor {
 
         batchElement = batchElement as ContractBinding;
         if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
-          this._prompter.alreadyDeployed(batchElement.name);
-          this._prompter.finishedBindingExecution(batchElement.name);
+          this._logger.alreadyDeployed(batchElement.name);
+          this._logger.finishedBindingExecution(batchElement.name);
           continue;
         }
 
@@ -345,7 +344,7 @@ export class TxExecutor {
         //   continue;
         // }
 
-        this._prompter.bindingExecution(batchElement.name);
+        this._logger.bindingExecution(batchElement.name);
         batchElement = await this._executeSingleBinding(
           moduleName,
           batchElement,
@@ -391,7 +390,7 @@ export class TxExecutor {
           moduleState[batchElement.name] = batchElement;
 
           await this._moduleStateRepo.storeSingleBinding(batchElement);
-          this._prompter.finishedBindingExecution(batchElement.name);
+          this._logger.finishedBindingExecution(batchElement.name);
         }
       }
     }
@@ -414,7 +413,7 @@ export class TxExecutor {
               continue;
             }
 
-            this._prompter.eventExecution(
+            this._logger.eventExecution(
               (batchElement as StatefulEvent).event.name
             );
             eventPromise.push(
@@ -772,8 +771,8 @@ export class TxExecutor {
       binding.signer
     );
 
-    this._prompter.promptSignedTransaction(signedTx);
-    await this._prompter.promptExecuteTx();
+    this._logger.promptSignedTransaction(signedTx);
+    await this._logger.promptExecuteTx();
 
     binding.txData = binding.txData as TransactionData;
     if (!parallelized) {
@@ -801,7 +800,7 @@ export class TxExecutor {
     return new Promise(async (resolve, reject) => {
       binding.txData = binding.txData as TransactionData;
 
-      this._prompter.sendingTx(elementName);
+      this._logger.sendingTx(elementName);
       let txResp;
       try {
         txResp = await this._ethers.sendTransaction(signedTx);
@@ -809,7 +808,7 @@ export class TxExecutor {
       } catch (e) {
         reject(new TransactionFailed(e.error.message));
       }
-      this._prompter.sentTx(elementName);
+      this._logger.sentTx(elementName);
     });
   }
 
@@ -830,15 +829,15 @@ export class TxExecutor {
         binding.txData.input = txResp;
         await this._moduleStateRepo.storeSingleBinding(binding);
 
-        this._prompter.waitTransactionConfirmation();
-        this._prompter.transactionConfirmation(1, elementName);
+        this._logger.waitTransactionConfirmation();
+        this._logger.transactionConfirmation(1, elementName);
         let txReceipt = await txResp.wait(1);
         binding.txData.output = txReceipt;
         await this._moduleStateRepo.storeSingleBinding(binding);
 
         let currentConfirmation = 2;
         while (currentConfirmation < this._blockConfirmation) {
-          this._prompter.transactionConfirmation(
+          this._logger.transactionConfirmation(
             currentConfirmation,
             elementName
           );
@@ -849,7 +848,7 @@ export class TxExecutor {
         txReceipt = await txResp.wait(this._blockConfirmation);
         binding.txData.output = txReceipt;
         await this._moduleStateRepo.storeSingleBinding(binding);
-        this._prompter.transactionConfirmation(
+        this._logger.transactionConfirmation(
           this._blockConfirmation,
           elementName
         );
