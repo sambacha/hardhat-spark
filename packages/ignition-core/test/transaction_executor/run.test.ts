@@ -3,23 +3,26 @@ import chai, { assert } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { Namespace } from "cls-hooked";
 import { ethers } from "ethers";
-import { defaultAbiCoder } from "ethers/lib/utils";
 import sinon, { StubbedInstance, stubInterface } from "ts-sinon";
 
 import {
+  AfterDeployEvent,
   ContractBinding,
   copyValue,
   Deployed,
   EventHandler,
   EventTxExecutor,
+  EventType,
   ILogging,
   ITransactionGenerator,
   ModuleConfig,
   ModuleState,
+  StatefulEvent,
   TxExecutor,
 } from "../../src";
 import { ModuleStateRepo } from "../../src/services/modules/states/repo/state_repo";
 import { EmptyLogger } from "../../src/services/utils/logging/empty_logging";
+
 chai.use(chaiAsPromised);
 
 describe("transaction executor", () => {
@@ -339,8 +342,85 @@ describe("transaction executor", () => {
       true
     );
   });
-  it("should be able to execute single event on top of single contract", () => {
+  it("should be able to execute single event on top of single contract", async () => {
+    const moduleName = "testModule";
+    const contractName = "test";
+    const eventName = "afterDeployTest";
+    const bytecode = "0x0";
+    const contractAbi = {
+      inputs: [
+        {
+          internalType: "int256",
+          name: "a",
+          type: "int256",
+        },
+        {
+          internalType: "uint256",
+          name: "b",
+          type: "uint256",
+        },
+        {
+          internalType: "uint256",
+          name: "c",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "nonpayable",
+      type: "constructor",
+    };
+    const deployedData: Deployed = {
+      deploymentSpec: undefined,
+      lastEventName: undefined,
+      shouldRedeploy: undefined,
+      logicallyDeployed: true,
+      contractAddress: "0x0",
+    };
+    const contractStateData = new ContractBinding(
+      contractName,
+      contractName,
+      [1, 2, 3],
+      moduleName,
+      [],
+      "",
+      stubModuleSession,
+      bytecode,
+      contractAbi.inputs,
+      {},
+      deployedData,
+      {
+        input: {
+          from: "0x0",
+        },
+      },
+      undefined,
+      stubSigner,
+      logger,
+      stubTransactionGenerator,
+      stubModuleStateRepo,
+      stubEventTransactionExecutor,
+      stubEventSession
+    );
+    const event: AfterDeployEvent = {
+      name: eventName,
+      eventType: EventType.AfterDeployEvent,
+      deps: ["test"],
+      eventDeps: [],
+      usage: [],
+      eventUsage: [],
+      moduleName,
+      subModuleNameDepth: [],
+      fn: async () => {},
+    };
+    const statefulEvent = new StatefulEvent(event, false, {});
+    const moduleState: ModuleState = {
+      test: contractStateData,
+      afterDeployA: statefulEvent,
+    };
 
+    // @TODO this fails, not sure why
+    await txExecutor.execute(moduleName, moduleState, undefined);
+
+    assert.equal(true, true);
   });
   it("should be able to logically deploy contract");
 
