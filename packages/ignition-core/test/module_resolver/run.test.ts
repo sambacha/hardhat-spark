@@ -4,18 +4,16 @@ import { Namespace } from "cls-hooked";
 import { ethers } from "ethers";
 import sinon, { StubbedInstance, stubInterface } from "ts-sinon";
 
-import { DeployReturn } from "../../dist/src";
 import {
   buildModule,
   ContractBinding,
   ContractBindingMetaData,
   Deployed,
+  DeployReturn,
   EthClient,
   EventTxExecutor,
   EventType,
   HardhatExtractor,
-  ILogging,
-  IModuleStateRepo,
   ITransactionGenerator,
   MissingContractMetadata,
   ModuleAndModuleStateEventTypeMismatchError,

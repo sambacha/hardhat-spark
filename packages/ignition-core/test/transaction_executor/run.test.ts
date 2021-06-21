@@ -1,8 +1,12 @@
-import { TransactionResponse } from "@ethersproject/abstract-provider";
+import {
+  TransactionReceipt,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider";
 import chai, { assert } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { Namespace } from "cls-hooked";
+import { createNamespace, Namespace } from "cls-hooked";
 import { ethers } from "ethers";
+import { defaultAbiCoder } from "ethers/lib/utils";
 import sinon, { StubbedInstance, stubInterface } from "ts-sinon";
 
 import {
@@ -17,9 +21,11 @@ import {
   ITransactionGenerator,
   ModuleConfig,
   ModuleState,
+  ModuleStateFile,
   StatefulEvent,
   TxExecutor,
 } from "../../src";
+import { FileSystemModuleState } from "../../src/services/modules/states/module/file_system";
 import { ModuleStateRepo } from "../../src/services/modules/states/repo/state_repo";
 import { EmptyLogger } from "../../src/services/utils/logging/empty_logging";
 
@@ -27,7 +33,10 @@ chai.use(chaiAsPromised);
 
 describe("transaction executor", () => {
   let txExecutor: TxExecutor;
+  let moduleStateRepo: ModuleStateRepo;
+  let eventHandler: EventHandler;
   const logger = new EmptyLogger();
+  const networkName = "test";
   const networkId = "test";
   const stubLogger: StubbedInstance<ILogging> = stubInterface<ILogging>();
   const stubRpcProvider: StubbedInstance<ethers.providers.JsonRpcProvider> = stubInterface<
@@ -39,30 +48,36 @@ describe("transaction executor", () => {
   const stubTransactionGenerator: StubbedInstance<ITransactionGenerator> = stubInterface<
     ITransactionGenerator
   >();
-  const stubModuleStateRepo: StubbedInstance<ModuleStateRepo> = stubInterface<
-    ModuleStateRepo
+  const stubFileSystemModuleState: StubbedInstance<FileSystemModuleState> = stubInterface<
+    FileSystemModuleState
   >();
   const stubEventTransactionExecutor: StubbedInstance<EventTxExecutor> = stubInterface<
     EventTxExecutor
   >();
-  const stubEventSession: StubbedInstance<Namespace> = stubInterface<
-    Namespace
-  >();
+  const eventSession: Namespace = createNamespace("event");
   const stubModuleSession: StubbedInstance<Namespace> = stubInterface<
     Namespace
   >();
-  const stubEventHandler: StubbedInstance<EventHandler> = stubInterface<
-    EventHandler
-  >();
+
   beforeEach(() => {
+    moduleStateRepo = new ModuleStateRepo(
+      networkName,
+      "/",
+      false,
+      stubFileSystemModuleState,
+      true
+    );
+
+    eventHandler = new EventHandler(moduleStateRepo, stubLogger);
+
     txExecutor = new TxExecutor(
       stubLogger,
-      stubModuleStateRepo,
+      moduleStateRepo,
       stubTransactionGenerator,
       networkId,
       stubRpcProvider,
-      stubEventHandler,
-      stubEventSession,
+      eventHandler,
+      eventSession,
       stubEventTransactionExecutor,
       false
     );
@@ -120,9 +135,9 @@ describe("transaction executor", () => {
       stubSigner,
       logger,
       stubTransactionGenerator,
-      stubModuleStateRepo,
+      moduleStateRepo,
       stubEventTransactionExecutor,
-      stubEventSession
+      eventSession
     );
     const moduleState: ModuleState = {
       test: contractStateData,
@@ -182,9 +197,9 @@ describe("transaction executor", () => {
       stubSigner,
       logger,
       stubTransactionGenerator,
-      stubModuleStateRepo,
+      moduleStateRepo,
       stubEventTransactionExecutor,
-      stubEventSession
+      eventSession
     );
     const moduleState: ModuleState = {
       test: contractStateData,
@@ -238,9 +253,9 @@ describe("transaction executor", () => {
       stubSigner,
       logger,
       stubTransactionGenerator,
-      stubModuleStateRepo,
+      moduleStateRepo,
       stubEventTransactionExecutor,
-      stubEventSession
+      eventSession
     );
     const moduleState: ModuleState = {
       test: contractStateData,
@@ -307,9 +322,9 @@ describe("transaction executor", () => {
       stubSigner,
       logger,
       stubTransactionGenerator,
-      stubModuleStateRepo,
+      moduleStateRepo,
       stubEventTransactionExecutor,
-      stubEventSession
+      eventSession
     );
     const moduleState: ModuleState = {
       test: contractStateData,
@@ -319,26 +334,34 @@ describe("transaction executor", () => {
       TransactionResponse
     >();
     stubRpcProvider.sendTransaction.resolves(transaction);
+    stubFileSystemModuleState.getModuleState.resolves(
+      moduleState as ModuleStateFile
+    );
 
+    moduleStateRepo.initStateRepo(moduleName);
     await txExecutor.execute(moduleName, moduleState, undefined);
 
-    // const constructorBytecode =
-    //   bytecode +
-    //   defaultAbiCoder
-    //     .encode(["int256", "uint256", "uint256"], contractStateData.args)
-    //     .substring(2);
+    const constructorBytecode =
+      bytecode +
+      defaultAbiCoder
+        .encode(["int256", "uint256", "uint256"], contractStateData.args)
+        .substring(2);
     assert.equal(stubLogger.bindingExecution.calledWith(contractName), true);
     // @TODO bytecode is not correct in below function, check later
+    // assert.equal(
+    //   stubTransactionGenerator.generateSingedTx.calledWith(
+    //     0,
+    //     constructorBytecode,
+    //     stubSigner
+    //   ),
+    //   true
+    // );
     assert.equal(stubTransactionGenerator.generateSingedTx.called, true);
     assert.equal(stubLogger.sendingTx.calledWith(contractName), true);
     assert.equal(transaction.wait.calledWith(1), true);
     assert.equal(stubLogger.sentTx.calledWith(contractName), true);
     assert.equal(
       stubLogger.finishedBindingExecution.calledWith(contractName),
-      true
-    );
-    assert.equal(
-      stubModuleStateRepo.storeSingleBinding.calledWith(contractStateData),
       true
     );
   });
@@ -396,9 +419,9 @@ describe("transaction executor", () => {
       stubSigner,
       logger,
       stubTransactionGenerator,
-      stubModuleStateRepo,
+      moduleStateRepo,
       stubEventTransactionExecutor,
-      stubEventSession
+      eventSession
     );
     const event: AfterDeployEvent = {
       name: eventName,
@@ -414,21 +437,137 @@ describe("transaction executor", () => {
     const statefulEvent = new StatefulEvent(event, false, {});
     const moduleState: ModuleState = {
       test: contractStateData,
-      afterDeployA: statefulEvent,
+      afterDeployTest: statefulEvent,
     };
+    stubFileSystemModuleState.getModuleState.resolves(
+      moduleState as ModuleStateFile
+    );
 
-    // @TODO this fails, not sure why
+    moduleStateRepo.initStateRepo(moduleName);
     await txExecutor.execute(moduleName, moduleState, undefined);
 
-    assert.equal(true, true);
+    assert.equal((moduleState[eventName] as StatefulEvent).executed, true);
+    assert.equal(
+      stubFileSystemModuleState.storeStates.calledWith(
+        networkName,
+        moduleName,
+        moduleState
+      ),
+      true
+    );
+    assert.equal(
+      stubLogger.finishedEventExecution.calledWith(eventName, event.eventType),
+      true
+    );
+    assert.equal(
+      stubFileSystemModuleState.storeStates.calledWith(
+        networkName,
+        moduleName,
+        moduleState
+      ),
+      true
+    );
   });
-  it("should be able to logically deploy contract");
+  it("should be able to logically deploy contract", async () => {
+    const moduleName = "testModule";
+    const contractName = "test";
+    const eventName = "afterDeployTest";
+    const bytecode = "0x0";
+    const contractAbi = {
+      inputs: [
+        {
+          internalType: "int256",
+          name: "a",
+          type: "int256",
+        },
+        {
+          internalType: "uint256",
+          name: "b",
+          type: "uint256",
+        },
+        {
+          internalType: "uint256",
+          name: "c",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "nonpayable",
+      type: "constructor",
+    };
+    const contractStateData = new ContractBinding(
+      contractName,
+      contractName,
+      [1, 2, 3],
+      moduleName,
+      [],
+      "",
+      stubModuleSession,
+      bytecode,
+      contractAbi.inputs,
+      {},
+      undefined,
+      {
+        input: {
+          from: "0x0",
+        },
+      },
+      undefined,
+      stubSigner,
+      logger,
+      stubTransactionGenerator,
+      moduleStateRepo,
+      stubEventTransactionExecutor,
+      eventSession
+    );
+    const event: AfterDeployEvent = {
+      name: eventName,
+      eventType: EventType.AfterDeployEvent,
+      deps: ["test"],
+      eventDeps: [],
+      usage: [],
+      eventUsage: [],
+      moduleName,
+      subModuleNameDepth: [],
+      fn: async () => {},
+    };
+    const statefulEvent = new StatefulEvent(event, false, {});
+    const moduleState: ModuleState = {
+      test: contractStateData,
+      afterDeployTest: statefulEvent,
+    };
+    const transaction: StubbedInstance<TransactionResponse> = stubInterface<
+      TransactionResponse
+    >();
+    const transactionReceipt: StubbedInstance<TransactionReceipt> = stubInterface<
+      TransactionReceipt
+    >();
+    transactionReceipt.contractAddress = "0x0";
+    transaction.wait.resolves(transactionReceipt);
+    stubRpcProvider.sendTransaction.resolves(transaction);
+    stubFileSystemModuleState.getModuleState.resolves(
+      moduleState as ModuleStateFile
+    );
+
+    moduleStateRepo.initStateRepo(moduleName);
+    await txExecutor.execute(moduleName, moduleState, undefined);
+
+    assert.equal(
+      (moduleState[contractName] as ContractBinding).deployMetaData
+        .logicallyDeployed,
+      true
+    );
+    assert.equal(
+      (moduleState[contractName] as ContractBinding).deployMetaData
+        .contractAddress,
+      "0x0"
+    );
+    assert.equal((moduleState[eventName] as StatefulEvent).executed, true);
+  });
 
   it("should be able to create a correct batches of module elements");
   it(
     "should be able to execute multiple elements inside a batch in parallel manner"
   );
 
-  it("should be able to execute module in sequential mode");
   it("should be able to execute module in parallel mode");
 });

@@ -21,11 +21,11 @@ import { ModuleStateRepo } from "../states/repo/state_repo";
 
 export class EventHandler {
   private readonly _moduleState: ModuleStateRepo;
-  private readonly _prompter: ILogging;
+  private readonly _logger: ILogging;
 
-  constructor(moduleState: ModuleStateRepo, prompter: ILogging) {
+  constructor(moduleState: ModuleStateRepo, logger: ILogging) {
     this._moduleState = moduleState;
-    this._prompter = prompter;
+    this._logger = logger;
   }
 
   public async executeBeforeCompileEventHook(
@@ -35,8 +35,8 @@ export class EventHandler {
   ): Promise<void> {
     const eventElement = moduleState[event.name] as StatefulEvent;
     if (eventElement.executed) {
-      this._prompter.alreadyDeployed(event.name);
-      this._prompter.finishedEventExecution(event.name, event.eventType);
+      this._logger.alreadyDeployed(event.name);
+      this._logger.finishedEventExecution(event.name, event.eventType);
 
       return;
     }
@@ -75,7 +75,7 @@ export class EventHandler {
       moduleState,
       eventName
     );
-    this._prompter.finishedEventExecution(
+    this._logger.finishedEventExecution(
       eventName,
       eventElement.event.eventType
     );
@@ -216,8 +216,8 @@ export class EventHandler {
   ) {
     const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      this._prompter.alreadyDeployed(eventName);
-      this._prompter.finishedEventExecution(eventName, eventType);
+      this._logger.alreadyDeployed(eventName);
+      this._logger.finishedEventExecution(eventName, eventType);
       return;
     }
 
@@ -228,7 +228,7 @@ export class EventHandler {
       eventType,
       eventName
     );
-    this._prompter.finishedEventExecution(eventName, eventType);
+    this._logger.finishedEventExecution(eventName, eventType);
   }
 
   private async _handleDeployedBindingsEvents(
@@ -240,8 +240,8 @@ export class EventHandler {
   ) {
     const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      this._prompter.alreadyDeployed(eventName);
-      this._prompter.finishedEventExecution(
+      this._logger.alreadyDeployed(eventName);
+      this._logger.finishedEventExecution(
         eventName,
         eventElement.event.eventType
       );
@@ -288,7 +288,7 @@ export class EventHandler {
       moduleState,
       eventName
     );
-    this._prompter.finishedEventExecution(
+    this._logger.finishedEventExecution(
       eventName,
       eventElement.event.eventType
     );
@@ -303,8 +303,8 @@ export class EventHandler {
   ) {
     const eventElement = moduleState[eventName] as StatefulEvent;
     if (eventElement.executed) {
-      this._prompter.alreadyDeployed(eventName);
-      this._prompter.finishedEventExecution(
+      this._logger.alreadyDeployed(eventName);
+      this._logger.finishedEventExecution(
         eventName,
         eventElement.event.eventType
       );
@@ -346,7 +346,7 @@ export class EventHandler {
       moduleState,
       eventName
     );
-    this._prompter.finishedEventExecution(
+    this._logger.finishedEventExecution(
       eventName,
       eventElement.event.eventType
     );
