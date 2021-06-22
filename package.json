@@ -5,7 +5,8 @@
   "author": "Tenderly",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/example-projects/*"
   ],
   "license": "MIT",
   "scripts": {

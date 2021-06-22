@@ -1,5 +1,6 @@
 import { cli } from "cli-ux";
 import { Namespace } from "cls-hooked";
+import * as fs from "fs";
 
 import { handleMappedErrorCodes } from "../types";
 
@@ -107,4 +108,23 @@ export async function errorHandling(
 
 export function copyValue(variableOne: any): any {
   return JSON.parse(JSON.stringify(variableOne));
+}
+
+export function checkForFolder(filePath: string) {
+  fs.access(filePath, function (err) {
+    if (!err) {
+      return;
+    }
+
+    fs.mkdirSync(filePath, { recursive: true });
+  });
+}
+
+export function checkForFile(filePath: string) {
+  try {
+    fs.accessSync(filePath);
+  } catch (e) {
+    // @TODO fix later
+    // fs.writeFileSync(filePath, "");
+  }
 }

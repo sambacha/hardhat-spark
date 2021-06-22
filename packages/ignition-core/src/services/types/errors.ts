@@ -384,10 +384,10 @@ Ignition will wait for ${chalk.bold(
 // }
 
 export class WrongDeploymentPathForNetwork extends UserError {
-  constructor(networkName: string, filePath: string) {
-    super(`Deployment file for ${chalk.bold(
-      networkName
-    )} is not present at ${chalk.italic(path.join(filePath))}.
+  constructor(filePath: string) {
+    super(`Deployment file is not present at ${chalk.italic(
+      path.join(filePath)
+    )}.
 
 If you are not sure how to define deployment file location in config script you can find more info here: ${CONFIG_SCRIPT_DOCS}
 `);

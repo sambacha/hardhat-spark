@@ -192,7 +192,7 @@ Spent ${chalk.bold(
       ethers.utils.formatEther(totalWeiSpent.toString())
     )} ETH in ${chalk.bold(elapsedTime.toString())}s
 
-Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}.$timestamp.log
+Detailed log file saved to deployment/.log/ignition.${moduleName.toLowerCase()}.$timestamp.log
 `;
   }
 

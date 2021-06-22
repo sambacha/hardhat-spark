@@ -14,7 +14,7 @@ import "./type_extentions";
 
 const DEFAULT_NETWORK_NAME = "local";
 export const PluginName = "hardhat-ignition";
-const DEFAULT_DEPLOYMENT_FOLDER = "deployments";
+const DEFAULT_DEPLOYMENT_FOLDER = "deployment";
 
 // TODO: Remove this
 export async function loadScript(filePath: string): Promise<any> {

@@ -1166,6 +1166,7 @@ export class ContractInstance {
     fragment: FunctionFragment
   ): ContractFunction {
     return async (...args: any[]): Promise<TransactionResponse> => {
+      // tslint:disable-next-line:unnecessary-bind
       const func = async function (
         this: ContractInstance,
         ...funcArgs: any[]
@@ -1276,7 +1277,7 @@ export class ContractInstance {
         this._prompter.finishedExecutionOfContractFunction(fragment.name);
 
         return tx;
-      };
+      }.bind(this);
 
       const currentEventAbstraction = this._eventSession.get(
         ClsNamespaces.EVENT_NAME
@@ -1355,7 +1356,7 @@ export class IgnitionSigner {
 
     const func = async (): Promise<TransactionResponse> => {
       const toAddr = (await transaction.to) as string;
-      if (toAddr !== undefined) {
+      if (toAddr === undefined) {
         throw new MissingToAddressInWalletTransferTransaction();
       }
       this._prompter.executeWalletTransfer(address, toAddr);

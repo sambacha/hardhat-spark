@@ -29,7 +29,7 @@ const createSigners = (
   }
 
   const accountsAsMnemonic = accounts as HardhatNetworkHDAccountsConfig;
-  if (accountsAsMnemonic?.mnemonic === undefined) {
+  if (accountsAsMnemonic?.mnemonic !== undefined) {
     const privateKeys = derivePrivateKeys(
       accountsAsMnemonic.mnemonic,
       accountsAsMnemonic.path,
