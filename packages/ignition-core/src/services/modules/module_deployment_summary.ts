@@ -160,6 +160,9 @@ export class ModuleDeploymentSummaryService {
           let outputGasUsed = BigNumber.from(0);
           if (singleTxOutput.gasUsed?._hex !== undefined) {
             outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
+          } else {
+            // @ts-ignore
+            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
           }
 
           if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
@@ -168,7 +171,7 @@ export class ModuleDeploymentSummaryService {
             inputGasPrice = BigNumber.from(singleTxInput.gasPrice.hex);
           }
 
-          totalGasSpent = totalGasSpent.add(BigNumber.from(outputGasUsed));
+          totalGasSpent = totalGasSpent.add(outputGasUsed);
 
           totalGasPrice = totalGasPrice.add(inputGasPrice);
           const wei = outputGasUsed.mul(inputGasPrice);
