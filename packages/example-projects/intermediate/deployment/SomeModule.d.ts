@@ -1,16 +1,16 @@
 import {
-  ModuleBuilder,
-  ContractBinding,
-  StatefulEvent,
   Action,
-} from 'ignition-core';
+  ContractBinding,
+  ModuleBuilder,
+  StatefulEvent,
+} from "ignition-core";
 
 export declare class SomeModuleBuilder extends ModuleBuilder {
-  Address: ContractBinding;
-  ERC20One: ContractBinding;
-  ERC20Two: ContractBinding;
-  Proxy: ContractBinding;
-  afterDeployMintTokens: StatefulEvent;
-  changeFromToSecondToken: StatefulEvent;
-  afterDeployAndChange: StatefulEvent;
+  public Address: ContractBinding;
+  public ERC20One: ContractBinding;
+  public ERC20Two: ContractBinding;
+  public Proxy: ContractBinding;
+  public afterDeployMintTokens: StatefulEvent;
+  public changeFromToSecondToken: StatefulEvent;
+  public afterDeployAndChange: StatefulEvent;
 }

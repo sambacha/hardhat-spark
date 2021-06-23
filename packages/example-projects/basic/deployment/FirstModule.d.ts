@@ -1,12 +1,12 @@
 import {
-  ModuleBuilder,
-  ContractBinding,
-  StatefulEvent,
   Action,
-} from 'ignition-core';
+  ContractBinding,
+  ModuleBuilder,
+  StatefulEvent,
+} from "ignition-core";
 
 export declare class FirstModuleBuilder extends ModuleBuilder {
-  A: ContractBinding;
-  B: ContractBinding;
-  afterDeployBandC: StatefulEvent;
+  public A: ContractBinding;
+  public B: ContractBinding;
+  public afterDeployBandC: StatefulEvent;
 }

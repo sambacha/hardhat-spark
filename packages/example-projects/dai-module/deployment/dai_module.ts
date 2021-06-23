@@ -1,8 +1,9 @@
-import * as path from 'path';
-import { buildModule, ModuleBuilder } from 'ignition-core';
+import * as dotenv from "dotenv";
+import { buildModule, ModuleBuilder } from "ignition-core";
+import * as path from "path";
 
-require('dotenv').config({path: path.resolve(__dirname + './../.env')});
+dotenv.config({ path: path.resolve(`${__dirname}./../.env`) });
 
-export const DaiModule = buildModule('DaiModule', async (m: ModuleBuilder) => {
-  m.contract('Dai', 1);
+export const DaiModule = buildModule("DaiModule", async (m: ModuleBuilder) => {
+  m.contract("Dai", 1);
 });

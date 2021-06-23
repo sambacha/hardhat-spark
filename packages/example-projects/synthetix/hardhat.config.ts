@@ -1,9 +1,10 @@
+import * as dotenv from "dotenv";
 import { ethers } from "ethers";
 import "ignition-hardhat-plugin";
-import path from "path";
+import * as path from "path";
 import * as web3utils from "web3-utils";
 
-require("dotenv").config({ path: path.resolve(__dirname + "/.env") });
+dotenv.config({ path: path.resolve(`${__dirname}/.env`) });
 
 const { ETH_ADDRESS, INFURA_KEY, PRIVATE_KEY } = process.env;
 

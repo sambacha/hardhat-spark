@@ -9,6 +9,12 @@
     "hardhat": "^2.0.4"
   },
   "dependencies": {
-    "dotenv": "^8.2.0"
+    "dotenv": "^8.2.0",
+    "ignition-core": "^0.0.1",
+    "ignition-hardhat-plugin": "^0.0.1"
+  },
+  "scripts": {
+    "ignition:deploy": "npx hardhat ignition:deploy",
+    "ignition:deploy:local": "npx hardhat ignition:deploy --network local"
   }
 }

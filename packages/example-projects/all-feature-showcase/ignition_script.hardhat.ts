@@ -1,10 +1,11 @@
-import * as hre from 'hardhat';
-import 'ignition-hardhat-plugin';
+import * as hre from "hardhat";
+import "ignition-hardhat-plugin";
 
-import { ExampleModule } from './deployment/module';
-const networkName = 'local';
+import { ExampleModule } from "./deployment/module";
+const networkName = "local";
 
 async function main() {
+  // @ts-ignore
   const ign = hre.ignition;
   await ign.init(false, false);
 
@@ -13,7 +14,7 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

@@ -8,9 +8,11 @@
   },
   "dependencies": {
     "dotenv": "^8.2.0",
-    "ethers": "^5.1.4"
+    "ethers": "^5.1.4",
+    "ignition-core": "^0.0.1",
+    "ignition-hardhat-plugin": "^0.0.1"
   },
   "scripts": {
-    "deploy": "npx hardhat ignition:deploy --network kovan"
+    "deploy": "npx hardhat ignition:deploy"
   }
 }

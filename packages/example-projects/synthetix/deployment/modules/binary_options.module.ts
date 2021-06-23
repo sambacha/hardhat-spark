@@ -1,18 +1,22 @@
-import { buildModule } from 'ignition-core';
-import { SynthetixModuleBuilder } from '../SynthetixModule';
+import { buildModule } from "ignition-core";
 
-export const BinaryOptionsModule = buildModule('BinaryOptionsModule', async (m: SynthetixModuleBuilder) => {
-  m.contract(
-    'BinaryOptionMarketManager',
-    m.ETH_ADDRESS,
-    m.ReadProxyAddressResolver,
-    m.maxOraclePriceAge,
-    m.expiryDuration,
-    m.maxTimeToMaturity,
-    m.creatorCapitalRequirement,
-    m.creatorSkewLimit,
-    m.poolFee,
-    m.creatorFee,
-    m.refundFee
-  );
-});
+import { SynthetixModuleBuilder } from "../SynthetixModule";
+
+export const BinaryOptionsModule = buildModule(
+  "BinaryOptionsModule",
+  async (m: SynthetixModuleBuilder) => {
+    m.contract(
+      "BinaryOptionMarketManager",
+      m.ETH_ADDRESS,
+      m.ReadProxyAddressResolver,
+      m.maxOraclePriceAge,
+      m.expiryDuration,
+      m.maxTimeToMaturity,
+      m.creatorCapitalRequirement,
+      m.creatorSkewLimit,
+      m.poolFee,
+      m.creatorFee,
+      m.refundFee
+    );
+  }
+);
