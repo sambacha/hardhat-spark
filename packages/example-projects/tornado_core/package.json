@@ -21,7 +21,8 @@
     "migrate:mainnet": "npx truffle migrate --network mainnet",
     "eslint": "npx eslint --ignore-path .gitignore .",
     "flat": "npx truffle-flattener contracts/ETHTornado.sol > ETHTornado_flat.sol && npx truffle-flattener contracts/ERC20Tornado.sol > ERC20Tornado_flat.sol",
-    "download": "node downloadKeys.js"
+    "download": "node downloadKeys.js",
+    "ignition:deploy": "npx hardhat ignition:deploy --network local"
   },
   "keywords": [],
   "author": "",
