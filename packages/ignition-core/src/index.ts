@@ -272,9 +272,7 @@ export class IgnitionCore implements IIgnition {
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
-          {
-            params: this.moduleParams ?? {},
-          }
+          this.moduleParams ?? {}
         );
       });
       this.moduleStateRepo.initStateRepo(moduleName);
@@ -384,9 +382,7 @@ export class IgnitionCore implements IIgnition {
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
-          {
-            params: this.moduleParams ?? {},
-          }
+          this.moduleParams ?? {}
         );
       });
       this.moduleStateRepo.initStateRepo(moduleName);
@@ -556,7 +552,9 @@ export async function setupServicesAndEnvironment(
       networkName,
       currentPath,
       false,
-      testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath),
+      testEnv
+        ? new MemoryModuleState()
+        : new FileSystemModuleState(currentPath),
       testEnv
     );
     const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
