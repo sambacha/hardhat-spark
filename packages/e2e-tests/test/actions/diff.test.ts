@@ -31,6 +31,7 @@ describe("ignition diff - integration", () => {
   const ignitionCoreTest = new IgnitionCore(
     {
       networkName,
+      rpcProvider: new ethers.providers.JsonRpcProvider(),
       networkId,
       signers: testPrivateKeys,
       test: true,

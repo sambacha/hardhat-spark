@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import { execSync } from "child_process";
 import { ethers } from "ethers";
 import { ContractBindingMetaData, IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
@@ -127,7 +128,7 @@ describe("ignition deploy", () => {
       const contractBindingAfter = (moduleStateFileAfter.Example as unknown) as ContractBindingMetaData;
       assert.equal(
         contractBindingBefore.deployMetaData.contractAddress !==
-        contractBindingAfter.deployMetaData.contractAddress,
+          contractBindingAfter.deployMetaData.contractAddress,
         true
       );
       assert.equal(
@@ -164,7 +165,7 @@ describe("ignition deploy", () => {
 
       assert.equal(
         firstContractBindingBefore.deployMetaData.contractAddress !==
-        firstContractBindingAfter.deployMetaData.contractAddress,
+          firstContractBindingAfter.deployMetaData.contractAddress,
         true
       );
       assert.equal(
@@ -178,7 +179,7 @@ describe("ignition deploy", () => {
 
       assert.equal(
         secondContractBindingBefore.deployMetaData.contractAddress !==
-        secondContractBindingAfter.deployMetaData.contractAddress,
+          secondContractBindingAfter.deployMetaData.contractAddress,
         true
       );
       assert.equal(
@@ -370,6 +371,9 @@ async function runDeployCommand(
     projectFileName
   );
   const modules = await loadScript(deploymentFilePath);
+
+  execSync("npx hardhat compile");
+
   for (const [, module] of Object.entries<Module>(modules)) {
     await ignition.deploy(networkName, module, false, true);
   }

@@ -26,6 +26,7 @@
     "test:diff": "mocha --config ./.mocharc.yaml \"test/actions/diff.test.ts\""
   },
   "dependencies": {
+    "child_process": "^1.0.2",
     "cli-ux": "^5.5.1",
     "ethers": "^5.1.4",
     "ignition-core": "^0.0.1",
