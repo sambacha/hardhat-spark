@@ -4,9 +4,8 @@ node_modules
 #Hardhat files
 cache
 artifacts
+deployment/.log
 
-#ignition files
+#hardhat-ignition files
 .hardhat-ignition
-hardhat-ignition-config.json
-
-tenderly.yaml
+hardhat-ignition.config.ts

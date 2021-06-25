@@ -1,8 +1,11 @@
-artifacts
-cache
 node_modules
 .env
 
-# hardhat-ignition
-.hardhat-ignition
+#Hardhat files
+cache
+artifacts
+deployment/.log
 
+#hardhat-ignition files
+.hardhat-ignition
+hardhat-ignition.config.ts

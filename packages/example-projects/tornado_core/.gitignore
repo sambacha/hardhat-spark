@@ -96,3 +96,14 @@ typings/
 
 ERC20Tornado_flat.sol
 ETHTornado_flat.sol
+
+
+node_modules
+.env
+
+#Hardhat files
+cache
+artifacts
+
+#hardhat-ignition files
+hardhat-ignition.config.ts
