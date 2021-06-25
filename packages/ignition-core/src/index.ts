@@ -507,8 +507,8 @@ export async function defaultInputParams(
     parallelizeDeployment = true;
   }
 
-  let logger: OverviewLogger | EmptyLogger;
-  if (params?.logging !== undefined) {
+  let logger: ILogging;
+  if (params?.logging === undefined || params.logging) {
     logger = new OverviewLogger();
   } else {
     logger = new EmptyLogger();
