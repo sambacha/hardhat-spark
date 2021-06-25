@@ -35,6 +35,7 @@ describe("ignition diff - integration", () => {
       networkId,
       signers: testPrivateKeys,
       test: true,
+      logging: false,
     },
     {},
     {}

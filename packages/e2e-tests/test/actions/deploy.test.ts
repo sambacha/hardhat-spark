@@ -40,6 +40,7 @@ describe("ignition deploy", () => {
       rpcProvider: defaultProvider,
       signers: testPrivateKeys,
       test: true,
+      logging: false,
     },
     {},
     {}
@@ -266,7 +267,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "all-feature-showcase";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "module.ts");
@@ -276,7 +277,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "basic";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "first.module.ts");
@@ -286,7 +287,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "dai-module";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "module.ts");
@@ -296,27 +297,17 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "intermediate";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "root.module.ts");
   });
 
-  it("should be able to run - examples/migration", async () => {
-    const projectFileName = "migration";
-    const projectLocation = path.resolve(
-      rootDir,
-      `../../example/${projectFileName}`
-    );
-    process.chdir(projectLocation);
-    await runDeployCommand(ignition, projectLocation, "tutorial.module.ts");
-  }).timeout(10000);
-
   it("should be able to run - examples/patterns - factory", async () => {
     const projectFileName = "patterns";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "factory.module.ts");
@@ -326,7 +317,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "patterns";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "proxy.module.ts");
@@ -337,7 +328,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
       const projectFileName = "synthetix";
       const projectLocation = path.resolve(
         rootDir,
-        `../../example/${projectFileName}`
+        `../example-projects/${projectFileName}`
       );
       process.chdir(projectLocation);
       await loadModuleParams(ignition, projectLocation);
@@ -350,7 +341,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "tornado_core";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await loadModuleParams(ignition, projectLocation);
@@ -371,8 +362,6 @@ async function runDeployCommand(
     projectFileName
   );
   const modules = await loadScript(deploymentFilePath);
-
-  execSync("npx hardhat compile");
 
   for (const [, module] of Object.entries<Module>(modules)) {
     await ignition.deploy(networkName, module, false, true);
