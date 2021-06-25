@@ -1,12 +1,19 @@
 import fs from "fs";
 import path from "path";
 
+import { MissingContractMetadata } from "../types";
+
 export function parseFiles(
   sourcePath: string,
   contractNames: string[],
   result: string[]
 ): string[] {
-  const filenames = fs.readdirSync(sourcePath);
+  let filenames;
+  try {
+    filenames = fs.readdirSync(sourcePath);
+  } catch (e) {
+    throw new MissingContractMetadata(sourcePath);
+  }
 
   filenames.forEach((fileName: string) => {
     if (fs.lstatSync(path.resolve(sourcePath, fileName)).isDirectory()) {

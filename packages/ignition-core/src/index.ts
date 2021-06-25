@@ -92,6 +92,7 @@ export interface GenTypesArgs {
   deploymentFolder: string;
 }
 
+// @TODO remove this
 export interface IIgnition {
   deploy(
     networkName: string,
@@ -284,6 +285,7 @@ export class IgnitionCore implements IIgnition {
 
       this._logger.startModuleResolving(moduleName);
       // resolving contract and events dependencies and determining execution order
+      // @todo topological deps
       const moduleState: ModuleState | null = await this._moduleResolver.resolve(
         module.getAllBindings(),
         module.getAllEvents(),
