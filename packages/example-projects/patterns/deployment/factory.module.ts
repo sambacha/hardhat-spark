@@ -19,7 +19,7 @@ export const FactoryModule = buildModule(
 );
 
 export const FactoryModuleInterface = buildModule(
-  "FactoryModule",
+  "FactoryModuleInterface",
   async (m: ModuleBuilder) => {
     const factory = m.contract("Factory");
     factory.factoryCreate(m, "Child", "createChild", [123], {
