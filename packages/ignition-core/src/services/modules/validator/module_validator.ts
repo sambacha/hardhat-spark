@@ -32,7 +32,7 @@ export class ModuleValidator implements IModuleValidator {
       const abiInputsLength = ABI.inputs?.length ?? 0;
       if (
         binding.args.length !== abiInputsLength &&
-        binding?.deployMetaData?.deploymentSpec?.deployFn !== undefined
+        binding?.deployMetaData?.deploymentSpec?.deployFn === undefined
       ) {
         throw new AbiMismatch(
           name,

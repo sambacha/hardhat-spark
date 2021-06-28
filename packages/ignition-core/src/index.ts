@@ -92,25 +92,6 @@ export interface GenTypesArgs {
   deploymentFolder: string;
 }
 
-// @TODO remove this
-export interface IIgnition {
-  deploy(
-    networkName: string,
-    module: Module,
-    logging?: boolean,
-    test?: boolean
-  ): Promise<void>;
-
-  diff(
-    networkName: string,
-    module: Module,
-    logging?: boolean,
-    test?: boolean
-  ): Promise<void>;
-
-  genTypes(module: Module, deploymentFolder: string): Promise<void>;
-}
-
 export interface IgnitionParams {
   networkName: string;
   networkId: string;
@@ -130,7 +111,7 @@ export interface IgnitionServices {
   transactionSigner?: ITransactionSigner;
 }
 
-export class IgnitionCore implements IIgnition {
+export class IgnitionCore {
   public params: IgnitionParams;
   public customServices: IgnitionServices;
   public moduleParams: ModuleParams;
@@ -487,13 +468,10 @@ export async function defaultInputParams(
   eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
   const provider = params.rpcProvider;
   eventSession.set(ClsNamespaces.IGNITION_RPC_PROVIDER, provider);
-
-  if (params?.blockConfirmation !== undefined) {
-    eventSession.set(
-      ClsNamespaces.BLOCK_CONFIRMATION_NUMBER,
-      params.blockConfirmation ?? 1
-    );
-  }
+  eventSession.set(
+    ClsNamespaces.BLOCK_CONFIRMATION_NUMBER,
+    params?.blockConfirmation ?? 1
+  );
 
   if (params?.localDeployment !== undefined) {
     isLocalDeployment = params?.localDeployment ?? true;

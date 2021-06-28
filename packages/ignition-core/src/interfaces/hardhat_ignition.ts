@@ -202,7 +202,7 @@ export interface Deployed {
   deploymentSpec:
     | {
         deployFn: DeployFn | undefined;
-        deps: Array<ContractBinding | ContractBindingMetaData>;
+        deps: Array<ContractBinding | ContractBindingMetaData>; // @TODO this should be depsName
       }
     | undefined;
 }

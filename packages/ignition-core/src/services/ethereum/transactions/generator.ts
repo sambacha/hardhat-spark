@@ -73,6 +73,15 @@ export class EthTxGenerator implements ITransactionGenerator {
           continue;
         }
 
+        if (
+          checkIfExist(
+            (moduleState[stateElementName] as ContractBinding)?.deployMetaData
+              .deploymentSpec?.deployFn
+          )
+        ) {
+          continue;
+        }
+
         moduleState[stateElementName].txData = {
           input: {
             from: await this._signer.getAddress(),

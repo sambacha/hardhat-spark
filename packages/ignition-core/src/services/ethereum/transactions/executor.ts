@@ -219,7 +219,7 @@ export class TxExecutor {
           continue;
         }
 
-        // @TODO(filip): this part is potentially unneeded
+        // @TODO(filip): this part is potentially unneeded, its already present in module resolver
         // // executing user defined shouldRedeploy function and skipping execution if user desired that.
         // if (
         //   element.deployMetaData.shouldRedeploy !== undefined &&
@@ -234,8 +234,10 @@ export class TxExecutor {
           element as ContractBinding,
           moduleState
         );
-        element.deployMetaData.contractAddress =
-          element?.txData?.output?.contractAddress;
+        if (element?.txData?.output?.contractAddress !== undefined) {
+          element.deployMetaData.contractAddress =
+            element?.txData?.output?.contractAddress;
+        }
         if (!checkIfExist(element.deployMetaData?.lastEventName)) {
           element.deployMetaData.logicallyDeployed = true;
         }
@@ -628,33 +630,33 @@ export class TxExecutor {
         break;
       }
     }
-
     if (binding?.deployMetaData?.deploymentSpec?.deployFn !== undefined) {
-      // @TODO add event session here instead of `setSingleEventName`
-      this._moduleStateRepo.setSingleEventName(`Deploy${binding.name}`);
-      const resp = await binding.deployMetaData.deploymentSpec.deployFn();
-      await this._moduleStateRepo.finishCurrentEvent(
-        moduleName,
-        moduleState,
-        `Deploy${binding.name}`
+      return this._eventSession.runAndReturn(
+        async (): Promise<ContractBinding> => {
+          if (binding?.deployMetaData?.deploymentSpec?.deployFn !== undefined) {
+            this._eventSession.set(
+              ClsNamespaces.EVENT_NAME,
+              `Deploy${binding.name}`
+            );
+            this._moduleStateRepo.setSingleEventName(`Deploy${binding.name}`);
+            const resp = await binding?.deployMetaData?.deploymentSpec?.deployFn();
+            await this._moduleStateRepo.finishCurrentEvent(
+              moduleName,
+              moduleState,
+              `Deploy${binding.name}`
+            );
+
+            binding.deployMetaData.contractAddress = resp.contractAddress;
+            if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
+              binding.deployMetaData.logicallyDeployed = true;
+            }
+
+            moduleState[binding.name] = binding;
+          }
+
+          return binding;
+        }
       );
-
-      binding.deployMetaData.contractAddress = resp.contractAddress;
-      if (binding.txData !== undefined) {
-        binding.txData = {
-          input: {
-            from: resp.transaction.from,
-          },
-          output: resp.transaction,
-        };
-      }
-      if (!checkIfExist(binding.deployMetaData?.lastEventName)) {
-        binding.deployMetaData.logicallyDeployed = true;
-      }
-
-      moduleState[binding.name] = binding;
-
-      return binding;
     }
 
     let bytecode: string = binding.bytecode as string;

@@ -156,7 +156,7 @@ export class ModuleDeploymentSummaryService {
         (singleTxInput: any, index: number) => {
           const singleTxOutput = transactionReceiptList.output[index];
 
-          let inputGasPrice;
+          let inputGasPrice = BigNumber.from(0);
           let outputGasUsed = BigNumber.from(0);
           if (singleTxOutput.gasUsed?._hex !== undefined) {
             outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
