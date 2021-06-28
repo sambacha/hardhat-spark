@@ -363,6 +363,8 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath);
 
+  execSync("npx hardhat compile");
+
   for (const [, module] of Object.entries<Module>(modules)) {
     await ignition.deploy(networkName, module, false, true);
   }
