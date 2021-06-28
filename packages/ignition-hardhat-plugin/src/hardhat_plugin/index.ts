@@ -29,14 +29,14 @@ extendEnvironment((env) => {
     env.network.config.chainId ?? env.config.networks[networkName].chainId
   );
 
-  const { params, customServices, repos, moduleParams } = extractDataFromConfig(
+  const { params, customServices, moduleParams } = extractDataFromConfig(
     networkName,
     chainId,
     env.config
   );
 
   env.ignition = lazyObject(
-    () => new HardhatIgnition(params, customServices, repos, moduleParams)
+    () => new HardhatIgnition(params, customServices, moduleParams)
   );
 });
 

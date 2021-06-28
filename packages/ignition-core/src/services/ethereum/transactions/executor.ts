@@ -25,7 +25,6 @@ import {
 import { Batcher } from "../../modules/events/batcher";
 import { EventHandler } from "../../modules/events/handler";
 import { ModuleResolver } from "../../modules/module_resolver";
-import { IModuleRegistryResolver } from "../../modules/states/registry";
 import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
 import { JsonFragment, JsonFragmentType } from "../../types";
 import {
@@ -150,8 +149,6 @@ export class TxExecutor {
   public async execute(
     moduleName: string,
     moduleState: ModuleState,
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
     moduleConfig: ModuleConfig | undefined
   ): Promise<void> {
     // store everything before execution is started
@@ -164,13 +161,7 @@ export class TxExecutor {
         this._prompter.nothingToDeploy();
       }
 
-      await this._executeParallel(
-        moduleName,
-        moduleState,
-        registry,
-        resolver,
-        moduleConfig
-      );
+      await this._executeParallel(moduleName, moduleState, moduleConfig);
 
       return;
     }
@@ -180,13 +171,7 @@ export class TxExecutor {
       this._prompter.nothingToDeploy();
     }
 
-    await this._executeSync(
-      moduleName,
-      moduleState,
-      registry,
-      resolver,
-      moduleConfig
-    );
+    await this._executeSync(moduleName, moduleState, moduleConfig);
     return;
   }
 
@@ -209,35 +194,16 @@ export class TxExecutor {
   private async _executeSync(
     moduleName: string,
     moduleState: ModuleState,
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
     moduleConfig: ModuleConfig | undefined
   ): Promise<void> {
     for (let [elementName, element] of Object.entries(moduleState)) {
       if (checkIfExist((element as ContractBinding)?.bytecode)) {
         element = element as ContractBinding;
 
-        const contractAddress = await resolver?.resolveContract(
-          this._networkId,
-          moduleName,
-          elementName
-        );
-
         // check if already deployed
         if (checkIfExist(element.deployMetaData?.contractAddress)) {
           this._prompter.alreadyDeployed(elementName);
           await this._prompter.promptContinueDeployment();
-          this._prompter.finishedBindingExecution(elementName);
-          continue;
-        }
-
-        // if contract is present in registry it would be resolved thought resolver
-        if (checkIfExist(contractAddress)) {
-          element.deployMetaData.contractAddress = contractAddress as string;
-          this._prompter.alreadyDeployed(elementName);
-          await this._moduleStateRepo.storeSingleBinding(
-            element as ContractBinding
-          );
           this._prompter.finishedBindingExecution(elementName);
           continue;
         }
@@ -272,18 +238,6 @@ export class TxExecutor {
           element.deployMetaData.logicallyDeployed = true;
         }
 
-        if (
-          checkIfExist(registry) &&
-          checkIfExist(element?.deployMetaData?.contractAddress)
-        ) {
-          await registry?.setAddress(
-            this._networkId,
-            moduleName,
-            element.name,
-            element?.deployMetaData?.contractAddress as string
-          );
-        }
-
         await this._moduleStateRepo.storeSingleBinding(element);
         this._prompter.finishedBindingExecution(element.name);
         continue;
@@ -301,8 +255,6 @@ export class TxExecutor {
   private async _executeParallel(
     moduleName: string,
     moduleState: ModuleState,
-    registry: IModuleRegistryResolver | undefined,
-    resolver: IModuleRegistryResolver | undefined,
     moduleConfig: ModuleConfig | undefined
   ): Promise<void> {
     const batches: [] = [];
@@ -350,22 +302,13 @@ export class TxExecutor {
     }
 
     // batched execution
-    await this._executeBatches(
-      moduleName,
-      batches,
-      moduleState,
-      registry,
-      resolver,
-      moduleConfig
-    );
+    await this._executeBatches(moduleName, batches, moduleState, moduleConfig);
   }
 
   private async _executeBatches(
     moduleName: string,
     batches: any[],
     moduleState: ModuleState,
-    registry?: IModuleRegistryResolver,
-    resolver?: IModuleRegistryResolver,
     moduleConfig?: ModuleConfig
   ) {
     for (const batch of batches) {
@@ -375,24 +318,10 @@ export class TxExecutor {
           continue;
         }
 
-        const contractAddress = await resolver?.resolveContract(
-          this._networkId,
-          moduleName,
-          batchElement.name
-        );
-
         batchElement = batchElement as ContractBinding;
         if (checkIfExist(batchElement.deployMetaData?.contractAddress)) {
           this._prompter.alreadyDeployed(batchElement.name);
           this._prompter.finishedBindingExecution(batchElement.name);
-          continue;
-        }
-
-        if (checkIfExist(contractAddress)) {
-          batchElement.deployMetaData.contractAddress = contractAddress as string;
-          await this._moduleStateRepo.storeSingleBinding(
-            batchElement as ContractBinding
-          );
           continue;
         }
 
@@ -456,18 +385,6 @@ export class TxExecutor {
           }
 
           moduleState[batchElement.name] = batchElement;
-
-          if (
-            checkIfExist(registry) &&
-            checkIfExist(batchElement?.deployMetaData?.contractAddress)
-          ) {
-            await registry?.setAddress(
-              this._networkId,
-              moduleName,
-              batchElement.name,
-              batchElement?.deployMetaData?.contractAddress as string
-            );
-          }
 
           await this._moduleStateRepo.storeSingleBinding(batchElement);
           this._prompter.finishedBindingExecution(batchElement.name);
