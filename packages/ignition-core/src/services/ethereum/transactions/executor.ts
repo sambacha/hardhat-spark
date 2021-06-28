@@ -26,15 +26,16 @@ import { Batcher } from "../../modules/events/batcher";
 import { EventHandler } from "../../modules/events/handler";
 import { ModuleResolver } from "../../modules/module_resolver";
 import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
-import { JsonFragment, JsonFragmentType } from "../../types/artifacts/abi";
 import {
   CliError,
   ContractTypeMismatch,
   ContractTypeUnsupported,
+  JsonFragment,
+  JsonFragmentType,
   MissingAbiInContractError,
   NoContractBindingDataInModuleState,
   TransactionFailed,
-} from "../../types/errors";
+} from "../../types";
 import { ModuleState } from "../../types/module";
 import { ClsNamespaces } from "../../utils/continuation_local_storage";
 import { ILogging } from "../../utils/logging";
@@ -141,7 +142,9 @@ export class TxExecutor {
     this._eventSession = eventSession;
     this._eventTxExecutor = eventTxExecutor;
 
-    this._blockConfirmation = +(process.env.BLOCK_CONFIRMATION_NUMBER ?? 1);
+    this._blockConfirmation = +this._eventSession.get(
+      ClsNamespaces.BLOCK_CONFIRMATION_NUMBER
+    );
   }
 
   public async execute(

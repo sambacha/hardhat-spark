@@ -1,7 +1,7 @@
 import { cli } from "cli-ux";
-import * as os from "os";
+import { Namespace } from "cls-hooked";
 
-import { handleMappedErrorCodes } from "../types/errors";
+import { handleMappedErrorCodes } from "../types";
 
 import { ILogging } from "./logging";
 
@@ -74,20 +74,11 @@ export async function checkMutex(
   return;
 }
 
-function getOperatingSystem(): string {
-  switch (os.type()) {
-    case "Windows_NT":
-      return "(Windows NT 6.1; Win64; x64)";
-    case "Darwin":
-      return "(Macintosh; Intel Mac OS X 10_13_6)";
-    case "Linux":
-      return "(X11; Linux x86_64)";
-    default:
-      return "(Unknown)";
-  }
-}
-
-export async function errorHandling(error: any, logger?: ILogging) {
+export async function errorHandling(
+  eventSession: Namespace | undefined,
+  error: any,
+  logger?: ILogging
+) {
   if (logger !== undefined) {
     logger.logError(error);
 
