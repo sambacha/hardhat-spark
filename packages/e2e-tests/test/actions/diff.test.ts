@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import { execSync } from 'child_process';
 import ux from "cli-ux";
 import { ethers } from "ethers";
 import { IgnitionCore, Module } from "ignition-core";
@@ -196,6 +197,8 @@ async function runDiffCommand(
     deploymentFolder,
     moduleFileName
   );
+
+  execSync("npx hardhat compile");
 
   const modules = await loadScript(deploymentFilePath);
   for (const [, module] of Object.entries(modules)) {
