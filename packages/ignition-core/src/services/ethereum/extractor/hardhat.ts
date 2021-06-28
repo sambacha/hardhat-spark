@@ -8,7 +8,7 @@ import { checkIfExist } from "../../utils/util";
 
 import { ICompiler } from "./index";
 
-export class HardhatCompiler implements ICompiler {
+export class HardhatExtractor implements ICompiler {
   public extractBytecode(contractNames: string[]): { [name: string]: string } {
     try {
       const bytecodes: { [name: string]: string } = {};
