@@ -18,7 +18,6 @@ import {
   ITransactionSigner,
 } from "../services/ethereum/transactions";
 import { EventTxExecutor } from "../services/ethereum/transactions/event_executor";
-import { IModuleRegistryResolver } from "../services/modules/states/registry";
 import { IModuleStateRepo } from "../services/modules/states/repo";
 import { IModuleValidator } from "../services/modules/validator";
 import {
@@ -1502,8 +1501,6 @@ export class ModuleBuilder {
   private readonly _actions: { [name: string]: Action };
   private _templates: { [name: string]: Template };
 
-  private _resolver: IModuleRegistryResolver | undefined;
-  private _registry: IModuleRegistryResolver | undefined;
   private _gasPriceProvider: IGasPriceCalculator | undefined;
   private _nonceManager: INonceManager | undefined;
   private _transactionSigner: ITransactionSigner | undefined;
@@ -1778,9 +1775,6 @@ export class ModuleBuilder {
     const bindings = m.getAllBindings();
     const events = m.getAllEvents();
 
-    const networkId = process.env.IGNITION_NETWORK_ID ?? "";
-    const resolver = m.getRegistry();
-
     for (const [eventName, event] of Object.entries(events)) {
       if (checkIfExist(this._contractEvents[eventName])) {
         continue;
@@ -1798,11 +1792,6 @@ export class ModuleBuilder {
         continue;
       }
 
-      binding.deployMetaData.contractAddress = await resolver?.resolveContract(
-        networkId,
-        m.name,
-        bindingName
-      );
       this[bindingName] = binding;
       this._bindings[bindingName] = binding;
     }
@@ -1828,18 +1817,6 @@ export class ModuleBuilder {
     return this._actions;
   }
 
-  public setResolver(resolver: IModuleRegistryResolver): void {
-    this._resolver = resolver;
-  }
-
-  public getResolver(): IModuleRegistryResolver | undefined {
-    return this._resolver;
-  }
-
-  public setRegistry(registry: IModuleRegistryResolver): void {
-    this._registry = registry;
-  }
-
   public setCustomGasPriceProvider(provider: IGasPriceCalculator): void {
     this._gasPriceProvider = provider;
   }
@@ -1862,10 +1839,6 @@ export class ModuleBuilder {
 
   public getCustomTransactionSigner(): ITransactionSigner | undefined {
     return this._transactionSigner;
-  }
-
-  public getRegistry(): IModuleRegistryResolver | undefined {
-    return this._registry;
   }
 
   public getAllTemplates(): { [name: string]: Template } {
@@ -1955,8 +1928,6 @@ export class Module {
   private readonly _moduleConfig: ModuleConfig | undefined;
   private _templates: { [name: string]: Template };
 
-  private _registry: IModuleRegistryResolver | undefined;
-  private _resolver: IModuleRegistryResolver | undefined;
   private _gasPriceProvider: IGasPriceCalculator | undefined;
   private _nonceManager: INonceManager | undefined;
   private _transactionSigner: ITransactionSigner | undefined;
@@ -2040,8 +2011,6 @@ export class Module {
     this._events = moduleBuilder.getAllEvents();
     this._moduleEvents = moduleBuilder.getAllModuleEvents();
     this._actions = moduleBuilder.getAllActions();
-    this._registry = moduleBuilder.getRegistry();
-    this._resolver = moduleBuilder.getResolver();
     this._gasPriceProvider = moduleBuilder.getCustomGasPriceProvider();
     this._nonceManager = moduleBuilder.getCustomNonceManager();
     this._transactionSigner = moduleBuilder.getCustomTransactionSigner();
@@ -2071,22 +2040,6 @@ export class Module {
 
   public getAllActions(): { [name: string]: Action } {
     return this._actions;
-  }
-
-  public getRegistry(): IModuleRegistryResolver | undefined {
-    return this._registry;
-  }
-
-  public setRegistry(registry: IModuleRegistryResolver): void {
-    this._registry = registry;
-  }
-
-  public getResolver(): IModuleRegistryResolver | undefined {
-    return this._resolver;
-  }
-
-  public setResolver(resolver: IModuleRegistryResolver): void {
-    this._resolver = resolver;
   }
 
   public getAction(name: string): Action {

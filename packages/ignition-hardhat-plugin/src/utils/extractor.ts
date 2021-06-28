@@ -10,7 +10,7 @@ import {
   HttpNetworkAccountsUserConfig,
   HttpNetworkConfig,
 } from "hardhat/types";
-import { IgnitionParams, IgnitionRepos, IgnitionServices } from "ignition-core";
+import { IgnitionParams, IgnitionServices } from "ignition-core";
 
 const createSigners = (
   accounts:
@@ -67,7 +67,6 @@ export const extractDataFromConfig = (
 ): {
   params: IgnitionParams;
   customServices: IgnitionServices;
-  repos: IgnitionRepos;
   moduleParams: { [name: string]: any };
 } => {
   if (config?.networks === undefined) {
@@ -77,7 +76,6 @@ export const extractDataFromConfig = (
         networkName,
       },
       customServices: {},
-      repos: {},
       moduleParams: {},
     };
   }
@@ -111,15 +109,9 @@ export const extractDataFromConfig = (
     transactionSigner: ignition?.transactionSigner,
   };
 
-  const repos: IgnitionRepos = {
-    resolver: ignition?.resolver,
-    registry: ignition?.registry,
-  };
-
   return {
     params,
     customServices,
-    repos,
     moduleParams: ignition?.moduleParams ?? {},
   };
 };

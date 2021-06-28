@@ -19,8 +19,6 @@ import { ethers } from "ethers";
 //     };
 //   };
 //   parallelizeDeployment?: boolean;
-//   registry?: IModuleRegistryResolver;
-//   resolver?: IModuleRegistryResolver;
 //   gasPriceProvider?: IGasPriceCalculator;
 //   nonceManager?: INonceManager;
 //   transactionSigner?: ITransactionSigner;
