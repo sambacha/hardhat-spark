@@ -1,6 +1,10 @@
 import * as fs from "fs";
-import { ModuleStateFile, STATE_DIR_NAME, STATE_NAME } from "ignition-core";
-import { IgnitionTests } from "ignition-test";
+import {
+  IgnitionCore,
+  ModuleStateFile,
+  STATE_DIR_NAME,
+  STATE_NAME,
+} from "ignition-core";
 import * as path from "path";
 
 export function getStateIfExist(dir: string): ModuleStateFile | undefined {
@@ -13,6 +17,17 @@ export function getStateIfExist(dir: string): ModuleStateFile | undefined {
       encoding: "utf-8",
     })
   );
+}
+
+export async function getStateObject(
+  ignitionCore: IgnitionCore,
+  moduleName: string
+): Promise<ModuleStateFile> {
+  if (ignitionCore?.moduleStateRepo) {
+    return ignitionCore.moduleStateRepo.getStateIfExist(moduleName);
+  }
+
+  return {};
 }
 
 export function storeNewState(
@@ -29,7 +44,7 @@ export function storeNewState(
 
 export async function loadStateFile(
   projectLocation: string,
-  ignition: IgnitionTests,
+  ignition: IgnitionCore,
   moduleName: string = "ExampleModule",
   networkName: string = "local"
 ) {
@@ -45,5 +60,8 @@ export async function loadStateFile(
   } catch (e) {
     stateFile = {};
   }
-  await ignition.setStateFile(moduleName, stateFile);
+
+  if (ignition?.moduleStateRepo) {
+    await ignition.moduleStateRepo.storeNewState(moduleName, stateFile);
+  }
 }
