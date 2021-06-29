@@ -13,7 +13,6 @@
     "build:browserify": "npx browserify cli.js -o index.js --exclude worker_threads",
     "build": "npm run build:circuit && npm run build:contract && npm run build:browserify",
     "browserify": "npm run build:browserify",
-    "test": "npx truffle test",
     "migrate": "npm run migrate:kovan",
     "migrate:dev": "npx truffle migrate --network development --reset",
     "migrate:kovan": "npx truffle migrate --network kovan --reset",
