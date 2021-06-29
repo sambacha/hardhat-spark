@@ -28,6 +28,7 @@ export const SynthetixDebtCacheSetup = buildModule(
       const validityChanged = wasInvalid !== isInvalid;
 
       if (force || validityChanged) {
+        // @TODO this function is ending up on sNIKKEI event as input
         DebtCache.deployed().takeDebtSnapshot({
           gasLimit: 2.5e6,
         });
@@ -59,7 +60,8 @@ export const SynthetixDebtCacheSetup = buildModule(
             cacheInfo.isStale
           );
           return true;
-        }  {
+        }
+        {
           const cachedDebtEther = web3utils.fromWei(cacheInfo.debt);
           const currentDebtEther = web3utils.fromWei(currentDebt.debt);
           const deviation =

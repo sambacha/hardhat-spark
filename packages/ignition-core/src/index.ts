@@ -395,6 +395,8 @@ export class IgnitionCore {
       }
     } catch (err) {
       await errorHandling(err, this._logger);
+
+      throw err;
     }
   }
 

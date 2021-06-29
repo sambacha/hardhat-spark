@@ -80,6 +80,12 @@ export async function checkMutex(
 }
 
 export async function errorHandling(error: any, logger?: ILogging) {
+  if (logger !== undefined) {
+    logger.logError(error);
+
+    return;
+  }
+
   if (checkIfExist(error?.code)) {
     cli.info(handleMappedErrorCodes(error.code, error));
     if (cli.config.outputLevel === "debug" && error?.stack) {

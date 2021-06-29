@@ -31,5 +31,22 @@
     "ethers": "^5.1.4",
     "ignition-core": "^0.0.1",
     "ignition-hardhat-plugin": "^0.0.1"
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "test",
+      ".nyc_output",
+      "*.ts",
+      "*.js"
+    ],
+    "reporter": [
+      "text",
+      "lcovonly"
+    ],
+    "all": true
   }
 }
