@@ -79,23 +79,14 @@ export async function checkMutex(
   return;
 }
 
-export async function errorHandling(
-  eventSession: Namespace | undefined,
-  error: any,
-  logger?: ILogging
-) {
-  if (logger !== undefined) {
-    logger.logError(error);
-
-    return;
-  }
-
+export async function errorHandling(error: any, logger?: ILogging) {
   if (checkIfExist(error?.code)) {
     cli.info(handleMappedErrorCodes(error.code, error));
     if (cli.config.outputLevel === "debug" && error?.stack) {
       cli.debug(error?.stack);
     }
-    return;
+
+    throw error;
   }
 
   cli.info(error.message);

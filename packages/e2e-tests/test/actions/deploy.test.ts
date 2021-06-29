@@ -323,6 +323,18 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     await runDeployCommand(ignition, projectLocation, "proxy.module.ts");
   });
 
+  it("should be able to run - examples/tornado_core", async () => {
+    const projectFileName = "tornado_core";
+    const projectLocation = path.resolve(
+      rootDir,
+      `../example-projects/${projectFileName}`
+    );
+    process.chdir(projectLocation);
+    await loadModuleParams(ignition, projectLocation);
+
+    await runDeployCommand(ignition, projectLocation, "tornado.module.ts");
+  }).timeout(10000);
+
   if (!skipSynthethix) {
     it("should be able to run - examples/synthetix", async () => {
       const projectFileName = "synthetix";
@@ -336,18 +348,6 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
       await runDeployCommand(ignition, projectLocation, "module.ts");
     }).timeout(200000); // ~160s normal running time
   }
-
-  it("should be able to run - examples/tornado_core", async () => {
-    const projectFileName = "tornado_core";
-    const projectLocation = path.resolve(
-      rootDir,
-      `../example-projects/${projectFileName}`
-    );
-    process.chdir(projectLocation);
-    await loadModuleParams(ignition, projectLocation);
-
-    await runDeployCommand(ignition, projectLocation, "tornado.module.ts");
-  }).timeout(10000);
 }
 
 async function runDeployCommand(

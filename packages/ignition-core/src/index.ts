@@ -195,7 +195,9 @@ export class IgnitionCore {
 
     this._gasProvider = gasProvider;
     this._eventSession = eventSession;
-    this.moduleStateRepo = moduleStateRepo;
+    if (this.moduleStateRepo === undefined) {
+      this.moduleStateRepo = moduleStateRepo;
+    }
     this._moduleResolver = moduleResolver;
     this._txGenerator = txGenerator;
     this._txExecutor = txExecutor;
@@ -218,7 +220,7 @@ export class IgnitionCore {
         await this.mustInit(this.params, this.customServices);
       }
 
-      if (this.params.logging !== logging) {
+      if (logging !== undefined && this.params.logging !== logging) {
         await this.reInitLogger(logging !== undefined);
       }
 
@@ -328,7 +330,7 @@ export class IgnitionCore {
       );
       this._logger.finishModuleDeploy(moduleName, summary);
     } catch (err) {
-      await errorHandling(this._eventSession, err, this._logger);
+      await errorHandling(err, this._logger);
 
       throw err;
     }
@@ -340,7 +342,7 @@ export class IgnitionCore {
         await this.mustInit(this.params, this.customServices);
       }
 
-      if (this.params.logging !== logging) {
+      if (logging !== undefined && this.params.logging !== logging) {
         await this.reInitLogger(logging !== undefined);
       }
 
