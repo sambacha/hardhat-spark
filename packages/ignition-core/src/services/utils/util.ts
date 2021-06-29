@@ -103,7 +103,7 @@ export function copyValue(variableOne: any): any {
 
 export function checkForFolder(filePath: string) {
   fs.access(filePath, function (err) {
-    if (!err) {
+    if (err === undefined) {
       return;
     }
 

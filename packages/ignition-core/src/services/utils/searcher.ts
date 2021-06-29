@@ -1,8 +1,8 @@
 import { cli } from "cli-ux";
 import fs from "fs";
 import path from "path";
-import { DeploymentFileError, WrongDeploymentPathForNetwork } from '../types';
 
+import { WrongDeploymentPathForNetwork } from "../types";
 import { HardhatBuild } from "../types/migration";
 
 const HARDHAT_CHAIN_ID_FILENAME = ".chainId";

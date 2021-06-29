@@ -49,7 +49,7 @@ describe("ignition deploy", () => {
     await ignitionCoreTest.mustInit();
   });
   afterEach(() => {
-    if (ignitionCoreTest?.moduleStateRepo) {
+    if (ignitionCoreTest?.moduleStateRepo !== undefined) {
       ignitionCoreTest.moduleStateRepo.clear();
     }
     process.chdir(rootDir);
