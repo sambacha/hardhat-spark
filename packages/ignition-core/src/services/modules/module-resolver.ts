@@ -11,10 +11,10 @@ import {
   ModuleEvent,
   ModuleEvents,
   StatefulEvent,
-} from "../../interfaces/hardhat_ignition";
+} from "../../interfaces/hardhat-ignition";
 import { EthClient } from "../ethereum/client";
 import { ITransactionGenerator } from "../ethereum/transactions";
-import { EventTxExecutor } from "../ethereum/transactions/event_executor";
+import { EventTxExecutor } from "../ethereum/transactions/event-executor";
 import { SingleContractLinkReference } from "../types/artifacts/libraries";
 import {
   CliError,
@@ -29,7 +29,7 @@ import { ModuleState, ModuleStateFile } from "../types/module";
 import { ILogging } from "../utils/logging";
 import { checkIfExist, isSameBytecode } from "../utils/util";
 
-import { ModuleStateRepo } from "./states/repo/state_repo";
+import { ModuleStateRepo } from "./states/repo/state-repo";
 
 export class ModuleResolver {
   public static resolveSingleEvent(

@@ -21,11 +21,11 @@ import {
   OnChangeEvent,
   StatefulEvent,
   TransactionData,
-} from "../../../interfaces/hardhat_ignition";
+} from "../../../interfaces/hardhat-ignition";
 import { Batcher } from "../../modules/events/batcher";
 import { EventHandler } from "../../modules/events/handler";
-import { ModuleResolver } from "../../modules/module_resolver";
-import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
+import { ModuleResolver } from "../../modules/module-resolver";
+import { ModuleStateRepo } from "../../modules/states/repo/state-repo";
 import {
   CliError,
   ContractTypeMismatch,
@@ -37,11 +37,11 @@ import {
   TransactionFailed,
 } from "../../types";
 import { ModuleState } from "../../types/module";
-import { ClsNamespaces } from "../../utils/continuation_local_storage";
+import { ClsNamespaces } from "../../utils/continuation-local-storage";
 import { ILogging } from "../../utils/logging";
 import { checkIfExist } from "../../utils/util";
 
-import { EventTxExecutor } from "./event_executor";
+import { EventTxExecutor } from "./event-executor";
 import { ITransactionGenerator } from "./index";
 
 const CONSTRUCTOR_TYPE = "constructor";

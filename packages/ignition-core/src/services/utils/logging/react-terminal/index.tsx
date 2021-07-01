@@ -3,16 +3,16 @@ import { cli } from "cli-ux";
 import { render } from "ink";
 import React, { ReactNode } from "react";
 
-import { EventType } from "../../../../interfaces/hardhat_ignition";
+import { EventType } from "../../../../interfaces/hardhat-ignition";
 import { ModuleContextMissingInLogger } from "../../../types/errors";
 import { ElementStatus, ElementWithStatus } from "../../../types/logger";
 import { ModuleState } from "../../../types/module";
-import { getIgnitionVersion } from "../../package_info";
+import { getIgnitionVersion } from "../../package-info";
 import { checkIfExist } from "../../util";
-import { FileLogging } from "../file_logging";
+import { FileLogging } from "../file-logging";
 import { generateErrorMessage, ILogging } from "../index";
 
-import { ConfirmationQuestion } from "./ui/layout/confirmation_question";
+import { ConfirmationQuestion } from "./ui/layout/confirmation-question";
 import { TerminalLayout } from "./ui/layout/terminal";
 
 export class OverviewLogger extends FileLogging implements ILogging {

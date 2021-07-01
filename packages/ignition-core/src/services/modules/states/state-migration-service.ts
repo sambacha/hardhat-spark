@@ -4,7 +4,7 @@ import {
   ContractBindingMetaData,
   Deployed,
   TxData,
-} from "../../../interfaces/hardhat_ignition";
+} from "../../../interfaces/hardhat-ignition";
 import { CliError } from "../../types/errors";
 import {
   Build,

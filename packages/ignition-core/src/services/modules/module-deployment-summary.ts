@@ -11,11 +11,11 @@ import {
   ContractInput,
   StatefulEvent,
   TxData,
-} from "../../interfaces/hardhat_ignition";
+} from "../../interfaces/hardhat-ignition";
 import { ModuleStateFile } from "../types/module";
 import { checkIfExist } from "../utils/util";
 
-import { ModuleStateRepo } from "./states/repo/state_repo";
+import { ModuleStateRepo } from "./states/repo/state-repo";
 
 export enum SummaryType {
   "EMPTY" = "EMPTY",

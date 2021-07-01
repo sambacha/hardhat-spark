@@ -4,8 +4,8 @@ import { Namespace } from "cls-hooked";
 
 import { IModuleStateRepo } from "../../modules/states/repo";
 import { CliError } from "../../types";
-import { ClsNamespaces } from "../../utils/continuation_local_storage";
-import { KeyMutex } from "../../utils/mutex/key_mutex";
+import { ClsNamespaces } from "../../utils/continuation-local-storage";
+import { KeyMutex } from "../../utils/mutex/key-mutex";
 import { checkIfExist } from "../../utils/util";
 
 export class EventTxExecutor {

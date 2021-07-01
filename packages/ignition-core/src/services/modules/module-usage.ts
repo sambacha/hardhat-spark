@@ -4,14 +4,14 @@ import * as path from "path";
 import {
   ContractBindingMetaData,
   ModuleStateBindings,
-} from "../../interfaces/hardhat_ignition";
+} from "../../interfaces/hardhat-ignition";
 import { CliError } from "../types/errors";
 import { FileGenerationType, ModuleFile } from "../types/migration";
 import { ModuleStateFile } from "../types/module";
-import { generateModuleFile } from "../utils/file_generator";
+import { generateModuleFile } from "../utils/file-generator";
 import { checkIfExist, removeLastPathElement } from "../utils/util";
 
-import { ModuleStateRepo } from "./states/repo/state_repo";
+import { ModuleStateRepo } from "./states/repo/state-repo";
 
 export class ModuleUsage {
   private readonly _fileLocation: string;

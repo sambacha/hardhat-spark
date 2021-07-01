@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { ILogObject, Logger } from "tslog";
 
-import { EventType } from "../../../interfaces/hardhat_ignition";
+import { EventType } from "../../../interfaces/hardhat-ignition";
 import { ModuleContextMissingInLogger } from "../../types/errors";
 import { ModuleState } from "../../types/module";
 import { checkForFile, checkForFolder } from "../util";

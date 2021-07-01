@@ -24,9 +24,9 @@ import {
   StatefulEvent,
   TxExecutor,
 } from "../../src";
-import { FileSystemModuleState } from "../../src/services/modules/states/module/file_system";
-import { ModuleStateRepo } from "../../src/services/modules/states/repo/state_repo";
-import { EmptyLogger } from "../../src/services/utils/logging/empty_logging";
+import { FileSystemModuleState } from "../../src/services/modules/states/module/file-system";
+import { ModuleStateRepo } from "../../src/services/modules/states/repo/state-repo";
+import { EmptyLogger } from "../../src/services/utils/logging/empty-logging";
 
 chai.use(chaiAsPromised);
 

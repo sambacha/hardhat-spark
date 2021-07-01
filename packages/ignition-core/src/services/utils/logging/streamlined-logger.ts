@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import cli from "cli-ux";
 
-import { EventType } from "../../../interfaces/hardhat_ignition";
+import { EventType } from "../../../interfaces/hardhat-ignition";
 import { DeniedConfirmation } from "../../types/errors";
 import { ModuleState } from "../../types/module";
 

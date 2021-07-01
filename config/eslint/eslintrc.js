@@ -147,6 +147,9 @@ module.exports = {
       },
     ],
     "@typescript-eslint/unified-signatures": "error",
+    "unicorn/filename-case": ["error", {
+      "case": "kebabCase"
+    }],
     "constructor-super": "error",
     eqeqeq: ["error", "always"],
     "guard-for-in": "error",

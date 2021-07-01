@@ -1,4 +1,4 @@
-import { EventType } from "../../../interfaces/hardhat_ignition";
+import { EventType } from "../../../interfaces/hardhat-ignition";
 import { ModuleState } from "../../types/module";
 
 import { ILogging } from "./index";

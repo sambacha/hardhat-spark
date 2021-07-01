@@ -17,7 +17,7 @@ import {
   ITransactionGenerator,
   ITransactionSigner,
 } from "../services/ethereum/transactions";
-import { EventTxExecutor } from "../services/ethereum/transactions/event_executor";
+import { EventTxExecutor } from "../services/ethereum/transactions/event-executor";
 import { IModuleStateRepo } from "../services/modules/states/repo";
 import { IModuleValidator } from "../services/modules/validator";
 import {
@@ -43,7 +43,7 @@ import {
   TemplateNotFound,
   WalletTransactionNotInEventError,
 } from "../services/types/errors";
-import { ClsNamespaces } from "../services/utils/continuation_local_storage";
+import { ClsNamespaces } from "../services/utils/continuation-local-storage";
 import { ILogging } from "../services/utils/logging";
 import {
   checkIfExist,

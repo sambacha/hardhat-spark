@@ -7,7 +7,7 @@ import {
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent,
-} from "../../../interfaces/hardhat_ignition";
+} from "../../../interfaces/hardhat-ignition";
 import {
   CliError,
   EventDependencyNotDeployedError,

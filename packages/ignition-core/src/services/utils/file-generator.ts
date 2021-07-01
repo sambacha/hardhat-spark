@@ -1,4 +1,4 @@
-import { ModuleStateBindings } from "../../interfaces/hardhat_ignition";
+import { ModuleStateBindings } from "../../interfaces/hardhat-ignition";
 import { CliError } from "../types/errors";
 import {
   FileGenerationType,

@@ -10,7 +10,7 @@ import {
   EventType,
   MetaDataEvent,
   StatefulEvent,
-} from "../../../../interfaces/hardhat_ignition";
+} from "../../../../interfaces/hardhat-ignition";
 import { CliError } from "../../../types/errors";
 import { ModuleState, ModuleStateFile } from "../../../types/module";
 import { checkIfExist } from "../../../utils/util";
