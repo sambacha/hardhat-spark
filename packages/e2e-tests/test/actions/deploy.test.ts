@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import { execSync } from "child_process";
 import { ethers } from "ethers";
 import { ContractBindingMetaData, IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
@@ -36,8 +37,10 @@ describe("ignition deploy", () => {
     {
       networkName,
       networkId,
+      rpcProvider: defaultProvider,
       signers: testPrivateKeys,
       test: true,
+      logging: false,
     },
     {},
     {}
@@ -45,9 +48,8 @@ describe("ignition deploy", () => {
   before(async () => {
     await ignitionCoreTest.mustInit();
   });
-
   afterEach(() => {
-    if (ignitionCoreTest?.moduleStateRepo) {
+    if (ignitionCoreTest?.moduleStateRepo !== undefined) {
       ignitionCoreTest.moduleStateRepo.clear();
     }
     process.chdir(rootDir);
@@ -265,7 +267,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "all-feature-showcase";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "module.ts");
@@ -275,7 +277,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "basic";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "first.module.ts");
@@ -285,7 +287,7 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "dai-module";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "module.ts");
@@ -295,27 +297,17 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "intermediate";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "root.module.ts");
   });
 
-  it("should be able to run - examples/migration", async () => {
-    const projectFileName = "migration";
-    const projectLocation = path.resolve(
-      rootDir,
-      `../../example/${projectFileName}`
-    );
-    process.chdir(projectLocation);
-    await runDeployCommand(ignition, projectLocation, "tutorial.module.ts");
-  }).timeout(10000);
-
   it("should be able to run - examples/patterns - factory", async () => {
     const projectFileName = "patterns";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "factory.module.ts");
@@ -325,18 +317,30 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
     const projectFileName = "patterns";
     const projectLocation = path.resolve(
       rootDir,
-      `../../example/${projectFileName}`
+      `../example-projects/${projectFileName}`
     );
     process.chdir(projectLocation);
     await runDeployCommand(ignition, projectLocation, "proxy.module.ts");
   });
+
+  it("should be able to run - examples/tornado_core", async () => {
+    const projectFileName = "tornado_core";
+    const projectLocation = path.resolve(
+      rootDir,
+      `../example-projects/${projectFileName}`
+    );
+    process.chdir(projectLocation);
+    await loadModuleParams(ignition, projectLocation);
+
+    await runDeployCommand(ignition, projectLocation, "tornado.module.ts");
+  }).timeout(10000);
 
   if (!skipSynthethix) {
     it("should be able to run - examples/synthetix", async () => {
       const projectFileName = "synthetix";
       const projectLocation = path.resolve(
         rootDir,
-        `../../example/${projectFileName}`
+        `../example-projects/${projectFileName}`
       );
       process.chdir(projectLocation);
       await loadModuleParams(ignition, projectLocation);
@@ -344,18 +348,6 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
       await runDeployCommand(ignition, projectLocation, "module.ts");
     }).timeout(200000); // ~160s normal running time
   }
-
-  it("should be able to run - examples/tornado_core", async () => {
-    const projectFileName = "tornado_core";
-    const projectLocation = path.resolve(
-      rootDir,
-      `../../example/${projectFileName}`
-    );
-    process.chdir(projectLocation);
-    await loadModuleParams(ignition, projectLocation);
-
-    await runDeployCommand(ignition, projectLocation, "tornado.module.ts");
-  }).timeout(10000);
 }
 
 async function runDeployCommand(
@@ -364,13 +356,15 @@ async function runDeployCommand(
   projectFileName: string = moduleFileName
 ): Promise<void> {
   // @TODO run contracts compilation somewhere around here
-
   const deploymentFilePath = path.resolve(
     projectLocation,
     deploymentFolder,
     projectFileName
   );
   const modules = await loadScript(deploymentFilePath);
+
+  execSync("npx hardhat compile");
+
   for (const [, module] of Object.entries<Module>(modules)) {
     await ignition.deploy(networkName, module, false, true);
   }
@@ -404,7 +398,6 @@ async function loadModuleParams(
   await ignition.mustInit(
     ignition.params,
     ignition.customServices,
-    ignition.repos,
     config.moduleParams
   );
 }

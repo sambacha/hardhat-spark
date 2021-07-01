@@ -23,7 +23,7 @@ export async function getStateObject(
   ignitionCore: IgnitionCore,
   moduleName: string
 ): Promise<ModuleStateFile> {
-  if (ignitionCore?.moduleStateRepo) {
+  if (ignitionCore?.moduleStateRepo !== undefined) {
     return ignitionCore.moduleStateRepo.getStateIfExist(moduleName);
   }
 
@@ -61,7 +61,7 @@ export async function loadStateFile(
     stateFile = {};
   }
 
-  if (ignition?.moduleStateRepo) {
+  if (ignition?.moduleStateRepo !== undefined) {
     await ignition.moduleStateRepo.storeNewState(moduleName, stateFile);
   }
 }

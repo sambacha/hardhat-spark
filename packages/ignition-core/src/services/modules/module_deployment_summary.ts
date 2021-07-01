@@ -156,10 +156,13 @@ export class ModuleDeploymentSummaryService {
         (singleTxInput: any, index: number) => {
           const singleTxOutput = transactionReceiptList.output[index];
 
-          let inputGasPrice;
+          let inputGasPrice = BigNumber.from(0);
           let outputGasUsed = BigNumber.from(0);
           if (singleTxOutput.gasUsed?._hex !== undefined) {
             outputGasUsed = BigNumber.from(singleTxOutput.gasUsed._hex);
+          } else {
+            // @ts-ignore
+            outputGasUsed = BigNumber.from(singleTxOutput.gasUsed.hex);
           }
 
           if (!checkIfExist(singleTxInput.gasPrice?.hex)) {
@@ -168,7 +171,7 @@ export class ModuleDeploymentSummaryService {
             inputGasPrice = BigNumber.from(singleTxInput.gasPrice.hex);
           }
 
-          totalGasSpent = totalGasSpent.add(BigNumber.from(outputGasUsed));
+          totalGasSpent = totalGasSpent.add(outputGasUsed);
 
           totalGasPrice = totalGasPrice.add(inputGasPrice);
           const wei = outputGasUsed.mul(inputGasPrice);
@@ -192,7 +195,7 @@ Spent ${chalk.bold(
       ethers.utils.formatEther(totalWeiSpent.toString())
     )} ETH in ${chalk.bold(elapsedTime.toString())}s
 
-Detailed log file saved to deployment/.logs/ignition.${moduleName.toLowerCase()}.$timestamp.log
+Detailed log file saved to deployment/.log/ignition.${moduleName.toLowerCase()}.$timestamp.log
 `;
   }
 

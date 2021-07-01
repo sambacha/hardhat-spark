@@ -117,7 +117,7 @@ export class EventTxExecutor {
           transactionReceipt = await tx.wait(1);
 
           if (!this._eventSession.get(ClsNamespaces.PARALLELIZE)) {
-            const blockConfirmation = +this._eventSession.get(
+            const blockConfirmation = this._eventSession.get(
               ClsNamespaces.BLOCK_CONFIRMATION_NUMBER
             );
             transactionReceipt = await tx.wait(blockConfirmation);

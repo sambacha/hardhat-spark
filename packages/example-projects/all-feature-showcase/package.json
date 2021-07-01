@@ -1,0 +1,26 @@
+{
+  "name": "example-all-feature-showcase",
+  "version": "0.0.1",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.0",
+    "@ethersproject/abstract-provider": "^5.2.0",
+    "@ethersproject/bignumber": "^5.2.0",
+    "chai": "^4.2.0",
+    "ethereum-waffle": "^3.2.0",
+    "hardhat": "^2.1.2"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "dotenv": "^8.2.0",
+    "ethers": "^5.0.19",
+    "hardhat": "^2.1.2",
+    "ignition-core": "^0.0.1",
+    "ignition-hardhat-plugin": "^0.0.1"
+  },
+  "scripts": {
+    "ignition:deploy": "npx hardhat ignition:deploy",
+    "ignition:deploy:local": "npx hardhat ignition:deploy --network local",
+    "ignition-script:deploy": "npx hardhat run ignition_script.hardhat.ts"
+  }
+}

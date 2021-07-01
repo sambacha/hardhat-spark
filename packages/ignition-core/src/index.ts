@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 
 import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
 import { EthClient } from "./services/ethereum/client";
-import { ICompiler } from "./services/ethereum/extractor";
+import { IContractDataExtractor } from "./services/ethereum/extractor";
 import { HardhatExtractor } from "./services/ethereum/extractor/hardhat";
 import { IGasProvider } from "./services/ethereum/gas";
 import { GasPriceCalculator } from "./services/ethereum/gas/calculator";
@@ -92,24 +92,6 @@ export interface GenTypesArgs {
   deploymentFolder: string;
 }
 
-export interface IIgnition {
-  deploy(
-    networkName: string,
-    module: Module,
-    logging?: boolean,
-    test?: boolean
-  ): Promise<void>;
-
-  diff(
-    networkName: string,
-    module: Module,
-    logging?: boolean,
-    test?: boolean
-  ): Promise<void>;
-
-  genTypes(module: Module, deploymentFolder: string): Promise<void>;
-}
-
 export interface IgnitionParams {
   networkName: string;
   networkId: string;
@@ -129,7 +111,7 @@ export interface IgnitionServices {
   transactionSigner?: ITransactionSigner;
 }
 
-export class IgnitionCore implements IIgnition {
+export class IgnitionCore {
   public params: IgnitionParams;
   public customServices: IgnitionServices;
   public moduleParams: ModuleParams;
@@ -154,7 +136,7 @@ export class IgnitionCore implements IIgnition {
     | undefined;
 
   private _moduleTyping: ModuleTypings | undefined;
-  private readonly _compiler: ICompiler;
+  private readonly _extractor: IContractDataExtractor;
   private readonly _moduleValidator: IModuleValidator;
 
   constructor(
@@ -167,7 +149,7 @@ export class IgnitionCore implements IIgnition {
     this.moduleParams = moduleParams;
 
     // @TODO move to mustInit eventually
-    this._compiler = new HardhatExtractor();
+    this._extractor = new HardhatExtractor();
     this._moduleValidator = new ModuleValidator();
   }
 
@@ -213,7 +195,9 @@ export class IgnitionCore implements IIgnition {
 
     this._gasProvider = gasProvider;
     this._eventSession = eventSession;
-    this.moduleStateRepo = moduleStateRepo;
+    if (this.moduleStateRepo === undefined) {
+      this.moduleStateRepo = moduleStateRepo;
+    }
     this._moduleResolver = moduleResolver;
     this._txGenerator = txGenerator;
     this._txExecutor = txExecutor;
@@ -236,7 +220,7 @@ export class IgnitionCore implements IIgnition {
         await this.mustInit(this.params, this.customServices);
       }
 
-      if (this.params.logging !== logging) {
+      if (logging !== undefined && this.params.logging !== logging) {
         await this.reInitLogger(logging !== undefined);
       }
 
@@ -268,13 +252,11 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this._compiler,
+          this._extractor,
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
-          {
-            params: this.moduleParams ?? {},
-          }
+          this.moduleParams ?? {}
         );
       });
       this.moduleStateRepo.initStateRepo(moduleName);
@@ -286,6 +268,7 @@ export class IgnitionCore implements IIgnition {
 
       this._logger.startModuleResolving(moduleName);
       // resolving contract and events dependencies and determining execution order
+      // @todo topological deps
       const moduleState: ModuleState | null = await this._moduleResolver.resolve(
         module.getAllBindings(),
         module.getAllEvents(),
@@ -347,7 +330,7 @@ export class IgnitionCore implements IIgnition {
       );
       this._logger.finishModuleDeploy(moduleName, summary);
     } catch (err) {
-      await errorHandling(this._eventSession, err, this._logger);
+      await errorHandling(err, this._logger);
 
       throw err;
     }
@@ -359,7 +342,7 @@ export class IgnitionCore implements IIgnition {
         await this.mustInit(this.params, this.customServices);
       }
 
-      if (this.params.logging !== logging) {
+      if (logging !== undefined && this.params.logging !== logging) {
         await this.reInitLogger(logging !== undefined);
       }
 
@@ -380,13 +363,11 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this._compiler,
+          this._extractor,
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
-          {
-            params: this.moduleParams ?? {},
-          }
+          this.moduleParams ?? {}
         );
       });
       this.moduleStateRepo.initStateRepo(moduleName);
@@ -414,6 +395,8 @@ export class IgnitionCore implements IIgnition {
       }
     } catch (err) {
       await errorHandling(err, this._logger);
+
+      throw err;
     }
   }
 
@@ -434,7 +417,7 @@ export class IgnitionCore implements IIgnition {
       await moduleSession.runAndReturn(async () => {
         await module.init(
           moduleSession,
-          this._compiler,
+          this._extractor,
           this._moduleValidator,
           (ignitionWallets as unknown) as ethers.Signer[],
           undefined,
@@ -487,15 +470,12 @@ export async function defaultInputParams(
     networkId = DEFAULT_NETWORK_ID;
   }
   eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
-  const provider = new ethers.providers.JsonRpcProvider();
+  const provider = params.rpcProvider;
   eventSession.set(ClsNamespaces.IGNITION_RPC_PROVIDER, provider);
-
-  if (params?.blockConfirmation !== undefined) {
-    eventSession.set(
-      ClsNamespaces.BLOCK_CONFIRMATION_NUMBER,
-      params.blockConfirmation ?? 1
-    );
-  }
+  eventSession.set(
+    ClsNamespaces.BLOCK_CONFIRMATION_NUMBER,
+    params?.blockConfirmation ?? 1
+  );
 
   if (params?.localDeployment !== undefined) {
     isLocalDeployment = params?.localDeployment ?? true;
@@ -509,8 +489,8 @@ export async function defaultInputParams(
     parallelizeDeployment = true;
   }
 
-  let logger: OverviewLogger | EmptyLogger;
-  if (params?.logging !== undefined) {
+  let logger: ILogging;
+  if (params?.logging === undefined || params.logging) {
     logger = new OverviewLogger();
   } else {
     logger = new EmptyLogger();
@@ -538,111 +518,115 @@ export async function setupServicesAndEnvironment(
   services?: IgnitionServices
 ): Promise<any> {
   const eventSession = cls.createNamespace("event");
-  const {
-    networkName,
-    networkId,
-    gasPriceBackoff,
-    rpcProvider,
-    logger,
-    signers,
-  } = await defaultInputParams(eventSession, params, services);
-  const currentPath = process.cwd();
+  return eventSession.runAndReturn(async () => {
+    const {
+      networkName,
+      networkId,
+      gasPriceBackoff,
+      rpcProvider,
+      logger,
+      signers,
+    } = await defaultInputParams(eventSession, params, services);
+    const currentPath = process.cwd();
 
-  const gasProvider = new GasPriceCalculator(rpcProvider);
+    const gasProvider = new GasPriceCalculator(rpcProvider);
 
-  const testEnv = params?.test ?? false;
-  const moduleStateRepo = new ModuleStateRepo(
-    networkName,
-    currentPath,
-    false,
-    testEnv ? new MemoryModuleState() : new FileSystemModuleState(currentPath),
-    testEnv
-  );
-  const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
+    const testEnv = params?.test ?? false;
+    const moduleStateRepo = new ModuleStateRepo(
+      networkName,
+      currentPath,
+      false,
+      testEnv
+        ? new MemoryModuleState()
+        : new FileSystemModuleState(currentPath),
+      testEnv
+    );
+    const eventTxExecutor = new EventTxExecutor(eventSession, moduleStateRepo);
 
-  eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
-  if (signers.length === 0) {
-    throw new EmptySigners();
-  }
+    eventSession.set(ClsNamespaces.IGNITION_NETWORK_ID, networkId);
+    if (signers.length === 0) {
+      throw new EmptySigners();
+    }
 
-  const signer = signers[0];
-  const transactionManager = new TransactionManager(
-    rpcProvider,
-    signer,
-    networkId,
-    gasProvider,
-    gasProvider,
-    logger,
-    gasPriceBackoff
-  );
-  const txGenerator = new EthTxGenerator(
-    signer,
-    gasProvider,
-    gasProvider,
-    networkId,
-    rpcProvider,
-    transactionManager,
-    transactionManager,
-    logger,
-    gasPriceBackoff
-  );
+    const signer = signers[0];
+    const transactionManager = new TransactionManager(
+      rpcProvider,
+      signer,
+      networkId,
+      gasProvider,
+      gasProvider,
+      logger,
+      gasPriceBackoff
+    );
+    const txGenerator = new EthTxGenerator(
+      signer,
+      gasProvider,
+      gasProvider,
+      networkId,
+      rpcProvider,
+      transactionManager,
+      transactionManager,
+      logger,
+      gasPriceBackoff
+    );
 
-  const eventHandler = new EventHandler(moduleStateRepo, logger);
-  const txExecutor = new TxExecutor(
-    logger,
-    moduleStateRepo,
-    txGenerator,
-    networkId,
-    rpcProvider,
-    eventHandler,
-    eventSession,
-    eventTxExecutor
-  );
+    const eventHandler = new EventHandler(moduleStateRepo, logger);
+    const txExecutor = new TxExecutor(
+      logger,
+      moduleStateRepo,
+      txGenerator,
+      networkId,
+      rpcProvider,
+      eventHandler,
+      eventSession,
+      eventTxExecutor
+    );
 
-  const ethClient = new EthClient(rpcProvider);
-  const moduleResolver = new ModuleResolver(
-    rpcProvider,
-    signer,
-    logger,
-    txGenerator,
-    moduleStateRepo,
-    eventTxExecutor,
-    eventSession,
-    ethClient
-  );
+    const ethClient = new EthClient(rpcProvider);
+    const moduleResolver = new ModuleResolver(
+      rpcProvider,
+      signer,
+      logger,
+      txGenerator,
+      moduleStateRepo,
+      eventTxExecutor,
+      eventSession,
+      ethClient
+    );
 
-  const walletWrapper = new WalletWrapper(
-    eventSession,
-    transactionManager,
-    gasProvider,
-    gasProvider,
-    moduleStateRepo,
-    logger,
-    eventTxExecutor
-  );
-  const moduleTyping = new ModuleTypings();
+    const walletWrapper = new WalletWrapper(
+      eventSession,
+      transactionManager,
+      gasProvider,
+      gasProvider,
+      moduleStateRepo,
+      logger,
+      eventTxExecutor
+    );
+    const moduleTyping = new ModuleTypings();
 
-  const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(
-    moduleStateRepo
-  );
+    const moduleDeploymentSummaryService = new ModuleDeploymentSummaryService(
+      moduleStateRepo
+    );
 
-  return {
-    networkName,
-    networkId,
-    gasPriceBackoff,
-    rpcProvider,
-    signers,
-    logger,
+    return {
+      networkName,
+      networkId,
+      gasPriceBackoff,
+      rpcProvider,
+      signers,
+      logger,
 
-    gasProvider,
-    eventSession,
-    moduleStateRepo,
-    moduleResolver,
-    txGenerator,
-    txExecutor,
-    walletWrapper,
-    moduleDeploymentSummaryService,
+      gasProvider,
+      eventSession,
+      moduleStateRepo,
+      moduleResolver,
+      txGenerator,
+      txExecutor,
+      walletWrapper,
+      moduleDeploymentSummaryService,
 
-    moduleTyping,
-  };
+      moduleTyping,
+    };
+  });
 }

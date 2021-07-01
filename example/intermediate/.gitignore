@@ -1,8 +1,0 @@
-artifacts
-cache
-node_modules
-.env
-
-# hardhat-ignition
-.hardhat-ignition
-

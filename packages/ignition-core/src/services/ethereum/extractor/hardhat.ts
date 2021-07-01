@@ -6,9 +6,9 @@ import { LinkReferences } from "../../types/artifacts/libraries";
 import { parseFiles } from "../../utils/files";
 import { checkIfExist } from "../../utils/util";
 
-import { ICompiler } from "./index";
+import { IContractDataExtractor } from "./index";
 
-export class HardhatExtractor implements ICompiler {
+export class HardhatExtractor implements IContractDataExtractor {
   public extractBytecode(contractNames: string[]): { [name: string]: string } {
     try {
       const bytecodes: { [name: string]: string } = {};

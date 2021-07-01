@@ -5,6 +5,7 @@ import { ILogObject, Logger } from "tslog";
 import { EventType } from "../../../interfaces/hardhat_ignition";
 import { ModuleContextMissingInLogger } from "../../types/errors";
 import { ModuleState } from "../../types/module";
+import { checkForFile, checkForFolder } from "../util";
 
 import { generateErrorMessage, ILogging } from "./index";
 
@@ -23,7 +24,8 @@ export class FileLogging implements ILogging {
     const timestamp = Math.trunc(new Date().getTime() / 1000);
 
     const currentDir = process.cwd();
-    this._fullLogPath = path.join(
+    checkForFolder(path.resolve(currentDir, DEPLOYMENT_FOLDER, FOLDER_NAME));
+    this._fullLogPath = path.resolve(
       currentDir,
       DEPLOYMENT_FOLDER,
       FOLDER_NAME,
@@ -31,12 +33,14 @@ export class FileLogging implements ILogging {
     );
 
     const logToTransport = (logObject: ILogObject) => {
-      fs.appendFileSync(
-        this._fullLogPath,
-        `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${
-          logObject.argumentsArray[0]
-        } ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`
-      );
+      checkForFile(this._fullLogPath);
+      // @TODO
+      // fs.appendFileSync(
+      //   this._fullLogPath,
+      //   `[${logObject.date.toTimeString()}] ${logObject.logLevel.toUpperCase()} ${
+      //     logObject.argumentsArray[0]
+      //   } ${JSON.stringify(logObject.argumentsArray.slice(1))} \n`
+      // );
     };
 
     const logger: Logger = new Logger({

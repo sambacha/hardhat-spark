@@ -2,6 +2,7 @@ import { cli } from "cli-ux";
 import fs from "fs";
 import path from "path";
 
+import { WrongDeploymentPathForNetwork } from "../types";
 import { HardhatBuild } from "../types/migration";
 
 const HARDHAT_CHAIN_ID_FILENAME = ".chainId";
@@ -10,6 +11,9 @@ export function searchModuleFilesName(
   currentPath: string,
   results: any[]
 ): string[] {
+  if (!fs.existsSync(currentPath)) {
+    throw new WrongDeploymentPathForNetwork(currentPath);
+  }
   const filenames = fs.readdirSync(currentPath);
 
   filenames.forEach((fileName: string) => {

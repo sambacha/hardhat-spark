@@ -14,7 +14,7 @@ import "./type_extentions";
 
 const DEFAULT_NETWORK_NAME = "local";
 export const PluginName = "hardhat-ignition";
-const DEFAULT_DEPLOYMENT_FOLDER = "deployments";
+const DEFAULT_DEPLOYMENT_FOLDER = "deployment";
 
 // TODO: Remove this
 export async function loadScript(filePath: string): Promise<any> {
@@ -74,8 +74,11 @@ const deploy: ActionType<DeployArgs> = async (
     }
   }
 
+  await env.run("compile");
+
   const modulePath = path.resolve(process.cwd(), filePath);
   const modules = await loadScript(modulePath);
+
   for (const [, module] of Object.entries<Module>(modules)) {
     const logging = deployArgs.logging ?? true;
     await env.ignition.deploy(module, deployArgs.networkName, logging);
@@ -115,6 +118,9 @@ const diff: ActionType<DiffArgs> = async (
       throw e;
     }
   }
+
+  await env.run("compile");
+
   const modules = loadScript(path.resolve(process.cwd(), filePath));
   for (const [, module] of Object.entries(modules)) {
     const logging = diffArgs.logging ?? true;
@@ -129,6 +135,9 @@ const genTypes: ActionType<GenTypesArgs> = async (
   const modules = loadScript(
     path.resolve(process.cwd(), genTypesArgs.deploymentFolder)
   );
+
+  await env.run("compile");
+
   for (const [, module] of Object.entries(modules)) {
     await env.ignition.genTypes(module, genTypesArgs.deploymentFolder);
   }

@@ -10,7 +10,7 @@ import { cli } from "cli-ux";
 import { Namespace } from "cls-hooked";
 import { CallOverrides, ethers } from "ethers";
 
-import { ICompiler } from "../services/ethereum/extractor";
+import { IContractDataExtractor } from "../services/ethereum/extractor";
 import { IGasCalculator, IGasPriceCalculator } from "../services/ethereum/gas";
 import {
   INonceManager,
@@ -89,7 +89,10 @@ export interface ModuleParams {
   [name: string]: any;
 }
 
-export type ShouldRedeployFn = (curr: ContractBinding) => boolean;
+export type ShouldRedeployFn = (
+  old: ContractBindingMetaData,
+  curr: ContractBinding
+) => boolean;
 
 export interface DeployReturn {
   transaction: TransactionReceipt;
@@ -199,7 +202,7 @@ export interface Deployed {
   deploymentSpec:
     | {
         deployFn: DeployFn | undefined;
-        deps: Array<ContractBinding | ContractBindingMetaData>;
+        deps: Array<ContractBinding | ContractBindingMetaData>; // @TODO this should be depsName
       }
     | undefined;
 }
@@ -609,7 +612,7 @@ export class ContractBinding extends Binding {
     // event hooks
     events?: EventsDepRef,
     signer?: ethers.Signer,
-    prompter?: ILogging,
+    logger?: ILogging,
     txGenerator?: ITransactionGenerator,
     moduleStateRepo?: IModuleStateRepo,
     eventTxExecutor?: EventTxExecutor,
@@ -648,7 +651,7 @@ export class ContractBinding extends Binding {
     this._contractInstance = undefined;
 
     this.signer = signer;
-    this.prompter = prompter;
+    this.prompter = logger;
     this.txGenerator = txGenerator;
     this.moduleStateRepo = moduleStateRepo;
     this.eventTxExecutor = eventTxExecutor;
@@ -1163,6 +1166,7 @@ export class ContractInstance {
     fragment: FunctionFragment
   ): ContractFunction {
     return async (...args: any[]): Promise<TransactionResponse> => {
+      // tslint:disable-next-line:unnecessary-bind
       const func = async function (
         this: ContractInstance,
         ...funcArgs: any[]
@@ -1273,7 +1277,7 @@ export class ContractInstance {
         this._prompter.finishedExecutionOfContractFunction(fragment.name);
 
         return tx;
-      };
+      }.bind(this);
 
       const currentEventAbstraction = this._eventSession.get(
         ClsNamespaces.EVENT_NAME
@@ -1352,7 +1356,7 @@ export class IgnitionSigner {
 
     const func = async (): Promise<TransactionResponse> => {
       const toAddr = (await transaction.to) as string;
-      if (toAddr !== undefined) {
+      if (toAddr === undefined) {
         throw new MissingToAddressInWalletTransferTransaction();
       }
       this._prompter.executeWalletTransfer(address, toAddr);
@@ -1507,12 +1511,12 @@ export class ModuleBuilder {
 
   private readonly _subModules: ModuleBuilder[];
   private readonly _moduleSession: Namespace;
-  private _compiler: ICompiler;
+  private _extractor: IContractDataExtractor;
   private _moduleValidator: IModuleValidator;
 
   constructor(
     moduleSession: Namespace,
-    compiler: ICompiler,
+    compiler: IContractDataExtractor,
     moduleValidator: IModuleValidator,
     params?: ModuleParams
   ) {
@@ -1534,7 +1538,7 @@ export class ModuleBuilder {
     }
     this._subModules = [];
     this._moduleSession = moduleSession;
-    this._compiler = compiler;
+    this._extractor = compiler;
     this._moduleValidator = moduleValidator;
   }
 
@@ -1759,7 +1763,7 @@ export class ModuleBuilder {
 
     moduleBuilder = await m.init(
       this._moduleSession,
-      this._compiler,
+      this._extractor,
       this._moduleValidator,
       signers,
       this,
@@ -1962,7 +1966,7 @@ export class Module {
 
   public async init(
     moduleSession: Namespace,
-    compiler: ICompiler,
+    extractor: IContractDataExtractor,
     moduleValidator: IModuleValidator,
     signers: ethers.Signer[],
     m?: ModuleBuilder,
@@ -1973,7 +1977,12 @@ export class Module {
     }
     let moduleBuilder =
       m ??
-      new ModuleBuilder(moduleSession, compiler, moduleValidator, moduleParams);
+      new ModuleBuilder(
+        moduleSession,
+        extractor,
+        moduleValidator,
+        moduleParams
+      );
     if (moduleParams !== undefined) {
       moduleBuilder.setParam(moduleParams);
     }
@@ -2000,7 +2009,7 @@ export class Module {
     }
     moduleBuilder = await handleModule(
       moduleBuilder,
-      compiler,
+      extractor,
       moduleValidator,
       this.name,
       this._isUsage,
@@ -2082,7 +2091,7 @@ function checkIfSuitableForInstantiating(
 
 export async function handleModule(
   moduleBuilder: ModuleBuilder,
-  compiler: ICompiler,
+  compiler: IContractDataExtractor,
   moduleValidator: IModuleValidator,
   moduleName: string,
   isUsage: boolean,
@@ -2110,19 +2119,24 @@ export async function handleModule(
 
   for (const [bindingName, binding] of Object.entries(moduleBuilderBindings)) {
     if (
-      !checkIfExist(bytecodes[binding.contractName]) ||
-      !checkIfExist(libraries[binding.contractName])
+      (bytecodes !== undefined &&
+        !checkIfExist(bytecodes[binding.contractName])) ||
+      (libraries !== undefined &&
+        !checkIfExist(libraries[binding.contractName]))
     ) {
-      throw new MissingContractMetadata(
-        `Contract metadata are missing for ${bindingName}`
-      );
+      throw new MissingContractMetadata(binding.contractName);
     }
 
     moduleBuilderBindings[bindingName].bytecode =
       bytecodes[binding.contractName];
-    moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
-    moduleBuilderBindings[bindingName].libraries =
-      libraries[binding.contractName];
+    if (libraries !== undefined) {
+      moduleBuilderBindings[bindingName].libraries =
+        libraries[binding.contractName];
+    }
+
+    if (abi !== undefined) {
+      moduleBuilderBindings[bindingName].abi = abi[binding.contractName];
+    }
   }
 
   return moduleBuilder;

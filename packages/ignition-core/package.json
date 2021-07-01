@@ -9,6 +9,7 @@
   ],
   "license": "MIT",
   "scripts": {
+    "test": "nyc mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
     "lint:fix": "prettier --write \"src/**/*.{js,ts}\" \"test/**/*.{js,ts}\" && yarn lint --fix",
     "lint": "tslint --config tslint.json --project ./tsconfig.json",
     "build": "tsc --build .",
@@ -36,10 +37,12 @@
     "inquirer": "^8.0.0",
     "react": "^16.14.0",
     "ts-node": "^9.1.1",
+    "ts-sinon": "^2.0.1",
     "tslog": "^3.2.0"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.2.0",
+    "@types/chai-as-promised": "^7.1.4",
     "@types/cli-progress": "^3.8.0",
     "@types/cls-hooked": "^4.3.1",
     "@types/fs-extra": "^9.0.11",
@@ -49,7 +52,9 @@
     "@types/qs": "^6.9.6",
     "@types/react": "^17.0.5",
     "@types/uuid": "^8.3.0",
+    "chai-as-promised": "^7.1.1",
     "ethers": "^5.0.22",
+    "nyc": "^15.1.0",
     "prettier": "2.0.5",
     "rimraf": "^3.0.2",
     "tslint": "^5.16.0",
@@ -60,5 +65,22 @@
   },
   "peerDependencies": {
     "ethers": "^5.0.22"
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "test",
+      ".nyc_output",
+      "*.ts",
+      "*.js"
+    ],
+    "reporter": [
+      "text",
+      "lcovonly"
+    ],
+    "all": true
   }
 }

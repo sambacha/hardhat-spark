@@ -693,7 +693,7 @@ export class ModuleResolver {
           }
         }
         if (
-          userAlwaysDeploy !== undefined ||
+          (userAlwaysDeploy !== undefined && userAlwaysDeploy === true) ||
           resolvedModuleStateElement.forceFlag ||
           !isSameBytecode(
             stateFileElement.bytecode,
@@ -702,6 +702,7 @@ export class ModuleResolver {
           (resolvedModuleStateElement.deployMetaData.shouldRedeploy !==
             undefined &&
             resolvedModuleStateElement.deployMetaData.shouldRedeploy(
+              stateFileElement,
               resolvedModuleStateElement
             )) ||
           !checkIfExist(stateFileElement.deployMetaData?.contractAddress)
@@ -756,7 +757,7 @@ export class ModuleResolver {
 
       stateFileElement = (stateFileElement as unknown) as StatefulEvent;
       if (
-        userAlwaysDeploy !== undefined &&
+        (userAlwaysDeploy === undefined || userAlwaysDeploy === false) &&
         checkIfExist(stateFileElement) &&
         checkIfExist(stateFileElement.event)
       ) {
