@@ -133,7 +133,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     }
 
     this._moduleBars[this._currentModuleName].stop();
-    const { message, stack } = generateErrorMessage(error);
+    const { message } = generateErrorMessage(error);
 
     cli.info(message);
   }

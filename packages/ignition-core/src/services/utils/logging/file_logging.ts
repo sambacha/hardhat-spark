@@ -32,7 +32,7 @@ export class FileLogging implements ILogging {
       `/ignition.error.${timestamp}.log`
     );
 
-    const logToTransport = (logObject: ILogObject) => {
+    const logToTransport = (_logObject: ILogObject) => {
       checkForFile(this._fullLogPath);
       // @TODO
       // fs.appendFileSync(
@@ -130,7 +130,7 @@ export class FileLogging implements ILogging {
     });
   }
 
-  public finishModuleDeploy(moduleName: string, summary: string): void {
+  public finishModuleDeploy(moduleName: string, _summary: string): void {
     if (this._moduleName === undefined) {
       throw new ModuleContextMissingInLogger();
     }
@@ -272,7 +272,7 @@ export class FileLogging implements ILogging {
 
   public startModuleDeploy(
     moduleName: string,
-    moduleStates: ModuleState
+    _moduleStates: ModuleState
   ): void {
     const timestamp = Math.trunc(new Date().getTime() / 1000);
 
@@ -367,12 +367,12 @@ export class FileLogging implements ILogging {
     return Promise.resolve(true);
   }
 
-  public finishModuleResolving(moduleName: string): void {}
+  public finishModuleResolving(_moduleName: string): void {}
 
-  public startModuleResolving(moduleName: string): void {}
+  public startModuleResolving(_moduleName: string): void {}
 
   public contractFunctionAlreadyExecuted(
-    contractFunction: string,
-    ...args: any[]
+    _contractFunction: string,
+    ..._args: any[]
   ): void {}
 }

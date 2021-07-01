@@ -8,6 +8,7 @@ import {
 } from "../../types/errors";
 import { ModuleState } from "../../types/module";
 
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum Logging {
   "empty" = "empty",
   "overview" = "overview",
@@ -15,6 +16,7 @@ export enum Logging {
   "json" = "json",
   "streamlined" = "streamlined",
 }
+/* eslint-enable @typescript-eslint/naming-convention */
 
 export enum StateElementStatus {
   "NOT_EXECUTED" = "not executed",

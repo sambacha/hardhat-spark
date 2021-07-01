@@ -31,7 +31,7 @@ export class StreamlinedLogger implements ILogging {
 
   public startModuleDeploy(
     moduleName: string,
-    moduleStates: ModuleState
+    _moduleStates: ModuleState
   ): void {
     cli.info(chalk.bold("\nDeploy module - ", chalk.green(moduleName)));
     this._whitespaces += "  ";
@@ -83,7 +83,7 @@ export class StreamlinedLogger implements ILogging {
   }
 
   public logError(error: Error): void {
-    const { message, stack } = generateErrorMessage(error);
+    const { message } = generateErrorMessage(error);
 
     cli.info(message);
   }
@@ -122,7 +122,10 @@ export class StreamlinedLogger implements ILogging {
     this._whitespaces += "  ";
   }
 
-  public finishedEventExecution(eventName: string, eventType: EventType): void {
+  public finishedEventExecution(
+    eventName: string,
+    _eventType: EventType
+  ): void {
     this._finishedElementExecution();
     cli.info(
       `${this._whitespaces}${chalk.bold(
@@ -227,8 +230,8 @@ export class StreamlinedLogger implements ILogging {
   public finishModuleResolving(): void {}
 
   public contractFunctionAlreadyExecuted(
-    contractFunction: string,
-    ...args: any[]
+    _contractFunction: string,
+    ..._args: any[]
   ): void {}
 
   private _finishedElementExecution(): void {

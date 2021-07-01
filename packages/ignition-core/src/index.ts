@@ -33,7 +33,6 @@ import { ModuleState } from "./services/types/module";
 import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
-  DEFAULT_RPC_PROVIDER,
 } from "./services/utils/constants";
 import { ClsNamespaces } from "./services/utils/continuation_local_storage";
 import { ILogging } from "./services/utils/logging";
@@ -184,7 +183,7 @@ export class IgnitionCore {
       moduleDeploymentSummaryService,
 
       moduleTyping,
-    } = await setupServicesAndEnvironment(this.params, this.customServices);
+    } = await setupServicesAndEnvironment(this.params);
 
     this._networkName = this.params.networkName;
     this._networkId = networkId;
@@ -209,12 +208,7 @@ export class IgnitionCore {
     this._initialized = true;
   }
 
-  public async deploy(
-    networkName: string,
-    module: Module,
-    logging?: boolean,
-    test?: boolean
-  ) {
+  public async deploy(networkName: string, module: Module, logging?: boolean) {
     try {
       if (!this._initialized) {
         await this.mustInit(this.params, this.customServices);
@@ -441,8 +435,7 @@ export class IgnitionCore {
 
 export async function defaultInputParams(
   eventSession: Namespace,
-  params: IgnitionParams,
-  services?: IgnitionServices
+  params: IgnitionParams
 ): Promise<{
   networkName: string;
   networkId: string;
@@ -514,8 +507,7 @@ export async function defaultInputParams(
 }
 
 export async function setupServicesAndEnvironment(
-  params: IgnitionParams,
-  services?: IgnitionServices
+  params: IgnitionParams
 ): Promise<any> {
   const eventSession = cls.createNamespace("event");
   return eventSession.runAndReturn(async () => {
@@ -526,7 +518,7 @@ export async function setupServicesAndEnvironment(
       rpcProvider,
       logger,
       signers,
-    } = await defaultInputParams(eventSession, params, services);
+    } = await defaultInputParams(eventSession, params);
     const currentPath = process.cwd();
 
     const gasProvider = new GasPriceCalculator(rpcProvider);

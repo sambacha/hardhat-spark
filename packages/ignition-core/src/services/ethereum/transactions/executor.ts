@@ -183,7 +183,7 @@ export class TxExecutor {
   ): Promise<void> {
     ModuleResolver.handleModuleEvents(moduleState, moduleEvents);
 
-    for (const [eventName, event] of Object.entries(moduleEvents)) {
+    for (const eventName of Object.keys(moduleEvents)) {
       await this._executeEvent(
         moduleName,
         moduleState[eventName] as StatefulEvent,
@@ -367,12 +367,7 @@ export class TxExecutor {
         }
       );
 
-      await this._executeEvents(
-        moduleName,
-        moduleState,
-        batch,
-        batch.length - promiseTxReceipt.length
-      );
+      await this._executeEvents(moduleName, moduleState, batch);
 
       for (const batchElement of batch) {
         if (checkIfExist((batchElement as ContractBinding)?.bytecode)) {
@@ -401,8 +396,7 @@ export class TxExecutor {
   private async _executeEvents(
     moduleName: string,
     moduleState: ModuleState,
-    batch: any,
-    numberOfEvents: number
+    batch: any
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {

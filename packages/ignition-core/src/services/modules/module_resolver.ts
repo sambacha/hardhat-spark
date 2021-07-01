@@ -134,15 +134,13 @@ export class ModuleResolver {
 
     this._invalidateBindingEventsDependant(
       currentBinding.eventsDeps,
-      moduleStateFile,
-      resolvedModule
+      moduleStateFile
     );
   }
 
   private static _invalidateBindingEventsDependant(
     bindingEventDeps: EventsDepRef,
-    moduleStateFile: ModuleStateFile,
-    resolvedModule: ModuleState
+    moduleStateFile: ModuleStateFile
   ) {
     const invalidateSingleEvent = (statefulEvent: StatefulEvent) => {
       if (!checkIfExist(statefulEvent)) {

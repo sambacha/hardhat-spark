@@ -6,7 +6,6 @@ import chai, { assert } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { createNamespace, Namespace } from "cls-hooked";
 import { ethers } from "ethers";
-import { defaultAbiCoder } from "ethers/lib/utils";
 import sinon, { StubbedInstance, stubInterface } from "ts-sinon";
 
 import {
@@ -341,13 +340,13 @@ describe("transaction executor", () => {
       moduleStateRepo.initStateRepo(moduleName);
       await txExecutor.execute(moduleName, moduleState, undefined);
 
-      const constructorBytecode =
-        bytecode +
-        defaultAbiCoder
-          .encode(["int256", "uint256", "uint256"], contractStateData.args)
-          .substring(2);
       assert.equal(stubLogger.bindingExecution.calledWith(contractName), true);
       // @TODO bytecode is not correct in below function, check later
+      // const constructorBytecode =
+      //   bytecode +
+      //   defaultAbiCoder
+      //     .encode(["int256", "uint256", "uint256"], contractStateData.args)
+      //     .substring(2);
       // assert.equal(
       //   stubTransactionGenerator.generateSingedTx.calledWith(
       //     0,

@@ -101,6 +101,7 @@ export interface DeployReturn {
 
 export type DeployFn = () => Promise<DeployReturn>;
 
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum EventType {
   "OnChangeEvent" = "OnChangeEvent",
   "BeforeDeployEvent" = "BeforeDeployEvent",
@@ -113,6 +114,7 @@ export enum EventType {
   "OnSuccess" = "OnSuccess",
   "Deploy" = "Deploy",
 }
+/* eslint-enable @typescript-eslint/naming-convention */
 
 export interface BaseEvent {
   name: string;
@@ -264,7 +266,7 @@ export abstract class Binding {
     this.name = name;
   }
 
-  public deployed(m: ModuleBuilder): any {
+  public deployed(_m: ModuleBuilder): any {
     return {
       name: this.name,
     };
@@ -1120,10 +1122,7 @@ export class ContractInstance {
 
       if (parent[signature] !== undefined) {
         if (fragment.constant) {
-          this[signature] = this._buildConstantWrappers(
-            parent[signature],
-            fragment
-          );
+          this[signature] = this._buildConstantWrappers(parent[signature]);
           this[fragment.name] = this[signature];
           return;
         }
@@ -1298,8 +1297,7 @@ export class ContractInstance {
   }
 
   private _buildConstantWrappers(
-    contractFunction: ContractFunction,
-    fragment: FunctionFragment
+    contractFunction: ContractFunction
   ): ContractFunction {
     return async (...args: any[]): Promise<TransactionResponse> => {
       args = ContractInstance._formatArgs(args);
@@ -1756,12 +1754,11 @@ export class ModuleBuilder {
       m = await m;
     }
 
-    let moduleBuilder: ModuleBuilder;
     if (m.isInitialized()) {
       throw new ModuleIsAlreadyInitialized();
     }
 
-    moduleBuilder = await m.init(
+    const moduleBuilder = await m.init(
       this._moduleSession,
       this._extractor,
       this._moduleValidator,
@@ -2095,7 +2092,7 @@ export async function handleModule(
   moduleValidator: IModuleValidator,
   moduleName: string,
   isUsage: boolean,
-  isSubModule: boolean
+  _isSubModule: boolean
 ): Promise<ModuleBuilder> {
   const contractBuildNames: string[] = [];
   const moduleBuilderBindings = moduleBuilder.getAllBindings();
