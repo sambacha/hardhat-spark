@@ -1,8 +1,8 @@
-import { extendEnvironment, task } from "hardhat/config";
+import { extendEnvironment, task, types } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import { ActionType } from "hardhat/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types/runtime";
-import { DeployArgs, DiffArgs, GenTypesArgs, Module } from "ignition-core";
+import { Module } from "ignition-core";
 import inquirer from "inquirer";
 import * as path from "path";
 
@@ -10,6 +10,7 @@ import { HardhatIgnition } from "../index";
 import { extractDataFromConfig } from "../utils/extractor";
 import { SystemCrawlingService } from "../utils/system_crawler";
 
+import { DeployTaskArgs, DiffTaskArgs, GenTypesTaskArgs } from "./types";
 import "./type_extentions";
 
 const DEFAULT_NETWORK_NAME = "local";
@@ -40,8 +41,8 @@ extendEnvironment((env) => {
   );
 });
 
-const deploy: ActionType<DeployArgs> = async (
-  deployArgs: DeployArgs,
+const deploy: ActionType<DeployTaskArgs> = async (
+  deployArgs: DeployTaskArgs,
   env: HardhatRuntimeEnvironment
 ) => {
   let filePath =
@@ -80,13 +81,16 @@ const deploy: ActionType<DeployArgs> = async (
   const modules = await loadScript(modulePath);
 
   for (const [, module] of Object.entries<Module>(modules)) {
-    const logging = deployArgs.logging ?? true;
-    await env.ignition.deploy(module, deployArgs.networkName, logging);
+    await env.ignition.deploy(
+      module,
+      deployArgs.networkName,
+      deployArgs.logging
+    );
   }
 };
 
-const diff: ActionType<DiffArgs> = async (
-  diffArgs: DiffArgs,
+const diff: ActionType<DiffTaskArgs> = async (
+  diffArgs: DiffTaskArgs,
   env: HardhatRuntimeEnvironment
 ) => {
   let filePath =
@@ -128,18 +132,18 @@ const diff: ActionType<DiffArgs> = async (
   }
 };
 
-const genTypes: ActionType<GenTypesArgs> = async (
-  genTypesArgs: GenTypesArgs,
+const genTypes: ActionType<GenTypesTaskArgs> = async (
+  genTypesArgs: GenTypesTaskArgs,
   env: HardhatRuntimeEnvironment
 ) => {
   const modules = loadScript(
-    path.resolve(process.cwd(), genTypesArgs.deploymentFolder)
+    path.resolve(process.cwd(), genTypesArgs.moduleFilePath)
   );
 
   await env.run("compile");
 
   for (const [, module] of Object.entries(modules)) {
-    await env.ignition.genTypes(module, genTypesArgs.deploymentFolder);
+    await env.ignition.genTypes(module, genTypesArgs.moduleFilePath);
   }
 };
 
@@ -151,14 +155,13 @@ task("ignition:diff", "Difference between deployed and current deployment.")
   .addOptionalParam<string>(
     "networkName",
     "Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)",
-    "local",
-    undefined
+    "local"
   )
   .addOptionalParam<boolean>(
     "logging",
     "Logging param can be used to turn on/off logging in ignition.",
-    undefined,
-    undefined
+    true,
+    types.boolean
   )
   .setAction(diff);
 
@@ -173,18 +176,13 @@ task(
   .addOptionalParam<string>(
     "networkName",
     "Network name is specified inside your config file and if their is none it will default to (http://localhost:8545)",
-    "local",
-    undefined
+    "local"
   )
   .addOptionalParam<boolean>(
     "logging",
     "Logging param can be used to turn on/off logging in ignition.",
-    undefined,
-    undefined
-  )
-  .addFlag(
-    "testEnv",
-    "This should be provided in case of test and/or CI/CD, it means that no state file will be store."
+    true,
+    types.boolean
   )
   .setAction(deploy);
 
@@ -192,7 +190,7 @@ task(
   "ignition:genTypes",
   "It'll generate .d.ts file for written deployment modules for better type hinting."
 )
-  .addOptionalPositionalParam(
+  .addPositionalParam(
     "moduleFilePath",
     "Path to module deployment file."
   )
