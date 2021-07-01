@@ -7,8 +7,8 @@ import inquirer from "inquirer";
 import * as path from "path";
 
 import { HardhatIgnition } from "./hardhat_ignition";
-import { DeployTaskArgs, DiffTaskArgs, GenTypesTaskArgs } from "./types";
 import "./type_extentions";
+import { DeployTaskArgs, DiffTaskArgs, GenTypesTaskArgs } from "./types";
 import { extractDataFromConfig } from "./utils/extractor";
 import { SystemCrawlingService } from "./utils/system_crawler";
 
@@ -189,8 +189,5 @@ task(
   "ignition:genTypes",
   "It'll generate .d.ts file for written deployment modules for better type hinting."
 )
-  .addPositionalParam(
-    "moduleFilePath",
-    "Path to module deployment file."
-  )
+  .addPositionalParam("moduleFilePath", "Path to module deployment file.")
   .setAction(genTypes);
