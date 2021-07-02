@@ -7,15 +7,6 @@ import path from "path";
 const networkId = "31337";
 const rootDir = process.cwd();
 
-const testPrivateKeys = [
-  new ethers.Wallet(
-    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-  ),
-  new ethers.Wallet(
-    "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-  ),
-];
-
 export function useFixedProjectEnvironment(
   projectFileName: string,
   networkName = "hardhat"
@@ -72,6 +63,17 @@ export function initIgnition(exampleProject = false) {
     }
 
     const networkName = this.hardhatEnvironment.network.name;
+
+    const testPrivateKeys = [
+      new ethers.Wallet(
+        "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        hardhatProvider
+      ),
+      new ethers.Wallet(
+        "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+        hardhatProvider
+      ),
+    ];
 
     this.ignition = new IgnitionCore(
       {

@@ -355,7 +355,7 @@ function runExamples(skipSynthethix: boolean = false) {
         projectLocation,
         "tornado.module.ts"
       );
-    }).timeout(10000);
+    });
   });
 
   if (!skipSynthethix) {
@@ -373,7 +373,7 @@ function runExamples(skipSynthethix: boolean = false) {
           projectLocation,
           "module.ts"
         );
-      }).timeout(200000); // ~160s normal running time
+      });
     });
   }
 }
