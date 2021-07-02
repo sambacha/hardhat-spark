@@ -29,6 +29,7 @@
     "child_process": "^1.0.2",
     "cli-ux": "^5.5.1",
     "ethers": "^5.1.4",
+    "hardhat": "^2.4.1",
     "ignition-core": "^0.0.1",
     "ignition-hardhat-plugin": "^0.0.1"
   },

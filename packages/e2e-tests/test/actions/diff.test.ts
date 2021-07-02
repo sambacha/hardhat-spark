@@ -6,20 +6,12 @@ import { IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
 
 import { loadStateFile } from "../utils/files";
+import { initIgnition, useFixedProjectEnvironment } from "../utils/helpers";
 
 const deploymentFolder = "deployment";
 const defaultModuleFileName = "module.ts";
-const networkName = "local";
-const networkId = "31337";
+const networkName = "local"; // used for ignition to distinguish state file
 const rootDir = process.cwd();
-const testPrivateKeys = [
-  new ethers.Wallet(
-    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-  ),
-  new ethers.Wallet(
-    "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-  ),
-];
 
 // TODO: Remove this
 export async function loadScript(filePath: string): Promise<any> {
@@ -29,18 +21,6 @@ export async function loadScript(filePath: string): Promise<any> {
 
 describe("ignition diff - integration", () => {
   let output = "";
-  const ignitionCoreTest = new IgnitionCore(
-    {
-      networkName,
-      rpcProvider: new ethers.providers.JsonRpcProvider(),
-      networkId,
-      signers: testPrivateKeys,
-      test: true,
-      logging: false,
-    },
-    {},
-    {}
-  );
 
   beforeEach(() => {
     process.chdir(rootDir);
@@ -55,135 +35,124 @@ describe("ignition diff - integration", () => {
     };
   });
 
-  before(async () => {
-    await ignitionCoreTest.mustInit();
-  });
-
-  afterEach(() => {
-    output = "";
-    if (ignitionCoreTest?.moduleStateRepo !== undefined) {
-      ignitionCoreTest.moduleStateRepo.clear();
-    }
-  });
-
-  it("should be able to show difference in modules - single new binding", async () => {
+  describe("single new binding", function () {
     const projectDir = "single-new-binding";
-    const projectLocation = path.resolve(
-      rootDir,
-      `./test/projects-scenarios/${projectDir}`
-    );
-    process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionCoreTest);
+    const projectLocation = useFixedProjectEnvironment(projectDir);
+    initIgnition();
 
-    await runDiffCommand(ignitionCoreTest, projectLocation);
+    it("should be able to show difference in modules", async function () {
+      await loadStateFile(projectLocation, this.ignition);
 
-    assert.equal(
-      output,
-      `
+      await runDiffCommand(this.ignition, projectLocation);
+
+      assert.equal(
+        output,
+        `
 Module: ExampleModule
 + Contract Example
 `
-    );
+      );
+    });
   });
 
-  it("should be able to show difference in modules - multiple new bindings", async () => {
+  describe("multiple new bindings", function () {
     const projectDir = "multiple-new-bindings";
-    const projectLocation = path.resolve(
-      rootDir,
-      `./test/projects-scenarios/${projectDir}`
-    );
-    process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionCoreTest);
+    const projectLocation = useFixedProjectEnvironment(projectDir);
+    initIgnition();
 
-    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
+    it("should be able to show difference in modules", async function () {
+      await loadStateFile(projectLocation, this.ignition);
 
-    assert.equal(
-      output,
-      `
+      await runDiffCommand(this.ignition, projectLocation);
+
+      assert.equal(
+        output,
+        `
 Module: ExampleModule
 + Contract Example
 + Contract SecondExample
   └── Contract: Example
 `
-    );
+      );
+    });
   });
 
-  it("should be able to show difference in modules - single modified binding", async () => {
+  describe("single modified binding", function () {
     const projectDir = "single-modified-binding";
-    const projectLocation = path.resolve(
-      rootDir,
-      `./test/projects-scenarios/${projectDir}`
-    );
-    process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionCoreTest);
+    const projectLocation = useFixedProjectEnvironment(projectDir);
+    initIgnition();
 
-    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
+    it("should be able to show difference in modules", async function () {
+      await loadStateFile(projectLocation, this.ignition);
 
-    assert.equal(
-      output,
-      `
+      await runDiffCommand(this.ignition, projectLocation);
+
+      assert.equal(
+        output,
+        `
 Module: ExampleModule
 ~ Contract:  Example
 `
-    );
+      );
+    });
   });
 
-  it("should be able to show difference in modules - multiple modified binding", async () => {
+  describe("multiple modified binding", function () {
     const projectDir = "multiple-modified-binding";
-    const projectLocation = path.resolve(
-      rootDir,
-      `./test/projects-scenarios/${projectDir}`
-    );
-    process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionCoreTest);
+    const projectLocation = useFixedProjectEnvironment(projectDir);
+    initIgnition();
 
-    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
+    it("should be able to show difference in modules", async function () {
+      await loadStateFile(projectLocation, this.ignition);
 
-    assert.equal(
-      output,
-      `
+      await runDiffCommand(this.ignition, projectLocation);
+
+      assert.equal(
+        output,
+        `
 Module: ExampleModule
 ~ Contract:  Example
 ~ Contract:  SecondExample
   └── Contract: Example
 `
-    );
+      );
+    });
   });
 
-  it("should do nothing if their is no difference in module bindings", async () => {
+  describe("no-difference-in-binding", function () {
     const projectDir = "no-difference-in-binding";
-    const projectLocation = path.resolve(
-      rootDir,
-      `./test/projects-scenarios/${projectDir}`
-    );
-    process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionCoreTest);
+    const projectLocation = useFixedProjectEnvironment(projectDir);
+    initIgnition();
 
-    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
+    it("should do nothing if their is no difference in module bindings", async function () {
+      await loadStateFile(projectLocation, this.ignition);
 
-    assert.equal(
-      output,
-      "Nothing changed from last revision - ExampleModule\n"
-    );
+      await runDiffCommand(this.ignition, projectLocation);
+
+      assert.equal(
+        output,
+        "Nothing changed from last revision - ExampleModule\n"
+      );
+    });
   });
 
-  it("should fail if their is less bindings in modules compared to deployed one", async () => {
+  describe("less bindings", function () {
     const projectDir = "less-bindings";
-    const projectLocation = path.resolve(
-      rootDir,
-      `./test/projects-scenarios/${projectDir}`
-    );
-    process.chdir(projectLocation);
-    await loadStateFile(projectLocation, ignitionCoreTest);
+    const projectLocation = useFixedProjectEnvironment(projectDir);
+    initIgnition();
 
-    await runDiffCommand(ignitionCoreTest, projectLocation, "module.ts");
+    it("should fail if their is less bindings in modules compared to deployed one", async function () {
+      await loadStateFile(projectLocation, this.ignition);
 
-    assert.equal(
-      output,
-      `
+      await runDiffCommand(this.ignition, projectLocation);
+
+      assert.equal(
+        output,
+        `
 Module: ExampleModule
 `
-    );
+      );
+    });
   });
 });
 
