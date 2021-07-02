@@ -96,7 +96,7 @@ export interface IgnitionParams {
   networkName: string;
   networkId: string;
   rpcProvider: ethers.providers.JsonRpcProvider;
-  signers: ethers.Signer[];
+  signers?: ethers.Signer[];
   logging?: boolean;
   parallelizeDeployment?: boolean;
   localDeployment?: boolean;
