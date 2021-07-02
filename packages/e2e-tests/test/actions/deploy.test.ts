@@ -21,7 +21,6 @@ export async function loadScript(filePath: string): Promise<any> {
 
 const moduleName = "ExampleModule";
 const moduleFileName = "module.ts";
-const rootDir = process.cwd();
 
 describe("ignition deploy", function () {
   describe("project scenarios", function () {
@@ -232,7 +231,7 @@ describe("ignition deploy", function () {
     });
   });
 
-  describe("example projects - sync", () => {
+  describe("example projects - sync", function () {
     runExamples();
   });
 
@@ -255,7 +254,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/all-feature-showcase", function () {
     const projectFileName = "all-feature-showcase";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -268,9 +267,9 @@ function runExamples(skipSynthethix: boolean = false) {
   });
 
   describe("examples/basic", function () {
-    const projectFileName = "all-feature-showcase";
+    const projectFileName = "basic";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -285,7 +284,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/dai-module", function () {
     const projectFileName = "dai-module";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -300,7 +299,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/intermediate", function () {
     const projectFileName = "intermediate";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -315,7 +314,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/patterns - factory", function () {
     const projectFileName = "patterns";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -330,7 +329,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/patterns - proxy", function () {
     const projectFileName = "patterns";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -345,7 +344,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/tornado_core", function () {
     const projectFileName = "tornado_core";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition();
+    initIgnition(true);
 
     it("should be able to execute", async function () {
       await loadModuleParams(this.ignition, projectLocation);
@@ -363,7 +362,7 @@ function runExamples(skipSynthethix: boolean = false) {
     describe("examples/synthetix", function () {
       const projectFileName = "synthetix";
       const projectLocation = useExampleProjectsEnvironment(projectFileName);
-      initIgnition();
+      initIgnition(true);
 
       it("should be able to execute", async function () {
         await loadModuleParams(this.ignition, projectLocation);

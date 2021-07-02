@@ -62,15 +62,20 @@ export function useExampleProjectsEnvironment(
   return projectLocation;
 }
 
-export function initIgnition() {
+export function initIgnition(exampleProject = false) {
   beforeEach(async function () {
-    const hardhatProvider = new ethers.providers.Web3Provider(
+    let hardhatProvider: ethers.providers.JsonRpcProvider = new ethers.providers.Web3Provider(
       this.hardhatEnvironment.network.provider as EIP1193Provider
     );
+    if (exampleProject) {
+      hardhatProvider = new ethers.providers.JsonRpcProvider();
+    }
+
+    const networkName = this.hardhatEnvironment.network.name;
 
     this.ignition = new IgnitionCore(
       {
-        networkName: this.hardhatEnvironment.network.name,
+        networkName,
         networkId,
         rpcProvider: hardhatProvider,
         signers: testPrivateKeys,
