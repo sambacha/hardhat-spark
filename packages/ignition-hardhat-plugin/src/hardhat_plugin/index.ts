@@ -32,7 +32,7 @@ extendEnvironment((env) => {
   const { params, customServices, moduleParams } = extractDataFromConfig(
     networkName,
     chainId,
-    env.config
+    env
   );
 
   env.ignition = lazyObject(
