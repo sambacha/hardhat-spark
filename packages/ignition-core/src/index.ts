@@ -125,7 +125,7 @@ export class IgnitionCore {
   private readonly _gasPriceBackoff: GasPriceBackoff;
   private readonly _rpcProvider: ethers.providers.JsonRpcProvider;
   private readonly _signers: ethers.Signer[];
-  private readonly _logger: ILogging;
+  private _logger: ILogging;
 
   private readonly _gasProvider: IGasProvider;
   private readonly _eventSession: cls.Namespace;
@@ -386,8 +386,7 @@ export class IgnitionCore {
 
   public async reInitLogger(logging: boolean): Promise<void> {
     this.params.logging = logging;
-    // @TODO make it possible for this to be triggered with reference change
-    // await this._mustInit(this.params, this.customServices);
+    // @TODO make it possible to change logging
   }
 }
 
