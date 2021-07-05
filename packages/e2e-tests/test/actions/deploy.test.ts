@@ -334,6 +334,8 @@ function runExamples(ignition: IgnitionCore, skipSynthethix: boolean = false) {
 
   if (!skipSynthethix) {
     it("should be able to run - examples/synthetix", async () => {
+      // @TODO THIS TEST FAILS - there are some inconsistency in module state file storing introduced when converting to the lib
+
       const projectFileName = "synthetix";
       const projectLocation = path.resolve(
         rootDir,
@@ -352,7 +354,6 @@ async function runDeployCommand(
   projectLocation: string,
   projectFileName: string = moduleFileName
 ): Promise<void> {
-  // @TODO run contracts compilation somewhere around here
   const deploymentFilePath = path.resolve(
     projectLocation,
     deploymentFolder,
@@ -360,7 +361,11 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath);
 
-  execSync("npx hardhat compile");
+  // there is a bug in hardhat compiler for tornado
+  // https://github.com/nomiclabs/hardhat/issues/1191
+  if (!projectFileName.includes("tornado")) {
+    execSync("npx hardhat compile");
+  }
 
   for (const [, module] of Object.entries<Module>(modules)) {
     await ignition.deploy(networkName, module, false);
@@ -392,5 +397,5 @@ async function loadModuleParams(
     }
   }
 
-  // @TODO load module params if needed
+  ignition.moduleParams = config.moduleParams;
 }

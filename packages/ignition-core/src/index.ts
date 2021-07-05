@@ -114,9 +114,10 @@ export interface IgnitionServices {
 }
 
 export class IgnitionCore {
+  public moduleParams: ModuleParams;
+
   public readonly params: IgnitionParams;
   public readonly customServices: IgnitionServices;
-  public readonly moduleParams: ModuleParams;
   public readonly moduleStateRepo: ModuleStateRepo;
 
   private readonly _networkName: string;
