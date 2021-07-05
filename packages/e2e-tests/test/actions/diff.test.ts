@@ -55,10 +55,6 @@ describe("ignition diff - integration", () => {
     };
   });
 
-  before(async () => {
-    await ignitionCoreTest.mustInit();
-  });
-
   afterEach(() => {
     output = "";
     if (ignitionCoreTest?.moduleStateRepo !== undefined) {

@@ -45,9 +45,6 @@ describe("ignition deploy", () => {
     {},
     {}
   );
-  before(async () => {
-    await ignitionCoreTest.mustInit();
-  });
   afterEach(() => {
     if (ignitionCoreTest?.moduleStateRepo !== undefined) {
       ignitionCoreTest.moduleStateRepo.clear();
@@ -395,9 +392,5 @@ async function loadModuleParams(
     }
   }
 
-  await ignition.mustInit(
-    ignition.params,
-    ignition.customServices,
-    config.moduleParams
-  );
+  // @TODO load module params if needed
 }
