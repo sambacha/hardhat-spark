@@ -2,7 +2,7 @@ import "hardhat/types/config";
 import "hardhat/types/runtime";
 import { GasPriceBackoff } from "ignition-core";
 
-import { HardhatIgnitionConfig, IHardhatIgnition } from "../index";
+import { HardhatIgnitionConfig, IHardhatIgnition } from "./hardhat_ignition";
 
 declare module "hardhat/types/runtime" {
   export interface HardhatRuntimeEnvironment {
