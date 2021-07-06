@@ -15,8 +15,6 @@ import {
 export type Args = DeployArgs | DiffArgs | GenTypesArgs;
 
 export interface IHardhatIgnition {
-  init(logging?: boolean, test?: boolean): Promise<void>;
-
   deploy(
     m: Module,
     networkName: string,
@@ -49,22 +47,12 @@ export class HardhatIgnition implements IHardhatIgnition {
     this._ignitionCore = new IgnitionCore(params, services, moduleParams);
   }
 
-  public async init(
-    logging: boolean = true,
-    test: boolean = true
-  ): Promise<void> {
-    this._ignitionCore.params.logging = logging;
-    this._ignitionCore.params.test = test;
-    await this._ignitionCore.mustInit(this._ignitionCore.params);
-  }
-
   public async deploy(
     module: Module,
     networkName: string,
-    logging?: boolean,
-    test?: boolean
+    logging?: boolean
   ): Promise<void> {
-    await this._ignitionCore.deploy(networkName, module, logging, test);
+    await this._ignitionCore.deploy(networkName, module, logging);
   }
 
   public async diff(
