@@ -1,7 +1,12 @@
 import { assert } from "chai";
 import { ethers } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { ContractBindingMetaData, IgnitionCore, Module } from "ignition-core";
+import {
+  ContractBindingMetaData,
+  IgnitionCore,
+  Module,
+  ModuleParams,
+} from "ignition-core";
 import * as path from "path";
 
 import { getStateObject, loadStateFile } from "../utils/files";
@@ -14,7 +19,7 @@ import {
 const deploymentFolder = "deployment";
 
 // TODO: Remove this
-export async function loadScript(filePath: string): Promise<any> {
+export function loadScript(filePath: string): any {
   const m = require(filePath);
   return m.default ?? m;
 }
@@ -254,7 +259,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/all-feature-showcase", function () {
     const projectFileName = "all-feature-showcase";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    initIgnition({}, true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -269,7 +274,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/basic", function () {
     const projectFileName = "basic";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    initIgnition({}, true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -284,7 +289,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/dai-module", function () {
     const projectFileName = "dai-module";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    initIgnition({}, true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -299,7 +304,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/intermediate", function () {
     const projectFileName = "intermediate";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    initIgnition({}, true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -314,7 +319,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/patterns - factory", function () {
     const projectFileName = "patterns";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    initIgnition({}, true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -329,7 +334,7 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/patterns - proxy", function () {
     const projectFileName = "patterns";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    initIgnition({}, true);
 
     it("should be able to execute", async function () {
       await runDeployCommand(
@@ -344,11 +349,10 @@ function runExamples(skipSynthethix: boolean = false) {
   describe("examples/tornado_core", function () {
     const projectFileName = "tornado_core";
     const projectLocation = useExampleProjectsEnvironment(projectFileName);
-    initIgnition(true);
+    const moduleParams = loadModuleParams(projectLocation);
+    initIgnition(moduleParams, true);
 
     it("should be able to execute", async function () {
-      await loadModuleParams(this.ignition, projectLocation);
-
       await runDeployCommand(
         this.ignition,
         this.hardhatEnvironment,
@@ -362,18 +366,17 @@ function runExamples(skipSynthethix: boolean = false) {
     describe("examples/synthetix", function () {
       const projectFileName = "synthetix";
       const projectLocation = useExampleProjectsEnvironment(projectFileName);
-      initIgnition(true);
+      const moduleParams = loadModuleParams(projectLocation);
+      initIgnition(moduleParams, true);
 
       it("should be able to execute", async function () {
-        await loadModuleParams(this.ignition, projectLocation);
-
         await runDeployCommand(
           this.ignition,
           this.hardhatEnvironment,
           projectLocation,
           "module.ts"
         );
-      });
+      }).timeout(200000); // on average it takes around ~160s
     });
   }
 }
@@ -391,18 +394,17 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath);
 
-  await hardhatRuntime.run("compile");
+  if (!projectFileName.includes("tornado")) {
+    await hardhatRuntime.run("compile");
+  }
   const networkName = hardhatRuntime.network.name;
 
   for (const [, module] of Object.entries<Module>(modules)) {
-    await ignition.deploy(networkName, module, false, true);
+    await ignition.deploy(networkName, module);
   }
 }
 
-async function loadModuleParams(
-  ignition: IgnitionCore,
-  projectLocation: string
-): Promise<void> {
+function loadModuleParams(projectLocation: string): Promise<ModuleParams> {
   let config: any = {};
   try {
     const configFileJs = path.resolve(
@@ -410,7 +412,7 @@ async function loadModuleParams(
       "deployment",
       "module.params.js"
     );
-    config = await loadScript(configFileJs);
+    config = loadScript(configFileJs);
   } catch (e) {
     if (e.code === "MODULE_NOT_FOUND") {
       const configFileTs = path.resolve(
@@ -418,15 +420,11 @@ async function loadModuleParams(
         "deployment",
         "module.params.ts"
       );
-      config = await loadScript(configFileTs);
+      config = loadScript(configFileTs);
     } else {
       throw e;
     }
   }
 
-  await ignition.mustInit(
-    ignition.params,
-    ignition.customServices,
-    config.moduleParams
-  );
+  return config.moduleParams ?? {};
 }

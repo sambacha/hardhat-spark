@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { resetHardhatContext } from "hardhat/plugins-testing";
 import { EIP1193Provider } from "hardhat/types";
-import { IgnitionCore } from "ignition-core";
+import { IgnitionCore, ModuleParams } from "ignition-core";
 import path from "path";
 
 const networkId = "31337";
@@ -53,7 +53,10 @@ export function useExampleProjectsEnvironment(
   return projectLocation;
 }
 
-export function initIgnition(exampleProject = false) {
+export function initIgnition(
+  moduleParams: ModuleParams = {},
+  exampleProject = false
+) {
   beforeEach(async function () {
     let hardhatProvider: ethers.providers.JsonRpcProvider = new ethers.providers.Web3Provider(
       this.hardhatEnvironment.network.provider as EIP1193Provider
@@ -85,7 +88,7 @@ export function initIgnition(exampleProject = false) {
         logging: false,
       },
       {},
-      {}
+      moduleParams
     );
     await this.ignition.mustInit();
   });

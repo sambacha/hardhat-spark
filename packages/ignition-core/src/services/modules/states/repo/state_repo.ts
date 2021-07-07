@@ -317,7 +317,6 @@ export class ModuleStateRepo implements IModuleStateRepo {
       };
     }
 
-    // @TODO check if input/output is already present
     if (contractInput !== undefined) {
       currentEvent.txData[bindingName].contractInput.push(contractInput);
     }

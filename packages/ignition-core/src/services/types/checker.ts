@@ -110,7 +110,6 @@ function handleArray(
   //   arrayLength = +type.substring(type.indexOf('[') + 1, type.indexOf(']'));
   // }
 
-  // @TODO: handle handle length in multiple array dimension (matrix)
   // if (values.length != arrayLength) {
   //   cli.info("Array out of range out of range - ", bindingName, " \n provided length: ", values.length.toString(), " \n type: ", arrayLength.toString())
   //   cli.exit(0)

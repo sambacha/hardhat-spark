@@ -90,7 +90,6 @@ export function generateErrorMessage(
   }
 
   if (error?.code) {
-    // @TODO (filip) map all codes with meaningful message
     return {
       message: handleMappedErrorCodes(error?.code, error),
       stack,

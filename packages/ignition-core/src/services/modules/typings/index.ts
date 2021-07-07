@@ -49,7 +49,7 @@ export declare class ${moduleName}Builder extends ModuleBuilder {`;
     if (params) {
       for (const [paramName, paramValue] of Object.entries(params)) {
         file += `
-  ${paramName}: ${typeof paramValue};`; // @TODO change this to complex object typings
+  ${paramName}: ${typeof paramValue};`;
       }
     }
 

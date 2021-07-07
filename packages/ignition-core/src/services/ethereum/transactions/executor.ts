@@ -122,7 +122,7 @@ export class TxExecutor {
 
   constructor(
     logger: ILogging,
-    moduleState: ModuleStateRepo,
+    moduleStateRepo: ModuleStateRepo,
     txGenerator: ITransactionGenerator,
     networkId: string,
     provider: providers.JsonRpcProvider,
@@ -132,7 +132,7 @@ export class TxExecutor {
     parallelize: boolean = false
   ) {
     this._logger = logger;
-    this._moduleStateRepo = moduleState;
+    this._moduleStateRepo = moduleStateRepo;
     this._txGenerator = txGenerator;
 
     this._ethers = provider;
@@ -225,7 +225,8 @@ export class TxExecutor {
         //   element.deployMetaData.shouldRedeploy !== undefined &&
         //   !element.deployMetaData.shouldRedeploy(element)
         // ) {
-        //   continue;
+        //   // @TODO
+        //   throw new CliError("");
         // }
 
         this._logger.bindingExecution(element.name);
