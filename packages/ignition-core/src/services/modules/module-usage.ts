@@ -53,7 +53,7 @@ export class ModuleUsage {
     return generateModuleFile(
       this._moduleName,
       moduleRawUsage,
-      FileGenerationType.usage
+      FileGenerationType.USAGE
     );
   }
 

@@ -56,7 +56,7 @@ export class TxExecutor {
     elementsBatches: any
   ) {
     switch (event.eventType) {
-      case EventType.AfterDeployEvent: {
+      case EventType.AFTER_DEPLOY_EVENT: {
         await Batcher.handleAfterDeployEvent(
           event as AfterDeployEvent,
           element,
@@ -65,7 +65,7 @@ export class TxExecutor {
         );
         break;
       }
-      case EventType.OnChangeEvent: {
+      case EventType.ON_CHANGE_EVENT: {
         await Batcher.handleOnChangeEvent(
           event as OnChangeEvent,
           element,
@@ -74,7 +74,7 @@ export class TxExecutor {
         );
         break;
       }
-      case EventType.BeforeCompileEvent: {
+      case EventType.BEFORE_COMPILE_EVENT: {
         await Batcher.handleBeforeCompileEvent(
           event as BeforeCompileEvent,
           element,
@@ -83,8 +83,8 @@ export class TxExecutor {
         );
         break;
       }
-      case EventType.BeforeDeployEvent:
-      case EventType.AfterCompileEvent: {
+      case EventType.BEFORE_DEPLOY_EVENT:
+      case EventType.AFTER_COMPILE_EVENT: {
         await Batcher.handleCompiledEvent(
           event as BeforeDeployEvent,
           element,
@@ -93,10 +93,10 @@ export class TxExecutor {
         );
         break;
       }
-      case EventType.OnStart:
-      case EventType.OnCompletion:
-      case EventType.OnFail:
-      case EventType.OnSuccess: {
+      case EventType.ON_START:
+      case EventType.ON_COMPLETION:
+      case EventType.ON_FAIL:
+      case EventType.ON_SUCCESS: {
         await Batcher.handleModuleEvent(event as ModuleEvent, element, batches);
         break;
       }
@@ -507,7 +507,7 @@ export class TxExecutor {
           this._eventSession.set(ClsNamespaces.EVENT_NAME, event.event.name);
 
           switch (event.event.eventType) {
-            case EventType.BeforeDeployEvent: {
+            case EventType.BEFORE_DEPLOY_EVENT: {
               await this._eventHandler.executeBeforeDeployEventHook(
                 moduleName,
                 event.event as BeforeDeployEvent,
@@ -515,7 +515,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.AfterDeployEvent: {
+            case EventType.AFTER_DEPLOY_EVENT: {
               await this._eventHandler.executeAfterDeployEventHook(
                 moduleName,
                 event.event as AfterDeployEvent,
@@ -523,7 +523,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.BeforeCompileEvent: {
+            case EventType.BEFORE_COMPILE_EVENT: {
               await this._eventHandler.executeBeforeCompileEventHook(
                 moduleName,
                 event.event as BeforeCompileEvent,
@@ -531,7 +531,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.AfterCompileEvent: {
+            case EventType.AFTER_COMPILE_EVENT: {
               await this._eventHandler.executeAfterCompileEventHook(
                 moduleName,
                 event.event as AfterCompileEvent,
@@ -539,7 +539,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.OnChangeEvent: {
+            case EventType.ON_CHANGE_EVENT: {
               await this._eventHandler.executeOnChangeEventHook(
                 moduleName,
                 event.event as OnChangeEvent,
@@ -547,7 +547,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.OnStart: {
+            case EventType.ON_START: {
               await this._eventHandler.executeOnStartModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
@@ -555,7 +555,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.OnCompletion: {
+            case EventType.ON_COMPLETION: {
               await this._eventHandler.executeOnCompletionModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
@@ -563,7 +563,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.OnSuccess: {
+            case EventType.ON_SUCCESS: {
               await this._eventHandler.executeOnSuccessModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,
@@ -571,7 +571,7 @@ export class TxExecutor {
               );
               break;
             }
-            case EventType.OnFail: {
+            case EventType.ON_FAIL: {
               await this._eventHandler.executeOnFailModuleEventHook(
                 moduleName,
                 event.event as ModuleEvent,

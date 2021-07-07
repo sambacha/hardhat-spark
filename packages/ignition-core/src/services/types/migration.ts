@@ -5,17 +5,15 @@ export type ModuleFile = string;
 export const USAGE_FUNC = "buildUsage";
 export const MODULE_FUNC = "buildModule";
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export enum FileGenerationType {
-  "usage" = "usage",
-  "module" = "module",
+  USAGE = "usage",
+  MODULE = "module",
 }
 
 export enum Migration {
-  "truffle" = "truffle",
-  "hardhatDeploy" = "hardhatDeploy",
+  TRUFFLE = "truffle",
+  HARDHAT_DEPLOY = "hardhatDeploy",
 }
-/* eslint-enable @typescript-eslint/naming-convention */
 
 export type Build = TruffleBuild | HardhatBuild;
 

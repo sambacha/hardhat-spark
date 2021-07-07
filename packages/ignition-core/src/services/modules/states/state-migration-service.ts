@@ -31,13 +31,13 @@ export class StateMigrationService {
     this._stateMigrationType = stateMigrationType;
 
     switch (this._stateMigrationType) {
-      case Migration.truffle:
+      case Migration.TRUFFLE:
         this._artifactsPath = path.resolve(
           process.cwd(),
           TRUFFLE_BUILD_DIR_NAME
         );
         break;
-      case Migration.hardhatDeploy:
+      case Migration.HARDHAT_DEPLOY:
         this._artifactsPath = path.resolve(
           process.cwd(),
           HARDHAT_DEPLOYMENTS_DIR_NAME
@@ -48,9 +48,9 @@ export class StateMigrationService {
 
   public searchBuild(): Build[] {
     switch (this._stateMigrationType) {
-      case Migration.truffle:
+      case Migration.TRUFFLE:
         return searchBuilds(this._artifactsPath, []) as TruffleBuild[];
-      case Migration.hardhatDeploy:
+      case Migration.HARDHAT_DEPLOY:
         return searchBuildsAndNetworks(
           this._artifactsPath,
           []
@@ -62,7 +62,7 @@ export class StateMigrationService {
 
   public extractValidBuilds(builds: Build[]): Build[] {
     switch (this._stateMigrationType) {
-      case Migration.truffle: {
+      case Migration.TRUFFLE: {
         const validBuilds: TruffleBuild[] = [];
         for (let buildFile of builds) {
           buildFile = buildFile as TruffleBuild;
@@ -76,7 +76,7 @@ export class StateMigrationService {
 
         return validBuilds;
       }
-      case Migration.hardhatDeploy: {
+      case Migration.HARDHAT_DEPLOY: {
         const validBuilds: HardhatBuild[] = [];
         for (let buildFile of builds) {
           buildFile = buildFile as HardhatBuild;
@@ -98,7 +98,7 @@ export class StateMigrationService {
     validBuilds: Build[]
   ): { [networkId: string]: ModuleStateFile } {
     switch (this._stateMigrationType) {
-      case Migration.truffle: {
+      case Migration.TRUFFLE: {
         const stateObject: { [networkId: string]: ModuleStateFile } = {};
 
         for (let validBuild of validBuilds) {
@@ -136,7 +136,7 @@ export class StateMigrationService {
 
         return stateObject;
       }
-      case Migration.hardhatDeploy: {
+      case Migration.HARDHAT_DEPLOY: {
         const stateObject: { [networkId: string]: ModuleStateFile } = {};
 
         for (let validBuild of validBuilds) {

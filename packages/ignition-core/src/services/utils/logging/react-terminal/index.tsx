@@ -198,7 +198,7 @@ export class OverviewLogger extends FileLogging implements ILogging {
 
   public finishedEventExecution(eventName: string, eventType: EventType): void {
     super.finishedEventExecution(eventName, eventType);
-    if (eventType === EventType.OnFail) {
+    if (eventType === EventType.ON_FAIL) {
       return;
     }
 

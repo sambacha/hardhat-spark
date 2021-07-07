@@ -14,10 +14,10 @@ export function generateModuleFile(
 ): ModuleFile {
   let buildName;
   switch (fileGenerationType) {
-    case FileGenerationType.usage:
+    case FileGenerationType.USAGE:
       buildName = USAGE_FUNC;
       break;
-    case FileGenerationType.module:
+    case FileGenerationType.MODULE:
       buildName = MODULE_FUNC;
       break;
     default:

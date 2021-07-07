@@ -424,7 +424,7 @@ describe("transaction executor", () => {
       );
       const event: AfterDeployEvent = {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
         deps: ["test"],
         eventDeps: [],
         usage: [],
@@ -523,7 +523,7 @@ describe("transaction executor", () => {
       );
       const event: AfterDeployEvent = {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
         deps: ["test"],
         eventDeps: [],
         usage: [],
@@ -648,7 +648,7 @@ describe("transaction executor", () => {
       );
       const event: AfterDeployEvent = {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
         deps: ["test"],
         eventDeps: [],
         usage: [],

@@ -602,7 +602,7 @@ describe("resolve module", () => {
       const statefulEvent = new StatefulEvent(
         {
           name: eventName,
-          eventType: EventType.AfterDeployEvent,
+          eventType: EventType.AFTER_DEPLOY_EVENT,
         },
         true,
         {}
@@ -938,7 +938,7 @@ describe("resolve module", () => {
     const statefulEvent = new StatefulEvent(
       {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
       },
       true,
       {}
@@ -1186,7 +1186,7 @@ describe("resolve module", () => {
     const statefulEvent = new StatefulEvent(
       {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
       },
       true,
       {}
@@ -1273,7 +1273,7 @@ describe("resolve module", () => {
     const statefulEvent = new StatefulEvent(
       {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
       },
       true,
       {}

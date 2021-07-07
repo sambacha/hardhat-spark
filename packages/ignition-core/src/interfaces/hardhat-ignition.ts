@@ -101,20 +101,18 @@ export interface DeployReturn {
 
 export type DeployFn = () => Promise<DeployReturn>;
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export enum EventType {
-  "OnChangeEvent" = "OnChangeEvent",
-  "BeforeDeployEvent" = "BeforeDeployEvent",
-  "AfterDeployEvent" = "AfterDeployEvent",
-  "AfterCompileEvent" = "AfterCompileEvent",
-  "BeforeCompileEvent" = "BeforeCompileEvent",
-  "OnStart" = "OnStart",
-  "OnFail" = "OnFail",
-  "OnCompletion" = "OnCompletion",
-  "OnSuccess" = "OnSuccess",
-  "Deploy" = "Deploy",
+  "ON_CHANGE_EVENT" = "OnChangeEvent",
+  "BEFORE_DEPLOY_EVENT" = "BeforeDeployEvent",
+  "AFTER_DEPLOY_EVENT" = "AfterDeployEvent",
+  "AFTER_COMPILE_EVENT" = "AfterCompileEvent",
+  "BEFORE_COMPILE_EVENT" = "BeforeCompileEvent",
+  "ON_START" = "OnStart",
+  "ON_FAIL" = "OnFail",
+  "ON_COMPLETION" = "OnCompletion",
+  "ON_SUCCESS" = "OnSuccess",
+  "DEPLOY" = "Deploy",
 }
-/* eslint-enable @typescript-eslint/naming-convention */
 
 export interface BaseEvent {
   name: string;
@@ -359,7 +357,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.BeforeDeployEvent,
+      EventType.BEFORE_DEPLOY_EVENT,
       this.dependencies,
       usages,
       this.moduleSession
@@ -393,7 +391,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.AfterDeployEvent,
+      EventType.AFTER_DEPLOY_EVENT,
       this.dependencies,
       usages,
       this.moduleSession
@@ -427,7 +425,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.BeforeCompileEvent,
+      EventType.BEFORE_COMPILE_EVENT,
       this.dependencies,
       usages,
       this.moduleSession
@@ -461,7 +459,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.AfterCompileEvent,
+      EventType.AFTER_COMPILE_EVENT,
       this.dependencies,
       usages,
       this.moduleSession
@@ -495,7 +493,7 @@ export class GroupedDependencies {
   ): ContractEvent {
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.OnChangeEvent,
+      EventType.ON_CHANGE_EVENT,
       this.dependencies,
       usages,
       this.moduleSession
@@ -839,7 +837,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.BeforeDeployEvent,
+      EventType.BEFORE_DEPLOY_EVENT,
       [this],
       usages,
       this.moduleSession
@@ -879,7 +877,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.AfterDeployEvent,
+      EventType.AFTER_DEPLOY_EVENT,
       [this],
       usages,
       this.moduleSession
@@ -930,7 +928,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.BeforeCompileEvent,
+      EventType.BEFORE_COMPILE_EVENT,
       [this],
       usages,
       this.moduleSession
@@ -969,7 +967,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.AfterCompileEvent,
+      EventType.AFTER_COMPILE_EVENT,
       [this],
       usages,
       this.moduleSession
@@ -1008,7 +1006,7 @@ export class ContractBinding extends Binding {
 
     const generateBaseEvent = ContractBinding.generateBaseEvent(
       eventName,
-      EventType.OnChangeEvent,
+      EventType.ON_CHANGE_EVENT,
       [this],
       usages,
       this.moduleSession
@@ -1859,7 +1857,7 @@ export class ModuleBuilder {
   public onStart(eventName: string, fn: ModuleEventFn): void {
     this._moduleEvents.onStart[eventName] = {
       name: eventName,
-      eventType: EventType.OnStart,
+      eventType: EventType.ON_START,
       fn,
     };
   }
@@ -1873,7 +1871,7 @@ export class ModuleBuilder {
   public onCompletion(eventName: string, fn: ModuleEventFn): void {
     this._moduleEvents.onCompletion[eventName] = {
       name: eventName,
-      eventType: EventType.OnCompletion,
+      eventType: EventType.ON_COMPLETION,
       fn,
     };
   }
@@ -1887,7 +1885,7 @@ export class ModuleBuilder {
   public onSuccess(eventName: string, fn: ModuleEventFn): void {
     this._moduleEvents.onSuccess[eventName] = {
       name: eventName,
-      eventType: EventType.OnSuccess,
+      eventType: EventType.ON_SUCCESS,
       fn,
     };
   }
@@ -1901,7 +1899,7 @@ export class ModuleBuilder {
   public onFail(eventName: string, fn: ModuleEventFn): void {
     this._moduleEvents.onFail[eventName] = {
       name: eventName,
-      eventType: EventType.OnFail,
+      eventType: EventType.ON_FAIL,
       fn,
     };
   }
