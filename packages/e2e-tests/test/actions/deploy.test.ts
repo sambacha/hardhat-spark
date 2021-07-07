@@ -35,11 +35,7 @@ describe("ignition deploy", function () {
 
       it("should be able to deploy a module", async function () {
         await loadStateFile(projectLocation, this.ignition, moduleName);
-        await runDeployCommand(
-          this.ignition,
-          this.hardhatEnvironment,
-          projectLocation
-        );
+        await runDeployCommand(this.ignition, this.hre, projectLocation);
 
         const moduleStateFile = await getStateObject(this.ignition, moduleName);
         const contractBinding = (moduleStateFile.Example as unknown) as ContractBindingMetaData;
@@ -55,11 +51,7 @@ describe("ignition deploy", function () {
 
       it("should be able to deploy module", async function () {
         await loadStateFile(projectLocation, this.ignition, moduleName);
-        await runDeployCommand(
-          this.ignition,
-          this.hardhatEnvironment,
-          projectLocation
-        );
+        await runDeployCommand(this.ignition, this.hre, projectLocation);
 
         const moduleStateFile = await getStateObject(this.ignition, moduleName);
 
@@ -94,11 +86,7 @@ describe("ignition deploy", function () {
           moduleName
         );
 
-        await runDeployCommand(
-          this.ignition,
-          this.hardhatEnvironment,
-          projectLocation
-        );
+        await runDeployCommand(this.ignition, this.hre, projectLocation);
         const moduleStateFileAfter = await getStateObject(
           this.ignition,
           moduleName
@@ -134,11 +122,7 @@ describe("ignition deploy", function () {
           moduleName
         );
 
-        await runDeployCommand(
-          this.ignition,
-          this.hardhatEnvironment,
-          projectLocation
-        );
+        await runDeployCommand(this.ignition, this.hre, projectLocation);
         const moduleStateFileAfter = await getStateObject(
           this.ignition,
           moduleName
@@ -192,11 +176,7 @@ describe("ignition deploy", function () {
           moduleName
         );
 
-        await runDeployCommand(
-          this.ignition,
-          this.hardhatEnvironment,
-          projectLocation
-        );
+        await runDeployCommand(this.ignition, this.hre, projectLocation);
 
         const newModuleStateFile = await getStateObject(
           this.ignition,
@@ -221,11 +201,7 @@ describe("ignition deploy", function () {
 
       it("should do nothing if their is less bindings in modules compared to deployed one", async function () {
         await loadStateFile(projectLocation, this.ignition, moduleName);
-        await runDeployCommand(
-          this.ignition,
-          this.hardhatEnvironment,
-          projectLocation
-        );
+        await runDeployCommand(this.ignition, this.hre, projectLocation);
 
         const moduleStateFile = await getStateObject(this.ignition, moduleName);
         const contractBinding = (moduleStateFile.Example as unknown) as ContractBindingMetaData;
@@ -263,7 +239,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "module.ts"
       );
@@ -278,7 +254,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "first.module.ts"
       );
@@ -293,7 +269,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "module.ts"
       );
@@ -308,7 +284,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "root.module.ts"
       );
@@ -323,7 +299,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "factory.module.ts"
       );
@@ -338,7 +314,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "proxy.module.ts"
       );
@@ -354,7 +330,7 @@ function runExamples(skipSynthethix: boolean = false) {
     it("should be able to execute", async function () {
       await runDeployCommand(
         this.ignition,
-        this.hardhatEnvironment,
+        this.hre,
         projectLocation,
         "tornado.module.ts"
       );
@@ -373,7 +349,7 @@ function runExamples(skipSynthethix: boolean = false) {
     //   it("should be able to execute", async function () {
     //     await runDeployCommand(
     //       this.ignition,
-    //       this.hardhatEnvironment,
+    //       this.hre,
     //       projectLocation,
     //       "module.ts"
     //     );

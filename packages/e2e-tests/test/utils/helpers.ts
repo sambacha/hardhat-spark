@@ -22,7 +22,7 @@ export function useFixedProjectEnvironment(
     process.env.HARDHAT_NETWORK = networkName;
     this.networkName = networkName;
 
-    this.hardhatEnvironment = require("hardhat");
+    this.hre = require("hardhat");
   });
   afterEach("Resetting hardhat", () => {
     resetHardhatContext();
@@ -49,7 +49,7 @@ export function useExampleProjectsEnvironment(
     process.env.HARDHAT_NETWORK = networkName;
     this.networkName = networkName;
 
-    this.hardhatEnvironment = require("hardhat");
+    this.hre = require("hardhat");
   });
   afterEach("Resetting hardhat", () => {
     resetHardhatContext();
@@ -64,10 +64,10 @@ export function initIgnition(
 ) {
   beforeEach(async function () {
     const hardhatProvider: ethers.providers.JsonRpcProvider = new ethers.providers.Web3Provider(
-      this.hardhatEnvironment.network.provider as EIP1193Provider
+      this.hre.network.provider as EIP1193Provider
     );
 
-    const networkName = this.hardhatEnvironment.network.name;
+    const networkName = this.hre.network.name;
 
     const testPrivateKeys = [
       new ethers.Wallet(
