@@ -32,7 +32,7 @@ export function useFixedProjectEnvironment(
 
 export function useExampleProjectsEnvironment(
   projectFileName: string,
-  networkName = "localhost"
+  networkName = "hardhat"
 ): string {
   const projectLocation = path.resolve(
     rootDir,
@@ -58,12 +58,9 @@ export function initIgnition(
   exampleProject = false
 ) {
   beforeEach(async function () {
-    let hardhatProvider: ethers.providers.JsonRpcProvider = new ethers.providers.Web3Provider(
+    const hardhatProvider: ethers.providers.JsonRpcProvider = new ethers.providers.Web3Provider(
       this.hardhatEnvironment.network.provider as EIP1193Provider
     );
-    if (exampleProject) {
-      hardhatProvider = new ethers.providers.JsonRpcProvider();
-    }
 
     const networkName = this.hardhatEnvironment.network.name;
 
