@@ -5,15 +5,16 @@ import { IgnitionCore, ModuleParams } from "ignition-core";
 import path from "path";
 
 const networkId = "31337";
-const rootDir = process.cwd();
 
 export function useFixedProjectEnvironment(
   projectFileName: string,
   networkName = "hardhat"
 ) {
   const projectLocation = path.resolve(
-    rootDir,
-    `./test/projects-scenarios/${projectFileName}`
+    __dirname,
+    "..",
+    "projects-scenarios",
+    projectFileName
   );
 
   beforeEach("Loading hardhat", function () {
@@ -35,8 +36,12 @@ export function useExampleProjectsEnvironment(
   networkName = "hardhat"
 ): string {
   const projectLocation = path.resolve(
-    rootDir,
-    `../example-projects/${projectFileName}`
+    __dirname,
+    "..",
+    "..",
+    "..",
+    "example-projects",
+    projectFileName
   );
 
   beforeEach("Loading hardhat", function () {
@@ -94,7 +99,6 @@ export function initIgnition(
     if (this.ignition?.moduleStateRepo !== undefined) {
       this.ignition.moduleStateRepo.clear();
     }
-    process.chdir(rootDir);
 
     // resolving same reference of an object that is required multiple times
     require.cache = {};
