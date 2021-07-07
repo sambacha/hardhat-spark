@@ -33,7 +33,6 @@ import { ModuleState } from "./services/types/module";
 import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
-  DEFAULT_RPC_PROVIDER,
 } from "./services/utils/constants";
 import { ClsNamespaces } from "./services/utils/continuation_local_storage";
 import { ILogging } from "./services/utils/logging";
