@@ -2,3 +2,6 @@ node_modules
 dist
 .nyc_output
 coverage
+
+test/projects-scenarios/**/artifacts
+test/projects-scenarios/**/cache
