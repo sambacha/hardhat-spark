@@ -58,10 +58,7 @@ export function useExampleProjectsEnvironment(
   return projectLocation;
 }
 
-export function initIgnition(
-  moduleParams: ModuleParams = {},
-  exampleProject = false
-) {
+export function initIgnition(moduleParams: ModuleParams = {}) {
   beforeEach(async function () {
     const hardhatProvider: ethers.providers.JsonRpcProvider = new ethers.providers.Web3Provider(
       this.hre.network.provider as EIP1193Provider
@@ -95,12 +92,9 @@ export function initIgnition(
     await this.ignition.mustInit();
   });
 
-  afterEach(async function () {
+  afterEach(function () {
     if (this.ignition?.moduleStateRepo !== undefined) {
       this.ignition.moduleStateRepo.clear();
     }
-
-    // resolving same reference of an object that is required multiple times
-    require.cache = {};
   });
 }
