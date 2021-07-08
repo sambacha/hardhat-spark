@@ -56,26 +56,6 @@ Module: ExampleModule
     });
   });
 
-  describe("single new binding", function () {
-    const projectDir = "single-new-binding";
-    const projectLocation = useFixedProjectEnvironment(projectDir);
-    initIgnition();
-
-    it("should be able to show difference in modules", async function () {
-      await loadStateFile(projectLocation, this.ignition);
-
-      await runDiffCommand(this.ignition, projectLocation);
-
-      assert.equal(
-        output,
-        `
-Module: ExampleModule
-+ Contract Example
-`
-      );
-    });
-  });
-
   describe("multiple new bindings", function () {
     const projectDir = "multiple-new-bindings";
     const projectLocation = useFixedProjectEnvironment(projectDir);
