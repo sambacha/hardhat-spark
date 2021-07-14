@@ -334,7 +334,7 @@ function runExamples(skipSynthethix: boolean = false) {
         projectLocation,
         "tornado.module.ts"
       );
-    }).timeout(50000);
+    }).timeout(80000);
   });
 
   if (!skipSynthethix) {
