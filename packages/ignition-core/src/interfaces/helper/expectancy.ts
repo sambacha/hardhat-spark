@@ -6,7 +6,7 @@ import {
   ValueMismatch,
 } from "../../services/types/errors";
 import { checkIfExist } from "../../services/utils/util";
-import { ContractBinding } from "../hardhat_ignition";
+import { ContractBinding } from "../hardhat-ignition";
 
 /**
  * This function is checking if `get_StorageAt` call for `slot` in `contract` is same as `expectedValue`.

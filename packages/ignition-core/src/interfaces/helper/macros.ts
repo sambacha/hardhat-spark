@@ -5,7 +5,7 @@ import {
   ContractBinding,
   ContractEvent,
   ModuleBuilder,
-} from "../hardhat_ignition";
+} from "../hardhat-ignition";
 
 import { expectFuncRead, expectSlotRead } from "./expectancy";
 

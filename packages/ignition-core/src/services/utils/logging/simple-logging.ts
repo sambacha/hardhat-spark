@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { SingleBar } from "cli-progress";
 import cli from "cli-ux";
 
-import { EventType } from "../../../interfaces/hardhat_ignition";
+import { EventType } from "../../../interfaces/hardhat-ignition";
 import {
   CliError,
   DeniedConfirmation,
@@ -11,7 +11,7 @@ import {
 import { ModuleState } from "../../types/module";
 import { checkIfExist } from "../util";
 
-import { FileLogging } from "./file_logging";
+import { FileLogging } from "./file-logging";
 import { generateErrorMessage, ILogging } from "./index";
 
 export enum StateElementStatus {
@@ -133,7 +133,7 @@ export class SimpleOverviewLogger extends FileLogging implements ILogging {
     }
 
     this._moduleBars[this._currentModuleName].stop();
-    const { message, stack } = generateErrorMessage(error);
+    const { message } = generateErrorMessage(error);
 
     cli.info(message);
   }

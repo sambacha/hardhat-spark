@@ -1,6 +1,6 @@
 import { ModuleState, ModuleStateFile } from "../../../types/module";
 import { checkIfExist, copyValue } from "../../../utils/util";
-import { ModuleStateRepo } from "../repo/state_repo";
+import { ModuleStateRepo } from "../repo/state-repo";
 
 import { IModuleState, IModuleStateCleanup } from "./index";
 

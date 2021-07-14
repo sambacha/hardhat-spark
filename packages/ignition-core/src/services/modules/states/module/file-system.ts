@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 
 import { ModuleState, ModuleStateFile } from "../../../types/module";
-import { Mutex } from "../../../utils/mutex/simple_mutex";
-import { ModuleStateRepo } from "../repo/state_repo";
+import { Mutex } from "../../../utils/mutex/simple-mutex";
+import { ModuleStateRepo } from "../repo/state-repo";
 
 import { IModuleState, STATE_DIR_NAME, STATE_NAME } from "./index";
 

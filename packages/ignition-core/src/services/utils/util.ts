@@ -1,5 +1,4 @@
 import { cli } from "cli-ux";
-import { Namespace } from "cls-hooked";
 import * as fs from "fs";
 
 import { handleMappedErrorCodes } from "../types";

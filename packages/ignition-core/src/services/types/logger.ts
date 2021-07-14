@@ -1,7 +1,7 @@
 import {
   ContractBinding,
   StatefulEvent,
-} from "../../interfaces/hardhat_ignition";
+} from "../../interfaces/hardhat-ignition";
 
 export enum ElementStatus {
   "EMPTY" = "EMPTY",
