@@ -22,9 +22,9 @@ import {
   ModuleStateFile,
   StatefulEvent,
 } from "../../src";
-import { ModuleStateRepo } from "../../src/services/modules/states/repo/state_repo";
-import { ModuleValidator } from "../../src/services/modules/validator/module_validator";
-import { EmptyLogger } from "../../src/services/utils/logging/empty_logging";
+import { ModuleStateRepo } from "../../src/services/modules/states/repo/state-repo";
+import { ModuleValidator } from "../../src/services/modules/validator/module-validator";
+import { EmptyLogger } from "../../src/services/utils/logging/empty-logging";
 chai.use(chaiAsPromised);
 
 describe("resolve module", () => {
@@ -602,7 +602,7 @@ describe("resolve module", () => {
       const statefulEvent = new StatefulEvent(
         {
           name: eventName,
-          eventType: EventType.AfterDeployEvent,
+          eventType: EventType.AFTER_DEPLOY_EVENT,
         },
         true,
         {}
@@ -938,7 +938,7 @@ describe("resolve module", () => {
     const statefulEvent = new StatefulEvent(
       {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
       },
       true,
       {}
@@ -1186,7 +1186,7 @@ describe("resolve module", () => {
     const statefulEvent = new StatefulEvent(
       {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
       },
       true,
       {}
@@ -1273,7 +1273,7 @@ describe("resolve module", () => {
     const statefulEvent = new StatefulEvent(
       {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
       },
       true,
       {}

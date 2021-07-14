@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "lint:fix": "prettier --write \"src/**/*.{js,ts}\" \"test/**/*.{js,ts}\" && yarn lint --fix",
-    "lint": "tslint --config tslint.json --project ./tsconfig.json",
+    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "build": "tsc --build .",
     "clean": "rimraf dist"
   },
@@ -21,6 +21,13 @@
   "devDependencies": {
     "@types/inquirer": "^7.3.1",
     "@types/mocha": "^8.2.2",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
+    "eslint": "^7.29.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-unicorn": "^34.0.1",
     "ethers": "^5.1.4",
     "hardhat": "^2.2.1"
   },

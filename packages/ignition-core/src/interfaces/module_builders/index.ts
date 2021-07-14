@@ -1,4 +1,4 @@
-import { Module, ModuleBuilderFn, ModuleConfig } from "../hardhat_ignition";
+import { Module, ModuleBuilderFn, ModuleConfig } from "../hardhat-ignition";
 
 /**
  * This function is instantiating module class that will be used by hardhat-ignition in order to read user defined contracts and

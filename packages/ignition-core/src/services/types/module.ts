@@ -2,7 +2,7 @@ import {
   ContractBinding,
   ContractBindingMetaData,
   StatefulEvent,
-} from "../../interfaces/hardhat_ignition";
+} from "../../interfaces/hardhat-ignition";
 
 // @TODO move this in a meaningful place once we separate hardhat_ignition.ts
 export interface ModuleState {

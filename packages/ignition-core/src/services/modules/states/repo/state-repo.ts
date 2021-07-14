@@ -10,7 +10,7 @@ import {
   EventType,
   MetaDataEvent,
   StatefulEvent,
-} from "../../../../interfaces/hardhat_ignition";
+} from "../../../../interfaces/hardhat-ignition";
 import { CliError } from "../../../types/errors";
 import { ModuleState, ModuleStateFile } from "../../../types/module";
 import { checkIfExist } from "../../../utils/util";
@@ -223,9 +223,9 @@ export class ModuleStateRepo implements IModuleStateRepo {
     let currentEvent = currentState[currEventName] as StatefulEvent;
 
     if (
-      eventType === EventType.OnFail ||
-      eventType === EventType.OnSuccess ||
-      eventType === EventType.OnCompletion
+      eventType === EventType.ON_FAIL ||
+      eventType === EventType.ON_SUCCESS ||
+      eventType === EventType.ON_COMPLETION
     ) {
       currentEvent = new StatefulEvent(
         {
@@ -302,7 +302,7 @@ export class ModuleStateRepo implements IModuleStateRepo {
       // if event is not define in module it is custom deploy event..
       const event: MetaDataEvent = {
         name: currEventName,
-        eventType: EventType.Deploy,
+        eventType: EventType.DEPLOY,
       };
       currentEvent = new StatefulEvent(event, false, {});
     }
