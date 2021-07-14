@@ -7,8 +7,7 @@
     "@ethersproject/abstract-provider": "^5.2.0",
     "@ethersproject/bignumber": "^5.2.0",
     "chai": "^4.2.0",
-    "ethereum-waffle": "^3.2.0",
-    "hardhat": "^2.1.2"
+    "ethereum-waffle": "^3.2.0"
   },
   "dependencies": {
     "axios": "^0.21.1",

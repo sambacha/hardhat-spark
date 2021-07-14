@@ -2,6 +2,8 @@ import { assert } from "chai";
 import { ethers } from "ethers";
 import { ContractBindingMetaData, IgnitionCore, Module } from "ignition-core";
 
+import { FirstModule } from "../deployment/first.module";
+
 import { getStateObject } from "./helper";
 
 const networkName = "localhost";
@@ -35,14 +37,11 @@ describe("ignition deploy", function () {
       {}
     );
     it("should be able to deploy a module", async function () {
-      const modules = require("../deployment/first.module");
-
-      const firstModule = Object.entries<Module>(modules)[0][1];
-      await ignitionCore.deploy(networkName, firstModule);
+      await ignitionCore.deploy(networkName, FirstModule);
 
       const moduleStateFile = await getStateObject(
         ignitionCore,
-        firstModule.name
+        FirstModule.name
       );
       const contractBinding = (moduleStateFile.A as unknown) as ContractBindingMetaData;
       assert.isDefined(contractBinding?.deployMetaData?.contractAddress);
