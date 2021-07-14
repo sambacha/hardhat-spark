@@ -7,9 +7,9 @@ const networkName = "local";
 async function main() {
   // @ts-ignore
   const ign = hre.ignition;
-  await ign.init(true, false);
+  await ign.init(false, false);
 
-  await ign.deploy(await ExampleModule, networkName);
+  await ign.deploy(await ExampleModule, networkName, true);
 }
 
 main()

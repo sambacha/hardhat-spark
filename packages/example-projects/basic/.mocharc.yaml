@@ -1,0 +1,8 @@
+extension:
+  - 'ts'
+timeout: 10000
+jobs: 1
+require:
+  - 'ts-node/register'
+recursive: true
+exit: true
