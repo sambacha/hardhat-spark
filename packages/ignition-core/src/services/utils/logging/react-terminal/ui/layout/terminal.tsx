@@ -8,7 +8,7 @@ import {
   ContractBinding,
   ContractEvent,
   StatefulEvent,
-} from "../../../../../../interfaces/hardhat_ignition";
+} from "../../../../../../interfaces/hardhat-ignition";
 import { ElementStatus, ElementWithStatus } from "../../../../../types/logger";
 import { checkIfExist } from "../../../../util";
 

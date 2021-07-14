@@ -9,11 +9,11 @@ import {
 import { ModuleState } from "../../types/module";
 
 export enum Logging {
-  "empty" = "empty",
-  "overview" = "overview",
-  "simple" = "simple",
-  "json" = "json",
-  "streamlined" = "streamlined",
+  EMPTY = "empty",
+  OVERVIEW = "overview",
+  SIMPLE = "simple",
+  JSON = "json",
+  STREAMLINES = "streamlined",
 }
 
 export enum StateElementStatus {

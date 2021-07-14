@@ -6,7 +6,14 @@
   "license": "MIT",
   "devDependencies": {
     "@types/chai": "^4.2.18",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
     "chai": "^4.3.4",
+    "eslint": "^7.29.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-unicorn": "^34.0.1",
     "hardhat": "^2.3.0",
     "mocha": "^8.4.0",
     "prettier": "2.0.5",
@@ -20,7 +27,7 @@
   },
   "scripts": {
     "lint:fix": "prettier --write \"test/**/*.{js,ts}\" && yarn lint --fix",
-    "lint": "tslint --config tslint.json --project ./tsconfig.json",
+    "lint": "eslint 'test/**/*.ts'",
     "e2e-test": "mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
     "e2e-test:deploy": "mocha --config ./.mocharc.yaml \"test/actions/deploy.test.ts\"",
     "e2e-test:diff": "mocha --config ./.mocharc.yaml \"test/actions/diff.test.ts\""

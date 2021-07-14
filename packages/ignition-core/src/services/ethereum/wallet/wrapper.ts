@@ -1,12 +1,12 @@
 import { Namespace } from "cls-hooked";
 import { ethers } from "ethers";
 
-import { IgnitionSigner } from "../../../interfaces/hardhat_ignition";
-import { ModuleStateRepo } from "../../modules/states/repo/state_repo";
+import { IgnitionSigner } from "../../../interfaces/hardhat-ignition";
+import { ModuleStateRepo } from "../../modules/states/repo/state-repo";
 import { ILogging } from "../../utils/logging";
 import { IGasCalculator, IGasPriceCalculator } from "../gas";
 import { INonceManager } from "../transactions";
-import { EventTxExecutor } from "../transactions/event_executor";
+import { EventTxExecutor } from "../transactions/event-executor";
 
 export class WalletWrapper {
   private readonly _eventSession: Namespace;

@@ -6,13 +6,13 @@ export const USAGE_FUNC = "buildUsage";
 export const MODULE_FUNC = "buildModule";
 
 export enum FileGenerationType {
-  "usage" = "usage",
-  "module" = "module",
+  USAGE = "usage",
+  MODULE = "module",
 }
 
 export enum Migration {
-  "truffle" = "truffle",
-  "hardhatDeploy" = "hardhatDeploy",
+  TRUFFLE = "truffle",
+  HARDHAT_DEPLOY = "hardhatDeploy",
 }
 
 export type Build = TruffleBuild | HardhatBuild;

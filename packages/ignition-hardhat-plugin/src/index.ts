@@ -6,11 +6,11 @@ import { Module } from "ignition-core";
 import inquirer from "inquirer";
 import * as path from "path";
 
-import { HardhatIgnition } from "./hardhat_ignition";
-import "./type_extentions";
+import { HardhatIgnition } from "./hardhat-ignition";
+import "./type-extentions";
 import { DeployTaskArgs, DiffTaskArgs, GenTypesTaskArgs } from "./types";
 import { extractDataFromConfig } from "./utils/extractor";
-import { SystemCrawlingService } from "./utils/system_crawler";
+import { SystemCrawlingService } from "./utils/system-crawler";
 
 const DEFAULT_NETWORK_NAME = "local";
 export const PluginName = "hardhat-ignition";

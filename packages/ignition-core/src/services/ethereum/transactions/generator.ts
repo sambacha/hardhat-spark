@@ -1,6 +1,6 @@
 import { BigNumber, ethers, providers } from "ethers";
 
-import { ContractBinding } from "../../../interfaces/hardhat_ignition";
+import { ContractBinding } from "../../../interfaces/hardhat-ignition";
 import { SingleContractLinkReference } from "../../types/artifacts/libraries";
 import { GasPriceBackoff } from "../../types/config";
 import { CliError, GasPriceBackoffError } from "../../types/errors";
