@@ -1,7 +1,6 @@
 import { assert } from "chai";
 import { execSync } from "child_process";
 import ux from "cli-ux";
-import { ethers } from "ethers";
 import { IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
 

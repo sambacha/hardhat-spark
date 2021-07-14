@@ -61,10 +61,9 @@ export class HardhatIgnition implements IHardhatIgnition {
   public async deploy(
     module: Module,
     networkName: string,
-    logging?: boolean,
-    test?: boolean
+    logging?: boolean
   ): Promise<void> {
-    await this._ignitionCore.deploy(networkName, module, logging, test);
+    await this._ignitionCore.deploy(networkName, module, logging);
   }
 
   public async diff(

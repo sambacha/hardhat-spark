@@ -6,7 +6,6 @@ import chai, { assert } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { createNamespace, Namespace } from "cls-hooked";
 import { ethers } from "ethers";
-import { defaultAbiCoder } from "ethers/lib/utils";
 import sinon, { StubbedInstance, stubInterface } from "ts-sinon";
 
 import {
@@ -25,9 +24,9 @@ import {
   StatefulEvent,
   TxExecutor,
 } from "../../src";
-import { FileSystemModuleState } from "../../src/services/modules/states/module/file_system";
-import { ModuleStateRepo } from "../../src/services/modules/states/repo/state_repo";
-import { EmptyLogger } from "../../src/services/utils/logging/empty_logging";
+import { FileSystemModuleState } from "../../src/services/modules/states/module/file-system";
+import { ModuleStateRepo } from "../../src/services/modules/states/repo/state-repo";
+import { EmptyLogger } from "../../src/services/utils/logging/empty-logging";
 
 chai.use(chaiAsPromised);
 
@@ -341,13 +340,13 @@ describe("transaction executor", () => {
       moduleStateRepo.initStateRepo(moduleName);
       await txExecutor.execute(moduleName, moduleState, undefined);
 
-      const constructorBytecode =
-        bytecode +
-        defaultAbiCoder
-          .encode(["int256", "uint256", "uint256"], contractStateData.args)
-          .substring(2);
       assert.equal(stubLogger.bindingExecution.calledWith(contractName), true);
       // @TODO bytecode is not correct in below function, check later
+      // const constructorBytecode =
+      //   bytecode +
+      //   defaultAbiCoder
+      //     .encode(["int256", "uint256", "uint256"], contractStateData.args)
+      //     .substring(2);
       // assert.equal(
       //   stubTransactionGenerator.generateSingedTx.calledWith(
       //     0,
@@ -425,7 +424,7 @@ describe("transaction executor", () => {
       );
       const event: AfterDeployEvent = {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
         deps: ["test"],
         eventDeps: [],
         usage: [],
@@ -524,7 +523,7 @@ describe("transaction executor", () => {
       );
       const event: AfterDeployEvent = {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
         deps: ["test"],
         eventDeps: [],
         usage: [],
@@ -649,7 +648,7 @@ describe("transaction executor", () => {
       );
       const event: AfterDeployEvent = {
         name: eventName,
-        eventType: EventType.AfterDeployEvent,
+        eventType: EventType.AFTER_DEPLOY_EVENT,
         deps: ["test"],
         eventDeps: [],
         usage: [],

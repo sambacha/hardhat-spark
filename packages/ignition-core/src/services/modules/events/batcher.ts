@@ -7,7 +7,7 @@ import {
   ModuleEvent,
   OnChangeEvent,
   StatefulEvent,
-} from "../../../interfaces/hardhat_ignition";
+} from "../../../interfaces/hardhat-ignition";
 import {
   CliError,
   EventDependencyNotDeployedError,
@@ -75,9 +75,9 @@ export class Batcher {
     elementsBatches: any
   ) {
     switch (event.eventType) {
-      case EventType.BeforeCompileEvent:
-      case EventType.AfterCompileEvent:
-      case EventType.BeforeDeployEvent:
+      case EventType.BEFORE_COMPILE_EVENT:
+      case EventType.AFTER_COMPILE_EVENT:
+      case EventType.BEFORE_DEPLOY_EVENT:
         this._handleBeforeDeployEvents(
           event,
           element,
@@ -85,8 +85,8 @@ export class Batcher {
           elementsBatches
         );
         break;
-      case EventType.OnChangeEvent:
-      case EventType.AfterDeployEvent:
+      case EventType.ON_CHANGE_EVENT:
+      case EventType.AFTER_DEPLOY_EVENT:
         this._handleAfterDeployEvents(event, element, batches, elementsBatches);
         break;
       default:

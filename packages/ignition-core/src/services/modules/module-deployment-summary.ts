@@ -11,11 +11,11 @@ import {
   ContractInput,
   StatefulEvent,
   TxData,
-} from "../../interfaces/hardhat_ignition";
+} from "../../interfaces/hardhat-ignition";
 import { ModuleStateFile } from "../types/module";
 import { checkIfExist } from "../utils/util";
 
-import { ModuleStateRepo } from "./states/repo/state_repo";
+import { ModuleStateRepo } from "./states/repo/state-repo";
 
 export enum SummaryType {
   "EMPTY" = "EMPTY",
@@ -24,53 +24,13 @@ export enum SummaryType {
   "ALL" = "ALL",
 }
 
-interface SummaryDataOption {
-  time: boolean;
-  totalEthers: boolean;
-  totalGas: boolean;
-  averageGasPrice: boolean;
-  numberOfContract: boolean;
-  numberOfEvents: boolean;
-  numberOfTransactions: boolean;
-}
-
-const summaryDataOptions: { [type: string]: SummaryDataOption } = {
-  EMPTY: {
-    time: false,
-    totalEthers: false,
-    totalGas: false,
-    averageGasPrice: false,
-    numberOfContract: false,
-    numberOfEvents: false,
-    numberOfTransactions: false,
-  },
-  SIMPLE: {
-    time: true,
-    totalEthers: true,
-    totalGas: true,
-    averageGasPrice: true,
-    numberOfContract: false,
-    numberOfEvents: false,
-    numberOfTransactions: false,
-  },
-  ALL: {
-    time: true,
-    totalEthers: true,
-    totalGas: true,
-    averageGasPrice: true,
-    numberOfContract: true,
-    numberOfEvents: true,
-    numberOfTransactions: true,
-  },
-};
-
 export class ModuleDeploymentSummaryService {
   private readonly _moduleStateRepo: ModuleStateRepo;
   private _startTime: Date;
 
   constructor(
     moduleStateRepo: ModuleStateRepo,
-    summaryType: SummaryType = SummaryType.SIMPLE
+    _summaryType: SummaryType = SummaryType.SIMPLE
   ) {
     this._moduleStateRepo = moduleStateRepo;
     this._startTime = new Date();

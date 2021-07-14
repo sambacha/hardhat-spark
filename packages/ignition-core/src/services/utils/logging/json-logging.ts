@@ -1,6 +1,6 @@
 import { cli } from "cli-ux";
 
-import { EventType } from "../../../interfaces/hardhat_ignition";
+import { EventType } from "../../../interfaces/hardhat-ignition";
 import { ModuleState } from "../../types/module";
 
 import { generateErrorMessage, ILogging } from "./index";
@@ -193,7 +193,7 @@ export class JsonLogger implements ILogging {
 
   public startModuleDeploy(
     moduleName: string,
-    moduleStates: ModuleState
+    _moduleStates: ModuleState
   ): void {
     cli.info(
       JSON.stringify({
@@ -235,9 +235,9 @@ export class JsonLogger implements ILogging {
     );
   }
 
-  public finishedModuleUsageGeneration(moduleName: string) {}
+  public finishedModuleUsageGeneration(_moduleName: string) {}
 
-  public startingModuleUsageGeneration(moduleName: string) {}
+  public startingModuleUsageGeneration(_moduleName: string) {}
 
   public async parallelizationExperimental() {}
 
@@ -259,7 +259,7 @@ export class JsonLogger implements ILogging {
   public startModuleResolving(): void {}
 
   public contractFunctionAlreadyExecuted(
-    contractFunction: string,
-    ...args: any[]
+    _contractFunction: string,
+    ..._args: any[]
   ): void {}
 }

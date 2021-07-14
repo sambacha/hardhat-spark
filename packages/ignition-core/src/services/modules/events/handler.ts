@@ -12,12 +12,12 @@ import {
   ModuleEventFn,
   OnChangeEvent,
   StatefulEvent,
-} from "../../../interfaces/hardhat_ignition";
+} from "../../../interfaces/hardhat-ignition";
 import { CliError, EventExecutionError } from "../../types/errors";
 import { ModuleState } from "../../types/module";
 import { ILogging } from "../../utils/logging";
 import { checkIfExist } from "../../utils/util";
-import { ModuleStateRepo } from "../states/repo/state_repo";
+import { ModuleStateRepo } from "../states/repo/state-repo";
 
 export class EventHandler {
   private readonly _moduleState: ModuleStateRepo;
