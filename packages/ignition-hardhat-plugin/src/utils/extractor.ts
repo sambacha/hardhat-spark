@@ -6,10 +6,11 @@ import {
   HardhatNetworkHDAccountsConfig,
 } from "hardhat/src/types/config";
 import {
-  HardhatUserConfig,
+  EIP1193Provider,
   HttpNetworkAccountsUserConfig,
   HttpNetworkConfig,
 } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types/runtime";
 import { IgnitionParams, IgnitionServices } from "ignition-core";
 
 const createSigners = (
@@ -63,33 +64,44 @@ const createSigners = (
 export const extractDataFromConfig = (
   networkName: string,
   networkId: string,
-  config: HardhatUserConfig
+  environment: HardhatRuntimeEnvironment
 ): {
   params: IgnitionParams;
   customServices: IgnitionServices;
   moduleParams: { [name: string]: any };
 } => {
-  if (config?.networks === undefined) {
+  if (environment.config?.networks[networkName] === undefined) {
     return {
       params: {
         networkId,
         networkName,
-        rpcProvider: new ethers.providers.JsonRpcProvider(),
+        rpcProvider: new ethers.providers.Web3Provider(
+          environment.network.provider as EIP1193Provider
+        ),
       },
       customServices: {},
       moduleParams: {},
     };
   }
-  const networkConfig = config.networks[networkName];
-  const ignition = config?.ignition;
 
+  const networkConfig = environment.config.networks[networkName];
   const networkUrl =
     (networkConfig as HttpNetworkConfig)?.url ?? "http://localhost:8545";
 
-  const provider = new ethers.providers.JsonRpcProvider(networkUrl, {
-    name: networkName,
-    chainId: +networkId,
-  });
+  let provider: ethers.providers.JsonRpcProvider;
+  if (networkName === "hardhat") {
+    provider = new ethers.providers.Web3Provider(
+      environment.network.provider as EIP1193Provider
+    );
+  } else {
+    provider = new ethers.providers.JsonRpcProvider(networkUrl, {
+      name: networkName,
+      chainId: +networkId,
+    });
+  }
+
+  const ignition = environment.config?.ignition;
+
   const signers = createSigners(networkConfig?.accounts, provider);
   const params: IgnitionParams = {
     networkName,

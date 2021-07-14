@@ -21,6 +21,7 @@ import { IModuleState } from "./module";
 const TRUFFLE_BUILD_DIR_NAME = "build";
 const HARDHAT_DEPLOYMENTS_DIR_NAME = "deployments";
 
+// @TODO remove this class
 export class StateMigrationService {
   private readonly _moduleState: IModuleState;
   private readonly _stateMigrationType: Migration;

@@ -6,7 +6,7 @@ import { ETHTornadoModule } from "./eth_tornado.module";
 import { LibrariesModule } from "./libraries.module";
 
 export const TornadoModule = buildModule(
-  "LibrariesModule",
+  "TornadoModule",
   async (m: ModuleBuilder, signers: ethers.Signer[]) => {
     await m.useModule(LibrariesModule);
 

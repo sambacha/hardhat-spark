@@ -262,7 +262,6 @@ export class IgnitionCore {
 
       this._logger.startModuleResolving(moduleName);
       // resolving contract and events dependencies and determining execution order
-      // @todo topological deps
       const moduleState: ModuleState | null = await this._moduleResolver.resolve(
         module.getAllBindings(),
         module.getAllEvents(),
@@ -429,7 +428,7 @@ export class IgnitionCore {
 
   public async reInitLogger(logging: boolean): Promise<void> {
     this.params.logging = logging;
-    await this.mustInit(this.params, this.customServices);
+    // await this.mustInit(this.params, this.customServices);
   }
 }
 
