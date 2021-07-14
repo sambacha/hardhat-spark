@@ -3,7 +3,7 @@ import { Namespace } from "cls-hooked";
 import * as cls from "cls-hooked";
 import { ethers } from "ethers";
 
-import { Module, ModuleParams } from "./interfaces/hardhat_ignition";
+import { Module, ModuleParams } from "./interfaces/hardhat-ignition";
 import { EthClient } from "./services/ethereum/client";
 import { IContractDataExtractor } from "./services/ethereum/extractor";
 import { HardhatExtractor } from "./services/ethereum/extractor/hardhat";
@@ -13,20 +13,20 @@ import {
   INonceManager,
   ITransactionSigner,
 } from "./services/ethereum/transactions";
-import { EventTxExecutor } from "./services/ethereum/transactions/event_executor";
+import { EventTxExecutor } from "./services/ethereum/transactions/event-executor";
 import { TxExecutor } from "./services/ethereum/transactions/executor";
 import { EthTxGenerator } from "./services/ethereum/transactions/generator";
 import { TransactionManager } from "./services/ethereum/transactions/manager";
 import { WalletWrapper } from "./services/ethereum/wallet/wrapper";
 import { EventHandler } from "./services/modules/events/handler";
-import { ModuleDeploymentSummaryService } from "./services/modules/module_deployment_summary";
-import { ModuleResolver } from "./services/modules/module_resolver";
-import { FileSystemModuleState } from "./services/modules/states/module/file_system";
+import { ModuleDeploymentSummaryService } from "./services/modules/module-deployment-summary";
+import { ModuleResolver } from "./services/modules/module-resolver";
+import { FileSystemModuleState } from "./services/modules/states/module/file-system";
 import { MemoryModuleState } from "./services/modules/states/module/memory";
-import { ModuleStateRepo } from "./services/modules/states/repo/state_repo";
+import { ModuleStateRepo } from "./services/modules/states/repo/state-repo";
 import { ModuleTypings } from "./services/modules/typings";
 import { IModuleValidator } from "./services/modules/validator";
-import { ModuleValidator } from "./services/modules/validator/module_validator";
+import { ModuleValidator } from "./services/modules/validator/module-validator";
 import {
   EmptySigners,
   GasPriceBackoff,
@@ -37,14 +37,14 @@ import {
   DEFAULT_NETWORK_ID,
   DEFAULT_NETWORK_NAME,
 } from "./services/utils/constants";
-import { ClsNamespaces } from "./services/utils/continuation_local_storage";
+import { ClsNamespaces } from "./services/utils/continuation-local-storage";
 import { ILogging } from "./services/utils/logging";
-import { EmptyLogger } from "./services/utils/logging/empty_logging";
+import { EmptyLogger } from "./services/utils/logging/empty-logging";
 import { OverviewLogger } from "./services/utils/logging/react-terminal";
 import { checkIfExist, errorHandling } from "./services/utils/util";
 
-export * from "./interfaces/hardhat_ignition";
-export * from "./interfaces/module_builders";
+export * from "./interfaces/hardhat-ignition";
+export * from "./interfaces/module-builders";
 export * from "./interfaces/helper/expectancy";
 export * from "./interfaces/helper/macros";
 
@@ -61,17 +61,17 @@ export * from "./services/ethereum/gas";
 export * from "./services/ethereum/gas/calculator";
 export * from "./services/ethereum/transactions/generator";
 export * from "./services/ethereum/transactions/executor";
-export * from "./services/ethereum/transactions/event_executor";
+export * from "./services/ethereum/transactions/event-executor";
 export * from "./services/modules/states/repo";
-export * from "./services/modules/module_resolver";
+export * from "./services/modules/module-resolver";
 export * from "./services/modules/events/handler";
 export * from "./services/utils/logging";
 export * from "./services/types/migration";
-export * from "./services/modules/states/state_migration_service";
+export * from "./services/modules/states/state-migration-service";
 export * from "./services/utils/searcher";
 export * from "./services/ethereum/client";
-export * from "./services/modules/module_usage";
-export * from "./services/modules/module_deployment_summary";
+export * from "./services/modules/module-usage";
+export * from "./services/modules/module-deployment-summary";
 export * from "./services/types";
 export * from "./services/types/config";
 export * from "./services/types/module";
