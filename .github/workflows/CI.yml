@@ -60,6 +60,8 @@ jobs:
         run: yarn --frozen-lockfile
       - name: Clean
         run: yarn clean
+      - name: Build
+        run: yarn build
       - name: Run tests
         env:
           INFURA_KEY: ${{ secrets.INFURA_KEY }}
