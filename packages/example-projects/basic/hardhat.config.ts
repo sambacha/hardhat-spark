@@ -14,4 +14,9 @@ module.exports = {
       ],
     },
   },
+  ignition: {
+    logging: true,
+    test: false,
+    moduleParams: {},
+  },
 };

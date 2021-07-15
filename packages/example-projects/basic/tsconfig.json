@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "resolveJsonModule": true
+  },
+  "extends": "../../../config/typescript/tsconfig.json",
+  "exclude": [
+    "./dist",
+    "./node_modules",
+    "projects-scenarios/*/node_modules",
+    "./artifacts",
+    "./cache",
+    "./.hardhat-ignition"
+  ]
+}
+
