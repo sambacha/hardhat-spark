@@ -10,10 +10,9 @@ describe("ignition deploy", function () {
   describe("simple deploy test", async function () {
     it("should be able to deploy a module", async function () {
       const ign = hre.ignition;
-      await ign.init(false, false);
 
       const module = await FirstModule;
-      await ign.deploy(module, hre.network.name, true);
+      await ign.deploy(module, hre.network.name);
 
       const moduleStateFile = await getStateObject(
         (ign as any)._ignitionCore,

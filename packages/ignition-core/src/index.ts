@@ -27,11 +27,7 @@ import { ModuleStateRepo } from "./services/modules/states/repo/state-repo";
 import { ModuleTypings } from "./services/modules/typings";
 import { IModuleValidator } from "./services/modules/validator";
 import { ModuleValidator } from "./services/modules/validator/module-validator";
-import {
-  EmptySigners,
-  GasPriceBackoff,
-  ServicesNotInitialized,
-} from "./services/types";
+import { EmptySigners, GasPriceBackoff } from "./services/types";
 import { ModuleState } from "./services/types/module";
 import {
   DEFAULT_NETWORK_ID,
@@ -188,12 +184,8 @@ export class IgnitionCore {
     this._moduleValidator = new ModuleValidator();
   }
 
-  public async deploy(networkName: string, module: Module, logging?: boolean) {
+  public async deploy(networkName: string, module: Module) {
     try {
-      if (logging !== undefined && this.params.logging !== logging) {
-        await this.reInitLogger(logging);
-      }
-
       // wrapping ether.Wallet in order to support state file storage
       const signers = this._signers ?? [];
       const ignitionWallets = this._walletWrapper?.wrapSigners(signers);
@@ -294,11 +286,8 @@ export class IgnitionCore {
     }
   }
 
-  public async diff(networkName: string, module: Module, logging?: boolean) {
+  public async diff(networkName: string, module: Module) {
     try {
-      if (logging !== undefined && this.params.logging !== logging) {
-        await this.reInitLogger(logging !== undefined);
-      }
       const signers = this._signers ?? [];
       const ignitionWallets = this._walletWrapper?.wrapSigners(signers) ?? [];
       const moduleName = module.name;
@@ -349,10 +338,6 @@ export class IgnitionCore {
 
   public async genTypes(module: Module, deploymentFolder: string) {
     try {
-      if (this._moduleTyping === undefined || this._logger === undefined) {
-        throw new ServicesNotInitialized();
-      }
-
       const signers = this._signers ?? [];
       const ignitionWallets = this._walletWrapper?.wrapSigners(signers) ?? [];
 
@@ -374,11 +359,6 @@ export class IgnitionCore {
     } catch (err) {
       await errorHandling(err, this._logger);
     }
-  }
-
-  public async reInitLogger(logging: boolean): Promise<void> {
-    this.params.logging = logging;
-    // @TODO make it possible to change logging
   }
 }
 
