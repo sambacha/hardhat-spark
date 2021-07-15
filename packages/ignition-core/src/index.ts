@@ -27,8 +27,11 @@ import { ModuleStateRepo } from "./services/modules/states/repo/state-repo";
 import { ModuleTypings } from "./services/modules/typings";
 import { IModuleValidator } from "./services/modules/validator";
 import { ModuleValidator } from "./services/modules/validator/module-validator";
-import { GasPriceBackoff } from "./services/types/config";
-import { EmptySigners, ServicesNotInitialized } from "./services/types/errors";
+import {
+  EmptySigners,
+  GasPriceBackoff,
+  ServicesNotInitialized,
+} from "./services/types";
 import { ModuleState } from "./services/types/module";
 import {
   DEFAULT_NETWORK_ID,
@@ -41,7 +44,7 @@ import { OverviewLogger } from "./services/utils/logging/react-terminal";
 import { checkIfExist, errorHandling } from "./services/utils/util";
 
 export * from "./interfaces/hardhat-ignition";
-export * from "./interfaces/module_builders";
+export * from "./interfaces/module-builders";
 export * from "./interfaces/helper/expectancy";
 export * from "./interfaces/helper/macros";
 
@@ -111,30 +114,28 @@ export interface IgnitionServices {
 }
 
 export class IgnitionCore {
-  public params: IgnitionParams;
-  public customServices: IgnitionServices;
   public moduleParams: ModuleParams;
-  public moduleStateRepo: ModuleStateRepo | undefined;
 
-  private _initialized: boolean = false;
-  private _networkName: string | undefined;
-  private _networkId: string | undefined;
-  private _gasPriceBackoff: GasPriceBackoff | undefined;
-  private _rpcProvider: ethers.providers.JsonRpcProvider | undefined;
-  private _signers: ethers.Signer[] | undefined;
-  private _logger: ILogging | undefined;
+  public readonly params: IgnitionParams;
+  public readonly customServices: IgnitionServices;
+  public readonly moduleStateRepo: ModuleStateRepo;
 
-  private _gasProvider: IGasProvider | undefined;
-  private _eventSession: cls.Namespace | undefined;
-  private _moduleResolver: ModuleResolver | undefined;
-  private _txGenerator: EthTxGenerator | undefined;
-  private _txExecutor: TxExecutor | undefined;
-  private _walletWrapper: WalletWrapper | undefined;
-  private _moduleDeploymentSummaryService:
-    | ModuleDeploymentSummaryService
-    | undefined;
+  private readonly _networkName: string;
+  private readonly _networkId: string;
+  private readonly _gasPriceBackoff: GasPriceBackoff;
+  private readonly _rpcProvider: ethers.providers.JsonRpcProvider;
+  private readonly _signers: ethers.Signer[];
+  private _logger: ILogging;
 
-  private _moduleTyping: ModuleTypings | undefined;
+  private readonly _gasProvider: IGasProvider;
+  private readonly _eventSession: cls.Namespace;
+  private readonly _moduleResolver: ModuleResolver;
+  private readonly _txGenerator: EthTxGenerator;
+  private readonly _txExecutor: TxExecutor;
+  private readonly _walletWrapper: WalletWrapper;
+  private readonly _moduleDeploymentSummaryService: ModuleDeploymentSummaryService;
+
+  private readonly _moduleTyping: ModuleTypings;
   private readonly _extractor: IContractDataExtractor;
   private readonly _moduleValidator: IModuleValidator;
 
@@ -147,25 +148,6 @@ export class IgnitionCore {
     this.customServices = services;
     this.moduleParams = moduleParams;
 
-    // @TODO move to mustInit eventually
-    this._extractor = new HardhatExtractor();
-    this._moduleValidator = new ModuleValidator();
-  }
-
-  public async mustInit(
-    params?: IgnitionParams,
-    services?: IgnitionServices,
-    moduleParams?: ModuleParams
-  ) {
-    if (params !== undefined) {
-      this.params = params;
-    }
-    if (services !== undefined) {
-      this.customServices = services;
-    }
-    if (moduleParams !== undefined) {
-      this.moduleParams = moduleParams;
-    }
     const {
       networkId,
       gasPriceBackoff,
@@ -183,7 +165,7 @@ export class IgnitionCore {
       moduleDeploymentSummaryService,
 
       moduleTyping,
-    } = await setupServicesAndEnvironment(this.params);
+    } = setupServicesAndEnvironment(this.params);
 
     this._networkName = this.params.networkName;
     this._networkId = networkId;
@@ -194,9 +176,7 @@ export class IgnitionCore {
 
     this._gasProvider = gasProvider;
     this._eventSession = eventSession;
-    if (this.moduleStateRepo === undefined) {
-      this.moduleStateRepo = moduleStateRepo;
-    }
+    this.moduleStateRepo = moduleStateRepo;
     this._moduleResolver = moduleResolver;
     this._txGenerator = txGenerator;
     this._txExecutor = txExecutor;
@@ -204,29 +184,14 @@ export class IgnitionCore {
     this._moduleDeploymentSummaryService = moduleDeploymentSummaryService;
 
     this._moduleTyping = moduleTyping;
-
-    this._initialized = true;
+    this._extractor = new HardhatExtractor();
+    this._moduleValidator = new ModuleValidator();
   }
 
   public async deploy(networkName: string, module: Module, logging?: boolean) {
     try {
-      if (!this._initialized) {
-        await this.mustInit(this.params, this.customServices);
-      }
-
       if (logging !== undefined && this.params.logging !== logging) {
-        await this.reInitLogger(logging !== undefined);
-      }
-
-      if (
-        this.moduleStateRepo === undefined ||
-        this._logger === undefined ||
-        this._txGenerator === undefined ||
-        this._moduleResolver === undefined ||
-        this._txExecutor === undefined ||
-        this._moduleDeploymentSummaryService === undefined
-      ) {
-        throw new ServicesNotInitialized();
+        await this.reInitLogger(logging);
       }
 
       // wrapping ether.Wallet in order to support state file storage
@@ -331,19 +296,8 @@ export class IgnitionCore {
 
   public async diff(networkName: string, module: Module, logging?: boolean) {
     try {
-      if (!this._initialized) {
-        await this.mustInit(this.params, this.customServices);
-      }
-
       if (logging !== undefined && this.params.logging !== logging) {
         await this.reInitLogger(logging !== undefined);
-      }
-
-      if (
-        this.moduleStateRepo === undefined ||
-        this._moduleResolver === undefined
-      ) {
-        throw new ServicesNotInitialized();
       }
       const signers = this._signers ?? [];
       const ignitionWallets = this._walletWrapper?.wrapSigners(signers) ?? [];
@@ -395,10 +349,6 @@ export class IgnitionCore {
 
   public async genTypes(module: Module, deploymentFolder: string) {
     try {
-      if (!this._initialized) {
-        await this.mustInit(this.params, this.customServices);
-      }
-
       if (this._moduleTyping === undefined || this._logger === undefined) {
         throw new ServicesNotInitialized();
       }
@@ -428,14 +378,14 @@ export class IgnitionCore {
 
   public async reInitLogger(logging: boolean): Promise<void> {
     this.params.logging = logging;
-    // await this.mustInit(this.params, this.customServices);
+    // @TODO make it possible to change logging
   }
 }
 
-export async function defaultInputParams(
+export function defaultInputParams(
   eventSession: Namespace,
   params: IgnitionParams
-): Promise<{
+): {
   networkName: string;
   networkId: string;
   gasPriceBackoff: GasPriceBackoff | undefined;
@@ -444,7 +394,7 @@ export async function defaultInputParams(
   parallelizeDeployment: boolean;
   signers: ethers.Signer[];
   isLocalDeployment: boolean;
-}> {
+} {
   let networkName = params?.networkName ?? DEFAULT_NETWORK_NAME;
 
   let isLocalDeployment = true;
@@ -505,11 +455,9 @@ export async function defaultInputParams(
   };
 }
 
-export async function setupServicesAndEnvironment(
-  params: IgnitionParams
-): Promise<any> {
+export function setupServicesAndEnvironment(params: IgnitionParams): any {
   const eventSession = cls.createNamespace("event");
-  return eventSession.runAndReturn(async () => {
+  return eventSession.runAndReturn(() => {
     const {
       networkName,
       networkId,
@@ -517,7 +465,7 @@ export async function setupServicesAndEnvironment(
       rpcProvider,
       logger,
       signers,
-    } = await defaultInputParams(eventSession, params);
+    } = defaultInputParams(eventSession, params);
     const currentPath = process.cwd();
 
     const gasProvider = new GasPriceCalculator(rpcProvider);

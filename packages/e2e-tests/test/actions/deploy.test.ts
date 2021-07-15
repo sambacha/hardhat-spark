@@ -338,8 +338,7 @@ function runExamples(skipSynthethix: boolean = false) {
   });
 
   if (!skipSynthethix) {
-    // @TODO temporarily disabled running synthethix test
-    // there is some inconsistency in module state record keeping after converted to the library approach
+    // @TODO temporarily disabled running synthethix test. There is some inconsistency in module state record keeping after converted to the library approach
     // describe("examples/synthetix", function () {
     //   const projectFileName = "synthetix";
     //   const projectLocation = useExampleProjectsEnvironment(projectFileName);
@@ -371,6 +370,8 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath);
 
+  // there is a bug in hardhat compiler for tornado
+  // https://github.com/nomiclabs/hardhat/issues/1191
   if (!projectFileName.includes("tornado")) {
     await hardhatRuntime.run("compile");
   }
