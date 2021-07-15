@@ -299,13 +299,6 @@ export class IgnitionCore {
       if (logging !== undefined && this.params.logging !== logging) {
         await this.reInitLogger(logging !== undefined);
       }
-
-      if (
-        this.moduleStateRepo === undefined ||
-        this._moduleResolver === undefined
-      ) {
-        throw new ServicesNotInitialized();
-      }
       const signers = this._signers ?? [];
       const ignitionWallets = this._walletWrapper?.wrapSigners(signers) ?? [];
       const moduleName = module.name;
