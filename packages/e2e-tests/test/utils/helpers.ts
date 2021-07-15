@@ -89,7 +89,6 @@ export function initIgnition(moduleParams: ModuleParams = {}) {
       {},
       moduleParams
     );
-    await this.ignition.mustInit();
   });
 
   afterEach(function () {
