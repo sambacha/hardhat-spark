@@ -30,7 +30,7 @@
     "dotenv": "^8.2.0",
     "find-up": "^5.0.0",
     "fs-extra": "^9.0.1",
-    "hardhat": "^2.3.0",
+    "hardhat": "^2.2.1",
     "ink": "^3.0.8",
     "ink-spinner": "^4.0.1",
     "ink-text-input": "^4.0.1",

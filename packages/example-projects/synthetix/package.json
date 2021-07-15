@@ -16,7 +16,7 @@
     "ignition-hardhat-plugin": "^0.0.1"
   },
   "devDependencies": {
-    "hardhat": "^2.0.8"
+    "hardhat": "^2.2.1"
   },
   "scripts": {
     "deploy": "npx hardhat ignition:deploy --network local"

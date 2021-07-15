@@ -11,7 +11,7 @@
     "ethers": "^5.0.22",
     "ignition-core": "^0.0.1",
     "ignition-hardhat-plugin": "^0.0.1",
-    "hardhat": "^2.0.9"
+    "hardhat": "^2.2.1"
   },
   "scripts": {
     "deploy": "npx hardhat ignition:deploy",
