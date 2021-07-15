@@ -255,8 +255,6 @@ export class ModuleResolver {
     // resolving after deploy events for this contract (afterDeploy, onChange)
     this._resolveAfterDeployEvents(moduleState, binding, bindings, events);
 
-    // this.resolveAllElementsInSubModule() //@TODO think if this is needed
-
     return moduleState;
   }
 

@@ -7,7 +7,7 @@ import inquirer from "inquirer";
 import * as path from "path";
 
 import { HardhatIgnition } from "./hardhat-ignition";
-import "./type-extentions";
+import "./type-extensions";
 import { DeployTaskArgs, DiffTaskArgs, GenTypesTaskArgs } from "./types";
 import { extractDataFromConfig } from "./utils/extractor";
 import { SystemCrawlingService } from "./utils/system-crawler";
@@ -32,7 +32,7 @@ extendEnvironment((env) => {
   const { params, customServices, moduleParams } = extractDataFromConfig(
     networkName,
     chainId,
-    env.config
+    env
   );
 
   env.ignition = lazyObject(

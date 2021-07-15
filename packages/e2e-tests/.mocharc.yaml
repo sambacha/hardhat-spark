@@ -6,4 +6,3 @@ require:
   - 'ts-node/register'
 recursive: true
 exit: true
-forbid-only: true

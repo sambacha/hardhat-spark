@@ -54,12 +54,14 @@ jobs:
             node_modules
             packages/*/node_modules
             packages/e2e-tests/test/projects-scenarios/*/node_modules
-            example/*/node_modules
+            packages/example-projects/*/node_modules
           key: ${{ runner.os }}-node-${{ matrix.node }}-${{ hashFiles('yarn.lock') }}
       - name: Install
         run: yarn --frozen-lockfile
       - name: Clean
         run: yarn clean
+      - name: Build
+        run: yarn build
       - name: Run tests
         env:
           INFURA_KEY: ${{ secrets.INFURA_KEY }}

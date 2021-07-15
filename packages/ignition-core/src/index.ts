@@ -44,7 +44,7 @@ import { OverviewLogger } from "./services/utils/logging/react-terminal";
 import { checkIfExist, errorHandling } from "./services/utils/util";
 
 export * from "./interfaces/hardhat-ignition";
-export * from "./interfaces/module-builders";
+export * from "./interfaces/module_builders";
 export * from "./interfaces/helper/expectancy";
 export * from "./interfaces/helper/macros";
 
@@ -227,7 +227,6 @@ export class IgnitionCore {
 
       this._logger.startModuleResolving(moduleName);
       // resolving contract and events dependencies and determining execution order
-      // @todo topological deps
       const moduleState: ModuleState | null = await this._moduleResolver.resolve(
         module.getAllBindings(),
         module.getAllEvents(),

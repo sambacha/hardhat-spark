@@ -14,7 +14,6 @@
     "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-unicorn": "^34.0.1",
-    "hardhat": "^2.3.0",
     "mocha": "^8.4.0",
     "prettier": "2.0.5",
     "rimraf": "^3.0.2",
@@ -28,14 +27,15 @@
   "scripts": {
     "lint:fix": "prettier --write \"test/**/*.{js,ts}\" && yarn lint --fix",
     "lint": "eslint 'test/**/*.ts'",
-    "e2e-test": "mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
-    "e2e-test:deploy": "mocha --config ./.mocharc.yaml \"test/actions/deploy.test.ts\"",
-    "e2e-test:diff": "mocha --config ./.mocharc.yaml \"test/actions/diff.test.ts\""
+    "test": "mocha --config ./.mocharc.yaml \"test/*/**/*.test.ts\"",
+    "test:deploy": "mocha --config ./.mocharc.yaml \"test/actions/deploy.test.ts\"",
+    "test:diff": "mocha --config ./.mocharc.yaml \"test/actions/diff.test.ts\""
   },
   "dependencies": {
     "child_process": "^1.0.2",
     "cli-ux": "^5.5.1",
     "ethers": "^5.1.4",
+    "hardhat": "^2.4.1",
     "ignition-core": "^0.0.1",
     "ignition-hardhat-plugin": "^0.0.1"
   },
