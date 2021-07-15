@@ -6,8 +6,6 @@ import { FirstModule } from "../deployment/first.module";
 
 import { getStateObject } from "./helper";
 
-const networkName = "hardhat";
-
 describe("ignition deploy", function () {
   describe("simple deploy test", async function () {
     it("should be able to deploy a module", async function () {
@@ -15,7 +13,7 @@ describe("ignition deploy", function () {
       await ign.init(false, false);
 
       const module = await FirstModule;
-      await ign.deploy(module, networkName, true);
+      await ign.deploy(module, hre.network.name, true);
 
       const moduleStateFile = await getStateObject(
         (ign as any)._ignitionCore,
