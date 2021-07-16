@@ -1,4 +1,4 @@
-import { extendEnvironment, task, types } from "hardhat/config";
+import { extendEnvironment, task } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import { ActionType } from "hardhat/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types/runtime";
@@ -80,11 +80,7 @@ const deploy: ActionType<DeployTaskArgs> = async (
   const modules = await loadScript(modulePath);
 
   for (const [, module] of Object.entries<Module>(modules)) {
-    await env.ignition.deploy(
-      module,
-      deployArgs.networkName,
-      deployArgs.logging
-    );
+    await env.ignition.deploy(module, deployArgs.networkName);
   }
 };
 
@@ -126,8 +122,7 @@ const diff: ActionType<DiffTaskArgs> = async (
 
   const modules = loadScript(path.resolve(process.cwd(), filePath));
   for (const [, module] of Object.entries(modules)) {
-    const logging = diffArgs.logging ?? true;
-    await env.ignition.diff(module, diffArgs.networkName, logging);
+    await env.ignition.diff(module, diffArgs.networkName);
   }
 };
 
@@ -156,12 +151,6 @@ task("ignition:diff", "Difference between deployed and current deployment.")
     "Network name is specified inside your config file and if their is none it will default to local(http://localhost:8545)",
     "local"
   )
-  .addOptionalParam<boolean>(
-    "logging",
-    "Logging param can be used to turn on/off logging in ignition.",
-    true,
-    types.boolean
-  )
   .setAction(diff);
 
 task(
@@ -176,12 +165,6 @@ task(
     "networkName",
     "Network name is specified inside your config file and if their is none it will default to (http://localhost:8545)",
     "local"
-  )
-  .addOptionalParam<boolean>(
-    "logging",
-    "Logging param can be used to turn on/off logging in ignition.",
-    true,
-    types.boolean
   )
   .setAction(deploy);
 

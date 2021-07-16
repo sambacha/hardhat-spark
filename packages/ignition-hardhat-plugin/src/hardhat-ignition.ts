@@ -15,14 +15,9 @@ import {
 export type Args = DeployArgs | DiffArgs | GenTypesArgs;
 
 export interface IHardhatIgnition {
-  deploy(
-    m: Module,
-    networkName: string,
-    logging?: boolean,
-    test?: boolean
-  ): Promise<void>;
+  deploy(m: Module, networkName: string): Promise<void>;
 
-  diff(module: Module, networkName: string, logging?: boolean): Promise<void>;
+  diff(module: Module, networkName: string): Promise<void>;
 
   genTypes(module: Module, deploymentFolder: string): Promise<void>;
 }
@@ -47,20 +42,12 @@ export class HardhatIgnition implements IHardhatIgnition {
     this._ignitionCore = new IgnitionCore(params, services, moduleParams);
   }
 
-  public async deploy(
-    module: Module,
-    networkName: string,
-    logging?: boolean
-  ): Promise<void> {
-    await this._ignitionCore.deploy(networkName, module, logging);
+  public async deploy(module: Module, networkName: string): Promise<void> {
+    await this._ignitionCore.deploy(networkName, module);
   }
 
-  public async diff(
-    module: Module,
-    networkName: string,
-    logging?: boolean
-  ): Promise<void> {
-    await this._ignitionCore.diff(networkName, module, logging);
+  public async diff(module: Module, networkName: string): Promise<void> {
+    await this._ignitionCore.diff(networkName, module);
   }
 
   public async genTypes(
