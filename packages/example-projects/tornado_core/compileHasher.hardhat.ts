@@ -14,7 +14,9 @@ task("compile",async (args, hre, runSuper) => {
     deployedBytecode: "0x",
     contractName: 'Hasher',
     abi: genContract.abi,
-    bytecode: genContract.createCode('mimcsponge', 220)
+    bytecode: genContract.createCode('mimcsponge', 220),
+    linkReferences: {},
+    deployedLinkReferences: {}
   }
 
   fs.writeFileSync(outputPath, JSON.stringify(contract, undefined, 4))
