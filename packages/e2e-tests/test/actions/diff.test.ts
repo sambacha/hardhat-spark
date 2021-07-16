@@ -157,7 +157,7 @@ Module: ExampleModule
 
 async function runDiffCommand(
   ignition: IgnitionCore,
-  hardhatRuntime: HardhatRuntimeEnvironment,
+  hre: HardhatRuntimeEnvironment,
   projectLocation: string,
   moduleFileName: string = defaultModuleFileName
 ): Promise<void> {
@@ -167,8 +167,8 @@ async function runDiffCommand(
     moduleFileName
   );
 
-  await hardhatRuntime.run("compile");
-  const networkName = hardhatRuntime.network.name;
+  await hre.run("compile");
+  const networkName = hre.network.name;
 
   const modules = await loadScript(deploymentFilePath);
   for (const [, module] of Object.entries(modules)) {
