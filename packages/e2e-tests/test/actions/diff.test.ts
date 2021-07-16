@@ -1,6 +1,6 @@
 import { assert } from "chai";
-import { execSync } from "child_process";
 import ux from "cli-ux";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { IgnitionCore, Module } from "ignition-core";
 import * as path from "path";
 
@@ -9,7 +9,6 @@ import { initIgnition, useFixedProjectEnvironment } from "../utils/helpers";
 
 const deploymentFolder = "deployment";
 const defaultModuleFileName = "module.ts";
-const networkName = "local"; // used for ignition to distinguish state file
 const rootDir = process.cwd();
 
 // TODO: Remove this
@@ -43,7 +42,7 @@ describe("ignition diff - integration", () => {
     it("should be able to show difference in modules", async function () {
       await loadStateFile(projectLocation, this.ignition);
 
-      await runDiffCommand(this.ignition, projectLocation);
+      await runDiffCommand(this.ignition, this.hre, projectLocation);
 
       assert.equal(
         output,
@@ -63,7 +62,7 @@ Module: ExampleModule
     it("should be able to show difference in modules", async function () {
       await loadStateFile(projectLocation, this.ignition);
 
-      await runDiffCommand(this.ignition, projectLocation);
+      await runDiffCommand(this.ignition, this.hre, projectLocation);
 
       assert.equal(
         output,
@@ -85,7 +84,7 @@ Module: ExampleModule
     it("should be able to show difference in modules", async function () {
       await loadStateFile(projectLocation, this.ignition);
 
-      await runDiffCommand(this.ignition, projectLocation);
+      await runDiffCommand(this.ignition, this.hre, projectLocation);
 
       assert.equal(
         output,
@@ -105,7 +104,7 @@ Module: ExampleModule
     it("should be able to show difference in modules", async function () {
       await loadStateFile(projectLocation, this.ignition);
 
-      await runDiffCommand(this.ignition, projectLocation);
+      await runDiffCommand(this.ignition, this.hre, projectLocation);
 
       assert.equal(
         output,
@@ -127,7 +126,7 @@ Module: ExampleModule
     it("should do nothing if their is no difference in module bindings", async function () {
       await loadStateFile(projectLocation, this.ignition);
 
-      await runDiffCommand(this.ignition, projectLocation);
+      await runDiffCommand(this.ignition, this.hre, projectLocation);
 
       assert.equal(
         output,
@@ -144,7 +143,7 @@ Module: ExampleModule
     it("should fail if their is less bindings in modules compared to deployed one", async function () {
       await loadStateFile(projectLocation, this.ignition);
 
-      await runDiffCommand(this.ignition, projectLocation);
+      await runDiffCommand(this.ignition, this.hre, projectLocation);
 
       assert.equal(
         output,
@@ -158,6 +157,7 @@ Module: ExampleModule
 
 async function runDiffCommand(
   ignition: IgnitionCore,
+  hre: HardhatRuntimeEnvironment,
   projectLocation: string,
   moduleFileName: string = defaultModuleFileName
 ): Promise<void> {
@@ -167,7 +167,8 @@ async function runDiffCommand(
     moduleFileName
   );
 
-  execSync("npx hardhat compile");
+  await hre.run("compile");
+  const networkName = hre.network.name;
 
   const modules = await loadScript(deploymentFilePath);
   for (const [, module] of Object.entries(modules)) {

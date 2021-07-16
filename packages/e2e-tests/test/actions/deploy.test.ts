@@ -370,11 +370,7 @@ async function runDeployCommand(
   );
   const modules = await loadScript(deploymentFilePath);
 
-  // there is a bug in hardhat compiler for tornado
-  // https://github.com/nomiclabs/hardhat/issues/1191
-  if (!projectFileName.includes("tornado")) {
-    await hardhatRuntime.run("compile");
-  }
+  await hardhatRuntime.run("compile");
   const networkName = hardhatRuntime.network.name;
 
   for (const [, module] of Object.entries<Module>(modules)) {
