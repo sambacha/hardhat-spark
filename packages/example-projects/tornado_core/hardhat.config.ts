@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import * as path from "path";
-import("ignition-hardhat-plugin");
-import("./compileHasher.hardhat");
+import "ignition-hardhat-plugin";
+import "./compileHasher.hardhat";
 dotenv.config({ path: path.resolve(`${__dirname}/.env`) });
 
 const { PRIVATE_KEY, INFURA_KEY } = process.env;
