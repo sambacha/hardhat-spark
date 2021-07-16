@@ -1,5 +1,4 @@
 import { assert } from "chai";
-import { execSync } from "child_process";
 import ux from "cli-ux";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { IgnitionCore, Module } from "ignition-core";
