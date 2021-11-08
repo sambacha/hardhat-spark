@@ -2,16 +2,9 @@
 *-debug.log
 *-error.log
 /.nyc_output
-/dist
-/lib
 /package-lock.json
 /tmp
 node_modules
 .idea
-./example/artifacts
-./example/cache
-./example/.ignition
-./example/.env
-./.ignition
 ./oclif.manifest.json
 *.log
